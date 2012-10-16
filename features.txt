@@ -1,11 +1,11 @@
-	Features of abcm2ps 6.6.0 (J.F. Moine, December 2011)
-	=====================================================
+	Features of abcm2ps 7.1.2 (J.F. Moine, October 2012)
+	====================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
 
 	http://abcnotation.com/wiki/abc:standard:v2.1
 
-Here are listed only the differences from standard.
+Here are listed only the differences from the standard.
 
 
 Features not implemented.
@@ -13,13 +13,11 @@ Features not implemented.
 
 Information fields.
 
-	- The continuation field ('+:') is not implemented.
+	- The continuation field ('+:') is implemented for w: only.
 
 	- The charsets iso-8859-5 .. iso-8859-8 are not implemented.
 
 Tune body.
-
-	- Multi-measure invisible rests ('X') are not implemented.
 
 	- The following decorations are not implemented:
 		!dacoda!, !dacapo!
@@ -83,9 +81,6 @@ Information fields.
 	  (space) and '\t' (tabulation).
 
 Tune body.
-
-	- Some bar lines are drawn as defined (ex: ':|:'), some other
-	  ones are expanded, as '|::' to '[|::'.
 
 	- The decorations on notes inside chords cannot be standard ones
 	  because their offset is relative to the note they are attached to,
@@ -172,23 +167,49 @@ Information fields.
 	  An explicit measure duration may be specified putting its
 	  value after an '=' sign (ex: 'M:C|=2/1').
 
+	- 'microscale=<d>' in 'K:' or 'V:' fields defines the
+	  denominator to use in microtonal accidentals (see 'microtone'
+	  pitches below).
+
 	- The field 'd:' is the same as 's:' (symbol line).
 
 Tune body.
 
-	- Microtone pitches are indicated by a fraction after an
-	  accidental, as "^3/4c". When omitted, the numerator defaults
-	  to 1 and the denominator to 2 ("^/c" is the same as "^1/2c").
-	  The numerator and denominator cannot be greater than 256.
+	- Microtone pitches are indicated a number or a fraction after
+	  an accidental.
+
+	  By default, these pitches are indicated by a fraction of
+	  a semitone as "^3/4c" (3/4 of a sharp).
+	  When omitted, the numerator defaults to 1 and the denominator
+	  to 2 ("^/c" is the same as "^1/2c").
 	  Support exists for 1/2 and 3/2 sharps and flats. For other
-	  values, PostScript functions must be defined (by %%postscript).
-	  The name of such a function is:
+	  values, PostScript functions must be defined (%%postscript
+	  or %%beginps - see below).
+
+	  The microtone pitches may be indicated by a fraction of tone
+	  (! not semitone !) using "microscale=<denominator>" in K:
+	  or V: information fields. In this case, only the numerator
+	  is to be set after the accidental as "^3c".
+	  For instance, the two declarations
+		- without microscale:	^3/2c
+		- with microscale=4:	^3c
+	  give a same result.
+
+	  Note: the numerator and denominator cannot be greater than 255.
+
+	  By default, the name of the PostScript function which draws
+	  a microtone accidental is:
 		<accidental_type><micro_value>
 	  where:
 		  - <accidental_type> is "sh" (sharp) or "ft" (flat)
 			(may be also "nt", "dsh" or "dft" !)
 		  - <micro_value> is computed from the fraction as:
 			( <numerator> - 1 ) * 256 + <denominator> - 1
+	  and it is called with <x> and <y>.
+
+	  Setting %%micronewps to 1, the function name is:
+		<accidental_type><denominator>
+	  and it is called with <x> <y> <numerator>.
 
 	- A note length starting with '0' (zero') indicates a stemless
 	  note.
@@ -199,6 +220,8 @@ Tune body.
 	- '[]' is the same as '[|]' (invisible bar).
 
 	- ':' (colon alone) is the same as '.|' (dotted bar).
+
+	- ']' alone is not a bar. It stops a repeat bracket.
 
 	- Repeat bars may contain a set of digits, '-' (hyphen),
 	  ',' (comma) or '.' (dot), or even a free string. Ex:
@@ -227,6 +250,8 @@ Tune body.
 		!xstem!		draw a stem up to the note on the previous
 				staff
 		!/! .. !///!	tremolo on one note
+		!beam-accel! and !beam-rall!
+				feathered beam
 
 	- There may be decorations on grace notes.
 
@@ -247,6 +272,9 @@ Tune body.
 		"^above;_below"
 
 Clefs.
+
+	- the clef definition should not be in K: or V: information fields.
+	  Better use the %%clef pseudo-comment (see format.txt)
 
 	- 'clef=P' is the same as 'perc'.
 

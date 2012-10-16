@@ -53,7 +53,7 @@ int svg;			/* SVG (1) or XML (2 - HTML + SVG) output */
 int showerror;			/* show the errors */
 
 char outfn[FILENAME_MAX];	/* output file name */
-int  file_initialized;		/* for output file */
+int file_initialized;		/* for output file */
 FILE *fout;			/* output file */
 char *in_fname;			/* current input file name */
 time_t mtime;			/* last modification time of the input file */
@@ -89,65 +89,7 @@ static struct str_a {
 
 /* -- local functions -- */
 static void read_def_format(void);
-
-/* -- do a tune selection -- */
-static void do_select(struct abctune *t,
-		      int first_tune,
-		      int last_tune)
-{
-	struct abcsym *s;
-	int print_tune, i;
-
-	while (t != 0) {
-		i = first_tune - 1;
-		for (s = t->first_sym; s != 0; s = s->next) {
-			if (s->type != ABC_T_INFO)
-				continue;
-			if (s->text[0] == 'X') {
-				if (sscanf(s->text, "X:%d", &i) != 1)
-					i = 0;
-				break;
-			}
-			if (s->text[0] == 'K') {
-				i = 0;		/* T: without X: */
-				break;
-			}
-		}
-		print_tune = i >= first_tune && i <= last_tune;
-		if (print_tune
-		 || !t->client_data) {		/* (parse the global symbols) */
-			do_tune(t, !print_tune);
-			t->client_data = (void *) 1;	/* treated */
-		}
-		t = t->next;
-	}
-}
-
-/* -- do filtering on an input file -- */
-static void do_filter(struct abctune *t, char *sel)
-{
-	int cur_sel, end_sel, n;
-
-	for (;;) {
-		if (sscanf(sel, "%d%n", &cur_sel, &n) != 1)
-			break;
-		sel += n;
-		if (*sel == '-') {
-			sel++;
-			end_sel = (int) ((unsigned) (~0) >> 1);
-			if (sscanf(sel, "%d%n", &end_sel, &n) != 1)
-				end_sel = (unsigned) ~0 >> 1;
-			else
-				sel += n;
-		} else {
-			end_sel = cur_sel;
-		}
-		do_select(t, cur_sel, end_sel);
-		if (*sel != ',')
-			break;
-		sel++;
-	}
-}
+static void treat_file(char *fn, char *ext);
 
 static FILE *open_ext(char *fn, char *ext)
 {
@@ -263,41 +205,32 @@ static char *read_file(char *fn, char *ext)
 }
 
 /* call back to handle %%format/%%abc-include - see front.c */
-static void treat_file(char *fn,
-			char *ext,
-			char *sel);
 static void include_cb(unsigned char *fn)
 {
 	char abc_fn_sav[FILENAME_MAX];
 
 	strcpy(abc_fn_sav, abc_fn);
-	treat_file((char *) fn, "fmt", 0);
+	treat_file((char *) fn, "fmt");
 	strcpy(abc_fn, abc_fn_sav);
 }
 
 /* -- treat an input file and generate the ABC file -- */
-static void treat_file(char *fn,
-			char *ext,
-			char *sel)
+static void treat_file(char *fn, char *ext)
 {
 	struct abctune *t;
-	char *file, *file2, *p;
+	char *file, *file2;
 	int file_type, l;
 	static int nbfiles;
 
-	/* initialize if not already done */
-	if (fout == 0) {
-		read_def_format();
-		if (*ext == 'a')
-			make_font_list();
-	}
-
-	if (nbfiles == 0) {		/* if first file, init the front-end  */
-		front_init(0, 0, include_cb);
-	} else if (nbfiles > 2) {
+	if (nbfiles > 2) {
 		error(1, 0, "Too many included files");
 		return;
 	}
+
+	/* initialize if not already done */
+	frontend((unsigned char *) "\n", 0);	/* stop the %%tune/%%voice */
+	if (fout == 0)
+		read_def_format();
 
 	/* read the file into memory */
 	/* the real/full file name is in tex_buf[] */
@@ -312,7 +245,6 @@ static void treat_file(char *fn,
 	}
 	if (!quiet)
 		fprintf(stderr, "File %s\n", tex_buf);
-	p = file;
 
 	/* convert the strings */
 	l = strlen(tex_buf);
@@ -329,7 +261,7 @@ static void treat_file(char *fn,
 	}
 
 	nbfiles++;
-	file2 = (char *) frontend((unsigned char *) p, file_type);
+	file2 = (char *) frontend((unsigned char *) file, file_type);
 	nbfiles--;
 	free(file);
 
@@ -341,26 +273,23 @@ static void treat_file(char *fn,
 
 	memcpy(&deco_tune, &deco_glob, sizeof deco_tune);
 	if (file_type == FE_ABC) {		/* if ABC file */
-		if (!epsf)
-			open_output_file();
+//		if (!epsf)
+//			open_output_file();
 		clrarena(1);			/* clear previous tunes */
 	}
 	t = abc_parse(file2);
 	free(file2);
+	front_init(0, 0, include_cb);		/* reinit the front-end */
 	if (t == 0) {
 		if (file_type == FE_ABC)
 			error(1, 0, "File '%s' is empty!", tex_buf);
 		return;
 	}
 
-	if (file_type == FE_ABC) {		/* ABC file */
-		if (sel)
-			do_filter(t, sel);
-		else
-			do_select(t, -32000,
-			  (int) ((unsigned) (~0) >> 1));
-	} else {
-		do_tune(t, 1);			/* format or PS file */
+	while (t != 0) {
+		if (t->first_sym != 0)		/*fixme:last tune*/
+			do_tune(t);		/* generate */
+		t = t->next;
 	}
 /*	abc_free(t);	(useless) */
 }
@@ -371,7 +300,7 @@ static void read_def_format(void)
 	if (def_fmt_done)
 		return;
 	def_fmt_done = 1;
-	treat_file("default.fmt", "fmt", 0);
+	treat_file("default.fmt", "fmt");
 }
 
 /* -- set extension on a file name -- */
@@ -524,11 +453,25 @@ static struct cmdtblt_s *cmdtblt_parse(char *p)
 	return cmdtblt;
 }
 
+/* set a command line option */
+static void set_opt(char *w, char *v)
+{
+	if (v == 0)
+		v = "";
+	if (strlen(w) + strlen(v) >= sizeof tex_str - 2) {
+		error(1, 0, "Command line '%s' option too long", w);
+		return;
+	}
+	sprintf(tex_buf,		/* this buffer is available */
+		"%%%%%s %s lock\n", w, v);
+	frontend((unsigned char *) tex_buf, 0);
+}
+
 /* -- main program -- */
 int main(int argc, char **argv)
 {
 	unsigned j;
-	char *p, *sel, c, *aaa;
+	char *p, c, *aaa;
 
 	if (argc <= 1)
 		usage();
@@ -539,9 +482,12 @@ int main(int argc, char **argv)
 	while (--argc > 0) {
 		argv++;
 		p = *argv;
-		if (*p != '-' || p[1] == '-' || p[1] == '\0')
+		if (*p != '-' || p[1] == '-') {
+			if (*p == '+' && p[1] == 'F')	/* +F : no default format */
+				def_fmt_done = 1;
 			continue;
-		while ((c = *++p) != '\0') {
+		}
+		while ((c = *++p) != '\0') {	/* '-xxx' */
 			switch (c) {
 			case 'E':
 				svg = 0;	/* EPS */
@@ -570,6 +516,10 @@ int main(int argc, char **argv)
 				svg = 2;	/* SVG/XHTML */
 				epsf = 0;
 				break;
+			default:
+				if (strchr("aBbDdeFfIjmNOsTw", c)) /* if with arg */
+					p += strlen(p) - 1;	/* skip */
+				break;
 			}
 		}
 	}
@@ -592,6 +542,7 @@ int main(int argc, char **argv)
 	notitle.as.text = "T:";
 	set_format();
 	reset_deco();
+	front_init(0, 0, include_cb);
 
 #ifdef linux
 	/* if not set, try to find where is the default format directory */
@@ -605,7 +556,6 @@ int main(int argc, char **argv)
 	/* parse the arguments - finding a new file, treat the previous one */
 	argc = s_argc;
 	argv = s_argv;
-	sel = 0;
 	while (--argc > 0) {
 		argv++;
 		p = *argv;
@@ -616,8 +566,8 @@ int main(int argc, char **argv)
 
 			if (p[1] == '\0') {		/* '-' alone */
 				if (in_fname != 0) {
-					treat_file(in_fname, "abc", sel);
-					sel = 0;
+					treat_file(in_fname, "abc");
+					set_opt("select", 0);
 				}
 				in_fname = "";		/* read from stdin */
 				continue;
@@ -643,7 +593,9 @@ int main(int argc, char **argv)
 					cfmt.continueall = 0;
 					lock_fmt(&cfmt.continueall);
 					break;
-				case 'F': def_fmt_done = 1; break;
+				case 'F':
+//					 def_fmt_done = 1;
+					break;
 				case 'G':
 					cfmt.graceslurs = 1;
 					lock_fmt(&cfmt.graceslurs);
@@ -716,12 +668,11 @@ int main(int argc, char **argv)
 			if (p[1] == '-') {		/* long argument */
 				p += 2;
 				if (--argc <= 0) {
-					error(1, 0,
-						"++++ No argument for '--'");
+					error(1, 0, "No argument for '--'");
 					return EXIT_FAILURE;
 				}
 				argv++;
-				interpret_fmt_line(p, *argv, 1);
+				set_opt(p, *argv);
 				continue;
 			}
 			while ((c = *++p) != '\0') {
@@ -787,20 +738,17 @@ int main(int argc, char **argv)
 					cfmt.oneperpage = 1;
 					lock_fmt(&cfmt.oneperpage);
 					break;
-				case 'e':	/* filtering */
-					if (sel != 0)
-						error(1, 0,
-							"Previous '-e' ignored");
-					sel = p + 1;
-					if (sel[0] == '\0') {
+				case 'e':		/* filtering */
+					if (p[1] == '\0') {
 						if (--argc <= 0) {
 							error(1, 0,
-								"No filter in '-e'");
+								"No filter for '-e'");
 							break;
 						}
 						argv++;
-						sel = *argv;
+						set_opt("select", *argv);
 					} else {
+						set_opt("select", p + 1);
 						while (p[1] != '\0')	/* stop */
 							p++;
 					}
@@ -809,8 +757,8 @@ int main(int argc, char **argv)
 					/* flag with optional parameter */
 				case 'N':
 					if (p[1] == 0
-					&& (argc <= 1
-					 || !isdigit((unsigned) argv[1][0]))) {
+					 && (argc <= 1
+					  || !isdigit((unsigned) argv[1][0]))) {
 						pagenumbers = 2; /* old behaviour */
 						break;
 					}
@@ -845,7 +793,7 @@ int main(int argc, char **argv)
 							p++;
 					}
 
-					if (strchr("BbfjNsv", c)) {    /* check num args */
+					if (strchr("BbfjNs", c)) {	/* check num args */
 						for (j = 0; j < strlen(aaa); j++) {
 							if (!strchr("0123456789.",
 								    aaa[j])) {
@@ -863,30 +811,25 @@ int main(int argc, char **argv)
 
 					switch (c) {
 					case 'a':
-						interpret_fmt_line("maxshrink",
-								aaa, 1);
+						set_opt("maxshrink", aaa);
 						break;
 					case 'B':
-						interpret_fmt_line("barsperstaff",
-								aaa, 1);
+						set_opt("barsperstaff", aaa);
 						break;
 					case 'b':
-						interpret_fmt_line("measurefirst",
-								aaa, 1);
+						set_opt("measurefirst", aaa);
 						break;
 					case 'D':
 						styd = aaa;
 						break;
 					case 'd':
-						interpret_fmt_line("staffsep",
-								aaa, 1);
+						set_opt("staffsep", aaa);
 						break;
 					case 'F':
-						treat_file(aaa, "fmt", 0);
+						treat_file(aaa, "fmt");
 						break;
 					case 'I':
-						interpret_fmt_line("indent",
-								aaa, 1);
+						set_opt("indent", aaa);
 						break;
 					case 'j':
 						sscanf(aaa, "%d", &cfmt.measurenb);
@@ -898,8 +841,7 @@ int main(int argc, char **argv)
 						lock_fmt(&cfmt.measurebox);
 						break;
 					case 'm':
-						interpret_fmt_line("leftmargin",
-								aaa, 1);
+						set_opt("leftmargin", aaa);
 						break;
 					case 'N':
 						sscanf(aaa, "%d", &pagenumbers);
@@ -918,8 +860,7 @@ int main(int argc, char **argv)
 						strcpy(outfn, aaa);
 						break;
 					case 's':
-						interpret_fmt_line("scale",
-								aaa, 1);
+						set_opt("scale", aaa);
 						break;
 					case 'T': {
 						struct cmdtblt_s *cmdtblt;
@@ -930,8 +871,7 @@ int main(int argc, char **argv)
 						break;
 					    }
 					case 'w':
-						interpret_fmt_line("staffwidth",
-								aaa, 1);
+						set_opt("staffwidth", aaa);
 						break;
 					}
 					break;
@@ -944,14 +884,14 @@ int main(int argc, char **argv)
 		}
 
 		if (in_fname != 0) {
-			treat_file(in_fname, "abc", sel);
-			sel = 0;
+			treat_file(in_fname, "abc");
+			set_opt("select", 0);
 		}
 		in_fname = p;
 	}
 
 	if (in_fname != 0)
-		treat_file(in_fname, "abc", sel);
+		treat_file(in_fname, "abc");
 	if (!epsf && fout == 0) {
 		error(1, 0, "No input file specified");
 		return EXIT_FAILURE;

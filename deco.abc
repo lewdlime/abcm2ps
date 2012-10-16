@@ -357,7 +357,6 @@
 %%deco # 3 sharp 8 0 0
 %%deco b 3 flat 8 0 0
 %%deco = 3 natural 8 0 0
-%%deco = 3 natural 8 0 0
 %
 % -- 'tr' + long trill
 %%deco tr( 5 - 11 0 0

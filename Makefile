@@ -1,6 +1,6 @@
 # Makefile source for abcm2ps
 
-VERSION = 6.6.21
+VERSION = 7.1.2
 
 CC = gcc
 INSTALL = /usr/bin/install -c
@@ -8,6 +8,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 
 CPPFLAGS = -DHAVE_CONFIG_H  -I.
+CPPPANGO = 
 CFLAGS = -g -O2 -Wall -pipe
 LDFLAGS =  -lm
 
@@ -24,14 +25,20 @@ docdir = /usr/local/doc
 # unix
 OBJECTS=abc2ps.o \
 	abcparse.o buffer.o deco.o draw.o format.o front.o music.o parse.o \
-	subs.o svg.o syms.o
+	slre.o subs.o svg.o syms.o
 abcm2ps: $(OBJECTS)
-	$(CC) $(CFLAGS) -o abcm2ps $(OBJECTS) $(LDFLAGS)
-$(OBJECTS): abcparse.h abc2ps.h config.h Makefile
-abc2ps.o front.o: front.h
+	$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(LDFLAGS)
 
-abcmfe: front.c
-	$(CC) -g -O2 front.c -DMAIN -o abcmfe
+$(OBJECTS): abcparse.h config.h Makefile
+abc2ps.o buffer.o deco.o draw.o format.o front.o music.o parse.o \
+	subs.o svg.o syms.o: abc2ps.h
+abc2ps.o front.o: front.h
+front.o parse.o slre.o: slre.h
+subs.o: subs.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPPANGO) -c -o $@ $<
+
+abcmfe: front.c front.h slre.h
+	$(CC) $(CFLAGS) -DMAIN -o $@ $< slre.o
 
 DOCFILES=$(addprefix $(srcdir)/,Changes License README *.abc *.eps *.txt)
 
@@ -97,6 +104,8 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/sample3.eps \
 	abcm2ps-$(VERSION)/sample4.abc \
 	abcm2ps-$(VERSION)/sample5.abc \
+	abcm2ps-$(VERSION)/slre.c \
+	abcm2ps-$(VERSION)/slre.h \
 	abcm2ps-$(VERSION)/subs.c \
 	abcm2ps-$(VERSION)/svg.c \
 	abcm2ps-$(VERSION)/syms.c \

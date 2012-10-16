@@ -38,21 +38,9 @@ static char ps_head[] =
 	"/showb{	dup currentpoint 3 -1 roll show\n"
 	"	.6 SLW\n"
 	"	exch 2 sub exch 3 sub 3 -1 roll\n"
-#if 1
 	"	stringwidth pop 4 add\n"
 	"	currentfont /ScaleMatrix get 0 get .8 mul\n"
 	"	4 add rectstroke}!\n"
-#else
-	"	stringwidth pop 4 add fh 4 add rectstroke}!\n"
-#endif
-
-#if 0
-	"/showcb{ % usage: str showcb - show centered in box\n"
-	"	dup stringwidth pop dup .5 mul neg 0 RM currentpoint 4 -1 roll show\n"
-	"	.6 SLW\n"
-	"	exch 2 sub exch 3 sub 3 -1 roll\n"
-	"	4 add fh 4 add rectstroke}!\n"
-#endif
 
 	/* x y tclef - treble clef */
 	"/utclef{<95200072\n"
@@ -788,6 +776,11 @@ static char ps_head[] =
 	/* x1 y2 x2 y2 x3 y3 x0 y0 gsl - grace note slur */
 	"/gsl{dlw M RC stroke}!\n"
 
+	/* x y custos */
+	"/custos{2 copy M -4 0 RM 2 2.5 RL 2 -2.5 RL 2 2.5 RL 2 -2.5 RL\n"
+	"	-2 -2.5 RL -2 2.5 RL -2 -2.5 RL -2 2.5 RL fill\n"
+	"	M 3.5 0 RM 5 7 RL dlw stroke}!\n"
+
 	/* extra characters (accidentals) range c280 .. c29f */
 	"/c280_c29f[\n"
 	"	/.notdef	/sharp		/flat		/natural\n"
@@ -891,8 +884,9 @@ static char ps_head[] =
 	"	/Encoding[256{/.notdef}repeat]\n"
 	"	/FontBBox[0 0 500 500]\n"
 	"	/BuildChar{\n"
-	"		500 0 setcharwidth 50 setlinewidth\n"
-	"		100 500 moveto 300 0 rlineto stroke\n"
+//	"		500 0 setcharwidth 50 setlinewidth\n"
+	"		500 0 99 348 401 453 setcachedevice 50 setlinewidth\n"
+	"		100 400 moveto 300 0 rlineto stroke\n"
 //	"		(char: )print = pop\n"
 	"		pop pop\n"
 	"	}\n"

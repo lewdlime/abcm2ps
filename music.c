@@ -29,7 +29,7 @@
 struct SYMBOL *tsnext;		/* next line when cut */
 float realwidth;		/* real staff width while generating */
 
-static int insert_meter;	/* insert time signature (1) and 1st line (2) */
+static int insert_meter;	/* insert time signature (1) and indent 1st line (2) */
 static float alfa_last, beta_last;	/* for last short short line.. */
 
 #define AT_LEAST(a,b)  do { float tmp = b; if(a<tmp) a=tmp; } while (0)
@@ -377,8 +377,7 @@ delsym2:
 /*fixme: KO if gchord/annot in both symbols*/
 	if (s2->as.text != 0 && s->as.text == 0) {
 		s->as.text = s2->as.text;
-		s->gcf = s2->gcf;
-		s->anf = s2->anf;
+		s->gch = s2->gch;
 	}
 	delsym(s2);			/* remove the next symbol */
 }
@@ -423,7 +422,6 @@ static void combine_voices(void)
 			}
 			continue;
 		}
-#if 1
 		if (s->as.type != ABC_T_NOTE) {
 			if (s->as.type != ABC_T_REST)
 				continue;
@@ -436,12 +434,6 @@ static void combine_voices(void)
 		}
 		if (!(s->sflags & S_BEAM_ST))
 			continue;
-#else
-//		if (s->as.type != ABC_T_NOTE || !(s->sflags & S_BEAM_ST))
-//		if (s->type != NOTEREST || !(s->sflags & S_BEAM_ST))
-		if (s->type != NOTEREST)
-			continue;
-#endif
 		if (s->sflags & S_BEAM_END) {
 			if (may_combine(s)) {
 				do_combine(s);
@@ -915,71 +907,43 @@ static float set_graceoffs(struct SYMBOL *s)
 	return xx;
 }
 
-/* -- compute the width needed by a guitar chord -- */
+/* -- compute the width needed by the guitar chords / annotations -- */
 static float gchord_width(struct SYMBOL *s,
 			  float wlnote,
 			  float wlw)
 {
 	struct SYMBOL *s2;
+	struct gch *gch;
+	int ix;
 	float lspc, rspc, w;
-	char *p, *q, sep, antype;
 
-	str_font(s->gcf);
-	lspc = rspc = cwid(' ') * cfmt.font_tb[s->gcf].swfac;
-	p = s->as.text;
-	antype = '\0';
-	sep = '\n';
-	for (;;) {
-		if (*p != '\0' && strchr("^_<>@", *p) != 0)
-			antype = *p++;
-		else
-			antype = '\0';
-		for (q = p; ; q++) {
-			if (*q == '\\') {
-				q++;
-				if (*q == '\\' || *q == ';')
-					continue;
-			}
-			if (*q == '\0' || *q == ';' || *q == '\n') {
-				sep = *q;
-				*q = '\0';
-				break;
-			}
-		}
-		w = tex_str(p);
-		switch (antype) {
-		case '^':		/* above */
-		case '_':		/* below */
+	lspc = rspc = 0;
+	for (ix = 0, gch = s->gch; ix < MAXGCH; ix++, gch++) {
+		if (gch->type == '\0')
+			break;
+		switch (gch->type) {
 		default: {		/* default = above */
 			float wl;
 
-			wl = w * GCHPRE;
-			if (wl > 8)
-				wl = 8;
+			wl = -gch->x;
 			if (wl > lspc)
 				lspc = wl;
-			w -= wl;
+			w = gch->w - wl;
 			if (w > rspc)
 				rspc = w;
 			break;
 		    }
 		case '<':		/* left */
-			w += wlnote;
+			w = gch->w + wlnote;
 			if (w > lspc)
 				lspc = w;
 			break;
 		case '>':		/* right */
-			w += s->wr;
+			w = gch->w + s->wr;
 			if (w > rspc)
 				rspc = w;
 			break;
-		case '@':		/* absolute */
-			break;
 		}
-		if (sep == '\0')
-			break;
-		*q = sep;
-		p = q + 1;
 	}
 #if 1
 	/* adjust width for no clash */
@@ -1281,7 +1245,6 @@ static void set_width(struct SYMBOL *s)
 		}
 
 		/* leave room for guitar chord */
-		/* !! this sequence is tied to draw_gchord() !! */
 		if (s->as.text != 0)
 			wlw = gchord_width(s, wlnote, wlw);
 
@@ -1388,42 +1351,8 @@ static void set_width(struct SYMBOL *s)
 			s->wl += deco_width(s);
 
 		/* have room for the repeat numbers / guitar chord */
-		if (s->as.text == 0)
-			break;
-		{
-			int ft;
-			struct FONTSPEC *f;
-
-			ft = s->as.u.bar.repeat_bar ? REPEATFONT : s->gcf;
-			str_font(ft);
-			f = &cfmt.font_tb[ft];
-			xx = tex_str(s->as.text) + cwid(' ') * f->swfac * 1.5;
-		}
-		if (s->as.u.bar.repeat_bar) {
-			xx += 8;
-		} else if (s->prev->as.text != 0) {
-			float spc;
-
-			spc = xx * GCHPRE;
-			if (spc > 8)
-				spc = 8;
-			AT_LEAST(s->wl, spc);
-			xx -= spc;
-		}
-		for (s2 = s->next; s2 != 0; s2 = s2->next) {
-			switch (s2->type) {
-			case CLEF:
-			case GRACE:
-				continue;
-			case NOTEREST:
-				if (s2->as.text != 0)
-					AT_LEAST(s->wr, xx);
-				break;
-			default:
-				break;
-			}
-			break;
-		}
+		if (s->as.text != 0)
+			s->wl = gchord_width(s, s->wl, s->wl);
 		break;
 	case CLEF:
 		/* shift the clef to the left - see draw_symbols() */
@@ -1439,7 +1368,10 @@ static void set_width(struct SYMBOL *s)
 		esp = 4;
 		if (s->as.u.key.nacc == 0) {
 			n1 = s->as.u.key.sf;	/* new key sig */
-			n2 = s->u;		/* old key */
+			if (cfmt.cancelkey || n1 == 0)
+				n2 = s->u;	/* old key */
+			else
+				n2 = 0;
 			if (n1 * n2 >= 0) {	/* if no natural */
 				if (n1 < 0)
 					n1 = -n1;
@@ -1516,6 +1448,7 @@ static void set_width(struct SYMBOL *s)
 	case TEMPO:
 	case PART:
 	case TUPLET:
+	case CUSTOS:
 #endif
 	case FMTCHG:
 	case STAVES:		/* no space */
@@ -1595,9 +1528,9 @@ static float set_space(struct SYMBOL *s)
 	if (s->dur == 0) {
 		if (s->type == BAR) {
 			if (s->as.u.bar.type & 0xf)
-				space *= 0.9;	/* complex bar */
+				space *= 0.8;	/* complex bar */
 			else
-				space *= 0.8;
+				space *= 0.7;
 		}
 		return space;
 	}
@@ -1727,7 +1660,7 @@ static void set_allsymwidth(struct SYMBOL *last_s)
 
 		/* set the spaces at start of sequence */
 		if (shrink == 0 && space == 0 && s->type == CLEF) {
-			s->sflags &= ~S_SEQST;		/* no space (clef) */
+			s->sflags &= ~S_SEQST;		/* no space */
 			s->time = s->ts_prev->time;
 		} else {
 			s->shrink = shrink;
@@ -1899,7 +1832,7 @@ static void set_repeat(struct SYMBOL *g,
 	}
 
 	/* second check and replace */
-	i = g->nohdix * n;			/* check if NL later in the line*/
+	i = g->nohdix * n;			/* check if NL later in the line */
 	for (s2 = s; s2 != 0; s2 = s2->next) {
 //		if (s2->sflags & S_NL)
 //			goto delrep;
@@ -2008,6 +1941,48 @@ delrep:					/* remove the %%repeat */
 	g->u = -1;
 }
 
+/* add a custos before the symbol of the next line */
+static void custos_add(struct SYMBOL *s)
+{
+	struct VOICE_S *p_voice;
+	struct SYMBOL *new_s, *s2;
+	int i;
+
+	s2 = s;
+	for (;;) {
+		if (s2 == 0)
+			return;
+		if (s2->as.type == ABC_T_NOTE)
+			break;
+		s2 = s2->next;
+	}
+
+	p_voice = &voice_tb[s->voice];
+	if ((p_voice->last_sym = s->prev) == 0)
+		p_voice->sym = 0;
+	p_voice->time = s->time;
+	new_s = sym_add(p_voice, CUSTOS);
+	new_s->next = s;
+	s->prev = new_s;
+	new_s->ts_prev = s->ts_prev;
+	new_s->ts_prev->ts_next = new_s;
+	new_s->ts_next = s;
+	s->ts_prev = new_s;
+
+	new_s->sflags |= S_SEQST;
+	new_s->wl = 8;
+	new_s->wr = 4;
+	new_s->shrink = 8 + 4;
+
+	new_s->nhd = s2->nhd;
+	memcpy(new_s->as.u.note.lens, s2->as.u.note.lens,
+			sizeof new_s->as.u.note.lens);
+	memcpy(new_s->pits, s2->pits, sizeof new_s->pits);
+	for (i = 0; i <= new_s->nhd; i++)
+		new_s->as.u.note.lens[i] = CROTCHET;
+	new_s->as.flags = ABC_F_STEMLESS;
+}
+
 /* -- define the beginning of a new music line -- */
 static struct SYMBOL *set_nl(struct SYMBOL *s)
 {
@@ -2017,9 +1992,15 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 	/* if normal symbol, cut here */
 	switch (s->type) {
 	case CLEF:
-	case KEYSIG:
-	case TIMESIG:
 	case BAR:
+		break;
+	case KEYSIG:
+		if (!cfmt.keywarn)
+			goto normal;
+		break;
+	case TIMESIG:
+		if (!cfmt.timewarn)
+			goto normal;
 		break;
 	case GRACE:
 		if (cfmt.continueall && s->next != 0
@@ -2027,6 +2008,7 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 			break;
 		/* fall thru */
 	default:
+normal:
 		time = s->time + s->dur;
 		for (s = s->ts_next; ; s = s->ts_next) {
 			if (s == 0)
@@ -2035,6 +2017,7 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 			 && s->time >= time)
 				break;
 		}
+//fixme: tester si (key/time sig) et warn ?
 		if (s->type == BAR)
 			break;
 
@@ -2042,10 +2025,11 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 		for (s2 = s->ts_next; ; s2 = s2->ts_next) {
 			if (s2 == 0)
 				return s;
-			if (s2->sflags & S_SEQST)
+			if (s2->sflags & S_SEQST) {
+				s2 = s2->ts_prev;
 				break;
+			}
 		}
-		s2 = s2->ts_prev;
 		done = 1;
 		for ( ; s2 != s; s2 = s2->ts_prev) {
 			if (s2->as.type == ABC_T_NOTE
@@ -2059,8 +2043,7 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 				done = 1;
 			}
 		}
-		s->sflags |= S_NL;
-		return s;
+		goto setnl;
 	}
 
 	/* go back to handle the staff breaks at end of line */
@@ -2113,7 +2096,10 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 		case CLEF:
 			if (done)
 				break;
+			continue;
 		case KEYSIG:
+			if (!cfmt.keywarn)
+				break;
 			continue;
 		default:
 			if (!done || s->prev == 0 || s->prev->type == GRACE)
@@ -2122,25 +2108,29 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 		}
 		break;
 	}
-	if (s != 0) {
-		s->sflags |= S_NL;
-		if (extra != 0		/* extra symbol(s) to be moved */
-		 && extra != s) {
-			s2 = extra->extra;
-			while (s2->next != 0)
-				s2 = s2->next;
-			s2->next = s->extra;
-			s->extra = extra->extra;
-			extra->extra = 0;
-		}
+	if (s == 0)
+		return s;
+	if (extra != 0			/* extra symbol(s) to be moved */
+	 && extra != s) {
+		s2 = extra->extra;
+		while (s2->next != 0)
+			s2 = s2->next;
+		s2->next = s->extra;
+		s->extra = extra->extra;
+		extra->extra = 0;
 	}
+setnl:
+	if (cfmt.custos && first_voice->next == 0)
+		custos_add(s);
+	s->sflags |= S_NL;
 	return s;
 }
 
 /* -- search where to cut the lines according to the staff width -- */
 static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 				struct SYMBOL *last,	/* last symbol / 0 */
-				float lwidth, float indent)
+				float lwidth,		/* w - (clef & key sig) */
+				float indent)		/* for start of tune */
 {
 	struct SYMBOL *s, *s2;
 	float x, xline, wwidth, x2, shrink, space;
@@ -2149,9 +2139,8 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 	/* calculate the whole size of the tune */
 	wwidth = indent;
 	for (s = first; s != last; s = s->ts_next) {
-		if (!(s->sflags & S_SEQST))
+		if ((shrink = s->shrink) == 0)
 			continue;
-		shrink = s->shrink;
 		if ((space = s->space) < shrink)
 			wwidth += shrink;
 		else
@@ -2173,11 +2162,9 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 		x = indent;
 		s2 = 0;
 		for ( ; s != last; s = s->ts_next) {
-			if (!(s->sflags & S_SEQST))
+			if ((shrink = s->shrink) == 0)
 				continue;
-			shrink = s->shrink;
-			space = s->space;
-			if (space < shrink)
+			if ((space = s->space) < shrink)
 				x += shrink;
 			else
 				x += shrink * cfmt.maxshrink
@@ -2187,16 +2174,8 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 				s2 = s;
 				x2 = x;
 			}
-			if (x > xline) {
-#if 0
-				if (s->next != 0 && s->next->type == BAR
-				 && (s->next->sflags & S_SEQST)) {
-					s2 = s->next;
-					x2 = x;
-				}
-#endif
+			if (x > xline)
 				break;
-			}
 		}
 		if (s2 != 0 && x2 > xline - 200) /* go back to the previous bar */
 			s = s2;
@@ -2205,6 +2184,7 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 		 || (last != 0 && s->time >= last->time))
 			break;
 		wwidth -= indent;
+		indent = 0;
 		for (s2 = first; s2 != s; s2 = s2->ts_next) {
 			if (!(s2->sflags & S_SEQST))
 				continue;
@@ -2215,103 +2195,9 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 				wwidth -= shrink * cfmt.maxshrink
 					+ space * (1 - cfmt.maxshrink);
 		}
-
-#if 1
-		indent = 0;
-#else
-		/* don't count part of the width of the next symbol */
-		indent = s->shrink * -0.8;
-#endif
 		first = s;
 	}
 	return s;
-}
-
-/* -- set the bar numbers -- */
-static void set_bar_num(void)
-{
-	struct SYMBOL *s;
-	int bar_time, wmeasure;
-	int bar_num;
-
-	wmeasure = voice_tb[cursys->top_voice].meter.wmeasure;
-	if (wmeasure == 0)				/* if M:none */
-		wmeasure = 1;
-
-	/* don't count a bar at start of line */
-	for (s = tsfirst; ; s = s->ts_next) {
-		if (s == 0)
-			return;
-		switch (s->type) {
-		case TIMESIG:
-		case CLEF:
-		case KEYSIG:
-		case FMTCHG:
-		case STBRK:
-			continue;
-		case BAR:
-			if (s->u != 0) {
-				nbar = s->u;		/* (%%setbarnb) */
-				break;
-			}
-			if (s->as.u.bar.repeat_bar
-			 && s->as.text != 0
-			 && cfmt.contbarnb == 0) {
-				if (s->as.text[0] == '1') {
-					nbar_rep = nbar;
-				} else {
-					nbar = nbar_rep; /* restart bar numbering */
-					s->u = nbar;
-				}
-			}
-			break;
-		}
-		break;
-	}
-
-	/* set the measure number on the top bars */
-	bar_time = s->time + wmeasure;	/* for incomplete measure at start of tune */
-	bar_num = nbar;
-	for ( ; s != 0; s = s->ts_next) {
-		switch (s->type) {
-		case TIMESIG:
-			wmeasure = s->as.u.meter.wmeasure;
-			if (wmeasure == 0)
-				wmeasure = 1;
-			if (s->time < bar_time)
-				bar_time = s->time + wmeasure;
-			break;
-		case MREST:
-			bar_num += s->as.u.bar.len - 1;
-//			bar_time += wmeasure * (s->as.u.bar.len - 1);
-			while (s->ts_next != 0
-			 && s->ts_next->type != BAR)
-				s = s->ts_next;
-			break;
-		case BAR:
-			if (s->u != 0) {
-				bar_num = s->u;		/* (%%setbarnb) */
-				s->u = 0;
-				if (s->time < bar_time)
-					break;
-			} else {
-				if (s->time < bar_time)	/* incomplete measure */
-					break;
-				bar_num++;
-			}
-			if (s->as.u.bar.repeat_bar
-				 && s->as.text != 0
-				 && cfmt.contbarnb == 0) {
-				if (s->as.text[0] == '1')
-					nbar_rep = bar_num;
-				else		/* restart bar numbering */
-					bar_num = nbar_rep;
-			}
-			s->u = bar_num;
-			bar_time = s->time + wmeasure;
-			break;
-		}
-	}
 }
 
 /* -- cut the tune into music lines -- */
@@ -2331,6 +2217,8 @@ static void cut_tune(float lwidth, float indent)
 			break;
 		lwidth -= s->shrink;
 	}
+	if (cfmt.custos && first_voice->next == 0)
+		lwidth -= 12;
 	if (cfmt.continueall) {
 		set_lines(s, 0, lwidth, indent);
 		return;
@@ -2445,14 +2333,15 @@ static void set_yval(struct SYMBOL *s)
 
 /* -- set the pitch of the notes according to the clefs -- */
 /* also set the vertical offset of the symbols */
-/* this function is called only once per tune */
+/* this function is called only once per tune
+ * then, once per music line up to the first sequence */
 static void set_pitch(struct SYMBOL *last_s)
 {
 	struct SYSTEM *sy;
 	struct SYMBOL *s;
 	int staff, delta, dur;
-	char staff_clef[MAXSTAFF];
-	static int delta_tb[4] = {
+	signed char staff_clef[MAXSTAFF];
+	static signed char delta_tb[4] = {
 		0 - 2 * 2,
 		6 - 3 * 2,
 		12 - 4 * 2,
@@ -2461,8 +2350,9 @@ static void set_pitch(struct SYMBOL *last_s)
 
 	sy = cursys;
 	for (staff = 0; staff <= sy->nstaff; staff++) {
-		delta = delta_tb[sy->staff[staff].clef.type];
-		staff_clef[staff] = delta + sy->staff[staff].clef.line * 2;
+		staff_clef[staff] = delta_tb[sy->staff[staff].clef.type]
+				+ sy->staff[staff].clef.transpose
+				+ sy->staff[staff].clef.line * 2;
 	}
 	dur = BASE_LEN;
 	for (s = tsfirst; s != last_s; s = s->ts_next) {
@@ -2488,14 +2378,16 @@ static void set_pitch(struct SYMBOL *last_s)
 				break;
 			}
 			set_yval(s);
-			delta = delta_tb[s->as.u.clef.type];
-			staff_clef[staff] = delta + s->as.u.clef.line * 2;
+			staff_clef[staff] = delta_tb[s->as.u.clef.type]
+						+ s->as.u.clef.transpose
+						+ s->as.u.clef.line * 2;
 			break;
 		case STAVES:
 			sy = sy->next;
 			for (staff = 0; staff <= sy->nstaff; staff++) {
-				delta = delta_tb[sy->staff[staff].clef.type];
-				staff_clef[staff] = delta + sy->staff[staff].clef.line * 2;
+				staff_clef[staff] = delta_tb[sy->staff[staff].clef.type]
+						+ sy->staff[staff].clef.transpose
+						+ sy->staff[staff].clef.line * 2;
 			}
 			break;
 		case GRACE:
@@ -2513,13 +2405,16 @@ static void set_pitch(struct SYMBOL *last_s)
 			set_yval(s);
 			break;
 		case KEYSIG:
-			s->pits[0] = staff_clef[staff];
-			set_yval(s);
+			s->pits[0] = staff_clef[staff];	/* keep the current clef */
+			s->ymx = 24 + 10;
+			s->ymn = -2;
 			break;
 		default:
 			set_yval(s);
 			break;
 		case MREST:
+			if (s->as.flags & ABC_F_INVIS)
+				break;
 			s->ymx = 24 + 15;
 			s->ymn = -2;
 			break;
@@ -2793,9 +2688,9 @@ if (staff > nst) {
 }
 #endif
 			voice = u->voice;
-			if (vtb[voice].st1 < 0)
+			if (vtb[voice].st1 < 0) {
 				vtb[voice].st1 = staff;
-			else if (vtb[voice].st1 != staff) {
+			} else if (vtb[voice].st1 != staff) {
 				if (staff > vtb[voice].st1) {
 					if (staff > vtb[voice].st2)
 						vtb[voice].st2 = staff;
@@ -3130,7 +3025,7 @@ static void init_music_line(void)
 	}
 
 	/* add time signature if needed */
-	if (insert_meter) {
+	if (insert_meter & 1) {
 		for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 			voice = p_voice - voice_tb;
 			if (cursys->voice[voice].range < 0
@@ -3158,12 +3053,16 @@ static void init_music_line(void)
 		 || cursys->voice[voice].second
 		 || p_voice->bar_start == 0)
 			continue;
-		i = 4;
+		i = 2;
 		if (p_voice->bar_text == 0	/* if repeat continuation */
 		 && p_voice->bar_start == B_OBRA) {
 			for (s = p_voice->last_sym;
 			     s != 0;
 			     s = s->next) {	/* search the end of repeat */
+				if (s->sflags & S_RBSTOP) {
+					i = -1;
+					break;
+				}
 				if (s->type != BAR)
 					continue;
 				if ((s->as.u.bar.type & 0xf0)	/* if complex bar */
@@ -3186,32 +3085,20 @@ static void init_music_line(void)
 			if (p_voice->bar_start & 0x4000)
 				s->sflags |= S_NOREPBRA;
 			s->as.text = p_voice->bar_text;
+			s->gch = p_voice->bar_gch;
 			s->as.u.bar.repeat_bar = p_voice->bar_repeat;
 			set_yval(s);
 		}
 		p_voice->bar_start = 0;
 		p_voice->bar_repeat = 0;
 		p_voice->bar_text = 0;
+		p_voice->bar_gch = 0;
 	}
-
-#if 0
-// done in parse.c
-	/* add tempo if any (only one) */
-	if ((s = info['Q' - 'A']) != 0) {
-		p_voice = &voice_tb[cursys->top_voice];
-		s->type = TEMPO;
-		s->voice = p_voice - voice_tb;
-		s->staff = p_voice->staff;
-		s->time = last_s->time;
-		s->next = last_s->extra;
-		last_s->extra = s;
-		info['Q' - 'A'] = 0;
-	}
-#endif
 
 	/* if initialization of a new music line, compute the spacing,
 	 * including the first (old) sequence */
 	if (tsnext != 0) {		/* (if called from cut_symbols()) */
+		set_pitch(last_s);
 		if ((s = last_s) != 0) {
 			for ( ; s != 0; s = s->ts_next)
 				if (s->sflags & S_SEQST)
@@ -3221,7 +3108,6 @@ static void init_music_line(void)
 				if (s->sflags & S_SEQST)
 					break;
 		}
-		set_pitch(last_s);
 		set_allsymwidth(s);	/* set the width of the added symbols */
 	}
 }
@@ -3249,6 +3135,7 @@ static void set_global(void)
 //	sy = cursys;
 	if (cfmt.abc2pscompat) {
 		int i;
+
 		for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 			int delta;
 			struct SYMBOL *g;
@@ -3431,7 +3318,7 @@ static float set_indent(void)
 		}
 		maxw += 4 * cwid(' ') * cfmt.font_tb[VOICEFONT].swfac + w;
 	}
-	if (insert_meter & 2) {			/* if first music line */
+	if (insert_meter & 2) {			/* if indent */
 		maxw += cfmt.indent;
 		insert_meter &= ~2;
 	}
@@ -4077,7 +3964,7 @@ static void check_bar(struct SYMBOL *s)
 	while (s->type == CLEF || s->type == KEYSIG || s->type == TIMESIG) {
 		if (s->type == TIMESIG
 		 && s->time > p_voice->sym->time)	/* if not empty voice */
-			insert_meter |= 1;
+			insert_meter |= 1;	/* meter in the next line */
 		if ((s = s->prev) == 0)
 			return;
 	}
@@ -4087,8 +3974,10 @@ static void check_bar(struct SYMBOL *s)
 	if (s->as.u.bar.repeat_bar) {
 		p_voice->bar_start = B_OBRA;
 		p_voice->bar_text = s->as.text;
+		p_voice->bar_gch = s->gch;
 		p_voice->bar_repeat = 1;
 		s->as.text = 0;
+		s->gch = 0;
 		s->as.u.bar.repeat_bar = 0;
 		if (s->as.flags & ABC_F_INVIS)
 			p_voice->bar_start |= 0x8000;
@@ -4171,8 +4060,7 @@ static void set_piece(void)
 			sy = sy->next;
 			for (staff = 0; staff <= sy->nstaff; staff++) {
 				p_staff = &staff_tb[staff];
-//--fixme: what is this comparison ?
-				if (sy->staff[staff].clef.stafflines > p_staff->clef.stafflines)
+				if (sy->staff[staff].clef.stafflines >= 0)
 					p_staff->clef.stafflines = sy->staff[staff].clef.stafflines;
 				if (sy->staff[staff].clef.staffscale != 0)
 					p_staff->clef.staffscale = sy->staff[staff].clef.staffscale;
@@ -4200,8 +4088,10 @@ static void set_piece(void)
 				memcpy(&s->as.u.bar,
 					&s2->as.u.bar,
 					sizeof s->as.u.bar);
-				if (s2->as.text != 0)
+				if (s2->as.text != 0) {
 					s->as.text = s2->as.text;
+					s->gch = s2->gch;
+				}
 			}
 			if (s2 != 0)
 				delsym(s2);
@@ -4233,17 +4123,17 @@ static void set_piece(void)
 	s = s->ts_prev;
 	s->ts_next = 0;
 
-	/* set end of voices */
+	/* set the end of the voices */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		int voice;
 
 		voice = p_voice - voice_tb;
 		for (s = tsnext->ts_prev; s != 0; s = s->ts_prev) {
-			if (s->voice != voice)
-				continue;
-			s->next = 0;
-			check_bar(s);
-			break;
+			if (s->voice == voice) {
+				s->next = 0;
+				check_bar(s);
+				break;
+			}
 		}
 		if (s == 0)
 			p_voice->sym = 0;
@@ -4332,7 +4222,8 @@ static void set_sym_glue(float width)
 
 	/* define the x offsets of all starting symbols */
 	x = xmax = 0;
-	for (s = tsfirst; s != 0; ) {
+	s = tsfirst;
+	for (;;) {
 		if (s->sflags & S_SEQST) {
 			float new_space;
 
@@ -4353,8 +4244,11 @@ static void set_sym_glue(float width)
 	}
 
 	/* if the last symbol is not a bar, add some extra space */
-	if (s->type != BAR
-	 && s->type != FMTCHG) {
+	switch (s->type) {
+	case BAR:
+	case FMTCHG:
+		break;
+	default: {
 		float min;
 
 		min = s->wr;
@@ -4367,35 +4261,41 @@ static void set_sym_glue(float width)
 		if (tsnext != 0 && tsnext->space * 0.8 > s->wr + 4) {
 			x += tsnext->space * 0.8 * spafac;
 			xmax += tsnext->space * 0.8 * spafac * 1.8;
-/*#if 0*/
 		} else {
+#if 1
+			x += min + 4;
+			xmax += min + 4;
+#else
 /*fixme:should calculate the space according to the last symbol duration */
 			x += (min + 4) * spafac;
 			xmax += (min + 4) * spafac * 1.8;
-/*#endif*/
+#endif
 		}
+		break;
+	    }
 	}
 
 	/* calculate the exact glue */
-	alfa = beta = 0;
 	if (x >= width) {
-		if (x == xmin)
+		beta = 0;
+		if (x == xmin) {
 			alfa = 1;
-		else
+		} else {
 			alfa = (x - width) / (x - xmin);	/* shrink */
-		if (alfa > 1) {
-			if (cfmt.linewarn)
+			if (alfa > 1) {
 				error(0, s,
-				      "Line too much shrunk (%.0fpt of %.0fpt)",
-					xmin, width);
-//			alfa = 1;
+				      "Line too much shrunk (%.0f/%0.fpt of %.0fpt)",
+					xmin, x, width);
+//				alfa = 1;
+			}
 		}
 		realwidth = xmin * alfa + x * (1 - alfa);
 	} else {
+		alfa = 0;
 		if (xmax > x)
 			beta = (width - x) / (xmax - x);	/* stretch */
 		else
-			beta = 1;			/* (no note) */
+			beta = 1;				/* (no note) */
 		if (beta > beta0) {
 			if (!cfmt.stretchstaff)
 				beta = 0;
@@ -4603,7 +4503,6 @@ void output_music(void)
 		lwidth = 20 CM;
 	}
 	indent = set_indent();
-	set_bar_num();
 	cut_tune(lwidth, indent);
 	alfa_last = 0.1;
 	beta_last = 0;
@@ -4637,5 +4536,8 @@ void output_music(void)
 /* -- reset the generator -- */
 void reset_gen(void)
 {
-	insert_meter = 3;
+	if (cfmt.fields[0] & (1 << ('M' - 'A')))
+		insert_meter = 3;	/* insert meter and indent */
+	else
+		insert_meter = 2;	/* indent only */
 }

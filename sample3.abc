@@ -66,7 +66,7 @@ K:G
 V:1
 [K:G exp ^F ^F, clef=C]
 %%staffbreak 0.2cm
-V:2 clef=F
+V:2 clef=F,
 %%staffbreak 0.2cm
 V:1
 [K:G clef=treble][M:C]SDE FG|AG !alcoda!FEO|DE FES||\
@@ -92,7 +92,6 @@ T:Annotations and guitar chords
 M:C
 L:1/8
 %%gchordbox 1
-%%freegchord 1
 K:C
 "^annotation""gchord in box"CD"_below"EG "<left"cd">right"ec|\
 "@20,-50anywhere"gf"<("">)"ed (c4y)||

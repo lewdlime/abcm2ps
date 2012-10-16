@@ -48,6 +48,7 @@ static struct format {
 #define FORMAT_U 3	/* float with unit */
 #define FORMAT_B 4	/* boolean */
 #define FORMAT_S 5	/* string */
+#define FORMAT_P 6	/* position (auto, up/above, down/below) */
 	char subtype;		/* special cases - see code */
 	short lock;
 } format_tb[] = {
@@ -61,23 +62,27 @@ static struct format {
 	{"botmargin", &cfmt.botmargin, FORMAT_U, 0},
 	{"breakoneoln", &cfmt.breakoneoln, FORMAT_B, 0},
 	{"bstemdown", &cfmt.bstemdown, FORMAT_B, 0},
+	{"cancelkey", &cfmt.cancelkey, FORMAT_B, 0},
 	{"combinevoices", &cfmt.combinevoices, FORMAT_B, 0},
 	{"comball", &cfmt.comball, FORMAT_B, 0},
 	{"composerfont", &cfmt.font_tb[COMPOSERFONT], FORMAT_F, 0},
 	{"composerspace", &cfmt.composerspace, FORMAT_U, 0},
 	{"contbarnb", &cfmt.contbarnb, FORMAT_B, 0},
 	{"continueall", &cfmt.continueall, FORMAT_B, 0},
+	{"custos", &cfmt.custos, FORMAT_B, 0},
 	{"dateformat", &cfmt.dateformat, FORMAT_S, 0},
+	{"dblrepbar", &cfmt.dblrepbar, FORMAT_I, 2},
 	{"dynalign", &cfmt.dynalign, FORMAT_B, 0},
-	{"dynamic", &cfmt.dynamic, FORMAT_I, 6},
+	{"dynamic", 0, FORMAT_P, 0},
 	{"footer", &cfmt.footer, FORMAT_S, 0},
 	{"footerfont", &cfmt.font_tb[FOOTERFONT], FORMAT_F, 0},
 	{"flatbeams", &cfmt.flatbeams, FORMAT_B, 0},
-	{"gchord", &cfmt.gchord, FORMAT_I, 6},
+	{"gchord", 0, FORMAT_P, 1},
 	{"gchordbox", &cfmt.gchordbox, FORMAT_B, 0},
 	{"gchordfont", &cfmt.font_tb[GCHORDFONT], FORMAT_F, 3},
 	{"graceslurs", &cfmt.graceslurs, FORMAT_B, 0},
 	{"gracespace", &cfmt.gracespace, FORMAT_I, 5},
+	{"gstemdir", 0, FORMAT_P, 6},
 	{"header", &cfmt.header, FORMAT_S, 0},
 	{"headerfont", &cfmt.font_tb[HEADERFONT], FORMAT_F, 0},
 	{"historyfont", &cfmt.font_tb[HISTORYFONT], FORMAT_F, 0},
@@ -86,6 +91,7 @@ static struct format {
 	{"infofont", &cfmt.font_tb[INFOFONT], FORMAT_F, 0},
 	{"infoline", &cfmt.infoline, FORMAT_B, 0},
 	{"infospace", &cfmt.infospace, FORMAT_U, 0},
+	{"keywarn", &cfmt.keywarn, FORMAT_B, 0},
 	{"landscape", &cfmt.landscape, FORMAT_B, 0},
 	{"leftmargin", &cfmt.leftmargin, FORMAT_U, 0},
 	{"lineskipfac", &cfmt.lineskipfac, FORMAT_R, 0},
@@ -94,13 +100,15 @@ static struct format {
 	{"maxstaffsep", &cfmt.maxstaffsep, FORMAT_U, 0},
 	{"maxsysstaffsep", &cfmt.maxsysstaffsep, FORMAT_U, 0},
 	{"measurebox", &cfmt.measurebox, FORMAT_B, 0},
-	{"measurefirst", &cfmt.measurefirst, FORMAT_I, 2},
+	{"measurefirst", &cfmt.measurefirst, FORMAT_I, 0},
 	{"measurefont", &cfmt.font_tb[MEASUREFONT], FORMAT_F, 2},
 	{"measurenb", &cfmt.measurenb, FORMAT_I, 0},
+	{"micronewps", &cfmt.micronewps, FORMAT_B, 0},
+	{"microscale", &cfmt.microscale, FORMAT_I, 0},
 	{"musicspace", &cfmt.musicspace, FORMAT_U, 0},
 	{"notespacingfactor", &cfmt.notespacingfactor, FORMAT_R, 1},
 	{"oneperpage", &cfmt.oneperpage, FORMAT_B, 0},
-	{"ornament", &cfmt.ornament, FORMAT_I, 6},
+	{"ornament", 0, FORMAT_P, 2},
 	{"pageheight", &cfmt.pageheight, FORMAT_U, 0},
 	{"pagewidth", &cfmt.pagewidth, FORMAT_U, 0},
 #ifdef HAVE_PANGO
@@ -131,6 +139,7 @@ static struct format {
 	{"staffsep", &cfmt.staffsep, FORMAT_U, 0},
 	{"staffwidth", &staffwidth, FORMAT_U, 1},
 	{"stemheight", &cfmt.stemheight, FORMAT_R, 0},
+	{"stemdir", 0, FORMAT_P, 5},
 	{"straightflags", &cfmt.straightflags, FORMAT_B, 0},
 	{"stretchlast", &cfmt.stretchlast, FORMAT_B, 0},
 	{"stretchstaff", &cfmt.stretchstaff, FORMAT_B, 0},
@@ -152,11 +161,11 @@ static struct format {
 	{"topspace", &cfmt.topspace, FORMAT_U, 0},
 	{"transpose", &cfmt.transpose, FORMAT_I, 1},
 	{"tuplets", &cfmt.tuplets, FORMAT_I, 3},
-	{"vocal", &cfmt.vocal, FORMAT_I, 6},
+	{"vocal", 0, FORMAT_P, 3},
 	{"vocalfont", &cfmt.font_tb[VOCALFONT], FORMAT_F, 0},
 	{"vocalspace", &cfmt.vocalspace, FORMAT_U, 0},
 	{"voicefont", &cfmt.font_tb[VOICEFONT], FORMAT_F, 0},
-	{"volume", &cfmt.volume, FORMAT_I, 6},
+	{"volume", 0, FORMAT_P, 4},
 	{"wordsfont", &cfmt.font_tb[WORDSFONT], FORMAT_F, 0},
 	{"wordsspace", &cfmt.wordsspace, FORMAT_U, 0},
 	{"writefields", &cfmt.fields, FORMAT_B, 1},
@@ -227,7 +236,8 @@ static void fontspec(struct FONTSPEC *f,
 {
 	if (name != 0)
 		f->fnum = get_font(name, encoding);
-	else	name = fontnames[f->fnum];
+	else
+		name = fontnames[f->fnum];
 	f->size = size;
 	f->swfac = size;
 	if (swfac_font[f->fnum] != 0) {
@@ -259,6 +269,7 @@ void define_fonts(void)
 	int i;
 
 	define_cmap();
+	make_font_list();
 	for (i = 0; i < nfontnames; i++) {
 		if (used_font[i])
 			define_font(fontnames[i], i, font_enc[i]);
@@ -368,7 +379,9 @@ void set_format(void)
 	f->measurefirst = 1;
 	f->autoclef = 1;
 	f->breakoneoln = 1;
+	f->dblrepbar = (B_COL << 12) + (B_CBRA << 8) + (B_OBRA << 4) + B_COL;
 	f->dynalign = 1;
+	f->keywarn = 1;
 	f->linewarn = 1;
 #ifdef HAVE_PANGO
 	if (!svg && epsf != 2)
@@ -407,6 +420,7 @@ void set_format(void)
 	fontspec(&f->font_tb[VOICEFONT], "Times-Bold", 0, 13.0);
 	fontspec(&f->font_tb[WORDSFONT], "Times-Roman", 0, 16.0);
 	f->fields[0] = (1 << ('C' - 'A'))
+		| (1 << ('M' - 'A'))
 		| (1 << ('O' - 'A'))
 		| (1 << ('P' - 'A'))
 		| (1 << ('Q' - 'A'))
@@ -482,12 +496,40 @@ static char posit[3][8] = {"auto", "above", "below"};
 				putchar('\n');
 				break;
 			    }
+			case 2: {		/* dblrepbar */
+				int v;
+				char tmp[16], *p;
+
+				p = &tmp[sizeof tmp - 1];
+				*p = '\0';
+				for (v = cfmt.dblrepbar; v != 0; v >>= 4) {
+					switch (v & 0x0f) {
+					case B_BAR:
+						*--p = '|';
+						break;
+					case B_OBRA:
+						*--p = '[';
+						break;
+					case B_CBRA:
+						*--p = ']';
+						break;
+					default:
+//					case B_COL:
+						*--p = ':';
+						break;
+					}
+				}
+				printf("%s\n", p);
+				break;
+			    }
 			case 3:			/* tuplets */
 				printf("%d %d %d\n",
 					cfmt.tuplets >> 8,
 					(cfmt.tuplets >> 4) & 0x0f,
 					cfmt.tuplets & 0x0f);
 				break;
+//			case 4:			/* textoption */
+//				break;
 			case 5:			/* gracespace */
 				printf("%d.%d %d.%d %d.%d\n",
 					(cfmt.gracespace >> 16) / 10,
@@ -496,9 +538,6 @@ static char posit[3][8] = {"auto", "above", "below"};
 					((cfmt.gracespace >> 8) & 0xff) % 10,
 					(cfmt.gracespace & 0xff) / 10,
 					(cfmt.gracespace & 0xff) % 10);
-				break;
-			case 6:			/* position */
-				printf("%s\n", posit[*((int *) fd->v)]);
 				break;
 			}
 			break;
@@ -535,6 +574,22 @@ static char posit[3][8] = {"auto", "above", "below"};
 			printf("\"%s\"\n",
 				*((char **) fd->v) != 0 ? *((char **) fd->v) : "");
 			break;
+		case FORMAT_P: {
+			int i;
+
+			switch (fd->subtype) {
+			case 0: i = cfmt.posit.dyn; break;
+			case 1: i = cfmt.posit.gch; break;
+			case 2: i = cfmt.posit.orn; break;
+			case 3: i = cfmt.posit.voc; break;
+			case 4: i = cfmt.posit.vol; break;
+			case 5: i = cfmt.posit.std; break;
+			default:
+			case 6: i = cfmt.posit.gsd; break;
+			}
+			printf("%s\n", posit[i]);
+			break;
+		    }
 		}
 	}
 }
@@ -584,6 +639,38 @@ int get_textopt(char *p)
 	if (strncmp(p, "right", 5) == 0)
 		return T_RIGHT;
 	return -1;
+}
+
+/* -- get the double repeat bar -- */
+static int get_dblrepbar(char *p)
+{
+	int bar_type;
+
+	bar_type = 0;
+	for (;;) {
+		switch (*p++) {
+		case '|':
+			bar_type <<= 4;
+			bar_type |= B_BAR;
+			continue;
+		case '[':
+			bar_type <<= 4;
+			bar_type |= B_OBRA;
+			continue;
+		case ']':
+			bar_type <<= 4;
+			bar_type |= B_CBRA;
+			continue;
+		case ':':
+			bar_type <<= 4;
+			bar_type |= B_COL;
+			continue;
+		default:
+			break;
+		}
+		break;
+	}
+	return bar_type;
 }
 
 /* -- get a boolean value -- */
@@ -809,23 +896,25 @@ void interpret_fmt_line(char *w,		/* keyword */
 		if (strcmp(w, "barnumbers") == 0)
 			w = "measurenb";
 		break;
-	case 'd':
-		if (strcmp(w, "deco") == 0) {
-			deco_add(p);
-			return;
-		}
-		break;
 	case 'e':
 		if (strcmp(w, "exprabove") == 0) {	/* compatibility */
-			cfmt.posit &= ~((1 << POS_DYN) | (1 << POS_VOL));
-			if (g_logv(p))
-				cfmt.posit |= (1 << POS_DYN) | (1 << POS_VOL);
+			if (g_logv(p)) {
+				cfmt.posit.dyn = SL_ABOVE;
+				cfmt.posit.vol = SL_ABOVE;
+			} else {
+				cfmt.posit.dyn = SL_BELOW;
+				cfmt.posit.vol = SL_BELOW;
+			}
 			return;
 		}
 		if (strcmp(w, "exprbelow") == 0) {	/* compatibility */
-			cfmt.posit &= ~((1 << POS_DYN) | (1 << POS_VOL));
-			if (g_logv(p))
-				cfmt.posit |= (2 << POS_DYN) | (2 << POS_VOL);
+			if (g_logv(p)) {
+				cfmt.posit.dyn = SL_BELOW;
+				cfmt.posit.vol = SL_BELOW;
+			} else {
+				cfmt.posit.dyn = SL_ABOVE;
+				cfmt.posit.vol = SL_ABOVE;
+			}
 			return;
 		}
 		break;
@@ -892,13 +981,6 @@ void interpret_fmt_line(char *w,		/* keyword */
 		}
 		break;
 	case 'p':
-		if (strcmp(w, "postscript") == 0) {
-			if (!file_initialized && mbf == outbuf)
-				user_ps_add(p, 'b');
-			else if (svg || epsf == 2 || !secure)
-				a2b("%s\n", p);
-			return;
-		}
 		if (strcmp(w, "printparts") == 0) {	/* compatibility */
 			if (g_logv(p))
 				cfmt.fields[0] |= (1 << ('P' - 'A'));
@@ -914,17 +996,12 @@ void interpret_fmt_line(char *w,		/* keyword */
 			return;
 		}
 		break;
-	case 't':
-		if (strcmp(w, "tablature") == 0) {
-			tblt_parse(p);
-			return;
-		}
-		break;
 	case 'v':
 		if (strcmp(w, "vocalabove") == 0) {	/* compatibility */
-			cfmt.posit &= ~(1 << POS_VOC);
 			if (g_logv(p))
-				cfmt.posit |= (1 << POS_VOC);
+				cfmt.posit.voc = SL_ABOVE;
+			else
+				cfmt.posit.voc = SL_BELOW;
 			return;
 		}
 		break;
@@ -1009,18 +1086,10 @@ void interpret_fmt_line(char *w,		/* keyword */
 					else
 						break;	/*fixme: error */
 				}
-				if (bool) {
+				if (bool)
 					cfmt.fields[i] |= (1 << u);
-				} else {
+				else
 					cfmt.fields[i] &= ~(1 << u);
-#if 0
-					switch (*q) {
-					case 'Q':
-						cfmt.fields[u] = 0;
-						break;
-					}
-#endif
-				}
 				q++;
 			}
 			break;
@@ -1058,14 +1127,14 @@ void interpret_fmt_line(char *w,		/* keyword */
 			cfmt.gracespace = (i1 << 16) | (i2 << 8) | i3;
 			break;
 		}
-		if (fd->subtype == 4 && !isdigit(*p)) /* 'textoption' */
+		if (fd->subtype == 4 && !isdigit(*p))	/* textoption */
 			cfmt.textoption = get_textopt(p);
-		else if (fd->subtype == 6 && !isdigit(*p)) /* position */
-			*((int *) fd->v) = get_posit(p);
+		else if (fd->subtype == 2)		/* dblrepbar */
+			cfmt.dblrepbar = get_dblrepbar(p);
 		else
 			sscanf(p, "%d", (int *) fd->v);
 		switch (fd->subtype) {
-		case 1:					/* 'transpose' */
+		case 1:					/* transpose */
 			cfmt.transpose *= 3;
 			if (p[strlen(p) - 1] == '#') {
 				if (cfmt.transpose > 0)
@@ -1079,10 +1148,9 @@ void interpret_fmt_line(char *w,		/* keyword */
 					cfmt.transpose--;
 			}
 			break;
-		case 2:
-			nbar = nbar_rep = cfmt.measurefirst;
-			break;
-		case 4:				/* 'textoption' */
+//		case 2:				/* (free) */
+//			break;
+		case 4:				/* textoption */
 			if (cfmt.textoption < 0) {
 				error(1, 0,
 				      "Bad 'textoption' value '%s'",
@@ -1090,18 +1158,6 @@ void interpret_fmt_line(char *w,		/* keyword */
 				cfmt.textoption = T_LEFT;
 			}
 			break;
-		case 6:				/* position */
-			if ((unsigned) *((int *) fd->v) > 2) {
-				error(1, 0,
-				      "Bad position - set to 'auto'",
-				      *((int *) fd->v));
-				*((int *) fd->v) = SL_AUTO;
-			}
-			cfmt.posit = (cfmt.dynamic << POS_DYN)
-				| (cfmt.gchord << POS_GCH)
-				| (cfmt.ornament << POS_ORN)
-				| (cfmt.vocal << POS_VOC)
-				| (cfmt.volume << POS_VOL);
 			break;
 		}
 		break;
@@ -1182,6 +1238,29 @@ void interpret_fmt_line(char *w,		/* keyword */
 			strcpy(*((char **) fd->v), p);
 		break;
 	    }
+	case FORMAT_P: {
+		int i;
+
+		if (!isdigit(*p))
+			i = get_posit(p);
+		else
+			i = strtod(p, 0);
+		if ((unsigned) i > 2) {
+			error(1, 0,
+			      "Bad position - set to 'auto'");
+			i = 0;
+		}
+		switch (fd->subtype) {
+		case 0: cfmt.posit.dyn = i; break;
+		case 1: cfmt.posit.gch = i; break;
+		case 2: cfmt.posit.orn = i; break;
+		case 3: cfmt.posit.voc = i; break;
+		case 4: cfmt.posit.vol = i; break;
+		case 5: cfmt.posit.std = i; break;
+		case 6: cfmt.posit.gsd = i; break;
+		}
+		break;
+	    }
 	}
 }
 
@@ -1218,11 +1297,15 @@ void set_font(int ft)
 		fnum = f->fnum;
 	}
 	if (!used_font[fnum]
-	 && epsf != 2 && !svg) {
-		error(1, 0,
-		      "Font '%s' not predefined; using first in list",
-		      fontnames[fnum]);
-		fnum = 0;
+	 && epsf != 2 && !svg) {	/* (not usefull for svg output) */
+		if (!file_initialized) {
+			used_font[fnum] = 1;
+		} else {
+			error(1, 0,
+			      "Font '%s' not predefined; using first in list",
+			      fontnames[fnum]);
+			fnum = 0;
+		}
 	}
 	if (f->size == 0) {
 		error(0, 0, "Font '%s' with a null size - set to 8",

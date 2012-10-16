@@ -30,8 +30,6 @@
 #ifdef HAVE_PANGO
 #include <pango/pangocairo.h>
 #include <pango/pangofc-font.h>
-//fixme: needed for FT_Has_PS_Glyph_Names
-//#include <freetype/t1tables.h>
 #endif
 
 #include "abc2ps.h" 
@@ -184,7 +182,7 @@ static void cap_str(char *p)
 float cwid(unsigned short c)
 {
 	if (c > sizeof cw_tb / sizeof cw_tb[0])
-		c = 'A';
+		c = 'a';
 	return (float) cw_tb[c] / 1000.;
 }
 
@@ -281,7 +279,7 @@ float tex_str(char *s)
 				*d++ = 0xab;
 				break;
 			}
-			w += cwid('A') * swfac;
+			w += cwid('a') * swfac;
 			continue;
 		} else {
 			w += cwid((unsigned short) c1) * swfac;
@@ -305,7 +303,6 @@ static PangoLayout *layout = (PangoLayout *) -1;
 static PangoAttrList *attrs;
 static int out_pg_ft = -1;		/* current pango font */
 static GString *pg_str;
-
 
 /* -- initialize the pango mechanism -- */
 void pg_init(void)
@@ -696,7 +693,7 @@ static void pg_para_output(int job)
 	pg_str = g_string_truncate(pg_str, 0);
 }
 
-/* output of filled / justified text*/
+/* output of filled / justified text */
 static void pg_write_text(char *s, int job, float baseskip)
 {
 	char *p;
@@ -991,7 +988,7 @@ static void put_inf2r(struct SYMBOL *s1,
 	}
 	p = &s1->as.text[2];
 	if (s1->as.text[0] == 'T')
-		p = trim_title(p, s1 == info['T' - 'A']);
+		p = trim_title(p, s1);
 	if (s2 != 0) {
 		buf[sizeof buf - 1] = '\0';
 		strncpy(buf, p, sizeof buf - 1);
@@ -1371,7 +1368,7 @@ void put_history(void)
 }
 
 /* -- move trailing "The" to front, set to uppercase letters or add xref -- */
-char *trim_title(char *p, int first)
+char *trim_title(char *p, struct SYMBOL *title)
 {
 	char *b, *q, *r;
 static char buf[STRL1];
@@ -1381,18 +1378,21 @@ static char buf[STRL1];
 		q = strrchr(p, ',');
 		if (q != 0) {
 			if (q[1] != ' ' || !isupper((unsigned char) q[2])
+			 || strlen(q) > 7	/* word no more than 4 characters */
 			 || strchr(q + 2, ' ') != 0)
 				q = 0;
 		}
 	}
+	if (title != info['T' - 'A']
+	 || !(cfmt.fields[0] & (1 << ('X' - 'A'))))
+		title = 0;
 	if (q == 0
-	 && !cfmt.titlecaps
-	 && !(first && (cfmt.fields[0] & (1 << ('X' - 'A')))))
+	 && title == 0
+	 && !cfmt.titlecaps)
 		return p;		/* keep the title as it is */
 	b = buf;
 	r = &info['X' - 'A']->as.text[2];
-	if (first
-	 && (cfmt.fields[0] & (1 << ('X' - 'A')))
+	if (title != 0
 	 && *r != '\0') {
 		if (strlen(p) + strlen(r) + 3 >= sizeof buf) {
 			error(1, 0, "Title or X: too long");
@@ -1418,24 +1418,28 @@ static char buf[STRL1];
 void write_title(struct SYMBOL *s)
 {
 	char *p;
+	float sz;
 
 	p = &s->as.text[2];
 	if (*p == '\0')
 		return;
-	p = trim_title(p, s == info['T' - 'A']);
+	p = trim_title(p, s);
 	if (s == info['T' - 'A']) {
-		bskip(cfmt.titlespace + cfmt.font_tb[TITLEFONT].size);
+		sz = cfmt.font_tb[TITLEFONT].size;
+		bskip(cfmt.titlespace + sz);
 		str_font(TITLEFONT);
 	} else {
-		bskip(cfmt.subtitlespace + cfmt.font_tb[SUBTITLEFONT].size);
+		sz = cfmt.font_tb[SUBTITLEFONT].size;
+		bskip(cfmt.subtitlespace + sz);
 		str_font(SUBTITLEFONT);
 	}
 	if (cfmt.titleleft)
-		PUT0("0 0 M ");
+		a2b("0");
 	else
-		PUT1("%.1f 0 M ",
+		a2b("%.1f",
 		     0.5 * ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
-		     - cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale);
+			- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale);
+	a2b(" %.1f M ", sz * 0.2);
 	put_str(p, cfmt.titleleft ? A_LEFT : A_CENTER);
 }
 
@@ -1573,7 +1577,7 @@ static void write_headform(float lwidth)
 				while (isspace((unsigned char) *q))
 					q++;
 				if (i == 'T' - 'A')
-					q = trim_title(q, s == inf_s['T' - 'A']);
+					q = trim_title(q, s);
 				strncpy(buf, q, sizeof buf - 1);
 				buf[sizeof buf - 1] = '\0';
 				j = strlen(buf);
@@ -1588,7 +1592,7 @@ static void write_headform(float lwidth)
 				while (isspace((unsigned char) *q))
 					q++;
 				if (s->as.text[0] == 'T' && s->as.text[1] == ':')
-					q = trim_title(q, 0);
+					q = trim_title(q, s);
 				r = buf + strlen(buf);
 				strncpy(r, q, buf + sizeof buf - r - 1);
 				tex_str(buf);

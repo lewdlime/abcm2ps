@@ -65,14 +65,14 @@ V:3s staffscale=0.8
 V:1
 gc fe/d/ e>e d=e\
 V:2
-B_A/G/ c/[I:staff 4]C/[I:staff 3]G- G/G/=A B/cD/\
+B_A/G/ c/[I:staff +1]C/[I:staff -1]G- G/G/=A B/cD/\
 V:3
 B,/G,/ C=A,=B, CF, _B,_A,/G,/\
 %%staves (1s 2) 3s | {(1 2) 3}
 V:1s
 |fB _e_d/c/ dG\
 V:3s bass
-|_A,_D- D/C/F/E/ D/C/D\
+|_A,_D- D/C/F/E/ D/C/D-\
 V:1
 |fB _ed/c/ dG\
 V:2

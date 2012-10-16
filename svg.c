@@ -596,7 +596,13 @@ static struct {
 	"	c0.2 0.8 0.7 0.7 2.1 -0.4\n"
 	"	v0.8c-2 1.5 -3.4 1.9 -3.9 -0.4\n"
 	"	c-0.2 -0.8 -0.7 -0.7 -2.1 0.4z\"/>\n"},
-#define D_showerror 84
+#define D_custos 84
+{	"<g id=\"custos\">\n"
+	"	<path d=\"M-4 0l2 2.5l2 -2.5l2 2.5l2 -2.5\n"
+	"		l-2 -2.5l-2 2.5l-2 -2.5l-2 2.5\" fill=\"currentColor\"/>\n"
+	"	<path d=\"M3.5 0l5 -7\" stroke=\"currentColor\" fill=\"none\"/>\n"
+	"</g>\n"},
+#define D_showerror 85
 {	"<circle id=\"showerror\" r=\"30\" stroke=\"#ffc0c0\" stroke-width=\"2.5\" fill=\"none\"/>\n"},
 };
 
@@ -1847,6 +1853,10 @@ curveto:
 				fprintf(fout, "<path stroke=\"currentColor\" fill=\"none\"\n"
 					"d=\"M%.2f %.2fl%.2f -4l%.2f -4\"/>\n",
 					x, y, -w, w);
+			return;
+		}
+		if (strcmp(op, "custos") == 0) {
+			xysym(op, D_custos);
 			return;
 		}
 		if (strcmp(op, "currentgray") == 0) {

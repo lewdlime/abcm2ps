@@ -1,0 +1,415 @@
+%!! here is an experimental decoration extension !!
+%!! syntax may change in next releases !!
+%
+% this option is required for !trem!
+% %setdefl 1
+%
+% == postscript definitions - must be before any tune ==
+%
+%%beginps
+% -- cresc / decresc / dimin
+/crdc{		% usage: str x y crdc - cresc, decresc, ..
+	/Times-Italic 14 selectfont
+	M -6 4 RM show}!
+%
+% -- alternate piano/forte indication between parenthesis
+/apf{		% usage: str x y apf
+	M -6 5 RM
+	/Times-Italic 16 selectfont(\()show
+	/Times-BoldItalic 16 selectfont show
+	/Times-Italic 16 selectfont(\))show}!
+%
+% -- draw parenthesis around a note
+/opnot{		% usage: x y opnot
+	M -5.5 -3 RM /Times-Roman 15 selectfont(\(   \))show}!
+% -- same, but inside a chord (x is not the same)
+/opchnot{	% usage: x y opchnot
+	M -10.5 -3 RM /Times-Roman 15 selectfont(\(   \))show}!
+%
+% -- sforzando accent
+/sfa{		% usage: x y sfa	
+	1.2 SLW M -2.4 4.8 RM
+	2.4 8.0 RL
+	2.4 -7.4 RL
+	-1.0 0.0 RL
+	-1.8 6.4 RL
+	stroke}!
+%
+% -- draw octava indication
+/octava{	% usage: w x y octava
+	exch -10 add exch 2 copy
+	M 0 10 RM /Times-Roman 16 selectfont(8)show
+	/Times-Roman 12 selectfont(va)show
+	M 0 6 RL currentpoint stroke M
+	[6] 0 setdash 30 add 0 RL currentpoint stroke M
+	[] 0 setdash 0 -6 RL stroke}!
+/octavab{	% usage: w x y octavab
+	exch -14 add exch 2 copy 
+	M 0 2 RM /Times-Roman 16 selectfont(8)show
+	/Times-Roman 12 selectfont(va basso)show
+	22 add M 0 -6 RL currentpoint stroke M
+	[6] 0 setdash 30 add 0 RL stroke
+	[] 0 setdash}!
+%
+% -- write big letters (position marks) above the staff
+% (from Guido Gonzato)
+/bigl{		% usage: str x y bigl
+	/Times-Bold 26 selectfont
+	4 add M showc
+	1 SLW 1 -2 RM 
+	0 22 RL -22 0 RL
+	0 -22 RL 22 0 RL stroke}!
+% (from Jonas Petersson)
+/biglc{		% usage: str x y biglc
+	2 copy 5 2 roll /Times-Bold 22 selectfont
+	6 add M showc
+	1 SLW 13 add newpath
+	12 0 360 arc stroke}!
+%
+% -- pedal glyph
+% (from CMN http://ccrma-www.stanford.edu/software/cmn/cmn/cmn.html)
+/ped{		% usage: str x y ped
+	gsave 4 add exch -10 add exch T 26 dup scale
+	0.368 0.074 moveto
+	0.341 0.121 0.335 0.147 0.371 0.203 curveto
+	0.435 0.289 0.531 0.243 0.488 0.155 curveto
+	0.472 0.117 0.434 0.096 0.414 0.080 curveto
+	0.429 0.038 0.494 -0.006 0.541 0.075 curveto
+	0.559 0.123 0.558 0.224 0.663 0.252 curveto
+	0.603 0.354 0.449 0.393 0.461 0.405 curveto
+	0.902 0.262 0.705 -0.124 0.555 0.046 curveto
+	0.488 -0.032 0.417 0.021 0.389 0.055 curveto
+	0.303 -0.018 0.303 -0.020 0.248 0.040 curveto
+	0.218 0.108 0.191 0.062 0.164 0.047 curveto
+	0.010 -0.056 0.032 0.019 0.124 0.062 curveto
+	0.229 0.117 0.200 0.091 0.228 0.195 curveto
+	0.240 0.241 0.149 0.250 0.166 0.311 curveto
+	0.207 0.493 lineto
+	-0.041 0.441 0.049 0.261 0.126 0.387 curveto
+	0.138 0.381 lineto
+	-0.020 0.119 -0.100 0.472 0.220 0.507 curveto
+	0.548 0.486 0.399 0.171 0.254 0.374 curveto
+	0.264 0.384 lineto
+	0.338 0.259 0.521 0.449 0.228 0.488 curveto
+	0.198 0.356 lineto
+	0.181 0.304 0.273 0.294 0.262 0.241 curveto
+	0.229 0.101 lineto
+	0.273 0.070 0.282 -0.038 0.368 0.074 curveto
+	0.391 0.094 moveto
+	0.456 0.130 0.476 0.171 0.468 0.213 curveto
+	0.452 0.276 0.333 0.171 0.391 0.094 curveto
+	0.627 0.019 moveto
+	0.533 0.041 0.586 0.228 0.678 0.229 curveto
+	0.729 0.170 0.712 0.025 0.627 0.019 curveto
+	eofill
+	0.8 0.04 0.04 0 360 newpath arc fill
+	pop grestore}!
+%
+% -- pedal off glyph
+% (from CMN http://ccrma-www.stanford.edu/software/cmn/cmn/cmn.html)
+/pedoff{	% usage: str x y ped
+	gsave 4 add exch -5 add exch T 26 dup scale
+	0.219 0.198 moveto
+	0.231 0.172 0.195 0.138 0.162 0.173 curveto
+	0.149 0.219 0.206 0.231 0.219 0.198 curveto
+	0.144 0.242 moveto
+	0.166 0.223 0.193 0.230 0.181 0.267 curveto
+	0.178 0.306 0.144 0.302 0.151 0.335 curveto
+	0.160 0.381 0.225 0.377 0.224 0.330 curveto
+	0.228 0.302 0.198 0.306 0.197 0.267 curveto
+	0.194 0.237 0.213 0.222 0.237 0.247 curveto
+	0.263 0.276 0.234 0.297 0.268 0.322 curveto
+	0.314 0.347 0.354 0.297 0.316 0.259 curveto
+	0.296 0.237 0.273 0.266 0.246 0.237 curveto
+	0.223 0.217 0.232 0.194 0.266 0.197 curveto
+	0.303 0.202 0.302 0.232 0.332 0.228 curveto
+	0.381 0.232 0.388 0.156 0.332 0.152 curveto
+	0.302 0.148 0.302 0.185 0.266 0.183 curveto
+	0.231 0.186 0.228 0.169 0.245 0.143 curveto
+	0.273 0.116 0.297 0.141 0.316 0.117 curveto
+	0.350 0.075 0.303 0.029 0.258 0.062 curveto
+	0.237 0.082 0.261 0.102 0.233 0.133 curveto
+	0.212 0.151 0.194 0.147 0.197 0.113 curveto
+	0.203 0.075 0.232 0.075 0.230 0.043 curveto
+	0.223 -0.004 0.159 -0.002 0.152 0.042 curveto
+	0.148 0.075 0.185 0.076 0.183 0.113 curveto
+	0.183 0.147 0.163 0.150 0.141 0.133 curveto
+	0.113 0.104 0.140 0.079 0.113 0.059 curveto
+	0.069 0.037 0.033 0.077 0.063 0.117 curveto
+	0.082 0.141 0.104 0.117 0.132 0.142 curveto
+	0.153 0.163 0.144 0.188 0.113 0.182 curveto
+	0.073 0.182 0.075 0.147 0.046 0.152 curveto
+	-0.003 0.152 -0.003 0.227 0.048 0.227 curveto
+	0.075 0.231 0.075 0.198 0.113 0.196 curveto
+	0.141 0.197 0.147 0.207 0.133 0.237 curveto
+	0.102 0.264 0.082 0.237 0.062 0.261 curveto
+	0.028 0.302 0.077 0.347 0.118 0.318 curveto
+	0.138 0.297 0.116 0.275 0.144 0.242 curveto
+	fill pop grestore}!
+%
+% -- glissendo
+/gliss{	% usage: x2 y2 x1 y1 gliss
+	gsave exch 13 add exch 2 copy T 0 0 M
+	exch 4 -1 roll exch sub 3 1 roll sub	% dx dy
+	2 copy exch atan dup rotate	% dx dy alpha
+	exch pop cos div		% len
+% 	9 sub 0 RL			% simple line
+	9 sub 0 8 3 -1 roll{		% squiggly line
+		2 -1.15 2.30 150 30 arcn 4 0 T
+		2 1.15 2.30 -150 -30 arc 4 0 T pop
+	}for
+	1 SLW stroke grestore}!
+%
+% -- upper glissendo
+/glissup{	% usage: x y glissup
+	gsave T 5 0 T
+	25 rotate 10 0 T 0 0 M
+	0 8 8{
+		2 -1.15 2.30 150 30 arcn 4 0 T
+		2 1.15 2.30 -150 -30 arc 4 0 T pop
+	}for
+	1 SLW stroke grestore}!
+%
+% -- note decorations
+% (sorry for I don't know the name of these: there so many ones)
+% The convention I use here is:
+%	- t2 or t3: mordent with 2 or 3 peeks
+%	- ta or tb: turn from above or from below
+%	- b, ub or db: middle, upper or lower bar
+/tr3{		% usage: x y tr3 - mordent with 3 peeks
+	M 2.2 2.2 RL 2.1 -2.9 RL 0.7 0.7 RL
+	2.2 2.2 RL 2.1 -2.9 RL 0.7 0.7 RL
+	2.2 2.2 RL 2.1 -2.9 RL 0.7 0.7 RL
+	-2.2 -2.2 RL -2.1 2.9 RL -0.7 -0.7 RL
+	-2.2 -2.2 RL -2.1 2.9 RL -0.7 -0.7 RL
+	-2.2 -2.2 RL -2.1 2.9 RL -0.7 -0.7 RL fill}!
+/t2ub{		% usage: x y t2ub - mordent ending with an upper bar
+	2 copy umrd 0.6 SLW
+	M 5 4 RM 0 6 RL stroke}!
+/t3tab{		% usage: x y t3tab - mordent + upper turn and bar
+	4 add 2 copy exch 7.5 sub exch tr3 exch 7.5 add exch
+	2 copy 0.6 SLW M 2 6 14 6 16 0 RC
+	M 8 1 RM 0 6 RL stroke}!
+/ubt3ta{	% usage: x y ubt3ta - up bar + mordent + upper turn
+	4 add 2 copy 0.6 SLW
+	M -7.5 0 RM 0 6 RL stroke
+	2 copy exch 7.5 sub exch tr3
+	M 7.5 0 RM 2 6 14 6 16 0 RC stroke}!
+/tbt3{		% usage: x y tbt3 - low turn + long mordent
+	exch 10 sub exch 6 add 2 copy 0.6 SLW
+	M -8 0 RM 2 -6 14 -6 16 0 RC stroke
+	exch 8 add exch tr3}!
+/t2ta{		% usage: x y t2ta - mordent + upper turn
+	2 copy umrd
+	M 5 4 RM 1 5 9 5 10 0 RC stroke}!
+/t3b{		% usage: x y t3b - upper + lower mordent
+	2 copy exch -7.5 add exch 4 add tr3 0.6 SLW
+	M 2.5 0 RM 0 8 RL stroke}!
+/sharp{		% usage: x y sharp - sharp above note
+	4 add gsave T 0.6 dup scale 0 0 sh0 grestore}!
+/flat{		% usage: x y flat - flat above note
+	4 add gsave T 0.6 dup scale 0 0 ft0 grestore}!
+/natural{	% usage: x y natural - natural sign above note
+	4 add gsave T 0.6 dup scale 0 0 nt0 grestore}!
+%
+% -- 'treble-8' customization
+/octl{
+	/Times-BoldItalic 16 selectfont M 5.5 -14 RM(8vb)show}!
+%
+% -- latin guitar chords
+/gcshow{
+	dup 0 get
+	dup dup 65 ge exch 71 le and{
+		65 sub[(La)(Si)(Do)(Ré)(Mi)(Fa)(Sol)]exch get
+	}if show
+	dup length 1 sub 1 exch getinterval show}!
+%
+% -- 'tr' + long trill
+/trtrill{	% usage: w x y trtrill
+	2 copy trl
+	3 1 roll 9 add 3 1 roll 9 sub 3 1 roll 2 add ltr}!
+%
+% -- guitar diagrams
+/guitar{	% usage: x y guitar
+	gsave exch 10 sub exch 8 add T
+	1.5 SLW -0.3 24.6 M 20.6 0 RL stroke
+	0.6 SLW 0 0 M 20 0 RL 0 6 M 20 0 RL
+	0 12 M 20 0 RL 0 18 M 20 0 RL
+	0 0 M 0 24 RL 4 0 M 0 24 RL 8 0 M 0 24 RL
+	12 0 M 0 24 RL 16 0 M 0 24 RL 20 0 M 0 24 RL
+	stroke 0.5 SLW}!
+/gdot{newpath 1.4 0 360 arc fill}!
+/gx{28 M -1.3 -1.3 RM 2.6 2.6 RL 0 -2.6 RM -2.6 2.6 RL stroke}!
+/go{28 newpath 1.5 0 360 arc stroke}!
+/Dm{		% usage: x y Dm
+	guitar
+	0 gx 4 gx 8 go
+	20 21 gdot 12 15 gdot 16 9 gdot
+	grestore}!
+/Bb{
+	guitar
+	0 gx 20 gx
+	4 21 gdot 8 9 gdot 12 9 gdot 16 9 gdot
+	grestore}!
+/C7{
+	guitar
+	0 gx 20 go
+	16 21 gdot 8 15 gdot 4 9 gdot 12 9 gdot
+	grestore}!
+%
+% -- arpeggio variations
+%	arpeggio with arrow 1st version
+/arpu{	2 copy 4 index add M -6.5 0 RM 2.5 5 RL 2.5 -5 RL fill
+	arp}!
+/arpd{	2 copy M -6.5 0 RM 2.5 -5 RL 2.5 5 RL fill
+	arp}!
+%	arpeggio with arrow other version
+% /arpu{	2 copy 4 index add M -7 0 RM 3 5 RL 3 -5 RL
+%	0.7 SLW stroke arp}!
+% /arpd{	2 copy M -7 0 RM 3 -5 RL 3 5 RL
+%	0.7 SLW stroke arp}!
+%	arpeggio crossing the staves
+% (! this works because the decoration are drawn sorted by time !)
+/arps{		% arpeggio start - stack: h x ylow
+	exch /x exch def	% memorize 'x'
+	add /y exch def}!	% memorize the upper vert offset
+/arpe{		% arpeggio end - stack: h x ylow
+	3 -1 roll pop		% discard 'h'
+	exch dup x gt {pop x} if exch	% have room for accidentals
+	y 1 index sub 3 1 roll	% new height
+	arp}!
+%
+% -- optional breath
+/brth{6 add /xbr 2 index def /ybr 1 index def
+	/Times-BoldItalic 30 selectfont M (,) show}!
+/opbrth{pop pop xbr 10 sub ybr 5 sub
+	/Times-Roman 20 selectfont M (\(  \)) show}!
+%
+% -- head decorations / replacement
+% lower mordent
+/hlmrd{		% usage: x y hlmrd
+	exch 12 sub exch 4 sub lmrd}!
+% small note head
+/shd{		% usage: x y shd
+	M 3 1.3 RM
+	-1 2.5 -6.5 0 -5.5 -2.5 RC
+	1 -2.5 6.5 0 5.5 2.5 RC fill}!
+% -- measure bar between two staves (1 and 2)
+/hbar{		% usage: x y hbar
+	dlw pop dup 0 y0 M 24 y1 lineto stroke}!
+%%endps
+%
+% == decoration definitions ==
+%
+% actual syntax (see format.txt):
+%	%%deco <name> <c_func> <ps_func> <h> <wl> <wr> [<str>]
+%
+% -- accent near the note / sforzando
+%%deco accn 0 accent 8 4 4
+%%deco sfa 3 sfa 12 5 5
+%
+% -- dynamic indication below the staff
+%%deco fp 6 pf 18 5 11 fp
+%%deco cresc 6 crdc 20 4 28 Cresc.
+%%deco decresc 6 crdc 20 4 32 Decresc.
+%%deco dimin 6 crdc 20 4 28 Dimin.
+%%deco riten 6 crdc 20 8 40 Poco riten.
+%
+% -- dynamic indication below the staff between parenthesis
+%%deco (p) 6 apf 20 8 16 p
+%%deco (pp) 6 apf 20 8 24 pp
+%%deco (f) 6 apf 20 8 16 f
+%%deco (ff) 6 apf 20 8 24 ff
+%
+% -- repeat indication above the staff
+%%deco alcoda 3 dacs 20 0 0 al Coda
+%
+% -- who asked for a Pedal indication ?
+%%deco ped 6 ped 20 0 0
+%%deco ped-end 6 pedoff 20 0 0
+%
+% -- optional note
+%%deco () 1 opnot 0 0 0
+%
+% -- start / stop of octava indication
+%%deco 8( 5 - 24 0 0
+%%deco 8) 5 octava 24 0 0
+%%deco 8b( 7 - 24 0 0
+%%deco 8b) 7 octavab 24 0 0
+%
+% -- big letters
+%%deco biga 3 bigl 20 0 0 A
+%%deco bigb 3 biglc 20 0 0 B
+% ...
+%
+% -- glissendo
+%%deco -( 1 - 0 0 0
+%%deco -) 1 gliss 0 0 0
+%%deco - 1 glissup 0 2 10
+%
+% -- note decorations
+%%deco t2ub 3 t2ub 12 5 5
+%%deco t3tab 3 t3tab 12 8 24
+%%deco ubt3ta 3 ubt3ta 12 8 24
+%%deco tbt3 3 tbt3 14 14 18
+%%deco t2ta 3 t2ta 12 5 15
+%%deco t3b 3 t3b 12 5 15
+%%deco # 3 sharp 8 0 0
+%%deco b 3 flat 8 0 0
+%%deco = 3 natural 8 0 0
+%%deco = 3 natural 8 0 0
+%
+% -- 'tr' + long trill
+%%deco tr( 5 - 11 0 0
+%%deco tr) 5 trtrill 11 0 0
+%
+% -- guitar chords
+%%deco Dm 3 Dm 36 0 0
+%%deco Bb 3 Bb 36 0 0
+%%deco C7 3 C7 36 0 0
+%
+% -- arpeggios
+%%deco arpu 2 arpu 0 0 0
+%%deco arpd 2 arpd 0 0 0
+%%deco arps 2 arps 0 0 0
+%%deco arpe 2 arpe 0 0 0
+%
+% -- optional breath
+%%deco opbrth 3 opbrth 0 0 0
+%
+% -- head decorations
+%%deco op 1 opchnot 0 0 0	% optional head
+%%deco m 0 hlmrd 0 0 0		% lower mordent on the left
+%%deco head-x 0 dsh0 0 0 0	% X head
+%%deco head-shd 0 shd 0 0 0	% small head
+%
+% -- measure bar between two staves
+%%deco hbar 3 hbar 0 0 0
+
+X:1
+T:Customized decorations
+M:C
+L:1/8
+K:C treble-8
+!biga!y!fp!"C"C!t2ub!C !cresc!"D"D!t3tab!D !decresc!"E"E!ubt3ta!E !dimin!"F"F!tbt3!F|\
+!mp!"G"G!t2ta!G !(p)!A!t3b!c T!b!!(pp)!A2 P!#!!(f)!B2|M!=!!(ff)!c8|
+%
+K: clef=treble
+!8(!!riten!EF !-!G2 !ped!GA!ped-end!B!8)!c|!8b(!!bigb!C2!()!E2 !tr(!G3!tr)!!8b)!c!alcoda!|\
+CE!-(!G2!-)!C2c2|
+%
+"Dm"!Dm!e3/d/ d6 | "Bb"!Bb!z2 d/d3/ "C7"!C7!cB/A/- AG |\
+F!accent!G!accn!AB !sfa!c4||
+
+X:3
+T:Decorations with abcm2ps 4.x.x
+M:C
+L:1/4
+%%staves {1 2}
+K:C
+V:1
+!arpu![!op!C!op!Gc]4 !hbar![] !breath!!opbrth!!arpd![CGc]4 |\
+	!arps![CGc]4 | z3/[!head-x!B]/ [c!m!eg]2 | c4 ||
+V:2
+!arpeggio![C,,G,,C,]4 [] [C,,G,,C,]4 |\
+	!arpe![C,,G,,C,]4 | [C,,!head-shd!C,][G,,!head-shd!G,]C,2 | C,4 ||

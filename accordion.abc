@@ -1,0 +1,75 @@
+% tablature examples
+% --- diatonic accordion
+%%beginps
+% length x y n accordh - accordion tablature header with 2 or 3 lines
+/accordh{
+%	/Times-Roman 14 selectfont
+	/nlines exch def
+	.8 SLW
+	gsave 20 add T /w exch def
+	0 0 M w 0 RL
+	0 3 M w 0 RL
+	0 21 M w 0 RL
+	0 39 M w 0 RL
+	nlines 2 eq{
+		0 42 M w 0 RL
+		stroke
+		/barh 42 def
+		3 7 M (T:) show
+		3 25 M (P:) show
+	}{
+		0 57 M w 0 RL
+		0 60 M w 0 RL
+		stroke
+		/barh 60 def
+		3 7 M (B/a:) show
+		3 25 M (T:) show
+		3 43 M (P:) show
+	}ifelse
+	grestore
+}!
+% string x y n accordn - accordion tablature
+/accordn{
+	-18 mul add barh add 3 add M showc
+}!
+/accordb{
+	0 eq{20 add M 0 barh RL stroke}
+	{pop pop}ifelse pop}!
+%%endps
+
+X:3
+T:Andro à Patrice Corbel
+N: validé 03/05/01 -- 04/08/02
+R:Andro
+O:Bretagne
+M:4/4
+K:Am
+%%tablature 70 accordh accordn accordb
+ "A"A2 cA "F" aAce | "G"dGBd "C"e4 | "F"fedc "G"B2 AB |1 "F"cABc "E"B4 :|2 "F"cABc "A"A4 :|\
+w:    *  * * * * * *   8 6 7 8  7'   * * * *  * * *   * * * *  7   * * * *  *  
+w:    7  8 7 11 7 8 9   * * * *  *   8' 9 7' 8  6' 7 6'   8 7 6' 8  *   8 7 6' 8  7  
+ "A"A2 GF "E"E3 B | "E"c2 d2 "C"e4 | "F"fedc "G"B2 AB |1 "F"cABc "E"B4 :|2 "F"cABc "A"A4 :|
+w:    * 6 *  4' 7   6' 8  7'   * * * *  * * *   * * * *  7   * * * *  *  
+w:    7 * 4'  * *   * *  *   8' 9 7' 8  6' 7 6'   8 7 6' 8  *   8 7 6' 8  7  
+
+X:51
+T:Jeune fille de quinze ans (50-51-52)
+T:Une fille de rose
+N: rev. 01/06/01
+R:hanter dro
+C:trad
+A:Bretagne
+O:France
+M:3/4
+L:1/8
+Q:100
+K:Am
+%%tablature 90 accordh accordn accordb
+ |: "Am" ee/f/ "Am" ed "Am" c2   | "Am" ed/c/ "G" Bd "Am" cA | "Am" ee/f/ "Am" ed "Am" c2   |1 "Am" ed/c/ "G" BG "Em" E2 :|2 "Am" ed/c/ "G" BG "Am" A2 |
+w:     * * *  * *  * | * * *  7 8  * * | * * *  * *  * | * * *  7 6  4'| * * *  7 6  *  
+w:     9 9 8'  9 7'  8 | 9 7' 8  * *  8 7 | 9 9 8'  9 7'  8 | 9 7' 8  * *  * | 9 7' 8  * *  7  
+w: A a *  A a A~~a | A a * G g E e | A a *  A a A~~a | A a * G g E~~e | A a * G g E~~e | 
+ |: "Am" AA/B/ "Am" cd "C" e2 | "G" de/f/ "F" af "Am" e2 | "Am" cd/e/ "F" fe "G" d2 |1 "G" Bc/d/ "Em" cB "Em" cB :|2 "G" Bc/d/ "Em" cB "Am" A2 ||
+w:     * * *  * *  7' | 8 7' *  * *  * | * * *  * *  8 | 7 6' 8  6' 7  6' 7 | 7 6' 8  6' 7  *  
+w:     7 7 6'  8 7' * | * * 8'  9' 8'  9 | 8 7' 9  8' 9  * | * * *  * *  * * | * * *  * *  7  
+w: A a * A a C~c | G g * F f A~a | A a * F f G~g | G g * E e E e | G g * E e A~a |  

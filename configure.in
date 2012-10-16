@@ -1,0 +1,81 @@
+dnl Configure source for abcm2ps -*- sh -*-
+dnl Copyright (C) 2001-2012 JF Moine.
+
+AC_INIT(abc2ps.h)
+
+VERSION=6.6.21
+VDATE='October 3, 2012'
+
+AC_CANONICAL_SYSTEM
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_INSTALL
+dnl AC_PROG_MAKE_SET
+
+AC_CONFIG_HEADER(config.h)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(malloc.h)
+
+if test "X$GCC" = "Xyes" ; then
+	CFLAGS="$CFLAGS -Wall -pipe"
+fi
+
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+
+dnl Check for options
+
+AC_ARG_ENABLE(pango,
+[  --enable-pango          Use pango if available [[default: yes]]],
+[checkpango="$enableval"],
+[checkpango="yes"])
+
+if test "$checkpango" = "yes"; then
+$as_echo_n "checking for pango... " >&6
+if which pkg-config > /dev/null ; then
+
+dnl Checks freetype2
+	if pkg-config --exists freetype2 ; then
+dnl Checks pangocairo
+		if pkg-config --exists pangocairo ; then
+			$as_echo "yes" >&6
+	CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1 `pkg-config pango cairo freetype2 --cflags`"
+			LDFLAGS="$LDFLAGS `pkg-config pangocairo pangoft2 freetype2 --libs`"
+		else
+			$as_echo "no" >&6
+		fi
+	else
+		$as_echo "pangocairo not found" >&6
+	fi
+else
+	$as_echo "pkg-config not found" >&6
+fi
+fi
+
+AC_ARG_ENABLE(a4,
+[  --enable-a4             Handle european A4 format instead of default US letter],
+[if test "$enableval" = "yes"; then
+  AC_DEFINE(A4_FORMAT)dnl
+fi])
+
+AC_ARG_ENABLE(deco-is-roll,
+[  --enable-deco-is-roll   Have ~ as roll instead of twiddle],
+[if test "$enableval" = "yes"; then
+  AC_DEFINE(DECO_IS_ROLL)dnl
+fi])
+
+DEFAULT_FDIR="$prefix/share/abcm2ps"
+AC_ARG_WITH(def-fdir,
+  [  --with-def-fdir=directory  Default format directory],
+  [DEFAULT_FDIR="$withval"])
+
+dnl Build characteristics
+AC_SUBST(VERSION)
+
+AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
+AC_DEFINE_UNQUOTED(VDATE, "$VDATE")
+AC_DEFINE_UNQUOTED(DEFAULT_FDIR, "$DEFAULT_FDIR")
+
+AC_OUTPUT(Makefile)

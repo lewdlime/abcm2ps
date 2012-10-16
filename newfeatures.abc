@@ -1,0 +1,110 @@
+%%textfont Helvetica-Bold 21
+%%center Examples for new features in abc2ps-1.2.5
+%%textfont * 16
+%%center Oct. 5 1997
+%%textfont Times-Roman 16
+
+X:1
+T:Scale with Treble Clef
+M:C
+%%freegchord 1	% abcm2ps: don't print 'b' as a flat sign
+K:C treble	% abcm2ps: must be forced because too low at the beginning
+L: 1/4
+ "C,"C,"D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,\
+| "C"C"D"D"E"E"F"F  "G"G"A"A"B"B| "c"c "d"d"e"e"f"f  "g"g"a"a"b"b"c'"c' |
+
+X:2
+T:Scale with Bass and Alto Clef
+M:C
+K:C bass	% abcm2ps: no transposition
+L: 1/4
+P:Bass
+ "C,,,"C,,,"D,,,"D,,,"E,,,"E,,,"F,,,"F,,,  "G,,,"G,,,"A,,,"A,,,"B,,,"B,,,|\
+ "C,,"C,,"D,,"D,,"E,,"E,,"F,,"F,,  "G,,"G,,"A,,"A,,"B,,"B,,|\
+ "C,"C, "D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,"C"C |
+P:Alto
+%abcm2ps: don't have a new key signature
+%K:C alto
+K: clef=alto
+ "C,,"C,,"D,,"D,,"E,,"E,,"F,,"F,,  "G,,"G,,"A,,"A,,"B,,"B,,\
+| "C,"C,"D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,| "C"C "D"D"E"E"F"F  "G"G"A"A"B"B"c"c |
+
+X:3
+T:Clef Changes Within Tune
+T:In-Line Info Fields by [..]
+%%begintext align
+Here is an example for a block of text which is associated with a specific
+tune. It will only be printed if this tune (number 3) is selected.
+The text should be placed after the "T:" field and before the
+block is terminated by a blank line.
+Text which is outside a block is
+always printed; for example, the title at the top of the page.
+%%endtext
+M:C
+L: 1/8
+K:C
+cdef gabc' [K:bass] | C,D,E,F, G,A,B,C [K:D treble] | cdef gabc' |  
+%%sep
+%%text Note: this line and the separator above are also associated with this tune. 
+
+X:4
+T:Vocals
+T:Note also the trill
+C:Music: Trad.
+C:Text: Anonymous
+M:C
+K:C
+L: 1/4
+e>e ez || edTc2 | ed(c2 | e2 c2- | Hc4) |]
+w: *** 1.~~Three blind mice, three blind mice.___
+w: *** 2.~~See how~they run, see how~they ru-uuu-un._
+
+X:6
+T:Invisible Rests Using X
+M:C
+K:C
+L: 1/4
+"F"z4|"F"x4|"F"z4|"F"x4|"Bb"z4|"Bb"x4|"F"z4|"F"x4|"C"z4|"Bb"x4|"F"z4|"F"x4||
+
+%%leftmargin 3cm
+
+X:5
+T:Scotland The Brave
+T:Demonstrating the Bagpipe Mode and Output Formatting
+%%titleleft
+%%titlefont Helvetica-Bold 24
+%%subtitlefont Helvetica-Bold 16
+%%composerspace 0.4cm
+%%composerfont Helvetica 13
+%%staffwidth 5.5in
+%%scale 0.75
+%%staffsep 55
+C:Trad.
+C:from PS file by Alan S. Watt
+P:March
+L:1/8
+M:4/4
+K:HP
+e|{g}A2 {GdGe}A>B {gcd}c{e}A {gcd}ce| {ag}a2{g}a2 {GdG}ae {gcd}c{e}A|
+   {Gdc}d2 {g}f>d {gcd}ce {gcd}c{e}A|{GdG}B2{gef}e2{A}e>f {g}e/>d/{g}c/>B/|
+{g}A2 {GdGe}A>B {gcd}c{e}A {gcd}ce| {ag}a2{g}a2 {GdG}ae {gcd}c{e}A|
+   {Gdc}d2 {g}f>d {gcd}ce {gcd}c{e}A|{GdG}B2{g}A>B {G}A2 {gcd}ce||
+
+%%vskip 1cm
+%%textfont Times-Roman 16
+%%begintext
+Summary of changes:
+
+- Bass and alto clefs.
+- Vocals.
+- In-line info fields can be coded using [...].
+- Subtitles now printed without "or:".
+- Can be more than one composer field.
+- Predefined formats: standard, pretty, pretty2 (flag -p, -P).
+- Format page layout by .fmt file selected with flag -F.
+- Format page layout by %%-pseudocomments in abc file.
+- Other pseudocomments: %%sep, %%vskip, %%newpage.
+- Text output using %%text, %%center, and %%begintext .. %%endtext.
+- "x" functions like a rest but is invisible on the page.
+- Bagpipe mode for K:HP.
+%%endtext

@@ -1,0 +1,112 @@
+% sample4.abc - this file is part of abcm2ps
+
+% definitions for tablature
+%%beginps
+/hn{	currentgray 1.0 setgray 1 SLW
+	2 index 2 sub 2 index M 8 0 RL stroke setgray
+	3 sub M /Helvetica-Bold 8 selectfont show}!
+%%endps
+%%deco head-3 3 hn 0 0 0 3
+%%deco head-4 3 hn 0 0 0 4
+%%deco head-5 3 hn 0 0 0 5
+U:i=!invisible!
+U:j=!head-3!
+U:k=!head-4!
+U:l=!head-5!
+
+X:1
+%%abc-version 2.0
+T:ABC-2.0 new fea\	% strange continuation line
+tures
+M:C
+L:1/4
+%%measurenb 1
+K:C
+CDEF | GABc | FEDC [I:setbarnb 10] | [CEG]4 |]
+s:"^annotation;in 's:' line"**+1+|||H|
+
+X:2
+T:abcm2ps-4.x.x new features
+%%graceslurs 0
+%%breakoneoln 0		% needed with abcm2ps-5.x.x
+M:C
+L:1/4
+Q:1/4=ca. 80
+K:none
+"^slur above.."('FG) "^..below"(,FG)|\
+"^dashed tie.."A.-A "^..slur".(ce/)d/"^beam;crossing;a bar"!beamon!|\
+c/B/ "^chord slur"{(,G}[CA)]3||
+"^standard tuplet"(3A/A/A/ "^no bracket"[I:tuplets 1 0 0](3A/A/A/ \
+"^forced bracket"[I:tuplets 2 0 0](3A/A/A/ "^ratio"[I:tuplets 0 0 2](3A/A/A/| \
+"^nested tuplets"[I:tuplets 2 0 2](7:8:8(3A/A/A/ A/A/A/A/A/|
+"^1/4 tone;sharp"^/G  ^G "^3/4 tone;sharp"^3/2G ^^G |\
+"^1/4 tone;flat"_/G _G "^3/4 tone;flat"_3/2G __G|"^deco on;grace note"{.A4.B4}c4||
+% tremolo: note the position of the decorations and the note lengths
+"^tremolo"C/c/C/c/ C!trem1!c | C2!trem1!c2 | \
+C//[Gc]//C//[Gc]// C//[Gc]//C//[Gc]// C!trem2![Gc] | C2!trem2![Gc]2 ||
+%
+C///D///E///F///G///F///E///D///\
+C///D///E///F///G///F///E///D/// \
+"^beam break"C///D///E///F///!beambr2!G///F///E///D///\
+!beambr1!C///D///E///F///!beambr2!G///F///E///D///||
+T:		% needed with abcm2ps-5.x.x
+%%staves 1 2
+%%rightmargin 12cm
+V:1
+"^cross staff stems"cc//c//c//c//c2 | [CEGc]2[CEGc]2||
+V:2 bass
+!xstem!C,C,//!xstem!C,//C,//!xstem!C,//!xstem!C,2 | !xstem![C,,C,]2[C,,C,]2||
+
+X:3
+T:Yesterday
+T:(extract)
+M:4/4
+L:1/8
+%%staves (melody1 chords melody2)
+K:F
+V:melody1 stem=down
+e3/d/ d6 | z2 d/d3/ cB/A/- AG |
+w: far a-way, | Now it looks as though_ they're |
+V:chords
+"Dm"x4 "Dm/C"x4 | "Bb"x4  "C7"x4 |
+V:melody2 stem=up scale=0.8
+ie3/id/ id6 | x2 d/dc/.- c/B3/ AG |
+w: used to be, | There's a shad-_ow hang-ing |
+
+X:4
+T:Fantaisie
+C:Camille Saint-Saëns
+M:C
+L:1/8
+%%staves [recit GO pos ped]
+K:Eb
+V:recit name=Récit
+z8|z8|z8|
+V:GO treble name="Grand\nOrgue"
+z2[G,B,E][I:staff 3][G,B,E] \
+ [I:staff 2][A,CF][I:staff 3][A,CF] [I:staff 2][CEA][I:staff 3][CEA]| \
+[I:staff 2][A,CF][I:staff 3][A,CF] [I:staff 2][B,DG][I:staff 3][B,DG] \
+ [I:staff 2][CEA][I:staff 3][CEA] [I:staff 2][DAc][I:staff 3][DAc]| \
+[I:staff 2][EGB][I:staff 3][EGB] [I:staff 2][GBe][I:staff 3][GBe] \
+ [I:staff 2][EGB][I:staff 3][EGB] [I:staff 2][DFA][I:staff 3][DFA]|
+V:pos treble name=Positif
+z2x6|x8|x8|
+V:ped name=Pédale
+E,,8-|E,,8-|E,,2G,,2B,,2=B,,2|
+
+X:5
+T:Special staves
+M:9/8
+L:1/8
+%%staves [1 2] | (3 4)
+K:Cm
+V:1 stem=up
+[CGceg]6[C-,G-,ceg]3-|[CGceg]3[CGceg]6|
+% tablature
+V:2 clef=none stafflines=6 staffscale=1.6
+[K:none][M:none]i[jGlBldkfja]6i[jGlBldkfja]3|iA3i[jGlBldkfja]6|
+% percussion
+V:3 clef=perc stafflines=1
+[K:none]^c3^c3^c^c^c|^c3^c3^c^c^c|
+V:4 clef=perc stafflines=1
+[K:none]A3A3A3|A6A3|

@@ -1,0 +1,156 @@
+% Sample file to test various features of abc2ps
+
+U: M = !tenuto!		% abcm2ps: default M is lowermordent
+
+% abcm2ps >= 6.2.2 - definition of '...' (ellipsis) for PostScript
+%%beginps nosvg
+/morechar[
+/ellipsis
+]def
+/morefontdef{
+    /morefont curfont findfont dup length
+	dict begin
+		{1 index/FID ne{def}{pop pop}ifelse}forall
+		/Encoding 256 array def
+		Encoding 0 morechar putinterval
+		currentdict
+	end
+    definefont}def
+/compe200def{
+    /compe200<<
+	/FontType 0
+	/FontMatrix[1 0 0 1 0 0]
+	/FMapType 6
+% ellipsis - UTF-8: E2 80 A6 - unicode \u2026
+	/SubsVector<01 80a6 0001>
+	/Encoding[0 1 0]
+	/FDepVector[
+		/Error findfont
+		morefontdef
+	]
+    >>definefont}def
+%%endps
+
+X:1
+T:Scale
+T:Second Title
+T:Third Title
+M:C
+%K:C		% abcm2ps: automatic clef processing gives a bass clef
+K:C treble
+L: 1/4
+ "C,"C,"D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,\
+| "C"C"D"D"E"E"F"F  "G"G"A"A"B"B| "c"c "d"d"e"e"f"f  "g"g"a"a"b"b"c'"c' |
+
+X:3
+T:Short and Long Notes, Beams and Tuplets
+C:Trad
+M:C
+K:C
+L: 1/8
+ c8| d4 e2 fg | C c C/ c/ d/e/ d// C// C/D/E/F/ | d>e d>>e e<fe (3CDE (4fgab |
+
+X:4
+T:Key signature, Accidentals and Decorations
+M:C
+K:A
+L: 1/4
+ ^C=C_C ^G=G_G | .F/.G/.A/ Ma/Mg/Mf/ Jc J^c J[c^f] J[c^g]  |\
+ {f}e {C}D {cd}c {E^c}a2 {dedc}d|    
+ uc vc'-c'/Mb/Mc'/Ma/ | (b4 | b/).a/.b/.c'/ | ~A ~g \
+% RA Rg MA Mg | .A .g vf/-g/ (u.a/.b/)  | uR~M.c2  Hg4 || % abcm2ps: '-' is not a slur
+ RA Rg MA Mg | .A .g (vf/g/) (u.a/.b/)  | uR~M.c2  Hg4 ||
+
+X:5
+T:Bars and Rests
+M:6/8
+L: 1/4
+K:D
+[| z4 |] z2 |: z z/z// :| z2> :: z2 z>z | f>z g>z ||
+
+X:6
+T:Chords, Unions, First and Second Endings
+M:9/8
+K:D
+L: 1/4
+%|: [D2FA] ~+d2fa+ | [c2e][df][eg]|\	% abcm2ps: '+' is no more handled
+|: [D2F2A2] ~[d2f2a2] | [c2e2][df][eg]|\
+ [cc] [dd] [F/A][G/B][D/F]>[C/E] [G/e][A/e] [G/e]>.[A/e][B/e]>.[c/e]\
+|1 (3[A//df][A//ef][A//cg] [G3Ce] :|2 (3[A//=df][^A//dg][_A//_c^g] [e3gc] |]
+
+X:7
+T:Slurs and Ties
+T: Title with funny chars like \005 Çéñô Àçäßö © …
+M:C|
+K:Ebm
+[| (CDEF) ((3efg) ((3gag)| (C2 EF) (ef(ga)) | ((c2 (3(d)ef) e2)\
+ A2-|A4 (c4|(c4)(e4)|a8) |]
+
+X:8
+T:Changing Time or Key Signatures, Guitar Chords
+M: 6/8
+K: G
+ "Em"ABc def |\
+M: 9/8
+% abcm2ps: '\' is no more handled
+%"Am7"A,CC DFF GBB |\M:4/4\"G"a,2b,2"D"c2d2 ||\L:1/4\\K:Bb\"Eb"e4|
+"Am7"A,CC DFF GBB |[M:4/4]"G"a,2b,2"D"c2d2 ||[L:1/4][K:Bb]"Eb"e4-|
+K: Gb
+M: 6/8
+L:1/8		% abcm2ps: basic length is not reset on M:
+%| -"Gb"ede edc | def fed |1 "A"efg "D"gfe | e6 \ % abcm2ps: cannot have '-' before a note
+| "Gb"ede edc | def fed |1 "A"efg "D"gfe | e6 \
+:|2 "G"gag "F"f"Em"e"D7"d | "C"c6 |]
+
+X:9
+T:Strange tuplet cases
+M:C
+K:C
+L: 1/8
+ (3cde c(3d/e/f/ |(3zcd (3z/c/d/ (3czc c(4d/e/f/z/ d2-(3def | \
+   (3::2 c4d2  (3::4 cde/f/ (3gfe |
+ (3z2G,2A,2 (3C2E2G2 |e-(5e//f//g//f//g// de- (5e//f//g//f//g// |\
+  (6z/c/e/g/e/c/ (6z/c/e/g/e/c/ | (3d/e/f/g-(3g/f/e/d || 
+
+X:10
+T:Chords with many accidentals
+M: 6/8
+K: G
+[^c^d] [^c^e] [^c^f] [^c^g] [^c^a] [^c^b] |\
+[^C^D] [^C^E] [^C^F] [^C^G] [^C^A] [^C^B] |\
+[^c^d^e] [^c^d^f] [^c^f^g] [^c^f^a] [^c=d=f^g_a_b]  |]
+[^c^f^a] [^c^f^b] [^c^f^c'] [^c^f^d'] [^c^f^e'] |\
+[^c^e^f] [^c^f^g] [^c^g^a] [^c^g^b] |\
+ [^c^d^c'] [^c^e^c'] [^A^e^c']   [^G^e^c']   \
+ [^c_e^g][^c^f^g][^c^g^a][^c^d^g][^G^e^c']   ||
+
+X:11
+T:Horizontal beams
+M:9/8
+K:C
+L: 1/8
+ c,d,c, d,e,d, e,f,e, b,cb,  | c,/d,/c,/ d,/e,/d,/ e,/f,/e,/ |\
+   c,//d,//c,// d,//e,//d,// e,//f,//e,// |
+ cdc ded efe b,a,b,| c/d/c/ d/e/d/ e/f/e/ | c//d//c// d//e//d// e//f//e// |
+ c'd'c' d'e'd' e'f'e' f'g'f' | c'/d'/c'/ d'/e'/d'/ e'/f'/e'/ |\ 
+   c'//d'//c'// d'//e'//d'// e'//f'//e'// |
+
+X:12
+T:Gracenotes
+L:1/8
+M:C
+K:D
+FA{c}AF DF{^dc}A f{A}df f{AGA}df |{B}D2 {A}D2 {G}D2 {F}D2 {E}D2 |\
+ {E}c2 {F}c2 {G}c2 {A}c2 {B}c2 | 
+   {A}^c2 {gcd}c2 {gAGAG}A2{g}c<{GdG}e {Gdc}d>c {gBd}B<{e}G |\ 
+  {G}[G4e4] {FGAB}[^c4A4] {ef}[e4c4] {d'c'bagfedcB_AcBFGC}D4| 
+
+X: 13
+T: Vocals
+M: C|
+K: F
+L: 1/4
+BA |: "Gm"G2AB|"C7"cd2e|"F"f2fe|"Dm"dA2d|
+w: Close your eyes and I'll kiss you, to-mor-row I'll miss you; re-
+"Bb"d2dc|"Gm"B2GF|"Eb"G4-|G2 z2|
+w:mem-ber I'll al-ways be true._ 

@@ -1,0 +1,139 @@
+% Sample file to test various features of abcm2ps
+%%footer abcm2ps - sample2
+
+U: N = !tenuto!
+
+X:1
+T:All clefs
+M:C
+L:1/4
+K:C bass
+"^bass"G,CEG|[K:bass3]"^bass3"G,CEG|[K:alto4]"^alto4"G,CEG|[K:alto]"^alto"G,CEG|
+[K:alto2]"^alto2"G,CEG|[K:alto1]"^alto1"G,CEG|[K:treble]"^treble"G,CEG|
+[K:treble1]"^treble1"G,CEG|[K:treble-8]"^treble-8"G,CEG|[K:treble+8]"^treble+8"G,CEG|
+
+X:2
+T:Key signature change
+T:and multi-measure rest
+M:2
+L:1/4
+K:C
+Z4|"C"CEGc|[K:A]"A"Acea|[K:B]"B"Bdfb|[K:A]"A"Acea|
+[K:Eb]"Eb"EGBe|[K:Cb]"Cb"CEGc|[K:C]"C"CEGc|
+
+X:3
+T:All clefs with max signatures
+M:C
+L:1/4
+K:C# bass
+C,E,G,C|[K:Cb]C,E,G,C|[K:C# bass3]C,E,G,C|
+[K:Cb]C,E,G,C|[K:C# alto4]G,CEG|[K:Cb]G,CEG|
+[K:C# alto]G,CEG|[K:Cb]G,CEG|[K:C# alto2]CEGc|
+[K:Cb]CEGc|[K:C# alto1]CEGc|[K:Cb]CEGc|
+[K:C# treble]CEGc|[K:Cb]CEGc|[K:C]CEGc|
+
+X:4
+T:Guitar chords - annotations
+M:none
+L:1/4
+K:C
+"^no time""^signature"CD"gchord""^on bar"|EF\
+"^appogiattura"{B}c "^acciaccatura"{/B}c \
+"^three;chord;lines"G "^and""^four""^chord""^lines!"c| \
+"^Fa#"^F "^Sib"_B "^Fa="=F \
+"F#"^F "Bb"_B||
+
+X:5
+T:Standard decorations
+M:none
+L:1/8
+K:C
+~C.D JENF HCRD TEuF vcLB MAPG ScOB|
+w: \~ . J N H R T u v L M P S O
+w: grace dot slide tenuto fermata roll trill upbow downbow \
+w: emphasis lmordent umordent segno coda
+
+X:6
+T:All decorations
+M:none
+L:1/8
+K:C
+!0!C!1!D !2!E!3!F !4!G!5!A !+!B!accent!c|\
+w:~0 ~1 ~2 ~3 ~4 ~5 ~+ accent
+!breath!C!crescendo(!D !crescendo)!E!D.C.!F !diminuendo(!G!diminuendo)!A !f!B!ffff!c|
+w:breath crescendo( crescendo) D.C. diminuendo( diminuendo) ~f ffff
+!fine!C!invertedfermata!D !longphrase!E !mediumphrase!F !mf!G!open!A !p!B!pppp!c|
+w:fine invertedfermata longphrase mediumphrase mf open ~p pppp
+!pralltriller!C!sfz!D !shortphrase!E !snap!F !thumb!G!turn!A!wedge!B!D.S.!c|
+w:pralltriller sfz shortphrase snap thumb turn wedge D.S.
+
+X:7
+T:Non standard decorations
+C:Composer
+O:Origin
+R:Rhythm
+M:none
+L:1/8
+K:C
+!turnx!G!invertedturn!A !invertedturnx!B !arpeggio![EGc]|\
+w:turnx invertedturn invertedturnx arpeggio
+!trill(!c4-|!trill)!c3|
+w:trill( trill)
+
+X:8
+T:Decorations on two voices
+T:(also in 'd:' lines)
+%%infoline 1
+C:Composer
+O:Origin
+R:Rhythm
+M:C
+%%staves (1 2)
+K:C
+V:1
+  ~c.dJeNf cdef|aabc' gabc'|!coda!cdef gfec||
+d: * * * * HRTu|!mf!       |!sfz!  *** ***!D.S.!
+V:2
+   CDEF    CDEF|ffga   efga|C  D  EF   [EG]FEC||
+d: ~.JN    HRTu|~.JN   HRTu|!5!!4!M*   !5! M
+d:             |           |*  P  !3!  !4!
+
+X:9
+T:Beams
+L:1/16
+M:4/4
+K:C
+(3CDE(3FGA B/c/d/e/d/c/B/A/ (3zDE(3FGz z/c/d/e/d/c/B/z/|(3CDz(3zGA B/c/d/z/z/c/B/A/ G8|
+
+X:10
+T:Voice overlap
+T:invisible and dashed bars
+M:2/4
+L:1/8
+%%staves (1 2)
+K:C
+V:1
+FEDC:GGGG|G2 G2|c4[|]GABc|
+V:2
+GABc:FEDC|GD G>D|cBAG[|]G4|
+
+X:11
+T:Clef transpositions
+M:C
+L:1/4
+K:C
+%%titleleft 1
+T:No transposition
+"^clef=treble""A,"A,"B,"B,"C"C"D"D|\
+[K:alto]"^alto""A,"A,"B,"B,"C"C"D"D|\
+[K:bass]"^bass""A,"A,"B,"B,"C"C"D"D|
+T:Explicit clef transposition
+[K:clef=G]"^clef=G""A,"A,"B,"B,"C"C"D"D|\
+[K:clef=c]"^clef=c""A"A"B"B"c"c"d"d|\
+[K:clef=f]"^clef=f""a"a"b"b"c'"c'"d'"d'|
+T:abc2ps compatible clef transposition
+%%abc2pscompat 1
+[K:treble]"^treble""A,"A,"B,"B,"C"C"D"D|\
+[K:alto]"^alto""A"A"B"B"c"c"d"d|\
+[K:bass]"^bass""a"a"b"b"c'"c'"d'"d'|
+%%titleleft 0

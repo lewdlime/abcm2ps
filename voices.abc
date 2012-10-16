@@ -1,0 +1,133 @@
+% here are only some first lines of sample tunes
+
+%%deco fp 6 pf 20 2 5 fp
+
+% --- piano ---
+
+X:1
+T:Song for a guy
+C:Elton John
+M:C
+L:1/8
+Q:1/4=128
+%%staves {RH LH}
+K:C
+% most of piano tunes have only 2 voices ..
+V:RH
+[C8E8]|zE FG- GEC2|[B,3E3][B,D]- [B,4D4]|zD EF- FED2|D8|
+V:LH
+[C,3G,3][C,G,]- [C,4G,4]|[C,3G,3][C,G,]- [C,4G,4]|[B,,3G,3][B,,G,]- [B,,4G,4]|\
+[B,,3G,3][B,,G,]- [B,,4G,4]|[_B,,3F,3][B,,F,]- [B,,4F,4]|
+
+X:2
+T:8th Sonata for piano
+C:L. van Beethoven
+M:C
+L:1/16
+Q:1/8=66
+%%staves {1 2}
+K:Cm
+% .. even when there are a lot of notes
+V:1
+!fp![E,4G,4C4]- [E,3/G,3/C3/]!3![G,/C/]!4![G,3/=B,3/D3/]!5![G,/C/E/] ([=A,4C4E4]!4![=B,2D2])z2|\
+!fp!!3![=B,4D4F4]- [B,3/D3/F3/][B,/D/F/][B,3/D3/G3/][B,/D/A/] ([B,4D4A4]!3![C2E2G2])z2|
+V:2
+[C,,4E,,4G,,4C,4]- [C,,3/E,,3/G,,3/C,3/]!2!E,/!3!D,3/!4!C,/ (!2!^F,4G,2)z _A,,|\
+_A,4-A,3/!2!A,/!1!G,3/=F,/ E,4-E,2z3/ E,/|
+
+X:3
+T: Praeludium II (WT II)
+C: J.S. Bach
+M: C
+L: 1/16
+Q:1/4=66
+%%staves {RH LH}
+%%MIDI program 6
+K:Cm
+% same as bach.abc (abc2ps-1.3.0) but rewritten in a more standard way
+V:RH
+  zGFG AFEF GEDE FDCD     | E2c2F2c2 E2c2D2=B2                  | 
+V:LH
+  C,2C2F,2C2 E,2C2D,2=B,2 | C,G,F,G, A,F,E,F, G,E,D,E, F,D,C,D, |  
+
+X:4
+T:Allegro grazioso
+C:Schumann
+M:C
+L:1/8
+Q:1/4=66
+%%staves {1 (2 3)}
+K:G
+V:1
+(!p!B2AB G3)(A |Bcd[Ge]) ([F3A3][^GB])|([A2c2][^GB][Ac] AF=GA)|[G2B2][F2A2] {/G}G3B|
+V:2
+% this voice is not complete, but the measure must be respected
+ G,2C2 xD3-    |D2x2	 x4	      | A,2D2		C2x2  |x8		   |
+V:3
+(G,DCD B,D2)(F,|G,A,B,C  (D2)CB,)     |(A,EDE		CDB,C)|D2[D,2C2]  [G,3B,3]D|
+
+% --- vocal ---
+
+X:5
+T:Tridal a ra va c'halon
+T:(Mor Fawr Wyt Ti!)
+M:4/4
+L:1/8
+Q:1/4=48
+%%staves [(S A) (T B)]
+K:A
+% Breton words on a Wales choral
+V:S
+EEE	  |C3E	   EEFF        |(D2F3)	  FFF	 |E3C   EEDD		 |C4   z:|
+w:Ka-na a |rin, ka-na a rin be-|pred,* rag an Ao-|trou en-eus va zan-tel-|let.
+w:Eñ eo va|nerz, eñ eo i-vez va|Zad,*    eñ eo va|han, ka-na a rin e     |hloar.
+V:A
+CCC	  |A,3A,   B,CA,A,     |(B,2A,3)  DDB,   |C3A,  B,A,A,G,	 |A,4  z:|
+V:T
+A,A,A,	  |E,3E,   G,A,F,F,    |(F,2F,3)  A,A,G, |A,3A, G,A,F,E,	 |E,4  z:|
+V:B
+A,,A,,A,, |A,,3C,  B,,A,,D,D,  |(B,,2D,3) D,D,B,,|E,3F, E,C,B,,E,,	 |A,,4 z:|
+
+% --- organ ---
+
+X:6
+T:Wär Gott nicht mit uns diese Zeit
+C:Johann Nicolaus Hanff
+M:C
+L:1/8
+Q:1/4=66
+%%staves [1 (2 3) 4]
+V:1 nm="Rückpos"
+V:2 nm="Organo"
+K:C
+V:1
+%%MIDI program 53
+A3B    c2c2    |d2e2    de/f/P ^c3/d/|d8    |z8		  |
+V:2
+%%MIDI program 73
+z2E2-  E2AG    |F2E2    F2E2	     |F6  F2|E2CD   E3F/G/|
+V:3
+%%MIDI program 73
+z2C2-  CB,A,2  |A,8		     |A,6 D2|C2A,B, C3D/E/|
+V:4
+%%MIDI program 73
+z2A,2- A,G,F,E,|D,2^C,2 D,2A,,2      |D,,8  |z4	    z2A,2 |
+
+X:7
+T:Qui Tolis (Trio)
+C:André Raison
+M:3/4
+L:1/4
+Q:1/4=92
+%%staves {(Pos1 Pos2) Trompette}
+K:F
+%
+V:Pos1
+%%MIDI program 78
+"^Positif"x3  |x3    |c'>ba|Pga/g/f|:g2a  |ba2    |g2c- |c2P=B  |c>de  |fga    |
+V:Pos2
+%%MIDI program 78
+	 Mf>ed|cd/c/B|PA2d |ef/e/d |:e2f  |ef2    |c>BA |GA/G/F |E>FG  |ABc-   |
+V:Trompette
+%%MIDI program 56
+"^Trompette"z3|z3    |z3   |z3     |:Mc>BA|PGA/G/F|PE>EF|PEF/E/D|C>CPB,|A,G,F,-|

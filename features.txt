@@ -1,0 +1,319 @@
+	Features of abcm2ps 6.6.0 (J.F. Moine, December 2011)
+	=====================================================
+
+abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
+
+	http://abcnotation.com/wiki/abc:standard:v2.1
+
+Here are listed only the differences from standard.
+
+
+Features not implemented.
+========================
+
+Information fields.
+
+	- The continuation field ('+:') is not implemented.
+
+	- The charsets iso-8859-5 .. iso-8859-8 are not implemented.
+
+Tune body.
+
+	- Multi-measure invisible rests ('X') are not implemented.
+
+	- The following decorations are not implemented:
+		!dacoda!, !dacapo!
+
+	- 'U:' fields cannot contain guitar chord nor annotations.
+
+	- The values assigned by the 'U:' field are always global (they
+	  are not restored at end of tune).
+
+	- Multiple measure overlay (as '&&') is not implemented.
+	  Use the '(& .. & .. & .. &) extension instead.
+
+Data format.
+
+	- The HTML sequences are not implemented.
+
+	- The unicode '\Uxxxxxxxx' 32 bits character is not implemented.
+	  Use the UTF-16 surrogates instead.
+
+
+Features that work differently.
+===============================
+
+File structure.
+
+	- The X: header field may be omitted in tunebooks in which case
+	  a tune starts on a T: header field.
+
+	- The T: header field may be omitted when 'X:' is present.
+
+	- There is no notion of 'file header': any valid ABC field
+	  found outside the tunes is considered as global, and applies
+	  to the remaining tunes.
+
+Information fields.
+
+	- In a tune body, the lines beginning with a letter in range A-G
+	  or a-g and immediately followed by a colon are interpreted as
+	  information fields.
+
+	- When the %%abc-version is different from '2.0', the field 'A:' is
+	  'Area', and not 'Author of lyrics'. It is displayed only when
+	  'infoline' is set.
+
+	- In 'K:' fields, the list of accidentals may be 'none' (for
+	  no accidental).
+
+	- In 'U:' fields, the character may be
+	  '\ ' (back-slash - space) to redefine the character space, or
+	  '\t' (back-slash - t) to redefine the character tabulation.
+	  The default value of these characters is !beambreak! (see below).
+
+	- In 'U:' fields, !none! means that the character must not appear
+	  in the body.
+
+	- In 'U:' fields, !nil! means that the character is ignored.
+	  This is the default value for the character '`' (back-quote).
+
+	- In 'U:' fields, !beambreak! means that the character stops note
+	  beaming. This is the default value for the characters '\ '
+	  (space) and '\t' (tabulation).
+
+Tune body.
+
+	- Some bar lines are drawn as defined (ex: ':|:'), some other
+	  ones are expanded, as '|::' to '[|::'.
+
+	- The decorations on notes inside chords cannot be standard ones
+	  because their offset is relative to the note they are attached to,
+	  and not to the chord. They must be explicitly defined by %%deco
+	  and %%postscript.
+
+	- '@' in annotations must be followed by the <x> and <y> offsets
+	  of the text from the note position (in points). The <x> and <y>
+	  values are separated by a comma, and <y> may be followed by a
+	  space (usefull if the text begins with a digit, a dot or the
+	  letters 'E' or 'e' - see sample3.abc for an example).
+
+	- Grace notes may appear before any symbol and may contain
+	  chords. Their note lengths are handled. The unit note length
+	  is not tied to L: (or M:). Instead, for compatibility, it is:
+		- a quaver for a single note and
+		  a semi-quaver for many notes in standard tunes,
+		- a demi-semi-quaver in bagpipe tunes.
+	  Grace notes greater than crotchets are drawn as crotchets.
+
+	- Tuplets values may be greater than 9.
+
+	- Tuplets may be nested.
+
+Clefs.
+
+	- When 'clef=' is present, the clef name may be a note with its
+	  pitch optionnaly followed by the staff line on which it is defined.
+	  The note may be only 'G' (treble clef), 'C' (alto clef)
+	  or 'F' (bass clef).
+	  The two following definitions are equivalent:
+		K: clef=f
+		K: bass middle=d
+
+Multiple voices.
+
+	- When the voices are synchronized, a P: field alone in a line
+	  (not enclosed by '[' and ']') is set in the first voice, without
+	  changing the current voice. This fixes the common error:
+		P:A
+		V:1
+		..
+		V:2
+		..
+		P:B		% misplaced P: (in voice 2)
+		V:1
+		%		should be here
+		..
+		V:2
+		%		and normally repeated here
+		..
+
+ABC Stylesheet specification.
+
+	- The star ('*' = floating voice) is not treated in '%%score'.
+
+	- '%%staves' coexists with '%%score'.
+	  The differences in '%%staves' are:
+		- measure bars are drawn between staves when there is
+		  no '|' between the voice names (this feature is inverted
+		  in %%score).
+		- A floating voice may be only the second one in a
+		  3 voices brace.
+
+	- Some formatting directives are not implemented, and some new
+	  ones are defined. See the file 'format.txt' for details.
+
+
+Extensions.
+==========
+
+File structure.
+
+	- Lines starting with '\' (back-slash) are ignored (abc2mtex
+	  compatibility).
+
+Information fields.
+
+	- The field 'M:' may specify more complex meters with a
+	  combination of digits, parenthesis, slashes and blanks.
+	  It may also specify ancient meters as 'M:2' or 'M:3',
+	  and also 'M:o' (perfect minor), 'M:o.' (perfect major),
+	  'M:c' (imperfect minor) and 'M:c.' (imperfect major).
+	  An explicit measure duration may be specified putting its
+	  value after an '=' sign (ex: 'M:C|=2/1').
+
+	- The field 'd:' is the same as 's:' (symbol line).
+
+Tune body.
+
+	- Microtone pitches are indicated by a fraction after an
+	  accidental, as "^3/4c". When omitted, the numerator defaults
+	  to 1 and the denominator to 2 ("^/c" is the same as "^1/2c").
+	  The numerator and denominator cannot be greater than 256.
+	  Support exists for 1/2 and 3/2 sharps and flats. For other
+	  values, PostScript functions must be defined (by %%postscript).
+	  The name of such a function is:
+		<accidental_type><micro_value>
+	  where:
+		  - <accidental_type> is "sh" (sharp) or "ft" (flat)
+			(may be also "nt", "dsh" or "dft" !)
+		  - <micro_value> is computed from the fraction as:
+			( <numerator> - 1 ) * 256 + <denominator> - 1
+
+	- A note length starting with '0' (zero') indicates a stemless
+	  note.
+
+	- A space ('y') may be followed by a width in points.
+	  The default width is 20 pts.
+
+	- '[]' is the same as '[|]' (invisible bar).
+
+	- ':' (colon alone) is the same as '.|' (dotted bar).
+
+	- Repeat bars may contain a set of digits, '-' (hyphen),
+	  ',' (comma) or '.' (dot), or even a free string. Ex:
+		|: ... [1,3 ... :|2,4-6 ... :|["last time" ...
+	  (note that a '[' is needed before the string - this one may
+	   be empty).
+
+	- There may be slurs from notes to grace notes and reverse.
+
+	- Opening slurs ("(") may be followed by "'" or "," to force their
+	  direction (above or below).
+
+	- The tie character ("-") may be followed by "'" or "," to force
+	  the tie direction (above or below).
+
+	- The following decorations are added:
+		!beamon!	do not break beaming (on a measure bar)
+		!beambr1! and !beambr2!
+				let only 1 or 2 beams from the previous note
+		!gmark!		grace mark ('~' like sign)
+		!invisible!	prevent a note to be displayed
+		!rbstop!	stop here the current repeat bracket
+		!trem1! .. !trem4!
+				tremolo (on the second of a couple of notes
+				- see sample4.abc for example)
+		!xstem!		draw a stem up to the note on the previous
+				staff
+		!/! .. !///!	tremolo on one note
+
+	- There may be decorations on grace notes.
+
+	- Multiple lines of guitar chord / annotation may also be
+	  indicated by '\n' or ';' in which case, the lines are of
+	  the same type (gchord or annotation).
+	  The 3 next notations are equivalent:
+		"_ann1" "_ann2" "G3" "4" G
+		"_ann1;ann2" "G3;4" G
+		"_ann1\nann2" "G3\n4" G
+	  (annotation on 2 lines and guitar chord on 2 lines)
+	  The two next notations are NOT equivalent:
+		"_ann1" "G"
+		"_ann1;G"
+	  (in the 1st line, 'G' is a guitar chord, in the 2nd one,
+	  it is the 2nd line of the annotation)
+	  A new annotation type may be indicated after the new line as:
+		"^above;_below"
+
+Clefs.
+
+	- 'clef=P' is the same as 'perc'.
+
+	- When the clef name is 'perc' (or 'P'), accidentals change the
+	  note head glyph. By default, sharp notes are drawn as a 'x'
+	  and flat notes as a circled 'x'. This behaviour may be changed
+	  redefineding the PostScript functions 'pshhd' and 'pfthd', or
+	  defining 'pnthd' (natural), 'pdshhd' (double sharp) and
+	  'pdfthd' (double flat).
+
+	- When no clef is specified, clef changes are automatically
+	  inserted when needed ('bass' or 'treble').
+
+	- The clef name may be enclosed by double quotes in which case
+	  it is the name of a PostScript function which will draw the
+	  clef. This function arguments are the x and y offsets.
+
+Multiple voices.
+
+	- 'stem=auto' and 'gstem=auto' in a V: field re-enables the
+	  automatic computation of the direction of the stems (default
+	  values).
+
+	- 'gstem=up' or 'gstem=down' in a V: field forces the direction
+	  of the stems of the grace notes.
+
+	- For compatibility with previous abcm2ps version, V: fields may
+	  contain:
+		- 'gchord=up' (default) and 'gchord=down'
+		  which forces the display of guitar chords above or
+		  below the staff,
+
+		- 'dyn=up', 'dyn=down' or 'dyn=auto'
+		  which forces the place of the dynamic marks (above
+		  or below the staff - default is 'auto').
+
+		- 'lyrics=up', 'lyrics=down' or 'lyrics=auto'
+		  which forces the place of the lyrics (above or below
+		  the staff - default is 'auto').
+	  (use pseudo comments instead - see format.txt)
+
+	- 'staffscale=<value>' in a V: field sets the scale of the
+	  associated staff. The default value is '1'.
+
+	- 'merge' in a V: field makes the voice to go on the same staff
+	  as the previous voice (BarFly compatibility).
+
+	- The BarFly voice switch in tune ('V:x <notes>', i.e.
+	  voice + notes on the same line) may work.
+
+	- The operator '(&...&...&)' permits voice overlay on many
+	  measures. See sample3.abc for an example.
+
+Data format.
+
+	- The guitar chords and annotations may contain '\#', '\b' and '\='
+	  to display accidentals.
+
+	- Strings may contain characters from '\001' to '\005' to display
+	  accidentals. For compatibility, the values '\201' to '\205'
+	  are handled the same way.
+
+	- In quoted string, the '%' does not need to be escaped.
+
+Deprecated ABC syntax.
+
+	- Most of the deprecated ABC syntax is supported.
+
+	- Some incompatible syntaxes are handled according to the ABC version
+	  of the file as the ABC 2.0 continuation mechanism.

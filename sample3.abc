@@ -1,0 +1,121 @@
+%%deco alcoda 3 dacs 20 0 0 Al Coda
+%%header "		$T\n		Page $P"
+%%footer "	$F"
+
+X:1
+T:abcm2ps version 3 features
+M:2/4 3/4
+K:C
+C2D2 E2F2G2{FG}|G4-G6|1.2[M:5/4 (2/4 3/4)]G4{AB}z6:|["last time"A2B2 c6||
+%%multicol start
+%%rightmargin 11.5cm
+[M:2/4]C2G2|C4|
+%%multicol new
+%%leftmargin 11.5cm
+%%begintext
+
+Multi column text on the right after a blank line.
+%%endtext
+%%multicol end
+%%multicol start
+%%rightmargin 11.5cm
+%%begintext
+         And now at the left side.
+Here, there are spaces to align
+                the text on the right.
+%%endtext
+%%multicol new
+%%leftmargin 11.5cm
+CD EF|GA Bc|
+%%multicol end
+%
+%%center Scale change inside the tune
+%%scale 0.6
+%%leftmargin 7cm
+%%rightmargin 11cm
+CD EF|
+%%scale 1.2
+%%leftmargin 11cm
+%%rightmargin 4cm
+CD EF|
+%%leftmargin 5cm
+%%scale 1
+%%EPS sample3.eps
+%%scale 0.75		% set the scale back to default
+% restore the left and right margins
+%%leftmargin 1.78cm
+%%rightmargin 1.78cm
+%%center Is this centered?
+
+X:2
+T:Staff break
+M:none
+L:1/8
+K:G exp ^F ^F, clef=C
+%%staffbreak 0.2cm
+[K:G clef=treble][M:C]SDE FG|AG !alcoda!FEO|DE FES||\
+%%staffbreak 2cm
+[K:G clef=treble]OC2D2||
+
+X:3
+T:Staff break multi-staves
+M:none
+L:1/8
+%%staves {1 2}
+K:G
+V:1
+[K:G exp ^F ^F, clef=C]
+%%staffbreak 0.2cm
+V:2 clef=F
+%%staffbreak 0.2cm
+V:1
+[K:G clef=treble][M:C]SDE FG|AG !alcoda!FEO|DE FES||\
+V:2
+[K:G clef=bass][M:C]D,4|A,4|D,4||\
+V:1
+%%staffbreak 2cm
+[K:G clef=treble]OC2D2||
+V:2
+%%staffbreak 2cm
+[K:G clef=bass]A,,2D,,2||
+
+X:4
+T:Voice overlay and chords
+M:C
+L:1/4
+K:C
+[C2G]A[B3/G2]c/|cdef&ABcd|GA{[FA]}[GB][Ac]|defg&Bcde|
+GABc|efga&FGAB&CDEF|GA(&Bc|de&FG|AB&)cd|
+
+X:5
+T:Annotations and guitar chords
+M:C
+L:1/8
+%%gchordbox 1
+%%freegchord 1
+K:C
+"^annotation""gchord in box"CD"_below"EG "<left"cd">right"ec|\
+"@20,-50anywhere"gf"<("">)"ed (c4y)||
+
+X:6
+T:Grace notes
+M:C
+L:1/4
+%%graceslurs 0
+K:C
+V:1 name="voice name\non\nthree lines"
+{B2}A{B}A{B/}A{B//}A|{c4B4}A{c2B2}A{cB}A{c/B/}A|
+{a2g2f2 e2d2c2B4}A4|\
+	{(AB)}c{(AB}c){(GA)B}c{G(AB}c)|\
+	(c2{BA)G}{(G/A/B/) (G/A/B/)}c2||
+
+X:7
+T:Drum
+M:C
+L:1/8
+%%staves (1 2)
+K:C clef=perc
+V:1
+^a^f[c^f]^f ^f^f[c^f]^f|^a^f[c^f]^f ^f/c/^f c/^a3/||
+V:2
+FF/F/ z3/F/ zF/F/ z/F3/|FF/F/ z3/F/ z3/F/ z/F3/||

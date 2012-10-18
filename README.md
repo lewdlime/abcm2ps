@@ -8,7 +8,7 @@ abcm2ps is a program which converts music tunes from ABC format to
 PostScript or SVG. Based on abc2ps version 1.2.5 (see Contacts below),
 it was developped mainly to print barock organ scores which have
 independant voices played on one or many keyboards and a pedal-board
-(the 'm' of abcm2ps stands for many or multi staves/voices).
+(the `m` of abcm2ps stands for many or multi staves/voices).
 
 Features
 --------
@@ -25,20 +25,20 @@ The installation procedure is described in the file INSTALL.
 
 Basically, the program usage is:
 
-   abcm2ps [options] file1 [file1_options] file2 [file2_options] ...
+`abcm2ps [options] file1 [file1_options] file2 [file2_options] ...`
 
 where file1, file2, .. are the ABC input files. This will generate
-a Postscript file (default name: 'Out.ps' - run 'abcm2ps -h' to
+a Postscript file (default name: `Out.ps` - run `abcm2ps -h` to
 know the list of the command line options).
 
 Documentation
 -------------
 
-- options.txt contains the list of the command line options.
+- options.txt   contains the list of the command line options.
 
-- format.txt contains the list of the format parameters.
+- format.txt    contains the list of the format parameters.
 
-- features.txt lists the differences from the current ABC standard.
+- features.txt  lists the differences from the current ABC standard.
 
 Differences with abc2ps
 -----------------------
@@ -48,9 +48,9 @@ Differences with abc2ps
 
 - abcm2ps does not print the list of tunes and has different filtering
   functions. On the command line:
-	- '-o' is implicit
-	- '-e' accepts only one parameter.
-	- '-C', '-R', '-S', '-T' don't exist anymore. If you want such
+	- `-o` is implicit
+	- `-e` accepts only one parameter.
+	- `-C`, `-R`, `-S`, `-T` don't exist anymore. If you want such
 	  filtering, you should to use some external script or program
 	  instead.
 
@@ -58,14 +58,14 @@ Differences with abc2ps
 
 - The scale is global (it was restricted to the music part in abc2ps).
 
-- The characters '\\' don't do a line break.
+- The characters `\\` don't do a line break.
 
-- In landscape format, the values of 'pagewidth' and 'pageheight'
+- In landscape format, the values of `pagewidth` and `pageheight`
   are internally exchanged, so there is no need to set them explicitely.
 
-- The format 'staffwidth' is obsolete. Use 'pagewidth' instead.
+- The format `staffwidth` is obsolete. Use `pagewidth` instead.
 
-- Look also in the file 'sample.abc' for other incompatibilities.
+- Look also in the file `sample.abc` for other incompatibilities.
 
 Limits
 ------
@@ -86,7 +86,7 @@ http://abcplus.sourceforge.net/
 
 abc2ps was developped by Michael Methfessel:
 http://www.ihp-ffo.de/~msm/
-mailto:msm@ihp-ffo.de
+`msm (at) ihp-ffo (dot) de`
 
 To know more about the ABC notation, have a look at:
 http://abcnotation.com/

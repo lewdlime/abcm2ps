@@ -908,6 +908,17 @@ void define_svg_symbols(char *title, float w, float h)
 				s = in_fname;
 			else
 				s++;
+#if 1
+			fprintf(fout, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\n"
+				"\"http://www.w3.org/TR/xhtml1/DTD/xhtml1.dtd\">\n"
+				"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
+				"<head>\n"
+				"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n"
+				"<title>%s</title>\n"
+				"</head>\n"
+				"<body>\n",
+				s);
+#else
 			fprintf(fout, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 				"<!DOCTYPE html PUBLIC\n"
 				"	\"-//W3C//DTD XHTML 1.0 Strict//EN\"\n"
@@ -916,6 +927,7 @@ void define_svg_symbols(char *title, float w, float h)
 				"<head><title>%s</title></head>\n"
 				"<body>\n",
 				s);
+#endif
 		}
 		fprintf(fout, "<p>\n"
 			"<svg xmlns=\"http://www.w3.org/2000/svg\"\n"
@@ -1128,6 +1140,7 @@ static void def_use(int def)
 {
 	int i;
 
+	gcur.linewidth = 1;
 	setg(1);
 	if (def_tb[def].defined)
 		return;
@@ -1996,7 +2009,7 @@ curveto:
 			return;
 		}
 		if (strcmp(op, "dlw") == 0) {
-			gcur.linewidth = 0.7;
+			gcur.linewidth = 1;
 			return;
 		}
 		if (strcmp(op, "dotbar") == 0) {
@@ -3386,6 +3399,7 @@ rmoveto:
 			return;
 		}
 		if (strcmp(op, "staff") == 0) {
+			gcur.linewidth = 1;
 			setg(1);
 			y = yoffs - pop_free_val();
 			x = xoffs + pop_free_val();

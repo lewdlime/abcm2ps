@@ -1816,6 +1816,7 @@ static void slur_out(float x1,
 		     int staff)	/* if < 0, the staves are defined */
 {
 	float alfa, beta, mx, my, xx1, yy1, xx2, yy2, dx, dy, dz;
+	float scale_y;
 
 	alfa = .3;
 	beta = .45;
@@ -1865,19 +1866,21 @@ static void slur_out(float x1,
 		dz = .6;
 	dz *= s;
 
+	
+	scale_y = scale_voice ? cur_scale : 1;
 	if (!dotted)
 		a2b("%.2f %.2f %.2f %.2f %.2f %.2f 0 %.2f ",
 			(xx2 - dx - x2) / cur_scale,
-				(yy2 + dy - y2 - dz) / cur_scale,
+				(yy2 + dy - y2 - dz) / scale_y,
 			(xx1 + dx - x2) / cur_scale,
-				(yy1 + dy - y2 - dz) / cur_scale,
+				(yy1 + dy - y2 - dz) / scale_y,
 			(x1 - x2) / cur_scale,
-				(y1 - y2 - dz) / cur_scale,
+				(y1 - y2 - dz) / scale_y,
 				dz);
 	a2b("%.2f %.2f %.2f %.2f %.2f %.2f ",
-		(xx1 - x1) / cur_scale, (yy1 - y1) / cur_scale,
-		(xx2 - x1) / cur_scale, (yy2 - y1) / cur_scale,
-		(x2 - x1) / cur_scale, (y2 - y1) / cur_scale);
+		(xx1 - x1) / cur_scale, (yy1 - y1) / scale_y,
+		(xx2 - x1) / cur_scale, (yy2 - y1) / scale_y,
+		(x2 - x1) / cur_scale, (y2 - y1) / scale_y);
 	putxy(x1, y1);
 	if (staff >= 0)
 		a2b("y%d ", staff);
@@ -4234,7 +4237,7 @@ static void bar_set(float *bar_height)
 float draw_systems(float indent)
 {
 	struct SYMBOL *s;
-	int staff, staff_st;
+	int staff;
 	float xstaff[MAXSTAFF], bar_height[MAXSTAFF];
 	float x, x2;
 	float line_height;
@@ -4246,22 +4249,11 @@ float draw_systems(float indent)
 	for (staff = 0; staff <= nstaff; staff++)
 		xstaff[staff] = cursys->staff[staff].empty ? -1 : 0;
 	bar_set(bar_height);
-	staff_st = 1;
+	draw_lstaff(0);
 	for (s = tsfirst; s != 0; s = s->ts_next) {
 		staff = s->staff;
 		switch (s->type) {
 		case STAVES:
-			if (staff_st) {
-				if (cursys->nstaff > 0) {
-				    for (staff = 0; staff <= nstaff; staff++) {
-					if ((x = xstaff[staff]) >= 0) {
-						draw_lstaff(x);
-						break;
-					}
-				    }
-				    staff_st = 0;
-				}
-			}
 			cursys = cursys->next;
 			for (staff = 0; staff <= nstaff; staff++) {
 				if (cursys->staff[staff].empty) {
@@ -4311,11 +4303,9 @@ float draw_systems(float indent)
 			if (s->prev->type != BAR)
 				x2 += s->prev->wr;
 			draw_staff(staff, x, x2);
-			if (staff == 0) {
-				if (staff_st && cursys->nstaff > 0)
-					draw_lstaff(x);
-				staff_st = s->xmx > .5 CM;
-			}
+			if (staff == 0
+			 && s->xmx > .5 CM)
+				draw_lstaff(s->x);
 			if (s->xmx != 0) {
 				xstaff[staff] = s->x;
 				if (s->ts_next != 0 && s->ts_next->type == STAVES)
@@ -4325,6 +4315,7 @@ float draw_systems(float indent)
 			}
 			break;
 		default:
+//fixme:does not work for "%%staves K: M: $" */
 			if (cursys->staff[staff].empty)
 				s->as.flags |= ABC_F_INVIS;
 			break;
@@ -4335,10 +4326,6 @@ float draw_systems(float indent)
 		 || x >= realwidth - 8)
 			continue;
 		draw_staff(staff, x, realwidth);
-		if (staff_st) {
-			draw_lstaff(x);
-			staff_st = 0;
-		}
 	}
 	set_scale(0);
 	return line_height;

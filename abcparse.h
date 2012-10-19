@@ -91,7 +91,6 @@ struct abcsym {
 #define ABC_F_GRACE	0x0020		/* grace note */
 #define ABC_F_GR_END	0x0040		/* end of grace note sequence */
 #define ABC_F_SAPPO	0x0080		/* short appoggiatura */
-#define ABC_F_EMBED	0x0100		/* embedded header (between [..]) */
 	int linenum;		/* ABC source line number */
 	char *text;		/* main text (INFO, PSCOM),
 				 * guitar chord (NOTE, REST, BAR) */

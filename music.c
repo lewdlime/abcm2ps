@@ -221,7 +221,7 @@ static void set_head_directions(struct SYMBOL *s)
 }
 
 /* -- unlink a symbol -- */
-static void delsym(struct SYMBOL *s)
+static void unlksym(struct SYMBOL *s)
 {
 	if (s->next == 0) {
 		if (s->extra != 0) {
@@ -245,6 +245,8 @@ static void delsym(struct SYMBOL *s)
 	}
 	if (s->prev != 0)
 		s->prev->next = s->next;
+	else
+		voice_tb[s->voice].sym = s->next;
 	if (s->ts_next != 0) {
 		if ((s->sflags & S_SEQST)
 		 && !(s->ts_next->sflags & S_SEQST)) {
@@ -256,10 +258,10 @@ static void delsym(struct SYMBOL *s)
 	}
 	if (s->ts_prev != 0)
 		s->ts_prev->ts_next = s->ts_next;
-	if (tsnext == s)
-		tsnext = s->ts_next;
 	if (tsfirst == s)
 		tsfirst = s->ts_next;
+	if (tsnext == s)
+		tsnext = s->ts_next;
 }
 
 /* -- check if voice combine may occur -- */
@@ -379,7 +381,7 @@ delsym2:
 		s->as.text = s2->as.text;
 		s->gch = s2->gch;
 	}
-	delsym(s2);			/* remove the next symbol */
+	unlksym(s2);			/* remove the next symbol */
 }
 
 /* -- try to combine voices */
@@ -1771,7 +1773,7 @@ static void set_repeat(struct SYMBOL *g,
 				if (s2->dur != 0)
 					i--;
 				s2->extra = 0;
-				delsym(s2);
+				unlksym(s2);
 				s2 = s2->next;
 			}
 			s3->type = NOTEREST;
@@ -1870,7 +1872,7 @@ static void set_repeat(struct SYMBOL *g,
 			if (s2->type == BAR)
 				break;
 			s2->extra = 0;
-			delsym(s2);
+			unlksym(s2);
 			s2 = s2->next;
 		}
 		s3->type = NOTEREST;
@@ -1890,7 +1892,7 @@ static void set_repeat(struct SYMBOL *g,
 			if (s2->type == BAR || s2->type == CLEF)
 				break;
 			s2->extra = 0;
-			delsym(s2);
+			unlksym(s2);
 			s2 = s2->next;
 		}
 		s3->type = NOTEREST;
@@ -1913,7 +1915,7 @@ static void set_repeat(struct SYMBOL *g,
 			if (s2->type == BAR || s2->type == CLEF)
 				break;
 			s2->extra = 0;
-			delsym(s2);
+			unlksym(s2);
 			s2 = s2->next;
 		}
 		s3->type = NOTEREST;
@@ -1986,7 +1988,7 @@ static void custos_add(struct SYMBOL *s)
 /* -- define the beginning of a new music line -- */
 static struct SYMBOL *set_nl(struct SYMBOL *s)
 {
-	struct SYMBOL *s2, *extra;
+	struct SYMBOL *s2, *extra, *staves;
 	int time, done;
 
 	/* if normal symbol, cut here */
@@ -2017,7 +2019,7 @@ normal:
 			 && s->time >= time)
 				break;
 		}
-//fixme: tester si (key/time sig) et warn ?
+//fixme: test (key/time sig) and warn ?
 		if (s->type == BAR)
 			break;
 
@@ -2059,7 +2061,7 @@ normal:
 		break;
 	}
 	done = 0;
-	extra = 0;
+	staves = extra = 0;
 	for (; s != 0; s = s->ts_next) {
 		if (!(s->sflags & S_SEQST))
 			continue;
@@ -2070,6 +2072,12 @@ normal:
 				extra = s;
 			else
 				error(0, s, "Extra symbol may be misplaced");
+		}
+		if (s->type == STAVES) {	/* case "| $ %%staves K: M:" */
+			if (s->ts_next == 0)
+				return 0;
+			staves = s;
+			s = s->ts_next;
 		}
 		switch (s->type) {
 		case BAR:
@@ -2084,7 +2092,7 @@ normal:
 			continue;
 		case STBRK:
 			if (s->doty == 0) {	/* if not forced */
-				delsym(s);	/* remove */
+				unlksym(s);	/* remove */
 				continue;
 			}
 			done = -1;	/* keep the next symbols on the next line */
@@ -2118,6 +2126,21 @@ normal:
 		s2->next = s->extra;
 		s->extra = extra->extra;
 		extra->extra = 0;
+	}
+	if (staves != 0
+	 && staves != s) {		/* move the %%staves to the next line */
+		unlksym(staves);
+		staves->prev = s->prev;
+		if (s->prev != 0)
+			staves->prev->next = staves;
+		s->prev = staves;
+		staves->next = s;
+		staves->ts_prev = s->ts_prev;
+		staves->ts_prev->ts_next = staves;
+		s->ts_prev = staves;
+		staves->ts_next = s;
+		s->sflags &= ~S_SEQST;
+		s = staves;
 	}
 setnl:
 	if (cfmt.custos && first_voice->next == 0)
@@ -2254,7 +2277,7 @@ static void cut_tune(float lwidth, float indent)
 	xmin = indent;
 	s2 = s;
 	for ( ; s != 0; s = s->ts_next) {
-		if (!(s->sflags & S_SEQST))
+		if (!(s->sflags & (S_SEQST | S_EOLN)))
 			continue;
 		xmin += s->shrink;
 		if (xmin > lwidth) {
@@ -2374,7 +2397,7 @@ static void set_pitch(struct SYMBOL *last_s)
 /*fixme:%%staves:can this happen?*/
 				if (s->prev == 0)
 					break;
-				delsym(s);
+				unlksym(s);
 				break;
 			}
 			set_yval(s);
@@ -2491,13 +2514,13 @@ static void set_stem_dir(void)
 #if 1
 /*fixme:test*/
 if (staff > nst) {
-	bug("set_multi(): bad staff number\n", 1);
+	bug("set_stem_dir(): bad staff number\n", 1);
 }
 #endif
 			voice = u->voice;
-			if (vtb[voice].st1 < 0)
+			if (vtb[voice].st1 < 0) {
 				vtb[voice].st1 = staff;
-			else if (vtb[voice].st1 != staff) {
+			} else if (vtb[voice].st1 != staff) {
 				if (staff > vtb[voice].st1) {
 					if (staff > vtb[voice].st2)
 						vtb[voice].st2 = staff;
@@ -2684,7 +2707,7 @@ static void set_rest_offset(void)
 #if 1
 /*fixme:test*/
 if (staff > nst) {
-	bug("set_multi(): bad staff number\n", 1);
+	bug("set_rest_offset(): bad staff number\n", 1);
 }
 #endif
 			voice = u->voice;
@@ -3996,7 +4019,7 @@ static void check_bar(struct SYMBOL *s)
 		if (s->sflags & S_NOREPBRA)
 			p_voice->bar_start |= 0x4000;
 		if (s->prev != 0 && s->prev->type == BAR)
-			delsym(s);
+			unlksym(s);
 		else
 			s->as.u.bar.type = B_BAR;
 		return;
@@ -4094,7 +4117,7 @@ static void set_piece(void)
 				}
 			}
 			if (s2 != 0)
-				delsym(s2);
+				unlksym(s2);
 		}
 #endif
 	}
@@ -4384,7 +4407,7 @@ static void gen_init(void)
 		case FMTCHG:
 			if (s->extra != 0)
 				output_ps(s, 127);
-			delsym(s);
+			unlksym(s);
 			if (tsfirst == 0)
 				return;
 			continue;
@@ -4407,7 +4430,7 @@ static void gen_init(void)
 		    }
 #endif
 			cursys = cursys->next;
-			delsym(s);
+			unlksym(s);
 			if (tsfirst == 0)
 				return;
 			break;

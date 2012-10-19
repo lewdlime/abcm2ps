@@ -61,7 +61,7 @@ K:Cm
 %%leftmargin 0cm
 %%staves 1s 3s | {(1 2) 3}
 V:1s name="Ossia" staffscale=0.8
-V:3s staffscale=0.8
+V:3s staffscale=0.8 bass
 V:1
 gc fe/d/ e>e d=e\
 V:2
@@ -71,7 +71,7 @@ B,/G,/ C=A,=B, CF, _B,_A,/G,/\
 %%staves (1s 2) 3s | {(1 2) 3}
 V:1s
 |fB _e_d/c/ dG\
-V:3s bass
+V:3s
 |_A,_D- D/C/F/E/ D/C/D-\
 V:1
 |fB _ed/c/ dG\

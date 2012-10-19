@@ -2195,7 +2195,8 @@ static int parse_line(struct abctune *t,
 
 	flags = 0;
 
-	lyric_started = 0;
+	if (abc_vers <= (2 << 16))
+		lyric_started = 0;
 	deco_start = deco_cont = 0;
 	slur = 0;
 	while (*p != '\0') {
@@ -2326,7 +2327,6 @@ static int parse_line(struct abctune *t,
 				*p = '\0';
 			}
 			parse_info(t, q, 0);
-			t->last_sym->flags |= ABC_F_EMBED;
 			*p = c;
 			if (c != '\0')
 				p++;
@@ -2542,9 +2542,9 @@ static char *parse_note(struct abctune *t,
 	char *q;
 	int pit, len, acc, nostem, chord, j, m;
 
-	if (flags & ABC_F_GRACE)	/* in a grace note sequence */
+	if (flags & ABC_F_GRACE) {	/* in a grace note sequence */
 		s = abc_new(t, 0, 0);
-	else {
+	} else {
 		s = abc_new(t, gchord, 0);
 		if (gchord) {
 			if (free_f)
@@ -2556,10 +2556,13 @@ static char *parse_note(struct abctune *t,
 	s->flags |= flags;
 
 	if (*p != 'X' && *p != 'Z'
-	 && !lyric_started && !(flags & ABC_F_GRACE)) {
-		lyric_started = 1;
-		s->flags |= ABC_F_LYRIC_START;
-		deco_start = s;
+	 && !(flags & ABC_F_GRACE)) {
+		if (!lyric_started) {
+			lyric_started = 1;
+			s->flags |= ABC_F_LYRIC_START;
+		}
+		if (deco_start == 0)
+			deco_start = s;
 	}
 
 	/* rest */
@@ -2782,6 +2785,7 @@ static int parse_info(struct abctune *t,
 				ulen = BASE_LEN / 8;
 			for (i = MAXVOICE; --i >= 0; )
 				voice_tb[i].ulen = ulen;
+			lyric_started = 0;
 		}
 		break;
 	case 'L':

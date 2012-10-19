@@ -361,7 +361,7 @@ static void voice_compress(void)
 {
 	struct VOICE_S *p_voice;
 	struct SYMBOL *s, *s2, *ns;
-	int sflags;
+//	int sflags;
 
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		if (p_voice->ignore)
@@ -371,7 +371,7 @@ static void voice_compress(void)
 				break;
 		}
 		ns = 0;
-		sflags = 0;
+//		sflags = 0;
 		for ( ; s != 0; s = s->next) {
 			switch (s->type) {
 			case FMTCHG:
@@ -440,7 +440,8 @@ static void voice_compress(void)
 			if (ns == 0)
 				continue;
 			s->extra = ns;
-			s->sflags |= (sflags & S_EOLN);
+//			s->sflags |= (sflags & S_EOLN);
+//			sflags = 0;
 			s->prev->next = 0;
 			if ((s->prev = ns->prev) != 0)
 				s->prev->next = s;
@@ -448,7 +449,6 @@ static void voice_compress(void)
 				p_voice->sym = s;
 			ns->prev = 0;
 			ns = 0;
-			sflags = 0;
 		}
 
 		/* when symbols with no space at end of tune,
@@ -904,7 +904,8 @@ static void set_bar_num(void)
 			tim = s->time;
 			s2 = s;
 			do {
-				if (s2->as.u.bar.repeat_bar
+				if (s2->type == BAR
+				 && s2->as.u.bar.repeat_bar
 				 && s2->as.text != 0
 				 && cfmt.contbarnb == 0) {
 					if (s2->as.text[0] == '1')
@@ -1920,7 +1921,8 @@ static void get_staves(struct SYMBOL *s)
 	voice_dup();
 
 	/* create a new staff system */
-	p_voice = first_voice;
+//fixme: pb with sample5 -e3
+	curvoice = p_voice = first_voice;
 	maxtime = p_voice->time;
 	flags = p_voice->sym != 0;
 	for (p_voice = p_voice->next; p_voice; p_voice = p_voice->next) {
@@ -1939,7 +1941,7 @@ static void get_staves(struct SYMBOL *s)
 		 * link the staves in a voice which is seen from
 		 * the previous system - see sort_all */
 		p_voice = curvoice;
-		if (p_voice->ignore) {
+		if (parsys->voice[p_voice - voice_tb].range < 0) {
 			for (voice = 0; voice < MAXVOICE; voice++) {
 				if (parsys->voice[voice].range >= 0) {
 					curvoice = &voice_tb[voice];
@@ -1948,12 +1950,14 @@ static void get_staves(struct SYMBOL *s)
 			}
 /*fixme: should check if voice < MAXVOICE*/
 		}
+		curvoice->time = maxtime;
 		sym_link(s, STAVES);	/* link the staves in the current voice */
 		s->as.state = ABC_S_HEAD; /* (output PS sequences immediately) */
 		parsys->nstaff = nstaff;
 		system_new();
 	}
-	curvoice = first_voice;
+//fixme: pb with sample5 -e3
+//	curvoice = first_voice;
 	staves_found = maxtime;
 
 	parse_staves(s, staves);
@@ -2816,8 +2820,7 @@ void do_tune(struct abctune *t)
 				s->as.flags |= ABC_F_SPACE;
 			}
 			get_note(s);
-			if ((as->flags & ABC_F_LYRIC_START)
-			 && t->abc_vers <= (2 << 16))
+			if (as->flags & ABC_F_LYRIC_START)
 				curvoice->lyric_start = s;
 			break;
 		case ABC_T_BAR:
@@ -2965,6 +2968,27 @@ void do_tune(struct abctune *t)
 //	clrarena(2);				/* clear generation */
 }
 
+/* check if a K: or M: may go to the tune key and time signatures */
+static int is_tune_sig(void)
+{
+	struct SYMBOL *s;
+
+	if (curvoice->time != 0)
+		return 0;		/* not at start of tune */
+	for (s = curvoice->sym; s != 0; s = s->next) {
+		switch (s->type) {
+		case TEMPO:
+		case PART:
+		case FMTCHG:
+			continue;
+		default:
+			return 0;
+		}
+		break;
+	}
+	return 1;
+}
+
 /* -- get a clef definition (in K: or V:) -- */
 static void get_clef(struct SYMBOL *s)
 {
@@ -3008,7 +3032,9 @@ static void get_clef(struct SYMBOL *s)
 	}
 	voice = p_voice - voice_tb;
 
-	if (p_voice->last_sym == 0) {		/* first clef */
+//fixme: pb with sample5 -e3
+//	if (p_voice->last_sym == 0) {		/* first clef */
+	if (is_tune_sig()) {
 		if ((stafflines = s->as.u.clef.stafflines) < 0)
 			stafflines = parsys->voice[voice].clef.stafflines;
 		if ((staffscale = s->as.u.clef.staffscale) == 0)
@@ -3258,26 +3284,6 @@ static void set_acc(struct SYMBOL *s)
 		s->as.u.key.pits[i] = pits[i];
 	}
 	s->as.u.key.nacc = nacc;
-}
-
-/* check if a K: or M: may go to the tune key and time signatures */
-static int is_tune_sig(void)
-{
-	struct SYMBOL *s;
-
-	if (curvoice->time != 0)
-		return 0;		/* not at start of tune */
-	for (s = curvoice->last_sym; s != 0; s = s->next) {
-		switch (s->type) {
-		case TEMPO:
-		case PART:
-			continue;
-		default:
-			return 0;
-		}
-		break;
-	}
-	return 1;
 }
 
 /* -- get a key signature definition (K:) -- */
@@ -4770,7 +4776,6 @@ static void sym_link(struct SYMBOL *s, int type)
 			s->prev = p_voice->last_sym;
 		} else {
 			p_voice->sym = s;
-			p_voice->lyric_start = s;
 		}
 		p_voice->last_sym = s;
 //fixme:test bug

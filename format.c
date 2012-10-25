@@ -280,25 +280,11 @@ void define_fonts(void)
 void make_font_list(void)
 {
 	struct FORMAT *f;
+	int i;
 
 	f = &cfmt;
-	used_font[f->font_tb[ANNOTATIONFONT].fnum] = 1;
-	used_font[f->font_tb[COMPOSERFONT].fnum] = 1;
-	used_font[f->font_tb[FOOTERFONT].fnum] = 1;
-	used_font[f->font_tb[GCHORDFONT].fnum] = 1;
-	used_font[f->font_tb[HEADERFONT].fnum] = 1;
-	used_font[f->font_tb[HISTORYFONT].fnum] = 1;
-	used_font[f->font_tb[INFOFONT].fnum] = 1;
-	used_font[f->font_tb[MEASUREFONT].fnum] = 1;
-	used_font[f->font_tb[PARTSFONT].fnum] = 1;
-	used_font[f->font_tb[REPEATFONT].fnum] = 1;
-	used_font[f->font_tb[SUBTITLEFONT].fnum] = 1;
-	used_font[f->font_tb[TEMPOFONT].fnum] = 1;
-	used_font[f->font_tb[TEXTFONT].fnum] = 1;
-	used_font[f->font_tb[TITLEFONT].fnum] = 1;
-	used_font[f->font_tb[VOCALFONT].fnum] = 1;
-	used_font[f->font_tb[VOICEFONT].fnum] = 1;
-	used_font[f->font_tb[WORDSFONT].fnum] = 1;
+	for (i = FONT_UMAX; i < FONT_DYN; i++)
+		used_font[f->font_tb[i].fnum] = 1;
 }
 
 /* -- set the name of an information header type -- */
@@ -920,7 +906,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 		break;
 	case 'f':
 		if (strcmp(w, "font") == 0) {
-			int fnum, encoding;
+			int i, fnum, encoding;
 			float swfac;
 			char fname[80];
 
@@ -957,6 +943,11 @@ void interpret_fmt_line(char *w,		/* keyword */
 			def_font_enc[fnum] = encoding;
 			swfac_font[fnum] = swfac;
 			used_font[fnum] = 1;
+			for (i = FONT_UMAX; i < FONT_MAX; i++) {
+				if (cfmt.font_tb[i].fnum == fnum)
+					cfmt.font_tb[i].swfac = cfmt.font_tb[i].size
+									* swfac;
+			}
 			return;
 		}
 		break;

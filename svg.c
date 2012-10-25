@@ -3802,10 +3802,17 @@ void svg_write(char *buf, int len)
 				float x, y, w;
 
 				q += 2;
-				sscanf((char *) q, "%c %d %d %f %f %f %d",
-					&type, &row, &col, &x, &y, &w, &h);
-				fprintf(fout, "<abc type=\"%c\" row=\"%d\" col=\"%d\" x=\"%.2f\" y=\"%.2f\" width=\"%.2f\" height=\"%d\"/>\n",
-					type, row, col, xoffs + x, yoffs - y - h, w, h);
+				type = *q++;
+				if (type != 'b' && type != 'e') {	/* if not beam */
+					sscanf((char *) q + 1, "%d %d %f %f %f %d",
+						&row, &col, &x, &y, &w, &h);
+				} else {
+					sscanf((char *) q + 1, "%d %d %f %f",
+						&row, &col, &x, &y);
+					w = h = 6;
+				}
+					fprintf(fout, "<abc type=\"%c\" row=\"%d\" col=\"%d\" x=\"%.2f\" y=\"%.2f\" width=\"%.2f\" height=\"%d\"/>\n",
+						type, row, col, xoffs + x, yoffs - y - h, w, h);
 				break;
 			}
 			break;

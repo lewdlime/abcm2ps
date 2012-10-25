@@ -1447,9 +1447,10 @@ static char *get_user(char *p,
 	value = deco_tb[s->u.user.value - 128];
 	if (strcmp(value, "beambreak") == 0)
 		char_tb[c] = CHAR_SPAC;
-	else if (strcmp(value, "nil") == 0)
+	else if (strcmp(value, "ignore") == 0)
 		char_tb[c] = CHAR_IGN;
-	else if (strcmp(value, "none") == 0)
+	else if (strcmp(value, "nil") == 0
+	      || strcmp(value, "none") == 0)
 		char_tb[c] = CHAR_BAD;
 	else
 		return 0;
@@ -2101,18 +2102,20 @@ static int parse_line(struct abctune *t,
 				switch (*p) {
 				case '!':
 					char_tb['!'] = CHAR_DECOS;
-					char_tb['+'] = CHAR_IGN;
+					char_tb['+'] = CHAR_BAD;
 					break;
 				case '+':
 					char_tb['+'] = CHAR_DECOS;
-					char_tb['!'] = CHAR_IGN;
+					char_tb['!'] = CHAR_BAD;
 					break;
 				}
 				return 0;
 			}
 			if (strncasecmp(p, "linebreak ", 10) == 0) {
-				char_tb['\n'] = CHAR_IGN;
-				char_tb['$'] = CHAR_IGN;
+				for (i = 0; i < sizeof char_tb; i++) {
+					if (char_tb[i] == CHAR_LINEBREAK)
+						char_tb[i] = CHAR_BAD;
+				}
 				char_tb['!'] = CHAR_DECOS;
 				p += 10;
 				for (;;) {
@@ -2122,9 +2125,11 @@ static int parse_line(struct abctune *t,
 						break;
 					switch (*p) {
 					case '!':
-						char_tb['+'] = CHAR_DECOS;
-						/* fall thru */
 					case '$':
+					case '*':
+					case ';':
+					case '?':
+					case '@':
 						char_tb[(unsigned char) *p++]
 								= CHAR_LINEBREAK;
 						break;

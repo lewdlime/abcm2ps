@@ -1,4 +1,4 @@
-	Features of abcm2ps 7.1.2 (J.F. Moine, October 2012)
+	Features of abcm2ps 7.2.0 (J.F. Moine, October 2012)
 	====================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
@@ -70,16 +70,6 @@ Information fields.
 	  '\t' (back-slash - t) to redefine the character tabulation.
 	  The default value of these characters is !beambreak! (see below).
 
-	- In 'U:' fields, !none! means that the character must not appear
-	  in the body.
-
-	- In 'U:' fields, !nil! means that the character is ignored.
-	  This is the default value for the character '`' (back-quote).
-
-	- In 'U:' fields, !beambreak! means that the character stops note
-	  beaming. This is the default value for the characters '\ '
-	  (space) and '\t' (tabulation).
-
 Tune body.
 
 	- The decorations on notes inside chords cannot be standard ones
@@ -117,9 +107,9 @@ Clefs.
 
 Multiple voices.
 
-	- When the voices are synchronized, a P: field alone in a line
-	  (not enclosed by '[' and ']') is set in the first voice, without
-	  changing the current voice. This fixes the common error:
+	- When the voices are synchronized, a 'P:' field is set in the first
+	  voice, without changing the current voice.
+	  This fixes the common error:
 		P:A
 		V:1
 		..
@@ -145,7 +135,7 @@ ABC Stylesheet specification.
 		- A floating voice may be only the second one in a
 		  3 voices brace.
 
-	- Some formatting directives are not implemented, and some new
+	- Some formatting directives are not implemented, and some other
 	  ones are defined. See the file 'format.txt' for details.
 
 
@@ -173,10 +163,17 @@ Information fields.
 
 	- The field 'd:' is the same as 's:' (symbol line).
 
+	- In 'U:' fields, !ignore! defines the character as ignored.
+	  This is the default value for the character '`' (back-quote).
+
+	- In 'U:' fields, !beambreak! defines the character as stopping
+	  note beaming. This is the default value for the characters
+	  '\ ' (space) and '\t' (tabulation).
+
 Tune body.
 
-	- Microtone pitches are indicated a number or a fraction after
-	  an accidental.
+	- Microtone pitches are indicated by a number or a fraction after
+	  an accidental (and before the note).
 
 	  By default, these pitches are indicated by a fraction of
 	  a semitone as "^3/4c" (3/4 of a sharp).
@@ -242,7 +239,7 @@ Tune body.
 		!beambr1! and !beambr2!
 				let only 1 or 2 beams from the previous note
 		!gmark!		grace mark ('~' like sign)
-		!invisible!	prevent a note to be displayed
+		!invisible!	prevent a symbol to be displayed
 		!rbstop!	stop here the current repeat bracket
 		!trem1! .. !trem4!
 				tremolo (on the second of a couple of notes
@@ -266,9 +263,9 @@ Tune body.
 	  The two next notations are NOT equivalent:
 		"_ann1" "G"
 		"_ann1;G"
-	  (in the 1st line, 'G' is a guitar chord, in the 2nd one,
-	  it is the 2nd line of the annotation)
-	  A new annotation type may be indicated after the new line as:
+	  (in the 1st line, 'G' is a guitar chord,
+	   in the 2nd one, it is the 2nd line of the annotation)
+	  A new annotation type may be indicated after a ';' as:
 		"^above;_below"
 
 Clefs.

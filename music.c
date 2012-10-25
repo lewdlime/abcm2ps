@@ -2110,7 +2110,7 @@ normal:
 				break;
 			continue;
 		default:
-			if (!done || s->prev == 0 || s->prev->type == GRACE)
+			if (!done || (s->prev != 0 && s->prev->type == GRACE))
 				continue;
 			break;
 		}
@@ -2127,19 +2127,20 @@ normal:
 		s->extra = extra->extra;
 		extra->extra = 0;
 	}
-	if (staves != 0
-	 && staves != s) {		/* move the %%staves to the next line */
-		unlksym(staves);
-		staves->prev = s->prev;
-		if (s->prev != 0)
-			staves->prev->next = staves;
-		s->prev = staves;
-		staves->next = s;
-		staves->ts_prev = s->ts_prev;
-		staves->ts_prev->ts_next = staves;
-		s->ts_prev = staves;
-		staves->ts_next = s;
-		s->sflags &= ~S_SEQST;
+	if (staves != 0) {		/* move the %%staves to the next line */
+		if (s != staves->ts_next) {
+			unlksym(staves);
+			staves->prev = s->prev;
+			if (s->prev != 0)
+				staves->prev->next = staves;
+			s->prev = staves;
+			staves->next = s;
+			staves->ts_prev = s->ts_prev;
+			staves->ts_prev->ts_next = staves;
+			s->ts_prev = staves;
+			staves->ts_next = s;
+			s->sflags &= ~S_SEQST;
+		}
 		s = staves;
 	}
 setnl:

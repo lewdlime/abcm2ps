@@ -1,3 +1,32 @@
+---- Version 7.2.0 - 12/10/25 ----
+
+Fix crash when mid-staff decoration in new voice at start of line
+	(reported by David Lacroix).
+Add "ignore" as special U: value.
+Extend %%linebreak to * ; ? and @.
+!! Put the output annotations (-A) after the symbols. !!
+Add more symbols in output annotations (-A).
+Adjust the width scale of all fonts when set in %%font.
+Fix "error w: without music" in secondary voices when ABC version >= 2.1
+	(reported by Frédéric Aupépin).
+
+---- Version 7.1.3 - 12/10/18 ----
+
+Fix bad slur vertical offsets on scaled staves.
+Fix loss of key/time warning when preceeded by %%stave
+	(reported by Mike Scott).
+Fix bad left side of staff systems when some %%score in the line.
+Handle the line breaks of all primary voices.
+Fix internal linkage errors.
+Fix error "w: without music" when Q: in tune header
+	(reported by Frédéric Aupépin).
+Fix bad line width after some decorations in SVG output.
+Bad measure number after time signature change
+	(reported by Jean-Luc Zins).
+Bad clef when P: or Q: between first K: and %%staves
+	followed by K: or V: with a clef != treble
+	(reported by Jean-Luc Zins).
+
 ---- Version 7.1.2 - 12/10/09 ----
 
 Treat "%%writefield M 0".

@@ -48,11 +48,15 @@ static void set_tie_room(void);
 /* output debug annotations */
 static void anno_out(struct SYMBOL *s, char type)
 {
+	if (s->as.linenum == 0)
+		return;
 	if (mbf[-1] != '\n')
 		*mbf++ = '\n';
 	a2b("%%A %c %d %d ", type, s->as.linenum, s->as.colnum);
 	putxy(s->x - s->wl - 2, staff_tb[s->staff].y + s->ymn - 2);
-	a2b("%.1f %d\n", s->wl + s->wr + 4, s->ymx - s->ymn + 4);
+	if (type != 'b' && type != 'e')		/* if not beam */
+		a2b("%.1f %d", s->wl + s->wr + 4, s->ymx - s->ymn + 4);
+	a2b("\n");
 }
 
 /* -- up/down shift needed to get k*6 -- */
@@ -1297,9 +1301,9 @@ static void draw_gracenotes(struct SYMBOL *s)
 			if (calculate_beam(&bm, g))
 				draw_beams(&bm);
 		}
+		draw_note(g->x, g, bm.s2 == 0);
 		if (annotate)
 			anno_out(s, 'g');
-		draw_note(g->x, g, bm.s2 == 0);
 		if (g == bm.s2)
 			bm.s2 = 0;		/* (draw flags again) */
 
@@ -4402,9 +4406,9 @@ static void draw_symbols(struct VOICE_S *p_voice)
 						draw_beams(&bm);
 					}
 				}
+				draw_note(x, s, bm.s2 == 0);
 				if (annotate)
 					anno_out(s, 'N');
-				draw_note(x, s, bm.s2 == 0);
 				if (s == bm.s2)
 					bm.s2 = 0;
 				if (annotate
@@ -4413,14 +4417,14 @@ static void draw_symbols(struct VOICE_S *p_voice)
 					anno_out(s, 'e');
 				break;
 			}
+			draw_rest(s);
 			if (annotate)
 				anno_out(s, 'R');
-			draw_rest(s);
 			break;
 		case BAR:
+			draw_bar(s);
 			if (annotate)
 				anno_out(s, 'B');
-			draw_bar(s);
 			break;
 		case CLEF:
 			staff = s->staff;
@@ -4450,6 +4454,8 @@ static void draw_symbols(struct VOICE_S *p_voice)
 			putxy(x, y);
 			PUT1("oct%c\n",
 			     s->as.u.clef.octave > 0 ? 'u' : 'l');
+			if (annotate)
+				anno_out(s, 'c');
 			break;
 		case TIMESIG:
 			memcpy(&p_voice->meter, &s->as.u.meter,
@@ -4461,6 +4467,8 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				break;
 			set_sscale(s->staff);
 			draw_timesig(x, s);
+			if (annotate)
+				anno_out(s, 'M');
 			break;
 		case KEYSIG:
 			memcpy(&p_voice->key, &s->as.u.key,
@@ -4470,6 +4478,8 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				break;
 			set_sscale(s->staff);
 			draw_keysig(p_voice, x, s);
+			if (annotate)
+				anno_out(s, 'K');
 			break;
 		case MREST:
 			set_scale(s);

@@ -1401,8 +1401,12 @@ static struct abcsym *get_lyric(struct abcsym *as)
 	/* treat all w: lines */
 	s = curvoice->lyric_start;
 	if (s == 0) {
-		error(1, s, "w: without music");
-		return as;
+		s = curvoice->sym;
+		if (s == 0) {
+			error(1, s, "w: without music");
+			return as;
+		}
+		curvoice->lyric_start = s;
 	}
 	if (s->ly != 0)			/* prev music line ended by a note */
 		s = s->next;

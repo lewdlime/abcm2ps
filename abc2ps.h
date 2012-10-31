@@ -250,10 +250,10 @@ struct FORMAT { 		/* struct for page layout */
 	float pageheight, pagewidth;
 	float topmargin, botmargin, leftmargin, rightmargin;
 	float topspace, wordsspace, titlespace, subtitlespace, partsspace;
-	float composerspace, musicspace, staffsep, vocalspace, textspace;
-	float scale, maxshrink, lineskipfac, parskipfac, sysstaffsep;
-	float indent, infospace, slurheight, notespacingfactor;
-	float maxstaffsep, maxsysstaffsep, stemheight;
+	float composerspace, musicspace, vocalspace, textspace;
+	float breaklimit, maxshrink, lineskipfac, parskipfac, stemheight;
+	float indent, infospace, slurheight, notespacingfactor, scale;
+	float staffsep, sysstaffsep, maxstaffsep, maxsysstaffsep;
 	int abc2pscompat, alignbars, aligncomposer, autoclef;
 	int barsperstaff, breakoneoln, bstemdown, cancelkey, comball;
 	int combinevoices, contbarnb, continueall, custos;

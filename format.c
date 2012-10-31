@@ -60,6 +60,7 @@ static struct format {
 	{"barsperstaff", &cfmt.barsperstaff, FORMAT_I, 0},
 	{"bgcolor", &cfmt.bgcolor, FORMAT_S, 0},
 	{"botmargin", &cfmt.botmargin, FORMAT_U, 0},
+	{"breaklimit", &cfmt.breaklimit, FORMAT_R, 3},
 	{"breakoneoln", &cfmt.breakoneoln, FORMAT_B, 0},
 	{"bstemdown", &cfmt.bstemdown, FORMAT_B, 0},
 	{"cancelkey", &cfmt.cancelkey, FORMAT_B, 0},
@@ -96,7 +97,7 @@ static struct format {
 	{"leftmargin", &cfmt.leftmargin, FORMAT_U, 0},
 	{"lineskipfac", &cfmt.lineskipfac, FORMAT_R, 0},
 	{"linewarn", &cfmt.linewarn, FORMAT_B, 0},
-	{"maxshrink", &cfmt.maxshrink, FORMAT_R, 0},
+	{"maxshrink", &cfmt.maxshrink, FORMAT_R, 2},
 	{"maxstaffsep", &cfmt.maxstaffsep, FORMAT_U, 0},
 	{"maxsysstaffsep", &cfmt.maxsysstaffsep, FORMAT_U, 0},
 	{"measurebox", &cfmt.measurebox, FORMAT_B, 0},
@@ -357,6 +358,7 @@ void set_format(void)
 	f->scale = 0.75;
 	f->slurheight = 1.0;
 	f->maxshrink = 0.65;
+	f->breaklimit = 0.7;
 	f->stretchstaff = 1;
 	f->graceslurs = 1;
 	f->lineskipfac = 1.1;
@@ -1164,16 +1166,11 @@ void interpret_fmt_line(char *w,		/* keyword */
 			}
 			*((float *) fd->v) = v;
 		}
-		if (fd->subtype == 1) {		/* note spacing factor */
+		switch (fd->subtype) {
+		case 1: {			/* note spacing factor */
 			int i;
 			float v;
 
-			if (cfmt.notespacingfactor <= 0) {
-				error(1, 0,
-					"Bad value for 'notespacingfactor'");
-				cfmt.notespacingfactor = 1;
-				break;
-			}
 			i = C_XFLAGS;		/* crotchet index */
 			v = space_tb[i];
 			for ( ; --i >= 0; ) {
@@ -1186,6 +1183,20 @@ void interpret_fmt_line(char *w,		/* keyword */
 				v *= cfmt.notespacingfactor;
 				space_tb[i] = v;
 			}
+			break;
+		    }
+		case 2:					/* maxshrink */
+			if (cfmt.maxshrink > 1) {
+				error(1, 0, "Bad value '%s' for '%s'", p, w);
+				cfmt.maxshrink = 0.65;
+			}
+			break;
+		case 3:					/* breaklimit */
+			if (cfmt.breaklimit < 0.5 || cfmt.breaklimit > 1) {
+				error(1, 0, "Bad value '%s' for '%s'", p, w);
+				cfmt.breaklimit = 0.8;
+			}
+			break;
 		}
 		break;
 	case FORMAT_F: {

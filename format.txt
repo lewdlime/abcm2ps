@@ -100,6 +100,18 @@ List of the format parameters
 	Description:
 		Try to typeset with <int> bars on each line.
 
+  breaklimit <float>
+	Default: 0.7
+	Compilation: none
+	Command line: none
+	Description:
+		Set the left fraction of line width where a music line break
+		cannot occur.
+		<float> must be between 0.5 (line breaks can occur in the right
+		half line) and 1 (split at the exact calculated point).
+		This parameter may be used with 'maxshrink' to adjust the
+		automatic line breaks.
+
   breakoneoln <bool>
 	Default: 1
 	Compilation: none
@@ -632,9 +644,10 @@ List of the format parameters
 	Compilation: none
 	Command line: -a<float>
 	Description:
-		Set how much to compress horizontally when staff breaks
-		are chosen automatically.
-		<float> must be between 0 and 1.
+		Set how much to compress horizontally when music line breaks
+		are automatic.
+		<float> must be between 0 (natural spacing)
+		and 1 (max shrinking).
 
   maxstaffsep <unit>
 	Default: 2000pt
@@ -912,6 +925,13 @@ List of the format parameters
 	Description:
 		Display the breve notes in square format.
 
+  stafflines <int>
+	Default: 5
+	Compilation: none
+	Command line: none
+	Description:
+		Set the number of lines of the staff of the current voice.
+
   staffnonote <bool>
 	Default: 1
 	Compilation: none
@@ -919,6 +939,13 @@ List of the format parameters
 	Description:
 		If not set, do not display the staves which have no note
 		in the music lines.
+
+  staffscale <float>
+	Default: 1
+	Compilation: none
+	Command line: none
+	Description:
+		Set the scale of the staff of the current voice.
 
   staffsep <unit>
 	Default: 46pt

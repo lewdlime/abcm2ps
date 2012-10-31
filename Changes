@@ -1,3 +1,19 @@
+---- Version 7.2.1 - 12/10/30 ----
+
+Fix crash when centered decoration under staff at start of new staff system.
+Add %%breaklimit
+	(required for Steve West).
+Change the internal algorithm of automatic line breaking.
+Fix loss of gchord/annot or bad font when scaled staves
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix bad vertical offset of lyrics when scaled staves and slurs in lower voice.
+Fix bad horizontal offset of lyrics on scaled staves.
+Handle the line breaks of the top voice only.
+Add %%staffscale and %%stafflines.
+Fix bad handling of '=' in M:none.
+Fix bad handling of %%barsperline when M:none
+	(reported by David Lacroix).
+
 ---- Version 7.2.0 - 12/10/25 ----
 
 Fix crash when mid-staff decoration in new voice at start of line

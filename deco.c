@@ -1062,8 +1062,13 @@ void draw_all_deco(void)
 				struct SYMBOL *s;
 
 				s = de->s;
-				while (s->staff != staff)
-					s = s->ts_prev;
+				if (s->staff > staff) {
+					while (s->staff != staff)
+						s = s->ts_prev;
+				} else if (s->staff < staff) {
+					while (s->staff != staff)
+						s = s->ts_next;
+				}
 				y2 = y_get(s, !(de->flags & DE_UP),
 					   de->x, de->v)
 					+ staff_tb[staff].y;
@@ -1398,18 +1403,19 @@ void draw_deco_note(void)
 /* (the staves are not yet defined) */
 void draw_deco_staff(void)
 {
-	struct SYMBOL *s;
+	struct SYMBOL *s, *first_gchord;
 	struct VOICE_S *p_voice;
 	float x, y, w;
 	struct deco_elt *de;
-	int some_gchord;
 	struct {
 		float ymin, ymax;
 	} minmax[MAXSTAFF];
 
+//	outft = -1;				/* force font output */
+
 	/* search the vertical offset for the guitar chords */
 	memset(minmax, 0, sizeof minmax);
-	some_gchord = 0;
+	first_gchord = 0;
 	for (s = tsfirst; s != 0; s = s->ts_next) {
 		struct gch *gch;
 		int ix, ig;
@@ -1417,7 +1423,8 @@ void draw_deco_staff(void)
 		gch = s->gch;
 		if (gch == 0)
 			continue;
-		some_gchord = 1;
+		if (!first_gchord)
+			first_gchord = s;
 		ig = -1;
 		for (ix = 0; ix < MAXGCH; ix++, gch++) {
 			if (gch->type == '\0')
@@ -1444,7 +1451,7 @@ void draw_deco_staff(void)
 	}
 
 	/* draw the guitar chords if any */
-	if (some_gchord) {
+	if (first_gchord) {
 		int i;
 
 		for (i = 0; i <= nstaff; i++) {
@@ -1455,7 +1462,8 @@ void draw_deco_staff(void)
 			if (minmax[i].ymax < 34)
 				minmax[i].ymax = 34;
 		}
-		for (s = tsfirst; s != 0; s = s->ts_next) {
+		set_sscale(-1);		/* restore the scale parameters */
+		for (s = first_gchord; s != 0; s = s->ts_next) {
 			if (s->as.text == 0)
 				continue;
 			switch (s->type) {
@@ -1482,7 +1490,6 @@ void draw_deco_staff(void)
 
 		if (p_voice->second || p_voice->sym == 0)
 			continue;
-		set_sscale(p_voice->staff);
 
 		/* search the max y offset and set the end of bracket */
 		y = staff_tb[p_voice->staff].topbar + 6 + 20;
@@ -1550,8 +1557,12 @@ void draw_deco_staff(void)
 		}
 
 		/* draw the repeat indications */
+		s = first_repeat;
+		if (!s)
+			continue;
+		set_sscale(p_voice->staff);
 		repnl = 0;
-		for (s = first_repeat; s != 0; s = s->next) {
+		for ( ; s != 0; s = s->next) {
 			char *p;
 
 			if (s->type != BAR
@@ -1721,6 +1732,8 @@ static void draw_gchord(struct SYMBOL *s,
 		}
 	}
 
+	str_font(s->gch->font);
+	set_font(s->gch->font);			/* needed if scaled staff */
 	set_sscale(s->staff);
 	action = A_GCHORD;
 	xboxh = xboxl = s->x;

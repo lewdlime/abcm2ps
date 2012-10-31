@@ -1925,7 +1925,6 @@ static void get_staves(struct SYMBOL *s)
 	voice_dup();
 
 	/* create a new staff system */
-//fixme: pb with sample5 -e3
 	curvoice = p_voice = first_voice;
 	maxtime = p_voice->time;
 	flags = p_voice->sym != 0;
@@ -1960,8 +1959,6 @@ static void get_staves(struct SYMBOL *s)
 		parsys->nstaff = nstaff;
 		system_new();
 	}
-//fixme: pb with sample5 -e3
-//	curvoice = first_voice;
 	staves_found = maxtime;
 
 	parse_staves(s, staves);
@@ -2402,7 +2399,7 @@ static struct abcsym *get_info(struct abcsym *as,
 		case ABC_S_HEAD:
 			info['P' - 'A'] = s;
 			break;
-		case ABC_S_TUNE: {
+		default: {
 			struct VOICE_S *p_voice, *curvoice_sav;
 
 			if (!(cfmt.fields[0] & (1 << ('P' - 'A'))))
@@ -2422,11 +2419,6 @@ static struct abcsym *get_info(struct abcsym *as,
 			sym_link(s, PART);
 			break;
 		    }
-		default:
-			if (!(cfmt.fields[0] & (1 << ('P' - 'A'))))
-				break;
-			sym_link(s, PART);
-			break;
 		}
 		break;
 	case 'Q':
@@ -2770,8 +2762,9 @@ void do_tune(struct abctune *t)
 		if (cfmt.oneperpage) {
 			use_buffer = 0;
 			close_page();
-		} else
+		} else {
 			use_buffer = !cfmt.splittune;
+		}
 	} else {
 		use_buffer = 1;
 		marg_init();
@@ -2839,7 +2832,7 @@ void do_tune(struct abctune *t)
 			if (cfmt.breakoneoln
 			 || (s->as.flags & ABC_F_SPACE))
 				curvoice->space = 1;
-			if (curvoice->second)
+			if (parsys->voice[curvoice - voice_tb].range != 0)
 				continue;
 			if (cfmt.continueall || cfmt.barsperstaff
 			 || as->u.eoln.type == 1)	/* if '\' */
@@ -3036,8 +3029,6 @@ static void get_clef(struct SYMBOL *s)
 	}
 	voice = p_voice - voice_tb;
 
-//fixme: pb with sample5 -e3
-//	if (p_voice->last_sym == 0) {		/* first clef */
 	if (is_tune_sig()) {
 		if ((stafflines = s->as.u.clef.stafflines) < 0)
 			stafflines = parsys->voice[voice].clef.stafflines;
@@ -4239,6 +4230,43 @@ irepeat:
 				s->xmx = 0.5 CM;
 				if (*p == 'f')
 					s->doty = 1;
+			}
+			return as;
+		}
+		if (strcmp(w, "stafflines") == 0) {
+			int voice, lines;
+
+			lines = atoi(p);
+			if ((unsigned) lines >= 10) {
+				error(1, s, "Bad %%%%stafflines value");
+				return as;
+			}
+			if (as->state != ABC_S_TUNE) {
+				for (voice = 0; voice < MAXVOICE; voice++)
+					parsys->voice[voice].clef.stafflines = lines;
+			} else {
+				voice = curvoice - voice_tb;
+				parsys->voice[voice].clef.stafflines = lines;
+			}
+			return as;
+		}
+		if (strcmp(w, "staffscale") == 0) {
+			int voice;
+			char *q;
+			float scale;
+
+			scale = strtod(p, &q);
+			if (scale <= 0.5 || scale > 2
+			 || (*q != '\0' && *q != ' ')) {
+				error(1, s, "Bad %%%%staffscale value");
+				return as;
+			}
+			if (as->state != ABC_S_TUNE) {
+				for (voice = 0; voice < MAXVOICE; voice++)
+					parsys->voice[voice].clef.staffscale = scale;
+			} else {
+				voice = curvoice - voice_tb;
+				parsys->voice[voice].clef.staffscale = scale;
 			}
 			return as;
 		}

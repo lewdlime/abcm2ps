@@ -39,6 +39,7 @@ static char *acc_tb[] = { "", "sh", "nt", "ft", "dsh", "dft" };
 static int scale_voice;		/* staff (0) or voice(1) scaling */
 static float cur_scale = 1;	/* voice or staff scale */
 static float cur_trans = 0;	/* != 0 when scaled staff */
+static float cur_staff = 1;	/* current scaled staff */
 
 static void draw_note(float x,
 		      struct SYMBOL *s,
@@ -3446,8 +3447,9 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 					/* fall thru */
 				case MREST:
 					if (lflag) {
-						PUT2("%.1f %.1f y wln ",
-						     x0 - lastx, lastx + 3);
+						putx(x0 - lastx);
+						putx(lastx + 3);
+						a2b("y wln ");
 						lflag = 0;
 						lastx = s->x + s->wr;
 					}
@@ -3464,19 +3466,21 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 			w = lyl->w;
 			shift = lyl->s;
 			if (hyflag) {
-				if (*p == LY_UNDER)		/* '_' */
+				if (*p == LY_UNDER) {		/* '_' */
 					*p = LY_HYPH;
-				else if (*p != LY_HYPH) {	/* not '-' */
-					PUT2("%.1f %.1f y hyph ",
-					     s->x - shift - lastx, lastx);
+				} else if (*p != LY_HYPH) {	/* not '-' */
+					putx(s->x - shift - lastx);
+					putx(lastx);
+					a2b("y hyph ");
 					hyflag = 0;
 					lastx = s->x + s->wr;
 				}
 			}
 			if (lflag
 			 && *p != LY_UNDER) {		/* not '_' */
-				PUT2("%.1f %.1f y wln ",
-				     x0 - lastx + 3, lastx + 3);
+				putx(x0 - lastx + 3);
+				putx(lastx + 3);
+				a2b("y wln ");
 				lflag = 0;
 				lastx = s->x + s->wr;
 			}
@@ -3497,7 +3501,8 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 				p[l] = '\0';
 				hyflag = 1;
 			}
-			a2b("%.1f y M ", x0);
+			putx(x0);
+			a2b("y M ");
 			put_str(p, A_LYRIC);
 			lastx = x0 + w;
 		}
@@ -3505,8 +3510,9 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 			x0 = realwidth - 10;
 			if (x0 < lastx + 10)
 				x0 = lastx + 10;
-			PUT2("%.1f %.1f y hyph ",
-			     x0 - lastx, lastx);
+			putx(x0 - lastx);
+			putx(lastx);
+			a2b("y hyph ");
 			if (cfmt.hyphencont)
 				p_voice->hy_st |= (1 << j);
 		}
@@ -3527,9 +3533,11 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 				break;
 			}
 		}
-		if (lflag)
-			PUT2("%.1f %.1f y wln",
-			     x0 - lastx + 3, lastx + 3);
+		if (lflag) {
+			putx(x0 - lastx + 3);
+			putx(lastx + 3);
+			a2b("y wln");
+		}
 		PUT0("\n");
 		if (incr > 0)
 			y -= lskip;
@@ -3858,11 +3866,8 @@ void draw_sym_near(void)
 		}
 	}
 	draw_all_lyrics();
-	outft = -1;				/* force font output */
 	draw_deco_staff();
-
-	/* restore the scale parameters */
-	set_sscale(-1);
+	set_sscale(-1);		/* restore the scale parameters */
 }
 
 /* -- draw the name/subname of the voices -- */
@@ -4566,13 +4571,15 @@ void set_scale(struct SYMBOL *s)
 			staff = s->staff;
 			scale = staff_tb[staff].clef.staffscale;
 		}
-/*fixme: KO when scale of staff != 1*/
+/*fixme: KO when both scales of staff and voice != 1*/
 	} else {
 		scale = 1;
 	}
 	if (staff >= 0 && scale != 1) {
 		trans = staff_tb[staff].y;
 		scale_voice = 0;
+		if (staff != cur_staff && cur_scale != 1)
+			cur_scale = 0;
 	} else {
 		trans = 0;
 		scale_voice = 1;
@@ -4580,14 +4587,16 @@ void set_scale(struct SYMBOL *s)
 	if (scale == cur_scale && trans == cur_trans)
 		return;
 	if (cur_scale != 1)
-		PUT0("grestore ");
+		a2b("grestore ");
 	cur_scale = scale;
 	cur_trans = trans;
 	if (scale != 1) {
-		if (scale_voice)
-			PUT1("scvo%d ", s->voice);
-		else
-			PUT1("scst%d ", staff);
+		if (scale_voice) {
+			a2b("scvo%d ", s->voice);
+		} else {
+			a2b("scst%d ", staff);
+			cur_staff = staff;
+		}
 	}
 }
 
@@ -4597,6 +4606,8 @@ void set_sscale(int staff)
 	float scale, trans;
 
 	scale_voice = 0;
+	if (staff != cur_staff && cur_scale != 1)
+		cur_scale = 0;
 	if (staff >= 0)
 		scale = staff_tb[staff].clef.staffscale;
 	else
@@ -4608,11 +4619,13 @@ void set_sscale(int staff)
 	if (scale == cur_scale && trans == cur_trans)
 		return;
 	if (cur_scale != 1)
-		PUT0("grestore ");
+		a2b("grestore ");
 	cur_scale = scale;
 	cur_trans = trans;
-	if (scale != 1)
-		PUT1("scst%d ", staff);
+	if (scale != 1) {
+		a2b("scst%d ", staff);
+		cur_staff = staff;
+	}
 }
 
 /* -- set the tie directions for one voice -- */

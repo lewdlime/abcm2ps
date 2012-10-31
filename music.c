@@ -1989,7 +1989,19 @@ static void custos_add(struct SYMBOL *s)
 static struct SYMBOL *set_nl(struct SYMBOL *s)
 {
 	struct SYMBOL *s2, *extra, *staves;
-	int time, done;
+	int done;
+
+	/* don't cut on a grace note */
+	if (s->type == GRACE) {
+		if (s->sflags & S_EOLN)
+			goto setnl;
+		for (s = s->ts_next; s; s = s->ts_next) {
+			if (s->sflags & S_SEQST)
+				break;
+		}
+		if (!s)
+			return s;
+	}
 
 	/* if normal symbol, cut here */
 	switch (s->type) {
@@ -1997,59 +2009,36 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 	case BAR:
 		break;
 	case KEYSIG:
-		if (!cfmt.keywarn)
-			goto normal;
-		break;
+		if (cfmt.keywarn)
+			break;
+		goto normal;
 	case TIMESIG:
-		if (!cfmt.timewarn)
-			goto normal;
-		break;
-	case GRACE:
-		if (cfmt.continueall && s->next != 0
-		 && s->next->as.type != ABC_T_NOTE)
+		if (cfmt.timewarn)
 			break;
 		/* fall thru */
 	default:
 normal:
-		time = s->time + s->dur;
-		for (s = s->ts_next; ; s = s->ts_next) {
-			if (s == 0)
-				return s;
-			if ((s->sflags & S_SEQST)
-			 && s->time >= time)
-				break;
-		}
-//fixme: test (key/time sig) and warn ?
-		if (s->type == BAR)
-			break;
+		if (s->sflags & S_EOLN)
+			goto setnl;
 
-		/* don't cut beamed notes */
-		for (s2 = s->ts_next; ; s2 = s2->ts_next) {
-			if (s2 == 0)
+		/* cut on the next symbol */
+		for (s = s->ts_next; ; s = s->ts_next) {
+			if (!s)
 				return s;
-			if (s2->sflags & S_SEQST) {
-				s2 = s2->ts_prev;
+			if (s->sflags & S_SEQST)
 				break;
-			}
 		}
-		done = 1;
-		for ( ; s2 != s; s2 = s2->ts_prev) {
-			if (s2->as.type == ABC_T_NOTE
-			 && !(s2->sflags & S_BEAM_ST))
-				done = 0;
-			if (s2->sflags & S_SEQST) {
-				if (done) {
-					s = s2;
-					break;
-				}
-				done = 1;
-			}
+		switch (s->type) {
+		case NOTEREST:
+		case GRACE:
+		case SPACE:
+			goto setnl;
 		}
-		goto setnl;
+		break;
 	}
 
 	/* go back to handle the staff breaks at end of line */
-	for (; s != 0; s = s->ts_prev) {
+	for (; s; s = s->ts_prev) {
 		if (!(s->sflags & S_SEQST))
 			continue;
 		switch (s->type) {
@@ -2062,19 +2051,19 @@ normal:
 	}
 	done = 0;
 	staves = extra = 0;
-	for (; s != 0; s = s->ts_next) {
+	for (; s; s = s->ts_next) {
 		if (!(s->sflags & S_SEQST))
 			continue;
 		if (done < 0)
 			break;
-		if (s->extra != 0) {
-			if (extra == 0)
+		if (s->extra) {
+			if (!extra)
 				extra = s;
 			else
 				error(0, s, "Extra symbol may be misplaced");
 		}
 		if (s->type == STAVES) {	/* case "| $ %%staves K: M:" */
-			if (s->ts_next == 0)
+			if (!s->ts_next)
 				return 0;
 			staves = s;
 			s = s->ts_next;
@@ -2083,7 +2072,7 @@ normal:
 		case BAR:
 			if (done
 			 || (s->u == 0		/* incomplete measure */
-			  && s->next != 0	/* not at end of tune */
+			  && s->next		/* not at end of tune */
 			  && (s->as.u.bar.type & 0x07) == B_COL
 			  && !(s->sflags & S_RRBAR)))
 						/* 'xx:' (not ':xx:') */
@@ -2110,28 +2099,28 @@ normal:
 				break;
 			continue;
 		default:
-			if (!done || (s->prev != 0 && s->prev->type == GRACE))
+			if (!done || (s->prev && s->prev->type == GRACE))
 				continue;
 			break;
 		}
 		break;
 	}
-	if (s == 0)
+	if (!s)
 		return s;
-	if (extra != 0			/* extra symbol(s) to be moved */
+	if (extra			/* extra symbol(s) to be moved */
 	 && extra != s) {
 		s2 = extra->extra;
-		while (s2->next != 0)
+		while (s2->next)
 			s2 = s2->next;
 		s2->next = s->extra;
 		s->extra = extra->extra;
 		extra->extra = 0;
 	}
-	if (staves != 0) {		/* move the %%staves to the next line */
+	if (staves) {			/* move the %%staves to the next line */
 		if (s != staves->ts_next) {
 			unlksym(staves);
 			staves->prev = s->prev;
-			if (s->prev != 0)
+			if (s->prev)
 				staves->prev->next = staves;
 			s->prev = staves;
 			staves->next = s;
@@ -2144,7 +2133,7 @@ normal:
 		s = staves;
 	}
 setnl:
-	if (cfmt.custos && first_voice->next == 0)
+	if (cfmt.custos && !first_voice->next)
 		custos_add(s);
 	s->sflags |= S_NL;
 	return s;
@@ -2157,14 +2146,16 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 				float indent)		/* for start of tune */
 {
 	struct SYMBOL *s, *s2;
-	float x, xline, wwidth, x2, shrink, space;
-	int nlines;
+	float x, xmin, xmax, wwidth, shrink, space;
+	int nlines, beam, bar_time;
 
-	/* calculate the whole size of the tune */
+	/* calculate the whole size of the piece of tune */
 	wwidth = indent;
 	for (s = first; s != last; s = s->ts_next) {
-		if ((shrink = s->shrink) == 0)
+		if (!(s->sflags & S_SEQST))
 			continue;
+		s->x = wwidth;
+		shrink = s->shrink;
 		if ((space = s->space) < shrink)
 			wwidth += shrink;
 		else
@@ -2174,52 +2165,106 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 
 	/* loop on cutting the tune into music lines */
 	s = first;
-	x2 = 0;
 	for (;;) {
 		nlines = wwidth / lwidth + 0.999;
 		if (nlines <= 1) {
-			if (last != 0)
+			if (last)
 				last = set_nl(last);
 			return last;
 		}
-		xline = wwidth / nlines;
-		x = indent;
+
+		/* try to cut on a measure bar */
+		s2 = first = s;
+		xmin = s->x + wwidth / nlines * cfmt.breaklimit;
+		xmax = s->x + lwidth;
+		for ( ; s != last; s = s->ts_next) {
+			if (s->type != BAR)
+				continue;
+			x = s->x;
+			if (x == 0)
+				continue;
+			if (x < xmin) {
+				s2 = s;
+				continue;
+			}
+			if (x <= xmax)
+				goto cut_here;
+			break;
+		}
+
+		/* try to avoid to cut a beam */
+		beam = 0;
+		s = s2;				/* restart on the last bar */
+		bar_time = s->time;
 		s2 = 0;
 		for ( ; s != last; s = s->ts_next) {
-			if ((shrink = s->shrink) == 0)
-				continue;
-			if ((space = s->space) < shrink)
-				x += shrink;
-			else
-				x += shrink * cfmt.maxshrink
-					+ space * (1 - cfmt.maxshrink);
-			if (s->type == BAR
-			 && !(s->sflags & S_NL)) {
-				s2 = s;
-				x2 = x;
+			x = s->x;
+			if (x != 0 && x >= xmin) {
+				if (x > xmax)
+					break;
+				if (beam <= 0) {
+					for (s = s->ts_prev ; ; s = s->ts_prev) {
+						if (s->x != 0)
+							break;
+					}
+					goto cut_here;
+				}
+				if (!s2)
+					s2 = s;
 			}
-			if (x > xline)
+			if (s->as.type == ABC_T_NOTE
+			 && (s->sflags & (S_BEAM_ST | S_BEAM_END))
+					!= (S_BEAM_ST | S_BEAM_END)) {
+				if (s->sflags & S_BEAM_ST)
+					beam++;
+				if (s->sflags & S_BEAM_END)
+					beam--;
+			}
+		}
+
+		/* cut on a crotchet */
+		s = s2;
+		if (!s) {
+//fixme:test - this should occur very rarely
+			fprintf(stderr, "*** cut_tune limit 1!\n");
+			s = first->ts_next;
+		}
+		for ( ; s != last; s = s->ts_next) {
+			x = s->x;
+			if (x == 0)
+				continue;
+			if ((s->time - bar_time) % CROTCHET == 0) {
+				for (s = s->ts_prev ; ; s = s->ts_prev) {
+					if (s->x != 0)
+						break;
+				}
+				goto cut_here;
+			}
+			if (x > xmax)
 				break;
 		}
-		if (s2 != 0 && x2 > xline - 200) /* go back to the previous bar */
-			s = s2;
-		s = set_nl(s);
-		if (s == 0
-		 || (last != 0 && s->time >= last->time))
-			break;
-		wwidth -= indent;
-		indent = 0;
-		for (s2 = first; s2 != s; s2 = s2->ts_next) {
-			if (!(s2->sflags & S_SEQST))
-				continue;
-			shrink = s2->shrink;
-			if ((space = s2->space) < shrink)
-				wwidth -= shrink;
-			else
-				wwidth -= shrink * cfmt.maxshrink
-					+ space * (1 - cfmt.maxshrink);
+//fixme:test - may occur when symbol width > line width
+		fprintf(stderr, "*** cut_tune limit 2!\n");
+		s = s->next;
+		if (!s)
+			return s;
+cut_here:
+		if (s->sflags & S_NL) {		/* already set here - advance */
+			error(0, s, "Line split problem - "
+					"adjust maxshrink and/or breaklimit");
+			nlines = 2;
+			for (s = s->ts_next; s != last; s = s->ts_next) {
+				if (s->x == 0)
+					continue;
+				if (--nlines <= 0)
+					break;
+			}
 		}
-		first = s;
+		s = set_nl(s);
+		if (!s
+		 || (last && s->time >= last->time))
+			break;
+		wwidth -= s->x - first->x;
 	}
 	return s;
 }
@@ -2228,7 +2273,7 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 static void cut_tune(float lwidth, float indent)
 {
 	struct SYMBOL *s, *s2;
-	int i, bar_time, wmeasure;
+	int i;
 	float xmin;
 
 	/* adjust the line width according to the starting clef
@@ -2241,7 +2286,7 @@ static void cut_tune(float lwidth, float indent)
 			break;
 		lwidth -= s->shrink;
 	}
-	if (cfmt.custos && first_voice->next == 0)
+	if (cfmt.custos && !first_voice->next)
 		lwidth -= 12;
 	if (cfmt.continueall) {
 		set_lines(s, 0, lwidth, indent);
@@ -2250,22 +2295,11 @@ static void cut_tune(float lwidth, float indent)
 
 	/* if asked, count the measures and set the EOLNs */
 	if ((i = cfmt.barsperstaff) != 0) {
-		wmeasure = voice_tb[cursys->top_voice].meter.wmeasure;
-		bar_time = s->time + wmeasure;
 		s2 = s;
-		for ( ; s != 0; s = s->ts_next) {
-			switch (s->type) {
-			case TIMESIG:
-				wmeasure = s->as.u.meter.wmeasure;
-				bar_time = s->time + wmeasure;
-			default:
+		for ( ; s; s = s->ts_next) {
+			if (s->type != BAR
+			 || s->u == 0)
 				continue;
-			case BAR:
-				break;
-			}
-			if (s->time < bar_time)
-				continue;	/* incomplete measure */
-			bar_time = s->time + wmeasure;
 			if (--i > 0)
 				continue;
 			s->sflags |= S_EOLN;
@@ -2277,7 +2311,7 @@ static void cut_tune(float lwidth, float indent)
 	/* cut at explicit end of line, checking the line width */
 	xmin = indent;
 	s2 = s;
-	for ( ; s != 0; s = s->ts_next) {
+	for ( ; s; s = s->ts_next) {
 		if (!(s->sflags & (S_SEQST | S_EOLN)))
 			continue;
 		xmin += s->shrink;
@@ -2285,12 +2319,12 @@ static void cut_tune(float lwidth, float indent)
 			if (cfmt.linewarn)
 				error(0, s, "Line overfull (%.0fpt of %.0fpt)",
 					xmin, lwidth);
-			for (s = s->ts_next; s != 0; s = s->ts_next) {
+			for (s = s->ts_next; s; s = s->ts_next) {
 				if (s->sflags & S_EOLN)
 					break;
 			}
 			s = s2 = set_lines(s2, s, lwidth, indent);
-			if (s == 0)
+			if (!s)
 				break;
 			xmin = s->shrink;
 			indent = 0;
@@ -2300,7 +2334,7 @@ static void cut_tune(float lwidth, float indent)
 		s2 = set_nl(s);
 		s->sflags &= ~S_EOLN;
 		s = s2;
-		if (s == 0)
+		if (!s)
 			break;
 		xmin = s->shrink;
 		indent = 0;

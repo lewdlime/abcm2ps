@@ -535,11 +535,11 @@ static char *parse_extra(char *p,
 			*p_octave = p + 7;
 		} else if (strncmp(p, "stafflines=", 11) == 0) {
 			if (*p_lines != 0)
-				syntax("Double clef stafflines", p);
+				syntax("Double stafflines", p);
 			*p_lines = p + 11;
 		} else if (strncmp(p, "staffscale=", 11) == 0) {
 			if (*p_scale != 0)
-				syntax("Double clef staffscale", p);
+				syntax("Double staffscale", p);
 			*p_scale = p + 11;
 		} else if (strncmp(p, "transpose=", 10) == 0
 			|| strncmp(p, "t=", 2) == 0) {
@@ -1159,8 +1159,8 @@ static char *top_err = "Cannot identify meter top";
 	in_parenth = 0;
 	wmeasure = 0;
 	m1 = 0;
-	if (*p == 'N' || *p == 'n') {
-		p++;				/* no meter */
+	if (strncmp(p, "none", 4) == 0) {
+		p += 4;				/* no meter */
 	} else while (*p != '\0') {
 		if (*p == '=')
 			break;

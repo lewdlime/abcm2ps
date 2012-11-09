@@ -361,6 +361,7 @@ void set_format(void)
 	f->breaklimit = 0.7;
 	f->stretchstaff = 1;
 	f->graceslurs = 1;
+	f->hyphencont = 1;
 	f->lineskipfac = 1.1;
 	f->parskipfac = 0.4;
 	f->measurenb = -1;

@@ -220,7 +220,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 	signed char ymn, ymx, yav; /* min, max, avg note head y offset */
 	float xmx;		/* max h-pos of a head rel to top
 				 * width when STBRK */
-	float xs, ys;		/* offset of stem end */
+	float xs, ys;		/* coord of stem end / bar height */
 	float wl, wr;		/* left, right min width */
 	float space;		/* natural space before symbol */
 	float shrink;		/* minimum space before symbol */
@@ -504,9 +504,10 @@ void draw_all_deco_head(struct SYMBOL *s, float x, float y);
 void draw_deco_near(void);
 void draw_deco_note(void);
 void draw_deco_staff(void);
-float draw_partempo(float top,
-		    int any_part,
-		    int any_tempo);
+float draw_partempo(int staff,
+			float top,
+			int any_part,
+			int any_tempo);
 void draw_measnb(void);
 void reset_deco(void);
 void set_defl(int new_defl);
@@ -515,14 +516,14 @@ void write_tempo(struct SYMBOL *s,
 		int beat,
 		float sc);
 float y_get(struct SYMBOL *s,
-	    int up,
-	    float x,
-	    float w);
+		int up,
+		float x,
+		float w);
 void y_set(struct SYMBOL *s,
-	   int up,
-	   float x,
-	   float w,
-	   float y);
+		int up,
+		float x,
+		float w,
+		float y);
 /* draw.c */
 void draw_sym_near(void);
 void draw_all_symb(void);
@@ -554,12 +555,12 @@ void reset_gen(void);
 extern float multicol_start;
 void do_tune(struct abctune *t);
 void identify_note(struct SYMBOL *s,
-		   int len,
-		   int *p_head,
-		   int *p_dots,
-		   int *p_flags);
+		int len,
+		int *p_head,
+		int *p_dots,
+		int *p_flags);
 struct SYMBOL *sym_add(struct VOICE_S *p_voice,
-		       int type);
+			int type);
 /* subs.c */
 void bug(char *msg, int fatal);
 void error(int sev, struct SYMBOL *s, char *fmt, ...);

@@ -1,9 +1,25 @@
+---- Version 7.2.2 - 12/11/07 ----
+
+Fix bad bars between staves with %%score.
+Fix bad explicit line breaks after notes.
+Don't try to stretch the last music line when %%stretchlast 0
+	(reported by Chuck Boody).
+Fix too much space above the staff when scaled staff and P: or Q:.
+Fix left indentation when empty staves and %%staffnonote.
+Fix bad offset of measure numbers when 1st staff empty and %%staffnonote.
+Fix bad offset of measure numbers when 1st staff is scaled
+	(reported by Hudson Flávio Meneses Lacerda).
+Change default value of %%hyphencont to 1
+	(asked by David Webber).
+Don't draw repeat brackets when bar between 2 staves
+	(reported by David Webber).
+
 ---- Version 7.2.1 - 12/10/30 ----
 
 Fix crash when centered decoration under staff at start of new staff system.
-Add %%breaklimit
-	(required for Steve West).
+Add %%breaklimit.
 Change the internal algorithm of automatic line breaking.
+	(reported by Steve West).
 Fix loss of gchord/annot or bad font when scaled staves
 	(reported by Hudson Flávio Meneses Lacerda).
 Fix bad vertical offset of lyrics when scaled staves and slurs in lower voice.

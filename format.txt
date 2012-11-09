@@ -526,12 +526,12 @@ List of the format parameters
 		Set the history font to <font> with a size <size>.
 
   hyphencont <bool>
-	Default: 0
+	Default: 1
 	Compilation: none
 	Command line: none
 	Description:
-		When a word of lyric under staff ends with a hyphen, put a
-		hyphen in the next line.
+		If set, when a word of lyric under staff ends with a hyphen,
+		put a hyphen in the next line.
 
   indent <unit>
 	Default: 0
@@ -1376,12 +1376,12 @@ List of the pseudo-comments treated while parsed
 	same page.
 
   newpage [<int>]
-	Continue printing on a new page and possibly restart page
+	Continue printing on a new page and optionally restart page
 	numbering from <int>.
 
   repbra <bool>
-	The repeat brackets are normally displayed as found in a voice.
-	'%%repbra 0' prevents displaying them for the current voice.
+	The repeat brackets are normally displayed as they are found in
+	a voice. %%repbra 0' prevents displaying them for the current voice.
 
   repeat [<n> [k]]
 	Try to replace a sequence by one or many repeat signs.

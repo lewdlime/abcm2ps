@@ -756,7 +756,7 @@ static void draw_lstaff(float x)
 	}
 	if (i == j && l == 0)
 		return;
-	set_scale(0);
+	set_sscale(-1);
 	yb = staff_tb[j].y + staff_tb[j].botbar
 				* staff_tb[j].clef.staffscale;
 	PUT3("%.1f %.1f %.1f bar\n",
@@ -799,9 +799,9 @@ static void draw_staff(int staff,
 		break;
 	}
 	putx(x2 - x1);
-	PUT1("%d ", nlines);
+	a2b("%d ", nlines);
 	putxy(x1, y);
-	PUT0("staff\n");
+	a2b("staff\n");
 }
 
 /* -- draw the time signature -- */
@@ -1118,7 +1118,7 @@ static void draw_bar(struct SYMBOL *s)
 		}
 		switch (bar_type & 0x07) {
 		default:
-			set_scale(0);
+			set_sscale(-1);
 			PUT4("%.1f %.1f %.1f %s ", h, x, yb, psf);
 			break;
 		case B_COL:
@@ -3971,56 +3971,22 @@ static float set_staff(void)
 	} delta_tb[MAXSTAFF], *p_delta;
 
 	/* search the empty staves in each parts */
+	memset(delta_tb, 0, sizeof delta_tb);
 	sy = cursys;
 	for (staff = 0; staff <= nstaff; staff++) {
-		sy->staff[staff].empty = 1;
 		staff_tb[staff].empty = 0;
-	}
-	memset(delta_tb, 0, sizeof delta_tb);
-	if (cfmt.staffnonote) {
-		for (s = tsfirst; s != 0; s = s->ts_next) {
-			switch (s->type) {
-			case STAVES:
-				for (staff = 0; staff <= nstaff; staff++)
-					if (!sy->staff[staff].empty)
-						delta_tb[staff].not_empty = 1;
-				sy = sy->next;
-				for (staff = 0; staff <= nstaff; staff++)
-					sy->staff[staff].empty = 1;
-				break;
-			case NOTEREST:
-			case SPACE:
-			case BAR:
-			case MREST:
-			case GRACE:
-				sy->staff[s->staff].empty = 0;
-				break;
-			}
-		}
-	} else {
-		for (s = tsfirst; s != 0; s = s->ts_next) {
-			switch (s->type) {
-			case STAVES:
-				for (staff = 0; staff <= nstaff; staff++)
-					if (!sy->staff[staff].empty)
-						delta_tb[staff].not_empty = 1;
-				sy = sy->next;
-				for (staff = 0; staff <= nstaff; staff++)
-					sy->staff[staff].empty = 1;
-				break;
-			case NOTEREST:
-				if (s->as.type == ABC_T_REST)
-					break;
-				if (!(s->as.flags & ABC_F_INVIS))
-					sy->staff[s->staff].empty = 0;
-				break;
-			}
-		}
-	}
-	/* 'sy' is the last staff system - here are the staff distances */
-	for (staff = 0; staff <= nstaff; staff++)
 		if (!sy->staff[staff].empty)
 			delta_tb[staff].not_empty = 1;
+	}
+	for (s = tsfirst; s != 0; s = s->ts_next) {
+		if (s->type != STAVES)
+			continue;
+		sy = sy->next;
+		for (staff = 0; staff <= nstaff; staff++) {
+			if (!sy->staff[staff].empty)
+				delta_tb[staff].not_empty = 1;
+		}
+	}
 
 	/* if a system brace has empty and non empty staves, keep all staves */
 	for (staff = 0; staff <= nstaff; staff++) {
@@ -4058,31 +4024,50 @@ static float set_staff(void)
 				continue;
 			}
 			if (prev_staff >= 0) {
-				for (i = 0; i < YSTEP; i++) {
-					v = staff_tb[staff].top[i]
-						* staff_tb[staff].clef.staffscale
-					  - staff_tb[prev_staff].bot[i]
-						* staff_tb[prev_staff].clef.staffscale;
-					if (p_delta->mtop < v)
-						p_delta->mtop = v;
+				if (staff_tb[staff].clef.staffscale
+						== staff_tb[prev_staff].clef.staffscale) {
+					float mtop;
+
+					mtop = 0;
+					for (i = 0; i < YSTEP; i++) {
+						v = staff_tb[staff].top[i]
+						  - staff_tb[prev_staff].bot[i];
+						if (mtop < v)
+							mtop = v;
+					}
+					p_delta->mtop = mtop
+							* staff_tb[staff].clef.staffscale;
+				} else {
+					for (i = 0; i < YSTEP; i++) {
+						v = staff_tb[staff].top[i]
+							* staff_tb[staff].clef.staffscale
+						  - staff_tb[prev_staff].bot[i]
+							* staff_tb[prev_staff].clef.staffscale;
+						if (p_delta->mtop < v)
+							p_delta->mtop = v;
+					}
 				}
 			} else {
+				float mtop;
+
+				mtop = 0;
 				for (i = 0; i < YSTEP; i++) {
-					v = staff_tb[staff].top[i]
-						* staff_tb[staff].clef.staffscale;
-					if (p_delta->mtop < v)
-						p_delta->mtop = v;
+					v = staff_tb[staff].top[i];
+					if (mtop < v)
+						mtop = v;
 				}
+				p_delta->mtop = mtop
+						* staff_tb[staff].clef.staffscale;
 			}
 			prev_staff = staff;
 		}
 		mbot = 0;
 		for (i = 0; i < YSTEP; i++) {
-			v = staff_tb[prev_staff].bot[i]
-				* staff_tb[prev_staff].clef.staffscale;
+			v = staff_tb[prev_staff].bot[i];
 			if (mbot > v)
 				mbot = v;
 		}
+		mbot *= staff_tb[prev_staff].clef.staffscale;
 	}
 
 	/* handle the empty staves and their tablatures
@@ -4094,7 +4079,7 @@ static float set_staff(void)
 
 		for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 			if (p_voice->scale != 1)
-				PUT2("/scvo%d{gsave %.2f dup scale}!\n",
+				a2b("/scvo%d{gsave %.2f dup scale}!\n",
 				     (int) (p_voice - voice_tb),
 				     p_voice->scale);
 			staff = p_voice->staff;
@@ -4126,9 +4111,10 @@ static float set_staff(void)
 	/* scan the first voice to see if any part or tempo */
 	any_part = any_tempo = 0;
 	for (s = voice_tb[cursys->top_voice].sym; s != 0; s = s->next) {
-		if ((g = s->extra) == 0)
+		g = s->extra;
+		if (!g)
 			continue;
-		for ( ; g != 0; g = g->next) {
+		for ( ; g; g = g->next) {
 			switch (g->type) {
 			case PART:
 				any_part = 1;
@@ -4143,13 +4129,14 @@ static float set_staff(void)
 	}
 
 	/* draw the parts and tempo indications if any */
+	dy = 0;
 	if (any_part || any_tempo) {
-		dy = delta_tb[0].mtop;
-		if (dy == 0)		/* first staff not displayed */
-			dy = 24 + 14;
-		dy = draw_partempo(dy, any_part, any_tempo);
-	} else {
-		dy = 0;
+		for (staff = 0; staff <= nstaff; staff++) {
+			dy = delta_tb[staff].mtop;
+			if (dy != 0)
+				break;
+		}
+		dy = draw_partempo(staff, dy, any_part, any_tempo);
 	}
 
 	/* set the staff offsets */
@@ -4161,10 +4148,12 @@ static float set_staff(void)
 	     staff++, p_delta++) {
 		dy += p_delta->mtop;
 		if (!staff_tb[staff].empty) {
-			staffsep += staff_tb[staff].topbar;
+			staffsep += staff_tb[staff].topbar
+				* staff_tb[staff].clef.staffscale;
 			if (dy < staffsep)
 				dy = staffsep;
-			maxsep += staff_tb[staff].topbar;
+			maxsep += staff_tb[staff].topbar
+				* staff_tb[staff].clef.staffscale;
 			if (dy > maxsep)
 				dy = maxsep;
 		}
@@ -4196,7 +4185,7 @@ static float set_staff(void)
 			if (delta_tb[staff].not_empty)
 				break;
 		}
-		if (staff < 0)		/* no symbol in this system */
+		if (staff < 0)		/* no symbol in this system ! */
 			return y;
 	}
 	dy = -mbot;
@@ -4336,7 +4325,7 @@ float draw_systems(float indent)
 			continue;
 		draw_staff(staff, x, realwidth);
 	}
-	set_scale(0);
+	set_sscale(-1);
 	return line_height;
 }
 
@@ -4565,16 +4554,12 @@ void set_scale(struct SYMBOL *s)
 	float scale, trans;
 
 	staff = -1;
-	if (s != 0) {
-		scale = voice_tb[s->voice].scale;
-		if (scale == 1) {
-			staff = s->staff;
-			scale = staff_tb[staff].clef.staffscale;
-		}
-/*fixme: KO when both scales of staff and voice != 1*/
-	} else {
-		scale = 1;
+	scale = voice_tb[s->voice].scale;
+	if (scale == 1) {
+		staff = s->staff;
+		scale = staff_tb[staff].clef.staffscale;
 	}
+/*fixme: KO when both staff and voice are scaled */
 	if (staff >= 0 && scale != 1) {
 		trans = staff_tb[staff].y;
 		scale_voice = 0;

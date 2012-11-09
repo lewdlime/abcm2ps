@@ -1743,7 +1743,7 @@ static void parse_staves(struct SYMBOL *s,
 	brace = bracket = parenth = 0;
 	flags_st = 0;
 	voice = 0;
-	p = s->as.text;
+	p = s->as.text + 7;
 	while (*p != '\0' && !isspace((unsigned char) *p))
 		p++;
 	while (*p != '\0') {
@@ -1940,9 +1940,11 @@ static void get_staves(struct SYMBOL *s)
 			parsys->voice[voice].range = -1;
 	} else {
 
-		/* create a new staff system and
+		/*
+		 * create a new staff system and
 		 * link the staves in a voice which is seen from
-		 * the previous system - see sort_all */
+		 * the previous system - see sort_all
+		 */
 		p_voice = curvoice;
 		if (parsys->voice[p_voice - voice_tb].range < 0) {
 			for (voice = 0; voice < MAXVOICE; voice++) {
@@ -2018,11 +2020,11 @@ static void get_staves(struct SYMBOL *s)
 				continue;
 
 			/* {a b c} --> {a *b c} */
-			if (p_staff[2].flags & (CLOSE_BRACE | CLOSE_BRACE2))
+			if (p_staff[2].flags & (CLOSE_BRACE | CLOSE_BRACE2)) {
 				p_staff[1].flags |= FL_VOICE;
 
 			/* {a b c d} --> {(a b) (c d)} */
-			else if (p_staff[2].flags == 0
+			} else if (p_staff[2].flags == 0
 				 && (p_staff[3].flags & (CLOSE_BRACE | CLOSE_BRACE2))) {
 				p_staff->flags |= OPEN_PARENTH;
 				p_staff[1].flags |= CLOSE_PARENTH;
@@ -2058,7 +2060,7 @@ static void get_staves(struct SYMBOL *s)
 			parsys->staff[staff].flags = 0;
 		}
 		p_voice->staff = p_voice->cstaff
-			= parsys->voice[voice].staff = staff;
+				= parsys->voice[voice].staff = staff;
 		parsys->staff[staff].flags |= flags;
 		if (flags & OPEN_PARENTH) {
 			while (i < MAXVOICE) {
@@ -2068,8 +2070,8 @@ static void get_staves(struct SYMBOL *s)
 				p_voice = &voice_tb[voice];
 				p_voice->second = 1;
 				p_voice->staff = p_voice->cstaff
-					= parsys->voice[voice].staff
-					= staff;
+						= parsys->voice[voice].staff
+						= staff;
 				if (p_staff->flags & CLOSE_PARENTH)
 					break;
 			}
@@ -2086,8 +2088,13 @@ static void get_staves(struct SYMBOL *s)
 			parsys->staff[staff].flags ^= STOP_BAR;
 	}
 
-	for (voice = 0; voice < MAXVOICE; voice++)
+	for (voice = 0; voice < MAXVOICE; voice++) {
 		parsys->voice[voice].second = voice_tb[voice].second;
+		staff = p_voice->staff;
+		if (staff > 0)
+			p_voice->norepbra
+				= !(parsys->staff[staff - 1].flags & STOP_BAR);
+	}
 }
 
 /* -- re-initialize all potential voices -- */
@@ -2450,7 +2457,7 @@ static struct abcsym *get_info(struct abcsym *as,
 						break;
 					}
 					s2 = s2->prev;
-				} while (s2 != 0 && s2->time == tim);
+				} while (s2 && s2->time == tim);
 			}
 			sym_link(s, TEMPO);
 			break;
@@ -2459,23 +2466,19 @@ static struct abcsym *get_info(struct abcsym *as,
 	case 's':
 		break;
 	case 'T':
-		switch (as->state) {
-		case ABC_S_HEAD:
+		if (as->state == ABC_S_HEAD)		/* in tune header */
 			goto addinfo;
-		default:
-			gen_ly(1);
-			p = &as->text[2];
-			if (*p != '\0') {
-				write_title(s);
-				a2b("%% --- + (%s) ---\n", p);
-				if (cfmt.pdfmark)
-					put_pdfmark(p);
-			}
-			voice_init();
-			reset_gen();		/* (display the time signature) */
-			curvoice = &voice_tb[parsys->top_voice];
-			break;
+		gen_ly(1);				/* in tune */
+		p = &as->text[2];
+		if (*p != '\0') {
+			write_title(s);
+			a2b("%% --- + (%s) ---\n", p);
+			if (cfmt.pdfmark)
+				put_pdfmark(p);
 		}
+		voice_init();
+		reset_gen();		/* (display the time signature) */
+		curvoice = &voice_tb[parsys->top_voice];
 		break;
 	case 'U': {
 		unsigned char *deco;
@@ -2972,16 +2975,15 @@ static int is_tune_sig(void)
 
 	if (curvoice->time != 0)
 		return 0;		/* not at start of tune */
-	for (s = curvoice->sym; s != 0; s = s->next) {
+	for (s = curvoice->sym; s; s = s->next) {
 		switch (s->type) {
 		case TEMPO:
 		case PART:
 		case FMTCHG:
-			continue;
+			break;
 		default:
 			return 0;
 		}
-		break;
 	}
 	return 1;
 }
@@ -3335,8 +3337,7 @@ static void get_key(struct SYMBOL *s)
 #endif
 	}
 
-	switch (s->as.state) {
-	case ABC_S_HEAD:			/* start of tune */
+	if (s->as.state == ABC_S_HEAD) {	/* start of tune */
 		for (i = MAXVOICE, p_voice = voice_tb;
 		     --i >= 0;
 		     p_voice++) {
@@ -3356,59 +3357,61 @@ static void get_key(struct SYMBOL *s)
 			if (p_voice->key.empty)
 				p_voice->key.sf = 0;
 		}
-		break;
-	default:				/* (cannot be ABC_S_GLOBAL) */
-//	case ABC_S_TUNE:
-		if (is_tune_sig()) {
+		return;
+	}
 
-			/* define the starting key signature */
-			memcpy(&curvoice->key, &s->as.u.key,
-						sizeof curvoice->key);
-			memcpy(&curvoice->ckey, &s->as.u.key,
-						sizeof curvoice->ckey);
-			memcpy(&curvoice->okey, &okey,
-						sizeof curvoice->okey);
-			curvoice->posit = cfmt.posit;
-			if (curvoice->key.mode >= BAGPIPE
-			 && curvoice->posit.std == 0)
-				curvoice->posit.std = SL_BELOW;
-			curvoice->transpose = cfmt.transpose;
-			if (curvoice->key.empty)
-				curvoice->key.sf = 0;
-			break;
-		}
-		if ((s->as.next == 0
-		  || s->as.next->type != ABC_T_CLEF)	/* if not explicit clef */
-		 && curvoice->ckey.sf == s->as.u.key.sf	/* and same key */
-		 && curvoice->ckey.nacc == 0
-		 && s->as.u.key.nacc == 0
-		 && curvoice->ckey.empty == s->as.u.key.empty
-		 && cfmt.keywarn)			/* if not key warning,
-							 * keep all key signatures */
-			break;			/* ignore */
+	/* ABC_S_TUNE (K: cannot be ABC_S_GLOBAL) */
+	if (is_tune_sig()) {
 
-		if (!curvoice->ckey.empty)
-			s->u = curvoice->ckey.sf;	/* previous key signature */
+		/* define the starting key signature */
+		memcpy(&curvoice->key, &s->as.u.key,
+					sizeof curvoice->key);
 		memcpy(&curvoice->ckey, &s->as.u.key,
 					sizeof curvoice->ckey);
 		memcpy(&curvoice->okey, &okey,
 					sizeof curvoice->okey);
-		if (s->as.u.key.empty)
-			s->as.u.key.sf = 0;
+		curvoice->posit = cfmt.posit;
+		if (curvoice->key.mode >= BAGPIPE
+		 && curvoice->posit.std == 0)
+			curvoice->posit.std = SL_BELOW;
+		curvoice->transpose = cfmt.transpose;
+		if (curvoice->key.empty)
+			curvoice->key.sf = 0;
+		return;
+	}
 
-		/* the key signature must appear before a time signature */
-		s2 = curvoice->last_sym;
-		if (s2 != 0 && s2->type == TIMESIG) {
-			curvoice->last_sym = s2->prev;
-			if (curvoice->last_sym == 0)
-				curvoice->sym = 0;
-			sym_link(s, KEYSIG);
-			s->next = s2;
-			s2->prev = s;
-			curvoice->last_sym = s2;
-		} else {
-			sym_link(s, KEYSIG);
-		}
+	/* key signature change */
+	if ((s->as.next == 0
+	  || s->as.next->type != ABC_T_CLEF)	/* if not explicit clef */
+	 && curvoice->ckey.sf == s->as.u.key.sf	/* and same key */
+	 && curvoice->ckey.nacc == 0
+	 && s->as.u.key.nacc == 0
+	 && curvoice->ckey.empty == s->as.u.key.empty
+	 && cfmt.keywarn)			/* if not key warning,
+						 * keep all key signatures */
+		return;			/* ignore */
+
+	if (!curvoice->ckey.empty)
+		s->u = curvoice->ckey.sf;	/* previous key signature */
+	memcpy(&curvoice->ckey, &s->as.u.key,
+				sizeof curvoice->ckey);
+	memcpy(&curvoice->okey, &okey,
+				sizeof curvoice->okey);
+	if (s->as.u.key.empty)
+		s->as.u.key.sf = 0;
+
+	/* the key signature must appear before a time signature */
+	s2 = curvoice->last_sym;
+	if (s2 != 0 && s2->type == TIMESIG) {
+		curvoice->last_sym = s2->prev;
+		if (curvoice->last_sym == 0)
+			curvoice->sym = 0;
+		sym_link(s, KEYSIG);
+		s->next = s2;
+		s2->prev = s;
+		curvoice->last_sym = s2;
+	} else {
+		sym_link(s, KEYSIG);
 	}
 }
 

@@ -1437,9 +1437,9 @@ static struct abcsym *get_lyric(struct abcsym *as)
 			}
 			switch (*p) {
 			case '|':
-				while (s != 0 && s->type != BAR)
+				while (s && s->type != BAR)
 					s = s->next;
-				if (s == 0) {
+				if (!s) {
 					error(1, s,
 						"Not enough bar lines for lyric line");
 					goto ly_next;
@@ -1512,11 +1512,11 @@ static struct abcsym *get_lyric(struct abcsym *as)
 			}
 
 			/* store the word in the next note */
-			while (s != 0
+			while (s
 			    && (s->as.type != ABC_T_NOTE
 			     || (s->as.flags & ABC_F_GRACE)))
 				s = s->next;
-			if (s == 0) {
+			if (!s) {
 				error(1, s, "Too many words in lyric line");
 				goto ly_next;
 			}
@@ -1630,6 +1630,7 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 		return;
 	if (s->as.type == ABC_T_BAR
 	 || s->as.u.v_over.type == V_OVER_E)  {
+		p_voice->last_sym->as.flags |= ABC_F_SPACE;
 		over_bar = 0;
 		if (over_time < 0) {
 			error(1, s, "Erroneous end of voice overlap");
@@ -1651,6 +1652,7 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 
 	/* (here is treated a new overlay - '&') */
 	/* create the extra voice if not done yet */
+	p_voice->last_sym->as.flags |= ABC_F_SPACE;
 	voice2 = s->as.u.v_over.voice;
 	p_voice2 = &voice_tb[voice2];
 	if (parsys->voice[voice2].range < 0) {
@@ -3387,9 +3389,9 @@ static void get_key(struct SYMBOL *s)
 	 && curvoice->ckey.nacc == 0
 	 && s->as.u.key.nacc == 0
 	 && curvoice->ckey.empty == s->as.u.key.empty
-	 && cfmt.keywarn)			/* if not key warning,
+	 && !cfmt.keywarn)			/* if not key warning,
 						 * keep all key signatures */
-		return;			/* ignore */
+		return;				/* ignore */
 
 	if (!curvoice->ckey.empty)
 		s->u = curvoice->ckey.sf;	/* previous key signature */

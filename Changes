@@ -1,3 +1,18 @@
+---- Version 7.3.0 - 12/11/17 ----
+
+Don't let annotations move the next key or time signature to the right.
+Fix lack of key/time warnings at end of line
+	(reported by Jean-Luc Zins).
+Don't continue beaming in voice overlay
+	(reported by Jean-Luc Zins).
+Don't shift notes with guitar chord after repeat bracket with long text
+	(reported by Norman Bearon).
+Fix bad ties from grace notes
+	(reported by David Lacroix).
+!! Change %%stretchlast to a floating point value. !!
+Fix clash of slurs with decorations/tuplets/...
+	(reported by John Walsh).
+
 ---- Version 7.2.2 - 12/11/07 ----
 
 Fix bad bars between staves with %%score.

@@ -67,10 +67,10 @@ documentation at:
 http://abcplus.sourceforge.net/
 
 abc2ps was developped by Michael Methfessel:
-http://www.ihp-ffo.de/~msm/
-msm (at) ihp-ffo (dot) de
+    http://www.ihp-ffo.de/~msm/
+    msm (at) ihp-ffo (dot) de
 
 To know more about the ABC notation, have a look at:
-http://abcnotation.com/
+    http://abcnotation.com/
 
 For any comment: moinejf (at) free (dot) fr

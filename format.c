@@ -142,7 +142,7 @@ static struct format {
 	{"stemheight", &cfmt.stemheight, FORMAT_R, 0},
 	{"stemdir", 0, FORMAT_P, 5},
 	{"straightflags", &cfmt.straightflags, FORMAT_B, 0},
-	{"stretchlast", &cfmt.stretchlast, FORMAT_B, 0},
+	{"stretchlast", &cfmt.stretchlast, FORMAT_R, 2},
 	{"stretchstaff", &cfmt.stretchstaff, FORMAT_B, 0},
 	{"subtitlefont", &cfmt.font_tb[SUBTITLEFONT], FORMAT_F, 0},
 	{"subtitlespace", &cfmt.subtitlespace, FORMAT_U, 0},
@@ -359,6 +359,7 @@ void set_format(void)
 	f->slurheight = 1.0;
 	f->maxshrink = 0.65;
 	f->breaklimit = 0.7;
+	f->stretchlast = 0.2;
 	f->stretchstaff = 1;
 	f->graceslurs = 1;
 	f->hyphencont = 1;
@@ -935,10 +936,8 @@ void interpret_fmt_line(char *w,		/* keyword */
 					float v;
 
 					v = strtod(p, &q);
-					if (v > 2 || (*q != '\0' && *q != '\0')) {
-						error(1, 0, "Bad value '%s' for '%s'", p, w);
-						break;
-					}
+					if (v > 2 || (*q != '\0' && *q != '\0'))
+						goto bad;
 					swfac = v;
 				}
 			}
@@ -956,11 +955,8 @@ void interpret_fmt_line(char *w,		/* keyword */
 		break;
 	case 'i':
 		if (strcmp(w, "infoname") == 0) {
-			if (*p < 'A' || *p > 'Z') {
-				error(1, 0, "Bad info type '%c' in %%%%infoname",
-					*p);
-				return;
-			}
+			if (*p < 'A' || *p > 'Z')
+				goto bad;
 			set_infoname(p);
 			return;
 		}
@@ -1095,12 +1091,8 @@ void interpret_fmt_line(char *w,		/* keyword */
 			unsigned i1, i2, i3;
 
 			if (sscanf(p, "%d %d %d", &i1, &i2, &i3) != 3
-			 || i1 > 2 || i2 > 2 || i3 > 2) {
-				error(1, 0,
-				      "Bad 'tuplets' values '%s' - ignored",
-				      p);
-				return;
-			}
+			 || i1 > 2 || i2 > 2 || i3 > 2)
+				goto bad;
 			cfmt.tuplets = (i1 << 8) | (i2 << 4) | i3;
 			break;
 		}
@@ -1109,12 +1101,8 @@ void interpret_fmt_line(char *w,		/* keyword */
 			float f1, f2, f3;
 
 			if (sscanf(p, "%f %f %f", &f1, &f2, &f3) != 3
-			 || f1 > 256 || f2 > 256 || f3 > 256) {
-				error(1, 0,
-				      "Bad 'gracespace' values '%s' - ignored",
-				      p);
-				return;
-			}
+			 || f1 > 256 || f2 > 256 || f3 > 256)
+				goto bad;
 			i1 = f2 * 10;
 			i2 = f2 * 10;
 			i3 = f3 * 10;
@@ -1145,61 +1133,55 @@ void interpret_fmt_line(char *w,		/* keyword */
 //		case 2:				/* (free) */
 //			break;
 		case 4:				/* textoption */
-			if (cfmt.textoption < 0) {
-				error(1, 0,
-				      "Bad 'textoption' value '%s'",
-				      p);
-				cfmt.textoption = T_LEFT;
-			}
-			break;
+			if (cfmt.textoption < 0)
+				goto bad;
 			break;
 		}
 		break;
-	case FORMAT_R:
-		{
-			char *q;
-			float v;
+	case FORMAT_R: {
+		char *q;
+		int i;
+		float v;
 
-			v = strtod(p, &q);
-			if (v <= 0 || (*q != '\0' && *q != ' ')) {
-				error(1, 0, "Bad value '%s' for '%s'", p, w);
-				break;
-			}
-			*((float *) fd->v) = v;
-		}
+		v = strtod(p, &q);
+		if (*q != '\0' && *q != ' ')
+			goto bad;
 		switch (fd->subtype) {
+		default:
+			if (v <= 0)
+				goto bad;
+			break;
 		case 1: {			/* note spacing factor */
-			int i;
-			float v;
+			float v2;
 
+			if (v < 1 || v > 2)
+				goto bad;
 			i = C_XFLAGS;		/* crotchet index */
-			v = space_tb[i];
+			v2 = space_tb[i];
 			for ( ; --i >= 0; ) {
-				v /= cfmt.notespacingfactor;
-				space_tb[i] = v;
+				v2 /= v;
+				space_tb[i] = v2;
 			}
 			i = C_XFLAGS;
-			v = space_tb[i];
+			v2 = space_tb[i];
 			for ( ; ++i < NFLAGS_SZ; ) {
-				v *= cfmt.notespacingfactor;
-				space_tb[i] = v;
+				v2 *= v;
+				space_tb[i] = v2;
 			}
 			break;
 		    }
-		case 2:					/* maxshrink */
-			if (cfmt.maxshrink > 1) {
-				error(1, 0, "Bad value '%s' for '%s'", p, w);
-				cfmt.maxshrink = 0.65;
-			}
+		case 2:				/* maxshrink / stretchlast */
+			if (v < 0 || v > 1)
+				goto bad;
 			break;
-		case 3:					/* breaklimit */
-			if (cfmt.breaklimit < 0.5 || cfmt.breaklimit > 1) {
-				error(1, 0, "Bad value '%s' for '%s'", p, w);
-				cfmt.breaklimit = 0.8;
-			}
+		case 3:				/* breaklimit */
+			if (v < 0.5 || v > 1)
+				goto bad;
 			break;
 		}
+		*((float *) fd->v) = v;
 		break;
+	    }
 	case FORMAT_F: {
 		int b;
 
@@ -1241,18 +1223,15 @@ void interpret_fmt_line(char *w,		/* keyword */
 			strcpy(*((char **) fd->v), p);
 		break;
 	    }
-	case FORMAT_P: {
+	case FORMAT_P: {			/* staff position */
 		int i;
 
 		if (!isdigit(*p))
 			i = get_posit(p);
 		else
 			i = strtod(p, 0);
-		if ((unsigned) i > 2) {
-			error(1, 0,
-			      "Bad position - set to 'auto'");
-			i = 0;
-		}
+		if ((unsigned) i > 2)
+			goto bad;
 		switch (fd->subtype) {
 		case 0: cfmt.posit.dyn = i; break;
 		case 1: cfmt.posit.gch = i; break;
@@ -1265,6 +1244,9 @@ void interpret_fmt_line(char *w,		/* keyword */
 		break;
 	    }
 	}
+	return;
+bad:
+	error(1, 0, "Bad value '%s' for '%s' - ignored", p, w);
 }
 
 /* -- lock a format -- */

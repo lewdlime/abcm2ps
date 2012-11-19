@@ -1963,8 +1963,18 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 		else
 			x2 = k->x;
 	}
+#if 1
+	if (s > 0) {
+		y1 = y_get(k1, 1, k1->x - 3, 6);
+		y2 = y_get(k2, 1, k2->x - 3, 6);
+	} else {
+		y1 = y_get(k1, 0, k1->x - 3, 6);
+		y2 = y_get(k2, 0, k2->x - 3, 6);
+	}
+#else
 	y1 = (float) (s > 0 ? k1->ymx + 2 : k1->ymn - 2);
 	y2 = (float) (s > 0 ? k2->ymx + 2 : k2->ymn - 2);
+#endif
 
 	if (k1->as.type == ABC_T_NOTE) {
 		if (s > 0) {
@@ -2126,6 +2136,19 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 	    for (k = k1->next; k != k2 ; k = k->next) {
 		if (k->staff != upstaff)
 			continue;
+#if 1
+		if (s > 0) {
+			y = y_get(k, 1, k->x - 3, 6);
+			y -= a * k->x + addy;
+			if (y > h)
+				h = y;
+		} else {
+			y = y_get(k, 0, k->x - 3, 6);
+			y -= a * k->x + addy;
+			if (y < h)
+				h = y;
+		}
+#else
 		switch (k->type) {
 		case NOTEREST:
 			if (s > 0) {
@@ -2162,6 +2185,7 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 			break;
 		    }
 		}
+#endif
 	    }
 	    y1 += .45 * h;
 	    y2 += .45 * h;
@@ -2944,6 +2968,16 @@ static void draw_ties(struct SYMBOL *k1,
 	int i, m1, nh1, pit, ntie, tie2, ntie3, time;
 	int mhead1[MAXHD], mhead2[MAXHD], mhead3[MAXHD];
 
+	/* special case for tie from a grace note */
+	if (k1->type == GRACE) {
+		k3 = k1->extra;
+		while (k3) {
+			if (k3->type == NOTEREST)
+				k1 = k3;
+			k3 = k3->next;
+		}
+	}
+
 	ntie = ntie3 = 0;
 	nh1 = k1->nhd;
 	time = k1->time + k1->dur;
@@ -3040,7 +3074,8 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			break;
 	rtie = p_voice->rtie;			/* tie from 1st repeat bar */
 	for (s2 = s1; s2 != 0; s2 = s2->next) {
-		if (s2->as.type == ABC_T_NOTE)
+		if (s2->as.type == ABC_T_NOTE
+		 || s2->type == GRACE)
 			break;
 		if (s2->type != BAR
 		 || !s2->as.u.bar.repeat_bar

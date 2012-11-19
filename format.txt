@@ -611,7 +611,7 @@ List of the format parameters
 		Define the character(s) which break(s) the music lines.
 		The <list of linebreak separators> is a blank separated
 		list of none, one or more of:
-			<EOL> (system End Of Line)
+			<EOL> (End Of Line of any system)
 			$
 			!
 			<none>
@@ -732,7 +732,7 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Set the note spacing factor to <float>.
+		Set the note spacing factor to <float> (range 1..2).
 		This value is used to compute the natural space of
 		the notes. The base space of the crotchet is always
 		40 pts. When the duration of a note type is twice the
@@ -992,13 +992,14 @@ List of the format parameters
 	Description:
 		Have straight flags on stems in bagpipe tunes.
 
-  stretchlast <bool>
-	Default: 0
+  stretchlast <float>
+	Default: 0.8
 	Compilation: none
 	Command line: none
 	Description:
-		Stretch the last music line of a tune when more
-		expanded than the previous line.
+		Stretch the last music line of a tune when it is
+		bigger than the <float> fraction of the page width
+		(<float> range is 0..1).
 
   stretchstaff <bool>
 	Default: 1

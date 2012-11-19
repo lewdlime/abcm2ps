@@ -253,7 +253,7 @@ struct FORMAT { 		/* struct for page layout */
 	float composerspace, musicspace, vocalspace, textspace;
 	float breaklimit, maxshrink, lineskipfac, parskipfac, stemheight;
 	float indent, infospace, slurheight, notespacingfactor, scale;
-	float staffsep, sysstaffsep, maxstaffsep, maxsysstaffsep;
+	float staffsep, sysstaffsep, maxstaffsep, maxsysstaffsep, stretchlast;
 	int abc2pscompat, alignbars, aligncomposer, autoclef;
 	int barsperstaff, breakoneoln, bstemdown, cancelkey, comball;
 	int combinevoices, contbarnb, continueall, custos;
@@ -267,7 +267,7 @@ struct FORMAT { 		/* struct for page layout */
 #endif
 	int partsbox, pdfmark;
 	int setdefl, shiftunisson, splittune, squarebreve;
-	int staffnonote, straightflags, stretchstaff, stretchlast;
+	int staffnonote, straightflags, stretchstaff;
 	int textoption, titlecaps, titleleft, titletrim;
 	int timewarn, transpose, tuplets;
 	char *bgcolor, *dateformat, *header, *footer, *titleformat;

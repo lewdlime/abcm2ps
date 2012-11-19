@@ -950,7 +950,7 @@ static float gchord_width(struct SYMBOL *s,
 #if 1
 	/* adjust width for no clash */
 	s2 = s->prev;
-	if (s2 != 0 && s2->as.text != 0) {
+	if (s2 != 0 && s2->gch) {
 		for (s2 = s->ts_prev; ; s2 = s2->ts_prev) {
 			if (s2 == s->prev) {
 				AT_LEAST(wlw, lspc);
@@ -961,7 +961,7 @@ static float gchord_width(struct SYMBOL *s,
 		}
 	}
 	s2 = s->next;
-	if (s2 != 0 && s2->as.text != 0) {
+	if (s2 != 0 && s2->gch) {
 		for (s2 = s->ts_next; ; s2 = s2->ts_next) {
 			if (s2 == s->next) {
 				AT_LEAST(s->wr, rspc);
@@ -973,7 +973,7 @@ static float gchord_width(struct SYMBOL *s,
 	}
 #else
 	s2 = s->prev;
-	if (s2 != 0 && s2->as.text != 0)
+	if (s2 != 0 && s2->gch) {
 		AT_LEAST(wlw, lspc);
 /*fixme: pb when ">" only*/
 	for (s2 = s->next; s2 != 0; s2 = s2->next) {
@@ -1353,7 +1353,8 @@ static void set_width(struct SYMBOL *s)
 			s->wl += deco_width(s);
 
 		/* have room for the repeat numbers / guitar chord */
-		if (s->as.text != 0)
+		if (s->as.text != 0
+		 && strlen(s->as.text) < 4)
 			s->wl = gchord_width(s, s->wl, s->wl);
 		break;
 	case CLEF:
@@ -1992,7 +1993,7 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 	int done;
 
 	/* if explicit EOLN, cut on the next symbol */
-	if (s->sflags & S_EOLN) {
+	if ((s->sflags & S_EOLN) && !cfmt.keywarn && !cfmt.timewarn) {
 		for (s = s->ts_next; ; s = s->ts_next) {
 			if (!s)
 				return s;
@@ -2470,9 +2471,10 @@ static void set_pitch(struct SYMBOL *last_s)
 			break;
 		case KEYSIG:
 			s->pits[0] = staff_clef[staff];	/* keep the current clef */
-			s->ymx = 24 + 10;
-			s->ymn = -2;
-			break;
+//			s->ymx = 24 + 10;
+//			s->ymn = -2;
+//			break;
+			/* fall thru */
 		default:
 			set_yval(s);
 			break;
@@ -4267,12 +4269,11 @@ static void set_sym_glue(float width)
 	} else {			/* if last music line */
 		if (x < width) {
 			beta = (width - x) / (xmax - x);	/* stretch */
-			if (!cfmt.stretchlast
-			 && beta >= beta_last) {
+			if (beta >= beta_last) {
 				beta = beta_last * xmax + (1 - beta_last) * x;
 
 				/* shrink underfull last line same as previous */
-//				if (beta < width * 0.75)
+				if (beta < width * (1. - cfmt.stretchlast))
 					width = beta;
 			}
 		}

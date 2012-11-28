@@ -39,7 +39,7 @@ L:1/4
 K:C
 "^no time""^signature"CD"gchord""^on bar"|EF\
 "^appogiattura"{B}c "^acciaccatura"{/B}c \
-"^three;chord;lines"G "^and""^four""^chord""^lines!"c| \
+"^three;annot;lines"G "^and""^four""^annot""^lines!"c| \
 "^Fa#"^F "^Sib"_B "^Fa="=F \
 "F#"^F "Bb"_B||
 

@@ -906,7 +906,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 	clef_ix %= 7;
 
 	/* normal accidentals */
-	if (s->as.u.key.nacc == 0) {
+	if (s->as.u.key.nacc == 0 && !s->as.u.key.empty) {
 
 		/* put neutrals if not 'accidental cancel' */
 		if (cfmt.cancelkey || s->as.u.key.sf == 0) {
@@ -1965,11 +1965,11 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 	}
 #if 1
 	if (s > 0) {
-		y1 = y_get(k1, 1, k1->x - 3, 6);
-		y2 = y_get(k2, 1, k2->x - 3, 6);
+		y1 = y_get(k1, 1, k1->x, 3);
+		y2 = y_get(k2, 1, k2->x - 3, 3);
 	} else {
-		y1 = y_get(k1, 0, k1->x - 3, 6);
-		y2 = y_get(k2, 0, k2->x - 3, 6);
+		y1 = y_get(k1, 0, k1->x, 3);
+		y2 = y_get(k2, 0, k2->x - 3, 3);
 	}
 #else
 	y1 = (float) (s > 0 ? k1->ymx + 2 : k1->ymn - 2);
@@ -2138,12 +2138,12 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 			continue;
 #if 1
 		if (s > 0) {
-			y = y_get(k, 1, k->x - 3, 6);
+			y = y_get(k, 1, k->x - 2, 4);
 			y -= a * k->x + addy;
 			if (y > h)
 				h = y;
 		} else {
-			y = y_get(k, 0, k->x - 3, 6);
+			y = y_get(k, 0, k->x - 2, 4);
 			y -= a * k->x + addy;
 			if (y < h)
 				h = y;
@@ -2236,21 +2236,24 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 	for (k = k1; ; k = k->next) {
 		if (k == k2)
 			break;
-		if (k->staff == upstaff) {
-			y = a * k->x + addy;
-			if (k->ymx < y)
-				k->ymx = y;
-			else if (k->ymn > y)
-				k->ymn = y;
-			if (k->next == k2)
-				dx = x2;
-			else
-				dx = k->next->x;
-			if (k != k1)
-				x1 = k->x;
-			dx -= x1;
-			y_set(k, s > 0, x1, dx, y);
+		if (k->staff != upstaff)
+			continue;
+		y = a * k->x + addy;
+		if (k->ymx < y)
+			k->ymx = y;
+		else if (k->ymn > y)
+			k->ymn = y;
+		if (k->next == k2) {
+			dx = x2;
+			if (k2->sflags & S_SL1)
+				dx -= 6;
+		} else {
+			dx = k->next->x;
 		}
+		if (k != k1)
+			x1 = k->x;
+		dx -= x1;
+		y_set(k, s > 0, x1, dx, y);
 	}
 	return (s > 0 ? SL_ABOVE : SL_BELOW) | (slur_type & SL_DOTTED);
 }
@@ -2717,8 +2720,9 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			if (sy == s2)
 				break;
 			y_set(sy, 1, sy->x, sy->next->x - sy->x, yy);
-		} else if (sy == s2)
+		} else if (sy == s2) {
 			break;
+		}
 	}
 
     } else {	/* lower voice of the staff: the bracket is below the staff */
@@ -2968,12 +2972,22 @@ static void draw_ties(struct SYMBOL *k1,
 	int i, m1, nh1, pit, ntie, tie2, ntie3, time;
 	int mhead1[MAXHD], mhead2[MAXHD], mhead3[MAXHD];
 
-	/* special case for tie from a grace note */
+	/* special cases for ties to/from a grace note */
 	if (k1->type == GRACE) {
 		k3 = k1->extra;
 		while (k3) {
 			if (k3->type == NOTEREST)
-				k1 = k3;
+				k1 = k3;	/* last grace note */
+			k3 = k3->next;
+		}
+	}
+	if (k2->type == GRACE) {
+		k3 = k2->extra;
+		while (k3) {
+			if (k3->type == NOTEREST) {
+				k2 = k3;	/* first grace note */
+				break;
+			}
 			k3 = k3->next;
 		}
 	}
@@ -3098,6 +3112,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 		draw_ties(s1, s2, 1);		/* tie to 1st note */
 	}
 
+	/* search the start of ties */
 	for (;;) {
 		for (s1 = s2; s1 != 0; s1 = s1->next) {
 			if (s1->sflags & S_TI1)
@@ -3128,8 +3143,11 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 		}
 		if (s1 == 0)
 			break;
+
+		/* search the end of the tie */
 		for (s2 = s1->next; s2 != 0; s2 = s2->next) {
-			if (s2->as.type == ABC_T_NOTE)
+			if (s2->as.type == ABC_T_NOTE
+			 || s2->type == GRACE)
 				break;
 			if (s2->type == BAR) {
 				if ((s2->sflags & S_RRBAR)
@@ -3825,16 +3843,16 @@ void draw_sym_near(void)
 		if (s->type == GRACE) {
 			g = s->extra;
 			for ( ; g != 0; g = g->next) {
-				y_set(s, 1, g->x - g->wl, g->wl + g->wr, g->ymx);
-				y_set(s, 0, g->x - g->wl, g->wl + g->wr, g->ymn);
+				y_set(s, 1, g->x - g->wl, g->wl + g->wr, g->ymx + 1);
+				y_set(s, 0, g->x - g->wl, g->wl + g->wr, g->ymn - 1);
 			}
 			continue;
 		}
 		if (s->type != MREST) {
-			y_set(s, 1, s->x - s->wl, s->wl + s->wr, s->ymx);
-			y_set(s, 0, s->x - s->wl, s->wl + s->wr, s->ymn);
+			y_set(s, 1, s->x - s->wl, s->wl + s->wr, s->ymx + 2);
+			y_set(s, 0, s->x - s->wl, s->wl + s->wr, s->ymn - 2);
 		} else {
-			y_set(s, 1, s->x - 16, 32, s->ymx);
+			y_set(s, 1, s->x - 16, 32, s->ymx + 2);
 		}
 		if (s->as.type != ABC_T_NOTE)
 			continue;
@@ -4328,6 +4346,31 @@ float draw_systems(float indent)
 				s->ys = bar_height[staff];
 			break;
 		case STBRK:
+#if 1
+			if (!s->ts_prev)
+				continue;
+			if (cursys->voice[s->voice].range != 0)
+				continue;
+			x2 = s->ts_prev->x;
+			if (s->ts_prev->type != BAR)
+				x2 += s->ts_prev->wr;
+			if (s->xmx > .5 CM)
+				draw_lstaff(s->x);
+			if (s->ts_next != 0
+			 && s->ts_next->type == STAVES)
+				s->ts_next->x = s->x;
+			for (staff = 0; staff <= nstaff; staff++) {
+				x = xstaff[staff];
+				if (x < 0
+				 || x >= x2)
+					continue;
+				draw_staff(staff, x, x2);
+				if (s->xmx != 0)
+					xstaff[staff] = s->x;
+				else
+					xstaff[staff] = x2;
+			}
+#else
 			if (s->prev == 0 || (x = xstaff[staff]) < 0)
 				continue;
 			x2 = s->prev->x;
@@ -4346,6 +4389,7 @@ float draw_systems(float indent)
 			} else {
 				xstaff[staff] = x2;
 			}
+#endif
 			break;
 		default:
 //fixme:does not work for "%%staves K: M: $" */

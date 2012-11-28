@@ -568,6 +568,16 @@ static void d_upstaff(struct deco_elt *de)
 	staffb = staff_tb[s->staff].botbar - 2;
 	if (dd->str != 0)
 		de->str = dd->str == 255 ? dd->name : str_tb[dd->str];
+
+	switch (s->posit.orn) {
+	case SL_ABOVE:
+		de->flags &= ~DE_BELOW;
+		break;
+	case SL_BELOW:
+		de->flags |= DE_BELOW;
+		break;
+	}
+
 	if (strcmp(dd->name, "roll") == 0) {
 		if (s->multi < 0
 		 || (s->multi == 0 && s->stem > 0)) {
@@ -1208,7 +1218,7 @@ void draw_all_deco_head(struct SYMBOL *s, float x, float y)
 static void deco_create(struct SYMBOL *s,
 			struct deco *dc)
 {
-	int k, l;
+	int k, l, posit;
 	unsigned char deco;
 	struct deco_def_s *dd;
 	struct deco_elt *de;
@@ -1254,6 +1264,28 @@ static void deco_create(struct SYMBOL *s,
 		if ((dd = d_tb[k]) == 0)
 			continue;
 #endif
+		/* check if hidden */
+		switch (dd->func) {
+		default:
+			posit = 0;
+			break;
+		case 3:				/* d_upstaff */
+		case 4:
+//fixme:trill does not work yet
+		case 5:				/* trill */
+			posit = s->posit.orn;
+			break;
+		case 6:				/* d_pf */
+			posit = s->posit.vol;
+			break;
+		case 7:				/* d_cresh */
+			posit = s->posit.dyn;
+			break;
+		}
+		if (posit == SL_HIDDEN) {
+			dc->t[k] = 0;
+			continue;
+		}
 
 		/* memorize the decorations, but not the head ones */
 		if (strncmp(dd->name, "head-", 5) == 0) {

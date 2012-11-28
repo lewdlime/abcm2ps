@@ -1,3 +1,25 @@
+---- Version 7.3.1 - 12/11/28 ----
+
+Fix left width of heads in flute.fmt.
+Fix the documentation about flute.fmt.
+Do %%ornament work.
+Add "hidden" in %%dynamic, %%gchord, %%ornament, %%vocal and %%volume.
+Don't do an error on the information field "r:".
+Fix no output when lack of "%%multicol end"
+	(reported by "henrygroups").
+Fix crash on "%%multicol end" with -E or -g.
+Handle "%%  endxx" (space after %%)
+	(reported by "henrygroups").
+Check again if not enough words in lyrics (w:)
+	(asked by Steve West).
+Handle ties from notes to grace notes
+	(asked by David Lacroix).
+Fix bad width of hole on %%staffbreak multi-voice.
+Fix bad offset of the slurs since previous version
+	(reported by David Lacroix).
+Don't display a key signature on %%transpose from K:none
+	(reported by David Lacroix).
+
 ---- Version 7.3.0 - 12/11/17 ----
 
 Don't let annotations move the next key or time signature to the right.

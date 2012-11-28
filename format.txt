@@ -335,6 +335,7 @@ List of the format parameters
 				the presence and position of lyrics)
 			1 or 'above' above the staff
 			2 or 'below' below the staff
+			3 or 'hidden' don't print
 		When this parameter appears outside a tune or inside a tune
 		header, it applies to all voices. When inside a tune body,
 		it applies to the current voice only.
@@ -450,6 +451,7 @@ List of the format parameters
 				above the staff)
 			1 or 'above' above the staff
 			2 or 'below' below the staff
+			3 or 'hidden' don't print
 		When this parameter appears outside a tune or inside a tune
 		header, it applies to all voices. When inside a tune body,
 		it applies to the current voice only.
@@ -763,6 +765,7 @@ List of the format parameters
 				the staff)
 			1 or 'above' above the staff
 			2 or 'below' below the staff
+			3 or 'hidden' don't print
 		When this parameter appears outside a tune or inside a tune
 		header, it applies to all voices. When inside a tune body,
 		it applies to the current voice only.
@@ -1217,6 +1220,7 @@ List of the format parameters
 				the staff)
 			1 or 'above' above the staff
 			2 or 'below' below the staff
+			3 or 'hidden' don't print
 		When this parameter appears outside a tune or inside a tune
 		header, it applies to all voices. When inside a tune body,
 		it applies to the current voice only.
@@ -1264,6 +1268,7 @@ List of the format parameters
 				the staff)
 			1 or 'above' above the staff
 			2 or 'below' below the staff
+			3 or 'hidden' don't print
 		When this parameter appears outside a tune or inside a tune
 		header, it applies to all voices. When inside a tune body,
 		it applies to the current voice only.
@@ -1483,7 +1488,7 @@ List of the pseudo-comments treated while parsed
 	For examples of tablatures with pitch, look at
 		flute.fmt
 	and try:
-		abcm2ps sample.abc -e1 -f flute.fmt -T1 -T3
+		abcm2ps sample.abc -e1 -F flute.fmt -T1 -T3
 
   text <line of text>
 	Print one line of text with the current value of '%%textoption'.

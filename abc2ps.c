@@ -892,6 +892,14 @@ int main(int argc, char **argv)
 
 	if (in_fname != 0)
 		treat_file(in_fname, "abc");
+	if (multicol_start != 0) {		/* lack of %%multicol end */
+		error(1, 0, "Lack of %%%%multicol end");
+		multicol_start = 0;
+		buffer_eob();
+		if (info['X' - 'A'] == 0
+		 && !epsf)
+			write_buffer();
+	}
 	if (!epsf && fout == 0) {
 		error(1, 0, "No input file specified");
 		return EXIT_FAILURE;

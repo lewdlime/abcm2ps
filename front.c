@@ -535,11 +535,16 @@ unsigned char *frontend(unsigned char *s,
 					goto next_eol;		/* comment */
 				goto next;
 			}
-			if (strncmp((char *) s, "%%end", 5) == 0
-			 && strncmp((char *) s + 5,
-					(char *) begin_end, end_len) == 0) {
-				begin_end = 0;
-				goto next;
+			if (*s == '%' && s[1] == '%') {
+				q = s + 2;
+				while (*q == ' ' || *q == '\t')
+					q++;
+				if (strncmp((char *) q, "end", 3) == 0
+				 && strncmp((char *) q + 3,
+						(char *) begin_end, end_len) == 0) {
+					begin_end = 0;
+					goto next;
+				}
 			}
 			if (strncmp("ps", (char *) begin_end, end_len) == 0) {
 				if (*s == '%')

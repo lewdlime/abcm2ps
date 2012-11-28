@@ -430,8 +430,8 @@ void set_format(void)
 void print_format(void)
 {
 	struct format *fd;
-static char yn[2][5] = {"no","yes"};
-static char posit[3][8] = {"auto", "above", "below"};
+static char *yn[2] = {"no","yes"};
+static char *posit[4] = {"auto", "above", "below", "hidden"};
 
 	for (fd = format_tb; fd->name; fd++) {
 		printf("%-15s ", fd->name);
@@ -607,7 +607,9 @@ static int get_posit(char *p)
 	if (strcmp(p, "down") == 0
 	 || strcmp(p, "below") == 0)
 		return SL_BELOW;
-	return 0;			/* auto */
+	if (strcmp(p, "hidden") == 0)
+		return SL_HIDDEN;
+	return 0;			/* auto (!= SL_AUTO) */
 }
 
 /* -- get the option for text -- */
@@ -1230,7 +1232,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 			i = get_posit(p);
 		else
 			i = strtod(p, 0);
-		if ((unsigned) i > 2)
+		if ((unsigned) i > 3)
 			goto bad;
 		switch (fd->subtype) {
 		case 0: cfmt.posit.dyn = i; break;
@@ -1238,8 +1240,16 @@ void interpret_fmt_line(char *w,		/* keyword */
 		case 2: cfmt.posit.orn = i; break;
 		case 3: cfmt.posit.voc = i; break;
 		case 4: cfmt.posit.vol = i; break;
-		case 5: cfmt.posit.std = i; break;
-		case 6: cfmt.posit.gsd = i; break;
+		case 5:
+			if (i > 2)
+				goto bad;
+			cfmt.posit.std = i;
+			break;
+		case 6:
+			if (i > 2)
+				goto bad;
+			cfmt.posit.gsd = i;
+			break;
 		}
 		break;
 	    }

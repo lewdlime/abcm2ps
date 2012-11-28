@@ -1247,7 +1247,7 @@ static void set_width(struct SYMBOL *s)
 		}
 
 		/* leave room for guitar chord */
-		if (s->as.text != 0)
+		if (s->gch)
 			wlw = gchord_width(s, wlnote, wlw);
 
 		/* leave room for vocals under note */
@@ -1301,7 +1301,7 @@ static void set_width(struct SYMBOL *s)
 		else
 			xx = (float) s->as.u.note.lens[1] * 0.5;
 		s->wr = xx;
-		if (s->as.text != 0)
+		if (s->gch)
 			xx = gchord_width(s, xx, xx);
 		if (s->as.u.note.dc.n > 0)
 			xx += deco_width(s);
@@ -1353,7 +1353,7 @@ static void set_width(struct SYMBOL *s)
 			s->wl += deco_width(s);
 
 		/* have room for the repeat numbers / guitar chord */
-		if (s->as.text != 0
+		if (s->gch
 		 && strlen(s->as.text) < 4)
 			s->wl = gchord_width(s, s->wl, s->wl);
 		break;
@@ -2232,7 +2232,7 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 		if (!s) {
 //fixme:test - this should occur very rarely
 			fprintf(stderr, "*** cut_tune limit 1!\n");
-			s = first->ts_next;
+			s = s2 = first->ts_next;
 		}
 		for ( ; s != last; s = s->ts_next) {
 			x = s->x;
@@ -2240,6 +2240,8 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 				continue;
 			if ((s->time - bar_time) % CROTCHET == 0) {
 				for (s = s->ts_prev ; ; s = s->ts_prev) {
+					if (!s)
+						return s;
 					if (s->x != 0)
 						break;
 				}

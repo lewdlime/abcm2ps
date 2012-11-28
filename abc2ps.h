@@ -125,7 +125,9 @@ struct gch {
 };
 
 /* positions / directions */
-/* 0: auto, 1: above/up (SL_ABOVE), 2: below/down (SL_BELOW) */
+/* 0: auto, 1: above/up (SL_ABOVE), 2: below/down (SL_BELOW)
+ * 3: hidden (SL_AUTO) */
+#define SL_HIDDEN SL_AUTO
 struct posit_s {
 	unsigned short dyn:2;	/* %%dynamic */
 	unsigned short gch:2;	/* %%gchord */

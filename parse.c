@@ -1158,6 +1158,8 @@ static void gch_build(struct SYMBOL *s)
 	float xspc;
 	int l, ix, box, gch_place;
 
+	if (s->posit.gch == SL_HIDDEN)
+		return;
 	s->gch = getarena(sizeof *s->gch * MAXGCH);
 	memset(s->gch, 0, sizeof *s->gch * MAXGCH);
 
@@ -1166,8 +1168,7 @@ static void gch_build(struct SYMBOL *s)
 
 	/* split the guitar chords / annotations
 	 * and initialize their vertical offsets */
-	gch_place = voice_tb[s->voice].posit.gch == SL_BELOW
-			? -1 : 1;
+	gch_place = s->posit.gch == SL_BELOW ? -1 : 1;
 	h_gch = cfmt.font_tb[cfmt.gcf].size;
 	h_ann = cfmt.font_tb[cfmt.anf].size;
 	y_above = y_below = y_left = y_right = 0;
@@ -1385,6 +1386,16 @@ static void gch_build(struct SYMBOL *s)
 	}
 }
 
+/* get the note which will receive a lyric word */
+static struct SYMBOL *next_lyric_note(struct SYMBOL *s)
+{
+	while (s
+	    && (s->as.type != ABC_T_NOTE
+	     || (s->as.flags & ABC_F_GRACE)))
+		s = s->next;
+	return s;
+}
+
 /* -- parse lyric (vocal) lines (w:) -- */
 static struct abcsym *get_lyric(struct abcsym *as)
 {
@@ -1393,7 +1404,7 @@ static struct abcsym *get_lyric(struct abcsym *as)
 	int ln, cont;
 	struct FONTSPEC *f;
 
-	curvoice->have_ly = 1;
+	curvoice->have_ly = curvoice->posit.voc != SL_HIDDEN;
 
 	f = &cfmt.font_tb[cfmt.vof];
 	str_font(cfmt.vof);			/* (for tex_str) */
@@ -1512,15 +1523,13 @@ static struct abcsym *get_lyric(struct abcsym *as)
 			}
 
 			/* store the word in the next note */
-			while (s
-			    && (s->as.type != ABC_T_NOTE
-			     || (s->as.flags & ABC_F_GRACE)))
-				s = s->next;
+			s = next_lyric_note(s);
 			if (!s) {
 				error(1, s, "Too many words in lyric line");
 				goto ly_next;
 			}
-			if (word[0] != '*') {
+			if (word[0] != '*'
+			 && s->posit.voc != SL_HIDDEN) {
 				struct lyl *lyl;
 				float w;
 
@@ -1585,8 +1594,15 @@ ly_next:
 				 && as->next->text[0] != '+')
 					goto ly_upd;
 				as = as->next;
-				if (as->text[0] == '+')
+				if (as->text[0] == '+') {
 					cont = 1;
+				} else {
+					s = next_lyric_note(s);
+					if (s) {
+						error(1, s,
+							"Not enough words for lyric line");
+					}
+				}
 				break;			/* more lyric */
 			default:
 				goto ly_upd;
@@ -1597,6 +1613,9 @@ ly_next:
 
 	/* the next lyrics will go into the next notes */
 ly_upd:
+	s = next_lyric_note(s);
+	if (s)
+		error(1, s, "Not enough words for lyric line");
 	curvoice->lyric_start = curvoice->last_sym;
 	return as;
 }
@@ -2465,6 +2484,7 @@ static struct abcsym *get_info(struct abcsym *as,
 			break;
 		}
 		break;
+	case 'r':
 	case 's':
 		break;
 	case 'T':
@@ -3623,7 +3643,6 @@ static void get_note(struct SYMBOL *s)
 
 	/* insert the note/rest in the voice */
 	sym_link(s,  s->as.u.note.lens[0] != 0 ? NOTEREST : SPACE);
-	s->posit = curvoice->posit;
 	if (!(s->as.flags & ABC_F_GRACE))
 		curvoice->time += s->dur;
 	s->nohdix = -1;
@@ -4057,7 +4076,8 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 					}
 					multicol_start = 0;
 					buffer_eob();
-					if (info['X' - 'A'] == 0)
+					if (info['X' - 'A'] == 0
+					 && !epsf)
 						write_buffer();
 				}
 			} else {
@@ -4225,6 +4245,7 @@ irepeat:
 		}
 		if (strcmp(w, "staffbreak") == 0) {
 			if (as->state != ABC_S_TUNE)
+//			 || parsys->voice[curvoice - voice_tb].range != 0)
 				return as;
 			sym_link(s, STBRK);
 			if (isdigit(*p)) {

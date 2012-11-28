@@ -345,9 +345,6 @@ struct abctune *abc_parse(char *file_api)
 	last_tune = 0;
 	g_abc_vers = g_ulen = 0;		/* (have gcc happy) */
 
-	if (strncmp(file, "%abc-", 5) == 0)
-		get_vers(file + 5);
-
 	/* scan till end of file */
 	for (;;) {
 		if ((p = get_line()) == 0) {
@@ -2045,6 +2042,8 @@ static int parse_line(struct abctune *t,
 	case '%':
 		if (p[1] == '@') {		/* line number - see front.c */
 			linenum = atol(p + 2);
+			if (linenum == 0 && strncmp(file, "%abc-", 5) == 0)
+				get_vers(file + 5);
 			return 0;
 		}
 		if (p[1] == '%') {

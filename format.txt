@@ -1345,7 +1345,7 @@ List of the pseudo-comments treated while parsed
 	For examples of tablatures with pitch, look at
 		flute.fmt
 	and try:
-		abcm2ps sample.abc -e1 -f flute.fmt -T1 -T3
+		abcm2ps sample.abc -e1 -F flute.fmt -T1 -T3
 
   text <line of text>
 	Print one line of text with the current value of '%%textoption'.

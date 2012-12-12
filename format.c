@@ -1307,5 +1307,5 @@ void set_font(int ft)
 		      fontnames[fnum]);
 		f->size = 8;
 	}
-	PUT2("%.1f F%d ", f->size, fnum);
+	a2b("%.1f F%d ", f->size, fnum);
 }

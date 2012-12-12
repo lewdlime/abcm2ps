@@ -505,7 +505,7 @@ static void str_pg_out(char *p, int action)
 	float w;
 
 //fixme: test
-//PUT1("\n%% t: '%s'\n", p);
+//a2b("\n%% t: '%s'\n", p);
 	if (out_pg_ft != curft)
 		out_pg_ft = -1;
 
@@ -778,7 +778,7 @@ static void str_ft_out1(char *p, int l)
 {
 	if (curft != outft) {
 		if (strtx) {
-			PUT1(")%s ", strop);
+			a2b(")%s ", strop);
 			strtx = 0;
 		}
 //		if (curft == 0)
@@ -786,10 +786,10 @@ static void str_ft_out1(char *p, int l)
 		set_font(curft);
 	}
 	if (!strtx) {
-		PUT0("(");
+		a2b("(");
 		strtx = 1;
 	}
-	PUT2("%.*s", l, p);
+	a2b("%.*s", l, p);
 }
 
 /* -- output a string and the font changes -- */
@@ -874,7 +874,7 @@ void str_ft_out(char *p, int end)
 	if (p > q)
 		str_ft_out1(q, p - q);
 	if (end && strtx) {
-		PUT1(")%s ", strop);
+		a2b(")%s ", strop);
 		strtx = 0;
 	}
 }
@@ -929,7 +929,7 @@ void str_out(char *p, int action)
 	case A_CENTER:
 	case A_RIGHT:
 		if (!svg && epsf != 2) {
-			PUT0("/str{");
+			a2b("/str{");
 			outft = -1;
 			strop = "strop";
 			break;
@@ -946,11 +946,11 @@ void str_out(char *p, int action)
 	if (svg || epsf == 2)
 		return;
 	if (action == A_CENTER || action == A_RIGHT) {
-		PUT0("}def\n"
+		a2b("}def\n"
 			"/strop/strw load def/w 0 def str w ");
 		if (action == A_CENTER)
-			PUT0("0.5 mul ");
-		PUT0("neg 0 RM/strop/show load def str ");
+			a2b("0.5 mul ");
+		a2b("neg 0 RM/strop/show load def str ");
 	}
 }
 
@@ -959,7 +959,7 @@ void put_str(char *str, int action)
 {
 	tex_str(str);
 	str_out(tex_buf, action);
-	PUT0("\n");
+	a2b("\n");
 }
 
 /* -- output a header information -- */
@@ -1230,12 +1230,12 @@ static int put_wline(char *p,
 	if (r != 0) {
 		sep = *r;
 		*r = '\0';
-		PUT1("%.1f 0 M ", x);
+		a2b("%.1f 0 M ", x);
 		put_str(q,  A_RIGHT);
 		*r = sep;
 	}
 	if (*p != '\0') {
-		PUT1("%.1f 0 M ", x + 5);
+		a2b("%.1f 0 M ", x + 5);
 		put_str(p, A_LEFT);
 	}
 	return *p == '\0' && r == 0;
@@ -1354,7 +1354,7 @@ void put_history(void)
 		w = tex_str(tmp);
 		h = cfmt.font_tb[HISTORYFONT].size * cfmt.lineskipfac;
 		set_font(HISTORYFONT);
-		PUT1("0 0 M(%s)show ", tex_buf);
+		a2b("0 0 M(%s)show ", tex_buf);
 		for (;;) {
 			put_inf(s2);
 			if ((s2 = s2->next) == 0)
@@ -1563,7 +1563,7 @@ static void write_headform(float lwidth)
 			f = &cfmt.font_tb[j];
 			sz = f->size * 1.1 + inf_sz[i];
 			y = ya[align] + sz;
-			PUT2("%.1f %.1f M ", x, -y);
+			a2b("%.1f %.1f M ", x, -y);
 			if (*p == 125) {	/* concatenate */
 			    p += 2;
 /*fixme: do it work with different fields*/
@@ -1597,7 +1597,7 @@ static void write_headform(float lwidth)
 				strncpy(r, q, buf + sizeof buf - r - 1);
 				tex_str(buf);
 				str_out(tex_buf, align);
-				PUT0("\n");
+				a2b("\n");
 				inf_nb[i]--;
 				p += 2;
 			    } else {
@@ -1610,7 +1610,7 @@ static void write_headform(float lwidth)
 					w = -tempo_width(s);
 					if (align == A_CENTER)
 						w *= 0.5;
-					PUT1("%.1f 0 RM ", w);
+					a2b("%.1f 0 RM ", w);
 				}
 				write_tempo(s, 0, 0.75);
 				info['Q' - 'A'] = 0;	/* don't display in tune */
@@ -1628,7 +1628,7 @@ static void write_headform(float lwidth)
 			if (inf_nb[i] == 1) {
 				while (s != 0) {
 					y += sz;
-					PUT2("%.1f %.1f M ", x, -y);
+					a2b("%.1f %.1f M ", x, -y);
 					put_inf2r(s, 0, align);
 					s = s->next;
 				}
@@ -1678,7 +1678,7 @@ void write_heading(struct abctune *t)
 					? info['R' - 'A'] : 0;
 	if (rhythm) {
 		str_font(COMPOSERFONT);
-		PUT1("0 %.1f M ",
+		a2b("0 %.1f M ",
 		     -(cfmt.composerspace + cfmt.font_tb[COMPOSERFONT].size));
 		put_inf(rhythm);
 		down1 -= cfmt.font_tb[COMPOSERFONT].size;
@@ -1713,7 +1713,7 @@ void write_heading(struct abctune *t)
 			for (;;) {
 				bskip(cfmt.font_tb[COMPOSERFONT].size);
 				down2 += cfmt.font_tb[COMPOSERFONT].size;
-				PUT0("0 0 M ");
+				a2b("0 0 M ");
 				put_inf(author);
 				if ((author = author->next) == 0)
 					break;
@@ -1726,7 +1726,7 @@ void write_heading(struct abctune *t)
 			s = composer;
 			for (;;) {
 				bskip(cfmt.font_tb[COMPOSERFONT].size);
-				PUT1("%.1f 0 M ", xcomp);
+				a2b("%.1f 0 M ", xcomp);
 				put_inf2r(s,
 					  (s == 0 || s->next == 0) ? origin : 0,
 					  align);
@@ -1748,7 +1748,7 @@ void write_heading(struct abctune *t)
 			 * otherwise output 'rhythm (area)' */
 			str_font(INFOFONT);
 			bskip(cfmt.font_tb[INFOFONT].size + cfmt.infospace);
-			PUT1("%.1f 0 M ", lwidth);
+			a2b("%.1f 0 M ", lwidth);
 			put_inf2r(rhythm, area, A_RIGHT);
 			down1 += cfmt.font_tb[INFOFONT].size + cfmt.infospace;
 		}
@@ -1766,7 +1766,7 @@ void write_heading(struct abctune *t)
 		if (down2 > 0.01)
 			bskip(down2);
 		str_font(PARTSFONT);
-		PUT0("0 0 M ");
+		a2b("0 0 M ");
 		put_inf(info['P' - 'A']);
 		down2 = 0;
 	}

@@ -178,7 +178,7 @@ static struct SYMBOL *first_note;	/* first note/rest of the line */
 static void draw_gchord(struct SYMBOL *s, float gchy_min, float gchy_max);
 
 /* -- get the max/min vertical offset -- */
-float y_get(struct SYMBOL *s,
+float y_get(int staff,
 		int up,
 		float x,
 		float w)
@@ -187,7 +187,7 @@ float y_get(struct SYMBOL *s,
 	int i, j;
 	float y;
 
-	p_staff = &staff_tb[s->staff];
+	p_staff = &staff_tb[staff];
 	i = (int) (x / realwidth * YSTEP);
 	if (i < 0) {
 //		fprintf(stderr, "y_get i:%d\n", i);
@@ -218,7 +218,7 @@ float y_get(struct SYMBOL *s,
 }
 
 /* -- adjust the vertical offsets -- */
-void y_set(struct SYMBOL *s,
+void y_set(int staff,
 		int up,
 		float x,
 		float w,
@@ -227,7 +227,7 @@ void y_set(struct SYMBOL *s,
 	struct STAFF_S *p_staff;
 	int i, j;
 
-	p_staff = &staff_tb[s->staff];
+	p_staff = &staff_tb[staff];
 	i = (int) (x / realwidth * YSTEP);
 	/* (may occur when annotation on 'y' at start of an empty staff) */
 	if (i < 0) {
@@ -256,7 +256,7 @@ void y_set(struct SYMBOL *s,
 }
 
 /* -- get the staff position of the dynamic and volume marks -- */
-static int dyn_p(struct SYMBOL *s, int pos)
+static int up_p(struct SYMBOL *s, int pos)
 {
 	switch (pos) {
 	case SL_ABOVE:
@@ -265,14 +265,12 @@ static int dyn_p(struct SYMBOL *s, int pos)
 		return 0;
 	}
 	if (s->multi != 0)
-		return s->multi > 0 ? 1 : 0;
+		return s->multi > 0;
 	if (!voice_tb[s->voice].have_ly)
 		return 0;
 
 	/* above if the lyrics are below the staff */
-	if (s->posit.voc == SL_ABOVE)
-		return 0;
-	return 1;
+	return s->posit.voc != SL_ABOVE;
 }
 
 /* -- drawing functions -- */
@@ -336,7 +334,7 @@ static void d_cresc(struct deco_elt *de)
 	de->staff = s2->staff;
 	de->flags &= ~DE_LDEN;		/* old behaviour */
 	de->flags |= DE_VAL;
-	up = dyn_p(s2, s2->posit.dyn);
+	up = up_p(s2, s2->posit.dyn);
 	if (up)
 		de->flags |= DE_UP;
 
@@ -377,7 +375,7 @@ static void d_cresc(struct deco_elt *de)
 	de->v = dx;
 	de->x = x;
 	dd = &deco_def_tb[de->t];
-	de->y = y_get(s2, up, x, dx);
+	de->y = y_get(de->staff, up, x, dx);
 	if (!up)
 		de->y -= dd->h;
 	/* (y_set is done later in draw_deco_staff) */
@@ -424,7 +422,7 @@ static void d_pf(struct deco_elt *de)
 	s = de->s;
 	dd = &deco_def_tb[de->t];
 
-	up = dyn_p(s, s->posit.vol);
+	up = up_p(s, s->posit.vol);
 	if (up)
 		de->flags |= DE_UP;
 
@@ -445,7 +443,7 @@ static void d_pf(struct deco_elt *de)
 
 	de->v = dd->wl + dd->wr;
 	de->x = x;
-	de->y = y_get(s, up, s->x, de->v);
+	de->y = y_get(s->staff, up, s->x, de->v);
 	if (!up)
 		de->y -= dd->h;
 	de->str = str;
@@ -484,11 +482,10 @@ static void d_slide(struct deco_elt *de)
 /* special case for long trill */
 static void d_trill(struct deco_elt *de)
 {
-	struct SYMBOL *s;
+	struct SYMBOL *s, *s2;
 	struct deco_def_s *dd;
 	int staff, up;
 	float x, y, w;
-	struct SYMBOL *s2;
 
 	if (de->flags & DE_LDST)
 		return;
@@ -526,7 +523,7 @@ static void d_trill(struct deco_elt *de)
 	}
 
 	dd = &deco_def_tb[de->t];
-	y = y_get(s2, up, x, w);
+	y = y_get(staff, up, x, w);
 	if (up) {
 		float stafft;
 
@@ -548,7 +545,11 @@ static void d_trill(struct deco_elt *de)
 	de->y = y;
 	if (up)
 		y += dd->h;
-	y_set(s2, up, x, w, y);
+	y_set(staff, up, x, w, y);
+	if (up)
+		s->ymx = s2->ymx = y;
+	else
+		s->ymn = s2->ymn = y;
 }
 
 /* above (or below) the staff */
@@ -581,20 +582,22 @@ static void d_upstaff(struct deco_elt *de)
 	if (strcmp(dd->name, "roll") == 0) {
 		if (s->multi < 0
 		 || (s->multi == 0 && s->stem > 0)) {
-			yc = y_get(s, 0, s->x - dd->wl, w);
+			yc = y_get(s->staff, 0, s->x - dd->wl, w);
 			if (yc > staffb)
 				yc = staffb;
 			yc -= dd->h;
-			y_set(s, 0, s->x, 0, yc);
+			y_set(s->staff, 0, s->x, 0, yc);
 			inv = 1;
+			s->ymn = yc;
 		} else {
-			yc = y_get(s, 1, s->x, 0) + 3;
+			yc = y_get(s->staff, 1, s->x, 0) + 3;
 			if (yc < stafft)
 				yc = stafft;
 			if (s->stem <= 0
 			 && (s->dots == 0 || ((int) s->y % 6)))
 				yc -= 2;
-			y_set(s, 1, s->x - dd->wl, w, yc + dd->h);
+			y_set(s->staff, 1, s->x - dd->wl, w, yc + dd->h);
+			s->ymx = yc + dd->h;
 		}
 	} else if (strcmp(dd->name, "breath") == 0
 		|| strcmp(dd->name, "longphrase") == 0
@@ -615,19 +618,21 @@ static void d_upstaff(struct deco_elt *de)
 		if (s->multi >= 0
 		 && strcmp(dd->name, "invertedfermata") != 0
 		 && !(de->flags & DE_BELOW)) {
-			yc = y_get(s, 1, s->x - dd->wl, w);
+			yc = y_get(s->staff, 1, s->x - dd->wl, w);
 			if (yc < stafft)
 				yc = stafft;
-			y_set(s, 1, s->x - dd->wl, w, yc + dd->h);
+			y_set(s->staff, 1, s->x - dd->wl, w, yc + dd->h);
+			s->ymx = yc + dd->h;
 		} else {
-			yc = y_get(s, 0, s->x - dd->wl, w);
+			yc = y_get(s->staff, 0, s->x - dd->wl, w);
 			if (yc > staffb)
 				yc = staffb;
 			yc -= dd->h;
-			y_set(s, 0, s->x - dd->wl, w, yc);
+			y_set(s->staff, 0, s->x - dd->wl, w, yc);
 			if (strcmp(dd->name, "fermata") == 0
 			 || strcmp(dd->name, "invertedfermata") == 0)
 				inv = 1;
+			s->ymn = yc;
 		}
 	}
 	if (inv) {
@@ -1079,7 +1084,7 @@ void draw_all_deco(void)
 					while (s->staff != staff)
 						s = s->ts_next;
 				}
-				y2 = y_get(s, !(de->flags & DE_UP),
+				y2 = y_get(staff, !(de->flags & DE_UP),
 							de->x, de->v)
 					+ staff_tb[staff].y;
 				if (de->flags & DE_UP)
@@ -1087,10 +1092,10 @@ void draw_all_deco(void)
 				if (((de->flags & DE_UP) && y2 > ym)
 				 || (!(de->flags & DE_UP) && y2 < ym)) {
 					y = ym;
-					y_set(de->s, de->flags & DE_UP,
+					y_set(staff, de->flags & DE_UP,
 							de->x, de->v,
 						  ((de->flags & DE_UP) ? y + dd->h : y)
-						- staff_tb[de->staff].y);
+						- staff_tb[staff].y);
 				}
 			}
 		}
@@ -1177,7 +1182,7 @@ int draw_deco_head(int deco, float x, float y, int stem)
 		break;
 	case 3:
 	case 4:
-		if (dd->str == 0)
+		if (dd->str != 0)
 			break;
 		/* fall thru */
 	case 6:
@@ -1472,11 +1477,11 @@ void draw_deco_staff(void)
 			gch = s->gch + ig;
 			w = gch->w;
 			if (gch->y >= 0) {
-				y = y_get(s, 1, s->x, w);
+				y = y_get(s->staff, 1, s->x, w);
 				if (y > minmax[s->staff].ymax)
 					minmax[s->staff].ymax = y;
 			} else {
-				y = y_get(s, 0, s->x, w);
+				y = y_get(s->staff, 0, s->x, w);
 				if (y < minmax[s->staff].ymin)
 					minmax[s->staff].ymin = y;
 			}
@@ -1573,14 +1578,14 @@ void draw_deco_staff(void)
 					break;
 				}
 			}
-			y2 = y_get(s1, 1, s1->x, s->x - s1->x);
+			y2 = y_get(p_voice->staff, 1, s1->x, s->x - s1->x);
 			if (y < y2)
 				y = y2;
 
 			/* have room for the repeat numbers */
 			if (s1->as.text) {
 				w = s1->gch->w;
-				y2 = y_get(s1, 1, s1->x + 4, w);
+				y2 = y_get(p_voice->staff, 1, s1->x + 4, w);
 				y2 += cfmt.font_tb[REPEATFONT].size + 2;
 				if (y < y2)
 					y = y2;
@@ -1668,7 +1673,7 @@ void draw_deco_staff(void)
 				putx(w);
 				putxy(x, y);
 				a2b("y%d repbra\n", s1->staff);
-				y_set(s1, 1, x, w, y + 2);
+				y_set(s1->staff, 1, x, w, y + 2);
 			}
 			if (s->as.u.bar.repeat_bar)
 				s = s->prev;
@@ -1720,7 +1725,7 @@ void draw_deco_staff(void)
 		}
 		if (de->flags & DE_UP)
 			y += dd->h;
-		y_set(de->s, de->flags & DE_UP, de->x, de->v, y);
+		y_set(de->staff, de->flags & DE_UP, de->x, de->v, y);
 	}
 }
 
@@ -1738,11 +1743,11 @@ static void draw_gchord(struct SYMBOL *s,
 //fixme: w may be too small
 	w = s->gch->w;
 #if 1
-	y_above = y_get(s, 1, s->x - 2, w);
-	y_below = y_get(s, 0, s->x - 2, w);
+	y_above = y_get(s->staff, 1, s->x - 2, w);
+	y_below = y_get(s->staff, 0, s->x - 2, w);
 #else
-	y_above = y_get(s, 1, s->x - 2, w) + 2;
-	y_below = y_get(s, 0, s->x - 2, w) - 2;
+	y_above = y_get(s->staff, 1, s->x - 2, w) + 2;
+	y_below = y_get(s->staff, 0, s->x - 2, w) - 2;
 #endif
 	ig = -1;
 	for (ix = 0, gch = s->gch; ix < MAXGCH; ix++, gch++) {
@@ -1822,20 +1827,20 @@ static void draw_gchord(struct SYMBOL *s,
 		switch (gch->type) {
 		case '_':			/* below */
 			y = gch->y + y_below;
-			y_set(s, 0, x, w, y - h * 0.2 - 2);
+			y_set(s->staff, 0, x, w, y - h * 0.2 - 2);
 			break;
 		case '^':			/* above */
 			y = gch->y + y_above;
-			y_set(s, 1, x, w, y + h * 0.8 + 2);
+			y_set(s->staff, 1, x, w, y + h * 0.8 + 2);
 			break;
 		default:			/* guitar chord */
 			hbox = gch->box ? 3 : 2;
 			if (gch->y >= 0) {
 				y = gch->y + y_above;
-				y_set(s, 1, x, w, y + h + hbox);
+				y_set(s->staff, 1, x, w, y + h + hbox);
 			} else {
 				y = gch->y + y_below;
-				y_set(s, 0, x, w, y - hbox);
+				y_set(s->staff, 0, x, w, y - hbox);
 			}
 			if (gch->box) {
 				if (xboxl > x)
@@ -1922,15 +1927,15 @@ void draw_measnb(void)
 			any_nb = 1;
 			x = 0;
 			w = 20;
-			while (s->staff != staff)
-				s = s->ts_next;
-			y = y_get(s, 1, x, w);
+//			while (s->staff != staff)
+//				s = s->ts_next;
+			y = y_get(staff, 1, x, w);
 			if (y < staff_tb[staff].topbar + 14)
 				y = staff_tb[staff].topbar + 14;
 			a2b("0 ");
 			puty(y);
 			a2b("y%d M(%d)%s", staff, bar_num, showm);
-			y_set(s, 1, x, w, y + cfmt.font_tb[MEASUREFONT].size + 2);
+			y_set(staff, 1, x, w, y + cfmt.font_tb[MEASUREFONT].size + 2);
 		} else if (bar_num % cfmt.measurenb == 0) {
 			for ( ; ; s = s->ts_next) {
 				switch (s->type) {
@@ -1959,14 +1964,14 @@ void draw_measnb(void)
 			}
 			if (cfmt.measurebox)
 				w += 4;
-			y = y_get(s, 1, x, w);
+			y = y_get(staff, 1, x, w);
 			if (y < staff_tb[staff].topbar + 6)
 				y = staff_tb[staff].topbar + 6;
 			y += 2;
 			putxy(x, y);
 			a2b("y%d M(%d)%s", staff, bar_num, showm);
 			y += cfmt.font_tb[MEASUREFONT].size;
-			y_set(s, 1, x, w, y);
+			y_set(staff, 1, x, w, y);
 			s->ymx = y;
 		}
 	}
@@ -2009,7 +2014,7 @@ void draw_measnb(void)
 		if (cfmt.measurebox)
 			w += 4;
 		x = s->x - w * 0.4;
-		y = y_get(s, 1, x, w);
+		y = y_get(staff, 1, x, w);
 		if (y < staff_tb[staff].topbar + 6)
 			y = staff_tb[staff].topbar + 6;
 		if (s->next->as.type == ABC_T_NOTE) {
@@ -2026,11 +2031,11 @@ void draw_measnb(void)
 		putxy(x, y);
 		a2b("y%d M(%d)%s", staff, bar_num, showm);
 		y += cfmt.font_tb[MEASUREFONT].size;
-		y_set(s, 1, x, w, y);
+		y_set(staff, 1, x, w, y);
 		s->ymx = y;
 	}
 	if (any_nb)
-		PUT0("\n");
+		a2b("\n");
 	nbar = bar_num;
 }
 
@@ -2204,7 +2209,7 @@ float draw_partempo(int staff,
 			if (!g)
 				continue;
 			w = tempo_width(g);
-			y = y_get(s, 1, s->x - 5, w) + 2;
+			y = y_get(staff, 1, s->x - 5, w) + 2;
 			if (y > ymin)
 				ymin = y;
 			if (x >= s->x - 5 && !(dosh & (shift >> 1)))
@@ -2264,7 +2269,7 @@ float draw_partempo(int staff,
 		if (!g)
 			continue;
 		w = tex_str(&g->as.text[2]);
-		y = y_get(s, 1, s->x - 10, w + 15) + 5;
+		y = y_get(staff, 1, s->x - 10, w + 15) + 5;
 		if (ymin < y)
 			ymin = y;
 	}

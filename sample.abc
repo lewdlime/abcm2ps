@@ -84,7 +84,7 @@ T: Title with funny chars like \005 Çéñô Àçäßö © …
 M:C|
 K:Ebm
 [| (CDEF) ((3efg) ((3gag)| (C2 EF) (ef(ga)) | ((c2 (3(d)ef) e2)\
- A2-|A4 (c4|(c4)(e4)|a8) |]
+ A2-|A4 c4-|(c4(e4)|a8) |]
 
 X:8
 T:Changing Time or Key Signatures, Guitar Chords

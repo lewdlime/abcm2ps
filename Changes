@@ -1,3 +1,17 @@
+---- Version 7.3.2 - 12/12/07 ----
+
+Don't do a page break after the tune title when %%scale after 1st K:.
+Fix clash of beams with grace notes when down stems.
+Display better slurs on grace notes with down stems.
+Fix abnormal error on w: ending with '\' (continuation).
+Fix loss of tempo (Q: in tune header) when %%scale/%%rightmargin/...
+	after first K:.
+Fix again clash of slurs with decorations/tuplets/...
+Fix bad slurs when inside the staff since 7.3.0
+	(reported by David Lacroix).
+Fix %%select when tunes have blank lines (%%begintext..)
+	(reported by Henry Bley-Vroman).
+
 ---- Version 7.3.1 - 12/11/28 ----
 
 Fix left width of heads in flute.fmt.
@@ -6,10 +20,10 @@ Do %%ornament work.
 Add "hidden" in %%dynamic, %%gchord, %%ornament, %%vocal and %%volume.
 Don't do an error on the information field "r:".
 Fix no output when lack of "%%multicol end"
-	(reported by "henrygroups").
+	(reported by Henry Bley-Vroman).
 Fix crash on "%%multicol end" with -E or -g.
 Handle "%%  endxx" (space after %%)
-	(reported by "henrygroups").
+	(reported by Henry Bley-Vroman).
 Check again if not enough words in lyrics (w:)
 	(asked by Steve West).
 Handle ties from notes to grace notes

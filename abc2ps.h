@@ -468,12 +468,6 @@ int lvlarena(int level);
 void *getarena(int len);
 void strext(char *fid, char *ext);
 /* buffer.c */
-#define PUT0(f) a2b(f)
-#define PUT1(f,a) a2b(f,a)
-#define PUT2(f,a,b) a2b(f,a,b)
-#define PUT3(f,a,b,c) a2b(f,a,b,c)
-#define PUT4(f,a,b,c,d) a2b(f,a,b,c,d)
-#define PUT5(f,a,b,c,d,e) a2b(f,a,b,c,d,e)
 void a2b(char *fmt, ...)
 #ifdef __GNUC__
 	__attribute__ ((format (printf, 1, 2)))
@@ -517,11 +511,11 @@ float tempo_width(struct SYMBOL *s);
 void write_tempo(struct SYMBOL *s,
 		int beat,
 		float sc);
-float y_get(struct SYMBOL *s,
+float y_get(int staff,
 		int up,
 		float x,
 		float w);
-void y_set(struct SYMBOL *s,
+void y_set(int staff,
 		int up,
 		float x,
 		float w,

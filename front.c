@@ -32,6 +32,7 @@ static int offset, size, keep_comments;
 static int latin;
 static void (*include_f)(unsigned char *fn);
 static unsigned char *selection;
+static int skip;
 
 /*
  * translation table from the ABC draft version 2
@@ -103,6 +104,8 @@ static unsigned char *latin_tb[5] = {
 /* add text to the output buffer */
 static void txt_add(unsigned char *s, int sz)
 {
+	if (skip)
+		return;
 	if (offset + sz > size) {
 		size = (offset + sz + 8191) / 8192 * 8192;
 		if (dst == 0)
@@ -455,7 +458,7 @@ unsigned char *frontend(unsigned char *s,
 			int ftype)
 {
 	unsigned char *p, *q, c, *begin_end;
-	int i, l, state, str_cnv_p, histo, end_len, nline, skip;
+	int i, l, state, str_cnv_p, histo, end_len, nline;
 
 	begin_end = 0;
 	end_len = 0;
@@ -579,10 +582,6 @@ unsigned char *frontend(unsigned char *s,
 				break;
 			}
 			goto next_eol;
-		}
-		if (skip) {
-			s = p;
-			continue;
 		}
 		if (histo) {			/* H: continuation */
 			if ((s[1] == ':'
@@ -788,13 +787,8 @@ info:
 					txt_add_eol();	/* no empty line - minor error */
 					break;
 				}
-				if (selection != 0) {
+				if (selection)
 					skip = !tune_select(s);
-					if (skip) {
-						s = p;
-						continue;
-					}
-				}
 				state = 1;
 				break;
 			case 'T':

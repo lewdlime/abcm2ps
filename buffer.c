@@ -50,7 +50,7 @@ int (*output)(FILE *out, const char *fmt, ...);
 
 int in_page;			/* filling a PostScript page */
 char *outbuf;			/* output buffer.. should hold one tune */
-char *mbf;			/* where to PUTx() */
+char *mbf;			/* where to a2b() */
 int use_buffer;			/* 1 if lines are being accumulated */
 
 /* -- cut off extension on a file identifier -- */
@@ -258,9 +258,10 @@ out2:
 /* epsf is always null */
 void close_output_file(void)
 {
-	if (fout == 0)
+	if (!fout)
 		return;
-	if (multicol_start != 0) {	/* if no '%%multicol end' or filtering */
+	if (multicol_start != 0) {	/* if no '%%multicol end' */
+		error(1, 0, "No \"%%%%multicol end\"");
 		multicol_start = 0;
 		write_buffer();
 	}
@@ -294,10 +295,11 @@ void close_page(void)
 			close_fout();
 		else
 			fputs("</p>\n", fout);
-	} else
+	} else {
 		fputs("%%PageTrailer\n"
 			"grestore\n"
 			"showpage\n", fout);
+	}
 	cur_lmarg = 0;
 	cur_scale = 1.0;
 	outft = -1;
@@ -705,7 +707,6 @@ static void newpage(void)
 /*  subroutines to handle output buffer  */
 
 /* -- update the output buffer pointer -- */
-/* called from the PUTx() macros */
 void a2b(char *fmt, ...)
 {
 	va_list args;
@@ -728,7 +729,7 @@ void a2b(char *fmt, ...)
 void bskip(float h)
 {
 	bposy -= h * cfmt.scale;
-	PUT1("0 %.2f T\n", -h);
+	a2b("0 %.2f T\n", -h);
 }
 
 /* -- clear_buffer -- */
@@ -860,7 +861,6 @@ void write_buffer(void)
    after page break and change buffer handling mode to pass though */
 void buffer_eob(void)
 {
-//	if (bposy == 0 && mbf == outbuf)
 	if (mbf == outbuf)
 		return;
 //fixme: should be done sooner and should be adjusted when cfmt change...
@@ -868,7 +868,7 @@ void buffer_eob(void)
 		maxy = (cfmt.landscape ? cfmt.pagewidth : cfmt.pageheight)
 			- cfmt.topmargin - cfmt.botmargin;
 	if (ln_num > 0 && mbf == ln_buf[ln_num - 1])
-		return;
+		return;				/* no data */
 	if (ln_num >= BUFFLN) {
 		char c, *p;
 
@@ -896,14 +896,15 @@ void buffer_eob(void)
 	ln_scale[ln_num] = cfmt.scale;
 	ln_font[ln_num] = outft;
 	ln_num++;
+
 	if (!use_buffer) {
 		write_buffer();
 		return;
 	}
 
-	/* if the current block does not enter in the current page
-	 * start a new page */
-	if (maxy + bposy < 0 && !epsf && multicol_start == 0) {
+	if (maxy + bposy < 0
+	 && !epsf
+	 && multicol_start == 0) {
 		maxy = 0;		/* force new page */
 		write_buffer();
 		use_buffer = 0;

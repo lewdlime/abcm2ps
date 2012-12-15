@@ -1,5 +1,5 @@
-	Features of abcm2ps 7.2.1 (J.F. Moine, October 2012)
-	====================================================
+	Features of abcm2ps 7.3.3 (J.F. Moine, December 2012)
+	=====================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
 

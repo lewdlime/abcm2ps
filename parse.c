@@ -86,6 +86,8 @@ static float lmarg, rmarg;
 static int mc_in_tune;			/* multicol started in tune */
 
 static void get_clef(struct SYMBOL *s);
+static struct abcsym *get_info(struct abcsym *as,
+		     struct abctune *t);
 static void get_key(struct SYMBOL *s);
 static void get_meter(struct SYMBOL *s);
 static void get_voice(struct SYMBOL *s);
@@ -376,6 +378,17 @@ static void voice_compress(void)
 //		sflags = 0;
 		for ( ; s; s = s->next) {
 			switch (s->type) {
+			case KEYSIG:	/* remove the empty key signatures */
+				if (s->as.u.key.empty) {
+					if (s->prev)
+						s->prev->next = s->next;
+					else
+						p_voice->sym = s->next;
+					if (s->next)
+						s->next->prev = s->prev;
+					continue;
+				}
+				break;
 			case FMTCHG:
 				s2 = s->extra;
 				if (s2) {	/* dummy format */
@@ -1654,7 +1667,7 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 		return;
 	if (s->as.type == ABC_T_BAR
 	 || s->as.u.v_over.type == V_OVER_E)  {
-		p_voice->last_sym->as.flags |= ABC_F_SPACE;
+		p_voice->last_sym->sflags |= S_BEAM_END;
 		over_bar = 0;
 		if (over_time < 0) {
 			error(1, s, "Erroneous end of voice overlap");
@@ -1676,7 +1689,7 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 
 	/* (here is treated a new overlay - '&') */
 	/* create the extra voice if not done yet */
-	p_voice->last_sym->as.flags |= ABC_F_SPACE;
+	p_voice->last_sym->sflags |= S_BEAM_END;
 	voice2 = s->as.u.v_over.voice;
 	p_voice2 = &voice_tb[voice2];
 	if (parsys->voice[voice2].range < 0) {
@@ -2333,6 +2346,44 @@ next_voice:
 	}
 }
 
+/* -- get the global definitions after the first K: or middle-tune T:'s -- */
+static struct abcsym *get_global(struct abcsym *as,
+		     struct abctune *t)
+{
+	struct abcsym *as2;
+
+	for (;;) {
+		as2 = as->next;
+		if (!as2)
+			break;
+		switch (as2->type) {
+		case ABC_T_INFO:
+			switch (as2->text[0]) {
+			case 'K':
+				as = as2;
+				as->state = ABC_S_HEAD;
+				get_key((struct SYMBOL *) as);
+				continue;
+			case 'I':
+			case 'M':
+			case 'Q':
+				as = as2;
+				as->state = ABC_S_HEAD;
+				as = get_info(as, t);
+				continue;
+			}
+			break;
+		case ABC_T_PSCOM:
+			as = as2;
+			as->state = ABC_S_HEAD;
+			as = process_pscomment(as);
+			continue;
+		}
+		break;
+	}
+	return as;
+}
+
 /* -- identify info line, store in proper place	-- */
 static struct abcsym *get_info(struct abcsym *as,
 		     struct abctune *t)
@@ -2352,13 +2403,13 @@ static struct abcsym *get_info(struct abcsym *as,
 	case 'd':
 		break;
 	case 'I':
-		process_pscomment(as);	/* same as pseudo-comment */
+		as = process_pscomment(as);	/* same as pseudo-comment */
 		break;
 	case 'K':
 		get_key(s);
 		if (as->state != ABC_S_HEAD)
 			break;
-		info['K' - 'A'] = s;
+		info['K' - 'A'] = s;		/* first K:, end of tune header */
 		tunenum++;
 
 		if (!epsf)
@@ -2414,6 +2465,7 @@ static struct abcsym *get_info(struct abcsym *as,
 			}
 			info['Q' - 'A'] = NULL;
 		}
+		as = get_global(as, t);
 
 		voice_filter();
 
@@ -2506,6 +2558,7 @@ static struct abcsym *get_info(struct abcsym *as,
 		voice_init();
 		reset_gen();		/* (display the time signature) */
 		curvoice = &voice_tb[parsys->top_voice];
+		as = get_global(as, t);
 		break;
 	case 'U': {
 		unsigned char *deco;
@@ -2862,8 +2915,6 @@ void do_tune(struct abctune *t)
 			if (cfmt.breakoneoln
 			 || (s->as.flags & ABC_F_SPACE))
 				curvoice->space = 1;
-			if (parsys->voice[curvoice - voice_tb].range != 0)
-				continue;
 			if (cfmt.continueall || cfmt.barsperstaff
 			 || as->u.eoln.type == 1)	/* if '\' */
 				continue;
@@ -2871,7 +2922,8 @@ void do_tune(struct abctune *t)
 			 && abc2win
 			 && t->abc_vers != (2 << 16))
 				continue;
-			if (curvoice->last_sym)
+			if (parsys->voice[curvoice - voice_tb].range == 0
+			 && curvoice->last_sym)
 				curvoice->last_sym->sflags |= S_EOLN;
 			if (!cfmt.alignbars)
 				continue;
@@ -2880,11 +2932,6 @@ void do_tune(struct abctune *t)
 					break;
 				switch (as->next->text[0]) {
 				case 'w':
-#if 0 //w:
-//fixme
-					get_info((struct SYMBOL *) as->next, t);
-					/* fall thru */
-#endif
 				case 'd':
 				case 's':
 					as = as->next;
@@ -4607,6 +4654,25 @@ center:
 				as->next->state = ABC_S_TUNE;
 				s->next = (struct SYMBOL *) as->next;
 				s = s->next;
+			}
+			return as;
+		}
+		if (strcmp(w, "voicescale") == 0) {
+			int voice;
+			char *q;
+			float scale;
+
+			scale = strtod(p, &q);
+			if (scale <= 0.7 || scale > 1.4
+			 || (*q != '\0' && *q != ' ')) {
+				error(1, s, "Bad %%%%voicescale value");
+				return as;
+			}
+			if (as->state != ABC_S_TUNE) {
+				for (voice = 0; voice < MAXVOICE; voice++)
+					voice_tb[voice].scale = scale;
+			} else {
+				curvoice->scale = scale;
 			}
 			return as;
 		}

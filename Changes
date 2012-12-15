@@ -1,3 +1,23 @@
+---- Version 7.3.3 - 12/12/14 ----
+
+Remove some example files from the distribution.
+Draw the staves with spaces ('y') only and "%%staffnonote 1".
+Fix %%alignbars which was broken in 7.2.1.
+Set as tune global some info fields (K:, M: and Q:) and pseudo-comments
+	after the first K: and middle-tune T:.
+Better note shifts of 3rd voice of a same staff.
+Change %%shiftunisson to %%shiftunison.
+In unison, shift the note with a down stem
+	(reported by Paolo Minazzi).
+Fix bad output file when note head decoration since 7.3.2.
+%%voicescale added.
+Fix loss of %%indent since 7.2.2
+	(reported by David Lacroix).
+Remove the horizontal space of empty key signatures
+	(reported by David Lacroix).
+Fix bad beam at end of voice overlay since 7.3.0
+	(reported by David Lacroix).
+
 ---- Version 7.3.2 - 12/12/07 ----
 
 Don't do a page break after the tune title when %%scale after 1st K:.
@@ -22,7 +42,7 @@ Don't do an error on the information field "r:".
 Fix no output when lack of "%%multicol end"
 	(reported by Henry Bley-Vroman).
 Fix crash on "%%multicol end" with -E or -g.
-Handle "%%  endxx" (space after %%)
+Handle "%% endxx" (space after %%)
 	(reported by Henry Bley-Vroman).
 Check again if not enough words in lyrics (w:)
 	(asked by Steve West).
@@ -127,12 +147,6 @@ Fix bad staff key/time signatures when P: or Q: before K:/M: in tune
 Fix crash when %%continueall and music line cut on a bar with !beamon!
 	(also when %%breakoneoln 0) and handle beams on two music lines
 	(reported by Guido Gonzato).
-
----- Version 7.1.1 - 12/09/30 ----
-	(same version)
-
-Fix compilation erreur in deco.c
-	(reported by Frédéric AUPÉPIN).
 
 ---- Version 7.1.1 - 12/09/29 ----
 

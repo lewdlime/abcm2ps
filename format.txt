@@ -198,7 +198,7 @@ List of the format parameters
 	Command line: none
 	Description:
 		When 'combinevoices' is set, voice combination does not
-		occurs when the pitches are a second, unisson or inverted.
+		occurs when the pitches are a second, unison or inverted.
 		Setting this flag makes the combination to occur in all
 		cases.
 
@@ -894,12 +894,12 @@ List of the format parameters
 		its default value.
 		Note: <size> is mandatory at the first definition..
 
-  shiftunisson <bool>
+  shiftunison <bool>
 	Default: 0
 	Compilation: none
 	Command line: none
 	Description:
-		In multivoice tunes, when voices go to unisson, there
+		In multivoice tunes, when voices go to unison, there
 		is often only one head. Setting this flag keeps the
 		two notes with a shift when there is a minim (half note)
 		and a note smaller than crotchet (black note), and also
@@ -1255,6 +1255,15 @@ List of the format parameters
 	Description:
 		Set the font of the voice names to <font> with
 		a size <size>.
+
+  voicescale <float>
+	Default: 1
+	Compilation: none
+	Command line: none
+	Description:
+		Set the scale of
+		- all voices when in the tune header,
+		- the current voice when found in the tune body.
 
   volume <int>
 	Default: 0

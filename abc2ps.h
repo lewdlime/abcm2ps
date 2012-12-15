@@ -268,7 +268,7 @@ struct FORMAT { 		/* struct for page layout */
 	int pango;
 #endif
 	int partsbox, pdfmark;
-	int setdefl, shiftunisson, splittune, squarebreve;
+	int setdefl, shiftunison, splittune, squarebreve;
 	int staffnonote, straightflags, stretchstaff;
 	int textoption, titlecaps, titleleft, titletrim;
 	int timewarn, transpose, tuplets;

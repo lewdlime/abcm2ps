@@ -61,7 +61,7 @@ static struct deco_def_s {
 	unsigned char h;	/* height */
 	unsigned char wl;	/* width */
 	unsigned char wr;
-	unsigned char str;	/* string index - 255=deco name */
+	unsigned char strx;	/* string index - 255=deco name */
 	unsigned char ld_end;	/* index of end of long decoration */
 	unsigned char dum;
 } deco_def_tb[128];
@@ -438,8 +438,8 @@ static void d_pf(struct deco_elt *de)
 	}
 
 	str = dd->name;
-	if (dd->str != 0 && dd->str != 255)
-		str = str_tb[dd->str];
+	if (dd->strx != 0 && dd->strx != 255)
+		str = str_tb[dd->strx];
 
 	de->v = dd->wl + dd->wr;
 	de->x = x;
@@ -567,8 +567,8 @@ static void d_upstaff(struct deco_elt *de)
 	w = dd->wl + dd->wr;
 	stafft = staff_tb[s->staff].topbar + 2;
 	staffb = staff_tb[s->staff].botbar - 2;
-	if (dd->str != 0)
-		de->str = dd->str == 255 ? dd->name : str_tb[dd->str];
+	if (dd->strx != 0)
+		de->str = dd->strx == 255 ? dd->name : str_tb[dd->strx];
 
 	switch (s->posit.orn) {
 	case SL_ABOVE:
@@ -664,7 +664,7 @@ static unsigned char deco_build(char *text)
 {
 	struct deco_def_s *dd;
 	int c_func, deco, h, o, wl, wr, n;
-	unsigned l, ps_x, str_x;
+	unsigned l, ps_x, strx;
 	char name[32];
 	char ps_func[16];
 
@@ -715,29 +715,29 @@ static unsigned char deco_build(char *text)
 
 	/* have an index for the string */
 	if (*text == '\0') {
-		str_x = 0;
+		strx = 0;
 	} else if (strcmp(text, name) == 0) {
-		str_x = 255;
+		strx = 255;
 	} else {
-		for (str_x = 1;
-		     str_x < sizeof str_tb / sizeof str_tb[0];
-		     str_x++) {
-			if (str_tb[str_x] == 0) {
+		for (strx = 1;
+		     strx < sizeof str_tb / sizeof str_tb[0];
+		     strx++) {
+			if (str_tb[strx] == 0) {
 				if (*text == '"') {
 					text++;
 					l = strlen(text);
-					str_tb[str_x] = malloc(l);
-					memcpy(str_tb[str_x], text, l - 1);
-					str_tb[str_x][l - 1] = '\0';
+					str_tb[strx] = malloc(l);
+					memcpy(str_tb[strx], text, l - 1);
+					str_tb[strx][l - 1] = '\0';
 				} else {
-					str_tb[str_x] = strdup(text);
+					str_tb[strx] = strdup(text);
 				}
 				break;
 			}
-			if (strcmp(str_tb[str_x], text) == 0)
+			if (strcmp(str_tb[strx], text) == 0)
 				break;
 		}
-		if (str_x == sizeof str_tb / sizeof str_tb[0]) {
+		if (strx == sizeof str_tb / sizeof str_tb[0]) {
 			error(1, 0, "Too many decoration strings");
 			return 128;
 		}
@@ -757,7 +757,7 @@ static unsigned char deco_build(char *text)
 	dd->h = h;
 	dd->wl = wl;
 	dd->wr = wr;
- 	dd->str = str_x;
+ 	dd->strx = strx;
 
 	/* link the start and end of long decorations */
 	l = strlen(name);
@@ -1182,13 +1182,13 @@ int draw_deco_head(int deco, float x, float y, int stem)
 		break;
 	case 3:
 	case 4:
-		if (dd->str != 0)
+		if (dd->strx == 0)
 			break;
 		/* fall thru */
 	case 6:
 		str = dd->name;
-		if (dd->str != 0 && dd->str != 255)
-			str = str_tb[dd->str];
+		if (dd->strx != 0 && dd->strx != 255)
+			str = str_tb[dd->strx];
 		a2b("(%s)", str);
 		break;
 	}

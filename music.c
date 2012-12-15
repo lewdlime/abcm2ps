@@ -79,7 +79,8 @@ static void set_head_directions(struct SYMBOL *s)
 	};
 
 	/* special case when single note */
-	if ((n = s->nhd) == 0) {
+	n = s->nhd;
+	if (n == 0) {
 		if (s->as.u.note.accs[0] != 0) {
 			dx = dx_tb[s->head];
 			if (s->as.flags & ABC_F_GRACE)
@@ -223,31 +224,32 @@ static void set_head_directions(struct SYMBOL *s)
 /* -- unlink a symbol -- */
 static void unlksym(struct SYMBOL *s)
 {
-	if (s->next == 0) {
-		if (s->extra != 0) {
+	if (!s->next) {
+		if (s->extra) {
 			s->type = FMTCHG;
 			s->u = -1;
 			return;
 		}
 	} else {
 		s->next->prev = s->prev;
-		if (s->extra != 0) {
+		if (s->extra) {
 			struct SYMBOL *g;
 
-			if ((g = s->next->extra) == 0)
+			g = s->next->extra;
+			if (!g) {
 				s->next->extra = s->extra;
-			else {
-				for (; g->next != 0; g = g->next)
+			} else {
+				for (; g->next; g = g->next)
 					;
 				g->next = s->extra;
 			}
 		}
 	}
-	if (s->prev != 0)
+	if (s->prev)
 		s->prev->next = s->next;
 	else
 		voice_tb[s->voice].sym = s->next;
-	if (s->ts_next != 0) {
+	if (s->ts_next) {
 		if ((s->sflags & S_SEQST)
 		 && !(s->ts_next->sflags & S_SEQST)) {
 			s->ts_next->sflags |= S_SEQST;
@@ -256,7 +258,7 @@ static void unlksym(struct SYMBOL *s)
 		}
 		s->ts_next->ts_prev = s->ts_prev;
 	}
-	if (s->ts_prev != 0)
+	if (s->ts_prev)
 		s->ts_prev->ts_next = s->ts_next;
 	if (tsfirst == s)
 		tsfirst = s->ts_next;
@@ -270,13 +272,14 @@ static int may_combine(struct SYMBOL *s)
 	struct SYMBOL *s2;
 	int nhd2;
 
-	if ((s2 = s->ts_next) == 0)
+	s2 = s->ts_next;
+	if (!s2)
 		return 0;
 	if (s2->voice == s->voice
 	 || s2->staff != s->staff
 	 || s2->time != s->time
 	 || s2->dur != s->dur
-	 || s2->ly != 0
+	 || s2->ly
 	 || (s2->sflags & (S_SL1 | S_SL2))
 	 || s2->as.u.note.slur_st != 0
 	 || s2->as.u.note.slur_end != 0)
@@ -309,7 +312,7 @@ static void do_combine(struct SYMBOL *s)
 	nhd = s->nhd;
 	s2 = s->ts_next;
 	nhd2 = s2->nhd;
-	s2->extra = 0;
+	s2->extra = NULL;
 	if (s->as.type != s2->as.type) {	/* if note and rest */
 		if (s2->as.type == ABC_T_REST)
 			goto delsym2;
@@ -377,7 +380,7 @@ static void do_combine(struct SYMBOL *s)
 		s->as.u.note.ti1[nhd] = SL_ABOVE | (type & ~SL_DOTTED);
 delsym2:
 /*fixme: KO if gchord/annot in both symbols*/
-	if (s2->as.text != 0 && s->as.text == 0) {
+	if (s2->as.text && !s->as.text) {
 		s->as.text = s2->as.text;
 		s->gch = s2->gch;
 	}
@@ -390,17 +393,18 @@ static void combine_voices(void)
 	struct SYMBOL *s, *s2, *g;
 	int i, r;
 
-	for (s = tsfirst; s->ts_next != 0; s = s->ts_next) {
-		if ((g = s->extra) != 0 && (s->sflags & S_IN_TUPLET)) {
+	for (s = tsfirst; s->ts_next; s = s->ts_next) {
+		g = s->extra;
+		if (g && (s->sflags & S_IN_TUPLET)) {
 			r = 0;
-			for ( ; g != 0; g = g->next) {
+			for ( ; g; g = g->next) {
 				if (g->type == TUPLET
 				 && g->as.u.tuplet.r_plet > r)
 					r = g->as.u.tuplet.r_plet;
 			}
 			i = r;
-			for (s2 = s; s2 != 0; s2 = s2->next) {
-				if (s2->ts_next == 0)
+			for (s2 = s; s2; s2 = s2->next) {
+				if (!s2->ts_next)
 					break;
 				if (s2->type != NOTEREST)
 					continue;
@@ -415,7 +419,7 @@ static void combine_voices(void)
 				continue;
 			}
 			r = s->as.u.tuplet.r_plet;
-			for (s2 = s; s2 != 0; s2 = s2->next) {
+			for (s2 = s; s2; s2 = s2->next) {
 				if (s2->type != NOTEREST)
 					continue;
 				do_combine(s2);
@@ -462,7 +466,7 @@ static void combine_voices(void)
 				s2 = s2->next;
 			} while (s2->type != NOTEREST);
 		}
-		if (s2 == 0)
+		if (!s2)
 			continue;
 		s2 = s;
 		for (;;) {
@@ -492,15 +496,16 @@ static void insert_clef(struct SYMBOL *s,
 	struct SYMBOL *new_s;
 
 	/* don't insert the clef between two bars */
-	if (s->type == BAR && s->prev != 0 && s->prev->type == BAR
+	if (s->type == BAR && s->prev && s->prev->type == BAR
 /*	 && s->time == s->prev->time */
 			)
 		s = s->prev;
 
 	/* create the symbol */
 	p_voice = &voice_tb[s->voice];
-	if ((p_voice->last_sym = s->prev) == 0)
-		p_voice->sym = 0;
+	p_voice->last_sym = s->prev;
+	if (!p_voice->last_sym)
+		p_voice->sym = NULL;
 	p_voice->time = s->time;
 	new_s = sym_add(p_voice, CLEF);
 	new_s->next = s;
@@ -518,10 +523,11 @@ static void insert_clef(struct SYMBOL *s,
 	if (s->type == STAVES) {
 		s = s->ts_next;
 		s->sflags |= S_SEQST;
-	} else if (s->ts_prev == 0 || s->ts_prev->type != CLEF) {
+	} else if (!s->ts_prev || s->ts_prev->type != CLEF) {
 		new_s->sflags |= S_SEQST;
 	}
-	if ((new_s->ts_prev = s->ts_prev) != 0)
+	new_s->ts_prev = s->ts_prev;
+	if (new_s->ts_prev)
 		new_s->ts_prev->ts_next = new_s;
 	else
 		tsfirst = new_s;
@@ -539,7 +545,7 @@ static void set_clef(int staff)
 
 	/* get the max and min pitches */
 	min = max = 16;			/* 'C' */
-	for (s = tsfirst; s != 0; s = s->ts_next) {
+	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->staff != staff || s->as.type != ABC_T_NOTE)
 			continue;
 		if (s->pits[0] < min)
@@ -555,7 +561,8 @@ static void set_clef(int staff)
 		do {
 			sy->staff[staff].clef.type = BASS;
 			sy->staff[staff].clef.line = 4;
-		} while ((sy = sy->next) != 0);
+			sy = sy->next;
+		} while (sy);
 		return;
 	}
 
@@ -564,7 +571,7 @@ static void set_clef(int staff)
 	sy->staff[staff].clef.type = clef_type;
 	sy->staff[staff].clef.line = clef_type == TREBLE ? 2 : 4;
 	last_chg = 0;
-	for (s = tsfirst; s != 0; s = s->ts_next) {
+	for (s = tsfirst; s; s = s->ts_next) {
 		struct SYMBOL *s2, *s3, *s4;
 
 		if (s->staff != staff || s->as.type != ABC_T_NOTE) {
@@ -584,14 +591,14 @@ static void set_clef(int staff)
 			 || s->pits[s->nhd] > 20)	/* G */
 				continue;
 			s2 = s->ts_prev;
-			if (s2 != 0
+			if (s2
 			 && s2->time == time
 			 && s2->staff == staff
 			 && s2->as.type == ABC_T_NOTE
 			 && s2->pits[0] >= 19)	/* F */
 				continue;
 			s2 = s->ts_next;
-			if (s2 != 0
+			if (s2
 			 && s2->staff == staff
 			 && s2->time == time
 			 && s2->as.type == ABC_T_NOTE
@@ -602,14 +609,14 @@ static void set_clef(int staff)
 			 || s->pits[s->nhd] < 20)	/* G */
 				continue;
 			s2 = s->ts_prev;
-			if (s2 != 0
+			if (s2
 			 && s2->time == time
 			 && s2->staff == staff
 			 && s2->as.type == ABC_T_NOTE
 			 && s2->pits[0] <= 13)	/* G, */
 				continue;
 			s2 = s->ts_next;
-			if (s2 != 0
+			if (s2
 			 && s2->staff == staff
 			 && s2->time == time
 			 && s2->as.type == ABC_T_NOTE
@@ -689,7 +696,7 @@ static void set_clef(int staff)
 			if (!voice_tb[s2->voice].second
 			 && voice_tb[s2->voice].staff == staff) {
 				if ((s2->sflags & S_BEAM_ST)
-				 || s3 == 0
+				 || !s3
 				 || (s3->sflags & S_BEAM_ST) == 0)
 					s3 = s2;
 			}
@@ -761,7 +768,7 @@ static void set_float(void)
 			continue;
 		staff_chg = 0;
 		staff = p_voice->staff;
-		for (s = p_voice->sym; s != 0; s = s->next) {
+		for (s = p_voice->sym; s; s = s->next) {
 			signed char up, down;
 
 			if (s->as.type != ABC_T_NOTE) {
@@ -783,7 +790,7 @@ static void set_float(void)
 				continue;
 			}
 			up = 127;
-			for (s1 = s->ts_prev; s1 != 0; s1 = s1->ts_prev) {
+			for (s1 = s->ts_prev; s1; s1 = s1->ts_prev) {
 				if (s1->staff != staff
 				 || s1->voice == s->voice)
 					break;
@@ -804,7 +811,7 @@ static void set_float(void)
 				continue;
 			}
 			down = -127;
-			for (s1 = s->ts_next; s1 != 0; s1 = s1->ts_next) {
+			for (s1 = s->ts_next; s1; s1 = s1->ts_next) {
 				if (s1->staff != staff + 1
 				 || s1->voice == s->voice)
 					break;
@@ -860,7 +867,7 @@ static float set_graceoffs(struct SYMBOL *s)
 	g->sflags |= S_BEAM_ST;
 	for ( ; ; g = g->next) {
 		if (g->type != NOTEREST) {
-			if (g->next == 0)
+			if (!g->next)
 				break;
 			continue;
 		}
@@ -878,7 +885,7 @@ static float set_graceoffs(struct SYMBOL *s)
 		if (g->nflags <= 0)
 			g->sflags |= S_BEAM_ST | S_BEAM_END;
 		next = g->next;
-		if (next == 0) {
+		if (!next) {
 			g->sflags |= S_BEAM_END;
 			break;
 		}
@@ -896,7 +903,8 @@ static float set_graceoffs(struct SYMBOL *s)
 	}
 
 	xx += gspleft + gspright;
-	if ((next = s->next) != 0
+	next = s->next;
+	if (next
 	 && next->as.type == ABC_T_NOTE) {	/* if before a note */
 		if (g->y >= (float) (3 * (next->pits[next->nhd] - 18)))
 			xx -= 1;		/* above, a bit closer */
@@ -950,7 +958,7 @@ static float gchord_width(struct SYMBOL *s,
 #if 1
 	/* adjust width for no clash */
 	s2 = s->prev;
-	if (s2 != 0 && s2->gch) {
+	if (s2 && s2->gch) {
 		for (s2 = s->ts_prev; ; s2 = s2->ts_prev) {
 			if (s2 == s->prev) {
 				AT_LEAST(wlw, lspc);
@@ -961,7 +969,7 @@ static float gchord_width(struct SYMBOL *s,
 		}
 	}
 	s2 = s->next;
-	if (s2 != 0 && s2->gch) {
+	if (s2 && s2->gch) {
 		for (s2 = s->ts_next; ; s2 = s2->ts_next) {
 			if (s2 == s->next) {
 				AT_LEAST(s->wr, rspc);
@@ -973,17 +981,17 @@ static float gchord_width(struct SYMBOL *s,
 	}
 #else
 	s2 = s->prev;
-	if (s2 != 0 && s2->gch) {
+	if (s2 && s2->gch) {
 		AT_LEAST(wlw, lspc);
 /*fixme: pb when ">" only*/
-	for (s2 = s->next; s2 != 0; s2 = s2->next) {
+	for (s2 = s->next; s2; s2 = s2->next) {
 		switch (s2->type) {
 		default:
 			continue;
 		case NOTEREST:
 		case SPACE:
 		case BAR:
-			if (s2->as.text != 0)
+			if (s2->as.text)
 				AT_LEAST(s->wr, rspc);
 			break;
 		}
@@ -1005,7 +1013,8 @@ static float ly_width(struct SYMBOL *s, float wlw)
 
 	/* check if the lyrics contain tablature definition */
 	for (i = 0; i < 2; i++) {
-		if ((tblt = voice_tb[s->voice].tblts[i]) == 0)
+		tblt = voice_tb[s->voice].tblts[i];
+		if (!tblt)
 			continue;
 		if (tblt->pitch == 0) {		/* yes, no width */
 			for (i = 0; i < MAXLY; i++) {
@@ -1035,10 +1044,10 @@ static float ly_width(struct SYMBOL *s, float wlw)
 			float sz;
 
 //			if (p[1] == '(')
-			if (*p == '(')
+			if (*p == '(') {
 //				sz = cwid((unsigned char) p[1]);
 				sz = cwid((unsigned char) *p);
-			else {
+			} else {
 				sz = 0;
 				while (*p != '\0') {
 /*fixme: KO when '\ooo'*/
@@ -1073,11 +1082,11 @@ static float ly_width(struct SYMBOL *s, float wlw)
 		AT_LEAST(wlw, shift);
 		xx -= shift;
 		shift = 2 * cwid(' ') * swfac;
-		for (k = s->next; k != 0; k = k -> next) {
+		for (k = s->next; k; k = k->next) {
 			switch (k->type) {
 			case NOTEREST:
-				if (k->ly == 0
-				 || k->ly->lyl[i] == 0)
+				if (!k->ly
+				 || !k->ly->lyl[i])
 					xx -= 9;
 				else if (k->ly->lyl[i]->t[0] == LY_HYPH
 				      || k->ly->lyl[i]->t[0] == LY_UNDER)
@@ -1146,7 +1155,7 @@ static void set_width(struct SYMBOL *s)
 		if (s->xmx > 0)
 			s->wr += s->xmx + 4;
 		s2 = s->prev;
-		if (s2 != 0) {
+		if (s2) {
 			switch (s2->type) {
 			case BAR:
 			case CLEF:
@@ -1166,7 +1175,7 @@ static void set_width(struct SYMBOL *s)
 					    ? 6.5 : 4.5));
 			}
 		}
-		if (s2 != 0) {
+		if (s2) {
 			switch (s2->type) {
 			case BAR:
 			case CLEF:
@@ -1216,7 +1225,7 @@ static void set_width(struct SYMBOL *s)
 
 		wlw = wlnote;
 
-		if (s2 != 0) {
+		if (s2) {
 			switch (s2->type) {
 			case NOTEREST:	/* extra space when up stem - down stem */
 				if (s2->as.type == ABC_T_REST)
@@ -1252,12 +1261,12 @@ static void set_width(struct SYMBOL *s)
 
 		/* leave room for vocals under note */
 		/* related to draw_lyrics() */
-		if (s->ly != 0)
+		if (s->ly)
 			wlw = ly_width(s, wlw);
 #if 0
 /*new fixme*/
 		/* reduce right space when not followed by a note */
-		for (k = s->next; k != 0; k = k->next) {
+		for (k = s->next; k; k = k->next) {
 			switch (k->type) {
 			default:
 				s->pr *= 0.8;
@@ -1290,7 +1299,7 @@ static void set_width(struct SYMBOL *s)
 		}
 #endif
 		/* if preceeded by a grace note sequence, adjust */
-		if (s2 != 0 && s2->type == GRACE)
+		if (s2 && s2->type == GRACE)
 			s->wl = wlnote - 4.5;
 		else
 			s->wl = wlw;
@@ -1342,7 +1351,7 @@ static void set_width(struct SYMBOL *s)
 				break;
 			}
 			s->wl = w;
-			if (s->next != 0
+			if (s->next
 			 && s->next->type != TIMESIG)
 				s->wr = 8;
 			else
@@ -1491,7 +1500,7 @@ static float set_space(struct SYMBOL *s)
 		}
 		return 0;
 	}
-	if (s->prev != 0 && s->prev->type == MREST)
+	if (s->prev && s->prev->type == MREST)
 		return s->prev->wr + 16;
 	if (len >= CROTCHET) {
 		if (len < MINIM)
@@ -1547,7 +1556,7 @@ static float set_space(struct SYMBOL *s)
 	if (s->as.type == ABC_T_NOTE && s->nflags >= 0) {
 		stemdir = s->stem;
 		for (s2 = s->ts_prev;
-		     s2 != 0 && s2->time == prev_time;
+		     s2 && s2->time == prev_time;
 		     s2 = s2->ts_prev) {
 			if (s2->nflags < 0 || s2->stem == stemdir) {
 				stemdir = 0;
@@ -1556,7 +1565,7 @@ static float set_space(struct SYMBOL *s)
 		}
 		if (stemdir != 0) {
 			for (s2 = s->ts_next;
-			     s2 != 0 && s2->time == s->time;
+			     s2 && s2->time == s->time;
 			     s2 = s2->ts_next) {
 				if (s2->nflags < 0 || s2->stem != stemdir) {
 					stemdir = 0;
@@ -1612,7 +1621,7 @@ static void set_allsymwidth(struct SYMBOL *last_s)
 			ymn1 = s2->ymn;
 			wl = s2->wl;
 			new_val = 0;
-			for (s3 = s->ts_prev; s3 != 0; s3 = s3->ts_prev) {
+			for (s3 = s->ts_prev; s3; s3 = s3->ts_prev) {
 				if (new_val < s3->wr
 				 && s3->type == NOTEREST
 				 && s2->type == NOTEREST)
@@ -1717,7 +1726,7 @@ static void set_repeat(struct SYMBOL *g,
 	if ((n = g->doty) < 0) {		/* number of notes / measures */
 		n = -n;
 		i = n;				/* number of notes to repeat */
-		for (s2 = s->ts_prev; s2 != 0; s2 = s2->ts_prev) {
+		for (s2 = s->ts_prev; s2; s2 = s2->ts_prev) {
 			if (s2->staff != staff)
 				continue;
 			if (s2->voice != voice
@@ -1741,7 +1750,7 @@ static void set_repeat(struct SYMBOL *g,
 		}
 
 		i = g->nohdix * n;		/* repeat number */
-		for (s2 = s; s2 != 0; s2 = s2->ts_next) {
+		for (s2 = s; s2; s2 = s2->ts_next) {
 			if (s2->staff != staff)
 				continue;
 			if (s2->voice != voice
@@ -1759,8 +1768,8 @@ static void set_repeat(struct SYMBOL *g,
 			if (--i <= 0)
 				break;
 		}
-		if (s2 == 0
-		 || s2->next == 0) {	/* should have a measure bar */
+		if (!s2
+		 || !s2->next) {		/* should have a measure bar */
 			error(0, s, "Not enough symbols after repeat sequence");
 			goto delrep;
 		}
@@ -1795,7 +1804,7 @@ static void set_repeat(struct SYMBOL *g,
 	/* first check of the measure repeat */
 	if (!xset) {
 		i = n;				/* number of measures to repeat*/
-		for (s2 = s->ts_prev; s2 != 0; s2 = s2->ts_prev) {
+		for (s2 = s->ts_prev; s2; s2 = s2->ts_prev) {
 			if (s2->staff != staff)
 				continue;
 			if (s2->voice != voice) {
@@ -1814,7 +1823,7 @@ static void set_repeat(struct SYMBOL *g,
 		}
 
 		i = g->nohdix * n;		/* repeat number */
-		for (s2 = s; s2 != 0; s2 = s2->ts_next) {
+		for (s2 = s; s2; s2 = s2->ts_next) {
 			if (s2->staff != staff)
 				continue;
 			if (s2->voice != voice) {
@@ -1836,7 +1845,7 @@ static void set_repeat(struct SYMBOL *g,
 
 	/* second check and replace */
 	i = g->nohdix * n;			/* check if NL later in the line */
-	for (s2 = s; s2 != 0; s2 = s2->next) {
+	for (s2 = s; s2; s2 = s2->next) {
 //		if (s2->sflags & S_NL)
 //			goto delrep;
 		if (s2->type == BAR) {
@@ -1847,7 +1856,7 @@ static void set_repeat(struct SYMBOL *g,
 	dur = (s2->time - s->time) / g->nohdix;	/* repeat duration */
 	s2 = s->prev->prev;			/* check if NL before */
 	if (n == 2) {				/* if repeat 2 measures */
-		for (; s2 != 0; s2 = s2->prev) {
+		for (; s2; s2 = s2->prev) {
 			if (s2->type == BAR) {
 				s2 = s2->prev;
 				break;
@@ -1856,7 +1865,7 @@ static void set_repeat(struct SYMBOL *g,
 //				goto delrep;
 		}
 	}
-	for (; s2 != 0; s2 = s2->prev) {
+	for (; s2; s2 = s2->prev) {
 		if (s2->type == BAR || s2->type == CLEF)
 			break;
 //		if (s2->sflags & S_NL)
@@ -1872,7 +1881,7 @@ static void set_repeat(struct SYMBOL *g,
 		for (;;) {
 			if (s2->type == BAR)
 				break;
-			s2->extra = 0;
+			s2->extra = NULL;
 			unlksym(s2);
 			s2 = s2->next;
 		}
@@ -1892,7 +1901,7 @@ static void set_repeat(struct SYMBOL *g,
 		for (;;) {
 			if (s2->type == BAR || s2->type == CLEF)
 				break;
-			s2->extra = 0;
+			s2->extra = NULL;
 			unlksym(s2);
 			s2 = s2->next;
 		}
@@ -1915,7 +1924,7 @@ static void set_repeat(struct SYMBOL *g,
 		for (;;) {
 			if (s2->type == BAR || s2->type == CLEF)
 				break;
-			s2->extra = 0;
+			s2->extra = NULL;
 			unlksym(s2);
 			s2 = s2->next;
 		}
@@ -2056,7 +2065,7 @@ normal:
 		break;
 	}
 	done = 0;
-	staves = extra = 0;
+	staves = extra = NULL;
 	for (; s; s = s->ts_next) {
 		if (!(s->sflags & S_SEQST))
 			continue;
@@ -2120,7 +2129,7 @@ normal:
 			s2 = s2->next;
 		s2->next = s->extra;
 		s->extra = extra->extra;
-		extra->extra = 0;
+		extra->extra = NULL;
 	}
 	if (staves) {			/* move the %%staves to the next line */
 		if (s != staves->ts_next) {
@@ -2535,7 +2544,7 @@ static void set_stem_dir(void)
 	s = tsfirst;
 	sy = cursys;
 	nst = sy->nstaff;
-	while (s != 0) {
+	while (s) {
 		for (staff = nst; staff >= 0; staff--) {
 			stb[staff].nvoice = -1;
 			for (i = 4; --i >= 0; ) {
@@ -2550,7 +2559,7 @@ static void set_stem_dir(void)
 		/* get the max/min offsets in the delta time */
 /*fixme: the stem height is not calculated yet*/
 		for (u = s;
-		     u != 0 && u->type != BAR && u->type != STAVES;
+		     u && u->type != BAR && u->type != STAVES;
 		     u = u->ts_next) {
 			if (u->type != NOTEREST
 			 || (u->as.flags & ABC_F_INVIS))
@@ -2662,7 +2671,7 @@ if (staff > nst) {
 						    > stb[staff].st[i + 1].ymx)
 							s->multi = -1;
 
-						/* special case for unisson */
+						/* special case for unison */
 						if (s->ts_prev->time == s->time
 						 && s->ts_prev->staff == s->staff
 						 && s->pits[s->nhd] == s->ts_prev->pits[0]
@@ -2910,7 +2919,8 @@ if (staff > nst) {
 				s->y = (stb[staff].st[i - 1].ymn
 					+ stb[staff].st[i + 1].ymx + 24)
 					/ 12 * 6 - 12;
-				if (((t = s->ts_next) != 0
+				t = s->ts_next;
+				if ((t
 				  && t->staff == staff
 				  && t->time == s->time
 				  && t->dur != 0
@@ -3128,7 +3138,7 @@ static void init_music_line(void)
 		if (p_voice->bar_text == 0	/* if repeat continuation */
 		 && p_voice->bar_start == B_OBRA) {
 			for (s = p_voice->last_sym;
-			     s != 0;
+			     s;
 			     s = s->next) {	/* search the end of repeat */
 				if (s->sflags & S_RBSTOP) {
 					i = -1;
@@ -3223,7 +3233,7 @@ static void set_global(void)
 			 || i == PERC)
 				continue;
 			delta = delpit[i];
-			for (s = p_voice->sym; s != 0; s = s->next) {
+			for (s = p_voice->sym; s; s = s->next) {
 				switch (s->type) {
 				case CLEF:
 					i = s->as.u.clef.type;
@@ -3242,7 +3252,7 @@ static void set_global(void)
 				case GRACE:
 					if (delta == 0)
 						break;
-					for (g = s->extra; g != 0; g = g->next) {
+					for (g = s->extra; g; g = g->next) {
 						if (g->type != NOTEREST)
 							continue;
 						for (i = g->nhd; i >= 0; i--)
@@ -3261,7 +3271,7 @@ static void set_global(void)
 
 		sym = p_voice->sym;
 		pitch = 22;				/* 'B' - if no note! */
-		for (s = sym; s != 0; s = s->next) {
+		for (s = sym; s; s = s->next) {
 			if (s->as.type == ABC_T_NOTE) {
 				pitch = s->pits[0];
 				break;
@@ -3273,7 +3283,7 @@ static void set_global(void)
 		}
 		start_flag = 1;
 		lastnote = 0;
-		for (s = sym; s != 0; s = s->next) {
+		for (s = sym; s; s = s->next) {
 			switch (s->type) {
 			default:
 				if (s->as.flags & ABC_F_SPACE)
@@ -3297,25 +3307,26 @@ static void set_global(void)
 					start_flag = 1;
 				if (start_flag
 				 || s->nflags - s->u <= 0) {
-					if (lastnote != 0) {
+					if (lastnote) {
 						lastnote->sflags |= S_BEAM_END;
-						lastnote = 0;
+						lastnote = NULL;
 					}
 					if (s->nflags - s->u <= 0) {
 						s->sflags |= (S_BEAM_ST | S_BEAM_END);
-						start_flag = 1;
 					} else if (s->as.type == ABC_T_NOTE) {
 						s->sflags |= S_BEAM_ST;
 						start_flag = 0;
 					}
 				}
+				if (s->sflags & S_BEAM_END)
+					start_flag = 1;
 				if (s->as.type == ABC_T_NOTE)
 					lastnote = s;
 				break;
 			}
 			if (s->as.type == ABC_T_NOTE) {
 				pitch = s->pits[0];
-				if (s->prev != 0
+				if (s->prev
 				 && s->prev->as.type != ABC_T_NOTE) {
 					s->prev->pits[0] = (s->prev->pits[0]
 							    + pitch) / 2;
@@ -3324,7 +3335,7 @@ static void set_global(void)
 				s->pits[0] = pitch;
 			}
 		}
-		if (lastnote != 0)
+		if (lastnote)
 			lastnote->sflags |= S_BEAM_END;
 	}
 
@@ -3347,7 +3358,7 @@ static void set_global(void)
 }
 
 /* -- return the left indentation of the staves -- */
-static float set_indent(void)
+static float set_indent(int keep)
 {
 	int staff, voice;
 	float w, maxw;
@@ -3395,7 +3406,8 @@ static float set_indent(void)
 	}
 	if (insert_meter & 2) {			/* if indent */
 		maxw += cfmt.indent;
-		insert_meter &= ~2;
+		if (!keep)
+			insert_meter &= ~2;
 	}
 	return maxw;
 }
@@ -3410,7 +3422,7 @@ static void set_beams(struct SYMBOL *sym)
 	beam = 0;
 	laststem = -1;
 	lasty = 0;
-	for (s = sym; s != 0; s = s->next) {
+	for (s = sym; s; s = s->next) {
 		if (s->as.type != ABC_T_NOTE) {
 			struct SYMBOL *g;
 
@@ -3420,7 +3432,7 @@ static void set_beams(struct SYMBOL *sym)
 			if (s->stem == 0
 			 && (s->stem = s->multi) == 0)
 				s->stem = 1;
-			for (; g != 0; g = g->next) {
+			for (; g; g = g->next) {
 				g->stem = s->stem;
 				g->multi = s->multi;
 			}
@@ -3439,7 +3451,7 @@ static void set_beams(struct SYMBOL *sym)
 
 				avg = s->yav;
 				n = 12;
-				for (t = s->next; t != 0; t = t->next) {
+				for (t = s->next; t; t = t->next) {
 					if (t->as.type == ABC_T_NOTE) {
 						if (t->multi != 0) {
 							avg = n - t->multi;
@@ -3488,7 +3500,7 @@ static void set_overlap(void)
 	int d, i1, i2, m, sd1, sd2, t;
 	float d1, d2, dy1, dy2, noteshift;
 
-	for (s = tsfirst; s != 0; s = s->ts_next) {
+	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->as.type != ABC_T_NOTE
 		 || (s->as.flags & ABC_F_INVIS))
 			continue;
@@ -3507,10 +3519,11 @@ static void set_overlap(void)
 		/* search the next note at the same time on the same staff */
 		s2 = s;
 		for (;;) {
-			if ((s2 = s2->ts_next) == 0)
+			s2 = s2->ts_next;
+			if (!s2)
 				break;
 			if (s2->time != s->time) {
-				s2 = 0;
+				s2 = NULL;
 				break;
 			}
 			if (s2->as.type == ABC_T_NOTE
@@ -3518,7 +3531,7 @@ static void set_overlap(void)
 			 && s2->staff == s->staff)
 				break;
 		}
-		if (s2 == 0)
+		if (!s2)
 			continue;
 
 		sd1 = sd2 = 0;
@@ -3530,8 +3543,8 @@ static void set_overlap(void)
 				 *	0: >= 4
 				 *	1: third or fourth
 				 *	2: second
-				 *	4: unisson
-				 *	-1: unisson and different accidentals */
+				 *	4: unison
+				 *	-1: unison and different accidentals */
 		{
 			int dp;
 
@@ -3579,7 +3592,7 @@ static void set_overlap(void)
 		else
 			noteshift = 7.8;
 
-		/* if unisson and different accidentals */
+		/* if unison and different accidentals */
 		if (t < 0) {
 			if (s2->as.u.note.accs[i2] == 0) {
 				d1 = noteshift + 12;
@@ -3657,7 +3670,7 @@ static void set_overlap(void)
 		}
 		/* (here, voice 1 stem up and voice 2 stem down) */
 
-		/* if unisson */
+		/* if unison */
 		if (t >= 4) {
 			int l1, l2;
 
@@ -3668,7 +3681,7 @@ static void set_overlap(void)
 			if (s1->as.flags & s2->as.flags & ABC_F_STEMLESS)
 				goto uni_shift;
 			if (s1->dots != s2->dots) {
-				if (cfmt.shiftunisson
+				if (cfmt.shiftunison
 				 || s1->dots * s2->dots != 0)
 					goto uni_shift;
 			}
@@ -3699,7 +3712,7 @@ static void set_overlap(void)
 				goto same_head;
 			}
 			if (l2 < CROTCHET) {	/* (l1 >= MINIM) */
-				if (cfmt.shiftunisson
+				if (cfmt.shiftunison
 				 || s1->dots != s2->dots)
 					goto uni_shift;
 				if (s2->dur >= MINIM) {
@@ -3766,7 +3779,7 @@ static void set_overlap(void)
 		}
 
 	uni_shift:
-		if (t >= 2) {			/* if close or unisson */
+		if (t >= 2) {			/* if close or unison */
 			if (s1->dots != s2->dots) {
 				if (s1->dots > s2->dots) /* shift the voice with more dots */
 					d1 = noteshift;
@@ -3778,9 +3791,13 @@ static void set_overlap(void)
 				if (s1->dots)
 					sd1 = 1;
 			} else {
-				d1 = noteshift;
+				if (t >= 4		/* if unison */
+				 && s1->stem >= 0)
+					d2 = noteshift;
+				else
+					d1 = noteshift;
 			}
-			if (t >= 4) {		/* if unisson */
+			if (t >= 4) {		/* if unison */
 				if (d1 != 0)
 					d1 += 1.5;
 				else
@@ -3846,12 +3863,14 @@ static void set_overlap(void)
 		}
 
 		/* handle the previous shift */
-		m = s1->stem >= 0 ? 0 : s1->nhd;
-		d1 -= s1->shhd[m];
-		d2 += s1->shhd[m];
-		m = s2->stem >= 0 ? 0 : s2->nhd;
-		d1 += s2->shhd[m];
-		d2 -= s2->shhd[m];
+		if (d1 != 0 || d2 != 0) {
+			m = s1->stem >= 0 ? 0 : s1->nhd;
+			d1 -= s1->shhd[m];
+			d2 += s1->shhd[m];
+			m = s2->stem >= 0 ? 0 : s2->nhd;
+			d1 += s2->shhd[m];
+			d2 -= s2->shhd[m];
+		}
 
 		if (d1 > 0) {			/* shift the 1st voice */
 			if (s2->dots && sd2 == 0)	/* room for the dots */
@@ -3933,20 +3952,20 @@ static void set_stems(void)
 		 * with the other end */
 		nflags = s->nflags;
 		if ((s->sflags & (S_BEAM_ST | S_BEAM_END)) == S_BEAM_ST) {
-			for (s2 = s->next; /*s2 != 0*/; s2 = s2->next) {
+			for (s2 = s->next; /*s2*/; s2 = s2->next) {
 				if (s2->as.type == ABC_T_NOTE
 				 && (s2->sflags & S_BEAM_END))
 					break;
 			}
-/*			if (s2 != 0) */
+/*			if (s2) */
 			    if (s2->nflags > nflags)
 				nflags = s2->nflags;
 		} else if ((s->sflags & (S_BEAM_ST | S_BEAM_END)) == S_BEAM_END) {
-			for (s2 = s->prev; /*s2 != 0*/; s2 = s2->prev) {
+			for (s2 = s->prev; /*s2*/; s2 = s2->prev) {
 				if (s2->sflags & S_BEAM_ST)
 					break;
 			}
-/*			if (s2 != 0) */
+/*			if (s2) */
 			    if (s2->nflags > nflags)
 				nflags = s2->nflags;
 		}
@@ -4051,8 +4070,8 @@ static void check_bar(struct SYMBOL *s)
 		p_voice->bar_text = s->as.text;
 		p_voice->bar_gch = s->gch;
 		p_voice->bar_repeat = 1;
-		s->as.text = 0;
-		s->gch = 0;
+		s->as.text = NULL;
+		s->gch = NULL;
 		s->as.u.bar.repeat_bar = 0;
 		if (s->as.flags & ABC_F_INVIS)
 			p_voice->bar_start |= 0x8000;
@@ -4070,7 +4089,7 @@ static void check_bar(struct SYMBOL *s)
 			p_voice->bar_start |= 0x8000;
 		if (s->sflags & S_NOREPBRA)
 			p_voice->bar_start |= 0x4000;
-		if (s->prev != 0 && s->prev->type == BAR)
+		if (s->prev && s->prev->type == BAR)
 			unlksym(s);
 		else
 			s->as.u.bar.type = B_BAR;
@@ -4120,18 +4139,17 @@ static void set_piece(void)
 	}
 
 	/* search the next end of line,
-	 * set the repeat measures, (remove some dble bars?),
-	 * search the empty staves */
+	 * set the repeat measures, (remove some dble bars?)
+	 * and search the empty staves
+	 */
 	memset(empty, 1, sizeof empty);
-	for (s = tsfirst; s != 0; s = s->ts_next) {
+	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->sflags & S_NL)
 			break;
-		if ((s2 = s->extra) != 0) {
-			for ( ; s2 != 0; s2 = s2->next) {
-				if (s2->type == FMTCHG && s2->u == REPEAT) {
-					set_repeat(s2, s, 1);
-					break;
-				}
+		for (s2 = s->extra; s2; s2 = s2->next) {
+			if (s2->type == FMTCHG && s2->u == REPEAT) {
+				set_repeat(s2, s, 1);
+				break;
 			}
 		}
 		switch (s->type) {
@@ -4153,6 +4171,7 @@ static void set_piece(void)
 			empty[s->staff] = 0;
 			break;
 		case NOTEREST:
+		case SPACE:
 			if (s->as.type != ABC_T_NOTE) {	/* rest */
 				if (cfmt.staffnonote)
 					empty[s->staff] = 0;
@@ -4184,27 +4203,28 @@ static void set_piece(void)
 	}
 
 	/* if last music line, nothing more to do */
-	if ((tsnext = s) == 0)
+	tsnext = s;
+	if (!s)
 		return;
 
 	s->sflags &= ~S_NL;
 	s = s->ts_prev;
-	s->ts_next = 0;
+	s->ts_next = NULL;
 
 	/* set the end of the voices */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		int voice;
 
 		voice = p_voice - voice_tb;
-		for (s = tsnext->ts_prev; s != 0; s = s->ts_prev) {
+		for (s = tsnext->ts_prev; s; s = s->ts_prev) {
 			if (s->voice == voice) {
-				s->next = 0;
+				s->next = NULL;
 				check_bar(s);
 				break;
 			}
 		}
-		if (s == 0)
-			p_voice->sym = 0;
+		if (!s)
+			p_voice->sym = NULL;
 	}
 }
 
@@ -4232,7 +4252,7 @@ static void set_sym_glue(float width)
 			x += space;
 			xmax += space * 1.8;
 		}
-		if (s->ts_next == 0)
+		if (!s->ts_next)
 			break;
 		s = s->ts_next;
 	}
@@ -4251,7 +4271,7 @@ static void set_sym_glue(float width)
 		beta0 = BETA_C;
 
 	/* memorize the glue for the last music line */
-	if (tsnext != 0) {
+	if (tsnext) {
 		if (x - width >= 0) {
 			alfa_last = (x - width) / (x - xmin);	/* shrink */
 			beta_last = 0;
@@ -4305,7 +4325,7 @@ static void set_sym_glue(float width)
 			s->x = x;
 			s->xmax = xmax;
 		}
-		if (s->ts_next == 0)
+		if (!s->ts_next)
 			break;
 		s = s->ts_next;
 	}
@@ -4325,7 +4345,7 @@ static void set_sym_glue(float width)
 				min = s->wr;
 		}
 		xmin += min + 3;
-		if (tsnext != 0 && tsnext->space * 0.8 > s->wr + 4) {
+		if (tsnext && tsnext->space * 0.8 > s->wr + 4) {
 			x += tsnext->space * 0.8 * spafac;
 			xmax += tsnext->space * 0.8 * spafac * 1.8;
 		} else {
@@ -4380,7 +4400,7 @@ static void set_sym_glue(float width)
 				x = xmin + s->x * (1 - alfa);
 			}
 			s->x = x;
-			if (s->ts_next == 0)
+			if (!s->ts_next)
 				break;
 			s = s->ts_next;
 		}
@@ -4390,7 +4410,7 @@ static void set_sym_glue(float width)
 			if (s->sflags & S_SEQST)
 				x = s->xmax * beta + s->x * (1 - beta);
 			s->x = x;
-			if (s->ts_next == 0)
+			if (!s->ts_next)
 				break;
 			s = s->ts_next;
 		}
@@ -4398,13 +4418,13 @@ static void set_sym_glue(float width)
 
 	/* set the x offsets of the grace notes */
 	if (some_grace) {
-		for (s = tsfirst; s != 0; s = s->ts_next) {
+		for (s = tsfirst; s; s = s->ts_next) {
 			struct SYMBOL *g;
 
 			if (s->type != GRACE)
 				continue;
 			x = s->x - s->wl + (cfmt.gracespace >> 16) * 0.1;
-			for (g = s->extra; g != 0; g = g->next)
+			for (g = s->extra; g; g = g->next)
 				if (g->type == NOTEREST)
 					g->x += x;
 		}
@@ -4423,10 +4443,10 @@ static void cut_symbols(void)
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		p_voice->sym = 0;		/* may have no symbol */
 		voice = p_voice - voice_tb;
-		for (s = tsfirst; s != 0; s = s->ts_next) {
+		for (s = tsfirst; s; s = s->ts_next) {
 			if (s->voice == voice) {
 				p_voice->sym = s;
-				s->prev = 0;
+				s->prev = NULL;
 				break;
 			}
 		}
@@ -4479,7 +4499,7 @@ static void update_clefs(void)
 	s = tsfirst;
 	while (s->type == CLEF)
 		s = s->ts_next;
-	for ( ; s != 0; s = s->ts_next) {
+	for ( ; s; s = s->ts_next) {
 		if (s->type != CLEF)
 			continue;
 		staff = s->staff;
@@ -4495,7 +4515,7 @@ static void error_show(void)
 {
 	struct SYMBOL *s;
 
-	for (s = tsfirst; s != 0; s = s->ts_next) {
+	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->as.flags & ABC_F_ERROR) {
 			putxy(s->x, staff_tb[s->staff].y + s->y);
 			a2b("showerror\n");
@@ -4531,11 +4551,11 @@ void output_music(void)
 
 	/* set the staff system if any STAVES at start of the next line */
 	gen_init();
-	if (tsfirst == 0)
+	if (!tsfirst)
 		return;
 	check_buffer();	/* dump buffer if not enough space for a music line */
 	set_global();			/* initialize the generator */
-	if (first_voice->next != 0) {	/* if many voices */
+	if (first_voice->next) {	/* if many voices */
 		if (cfmt.combinevoices)
 			combine_voices();
 		set_stem_dir();		/* set the stems direction in 'multi' */
@@ -4544,7 +4564,7 @@ void output_music(void)
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next)
 		set_beams(p_voice->sym);	/* decide on beams */
 	set_stems();			/* set the stem lengths */
-	if (first_voice->next != 0)	/* when multi-voices */
+	if (first_voice->next)		/* when multi-voices */
 		set_overlap();		/* shift the notes on voice overlap */
 	set_allsymwidth(0);		/* set the width of all symbols */
 
@@ -4555,7 +4575,7 @@ void output_music(void)
 		error(1, 0, "Bad page width %.1f", lwidth);
 		lwidth = 20 CM;
 	}
-	indent = set_indent();
+	indent = set_indent(1);		/* (keep the indentation flag) */
 	cut_tune(lwidth, indent);
 	alfa_last = 0.1;
 	beta_last = 0;
@@ -4563,7 +4583,7 @@ void output_music(void)
 		float line_height;
 
 		set_piece();
-		indent = set_indent();
+		indent = set_indent(0);
 		set_sym_glue(lwidth - indent);
 		if (indent != 0)
 			a2b("%.2f 0 T\n", indent); /* do indentation */
@@ -4578,7 +4598,7 @@ void output_music(void)
 		update_clefs();
 		tsfirst = tsnext;
 		gen_init();
-		if (tsfirst == 0)
+		if (!tsfirst)
 			break;
 		cut_symbols();
 		buffer_eob();

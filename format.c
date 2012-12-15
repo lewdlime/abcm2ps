@@ -131,8 +131,9 @@ static struct format {
 #if FONT_UMAX!=5
 #	error Bad number of user fonts
 #endif
-	{"shifthnote", &cfmt.shiftunisson, FORMAT_B, 0},	/*to remove*/
-	{"shiftunisson", &cfmt.shiftunisson, FORMAT_B, 0},
+	{"shifthnote", &cfmt.shiftunison, FORMAT_B, 0},	/*to remove*/
+	{"shiftunison", &cfmt.shiftunison, FORMAT_B, 0},
+	{"shiftunisson", &cfmt.shiftunison, FORMAT_B, 0}, /*to remove*/
 	{"slurheight", &cfmt.slurheight, FORMAT_R, 0},
 	{"splittune", &cfmt.splittune, FORMAT_B, 0},
 	{"squarebreve", &cfmt.squarebreve, FORMAT_B, 0},

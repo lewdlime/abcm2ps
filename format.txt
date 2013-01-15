@@ -1312,6 +1312,19 @@ List of the format parameters
 List of the pseudo-comments treated while parsed
 ------------------------------------------------
 
+  abcm2ps <char>
+	Change the pseudo-comment prefix.
+	By default, pseudo-comments are line starting with two percent
+	signs ("%%"). This command redefines the second character of
+	these commands. This permits to avoid clashes with pseudo-comments
+	of other programs.
+	Example:
+
+		%%abcm2ps *
+		%*voice Mib		% the voices which name contains "Mib"
+		%*transpose -3		% are transposed a minor third lower
+		%*abcm2ps %		% restore standard pseudo-comments
+
   begintext [<option>]
 	Start printing a free text.
 	The text appears on the next lines. When a line starts

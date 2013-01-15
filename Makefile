@@ -1,6 +1,6 @@
 # Makefile source for abcm2ps
 
-VERSION = 7.3.3
+VERSION = 7.3.4
 
 CC = gcc
 INSTALL = /usr/bin/install -c

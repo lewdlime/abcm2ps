@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2012 Jean-François Moine
+ * Copyright (C) 1998-2013 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -977,10 +977,10 @@ static void generate(void)
 	system_init();
 	if (!tsfirst)
 		return;				/* no symbol */
-	old_lvl = lvlarena(2);
 	set_bar_num();
 	if (!tsfirst)
 		return;				/* no more symbol */
+	old_lvl = lvlarena(2);
 	output_music();
 	clrarena(2);				/* clear generation */
 	lvlarena(old_lvl);
@@ -1701,6 +1701,7 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 		p_voice2->second = 1;
 		parsys->voice[voice2].second = 1;
 		p_voice2->scale = p_voice->scale;
+		p_voice2->octave = p_voice->octave;
 		range = parsys->voice[p_voice - voice_tb].range;
 		for (voice = 0; voice < MAXVOICE; voice++) {
 			if (parsys->voice[voice].range > range)
@@ -3461,8 +3462,8 @@ static void get_key(struct SYMBOL *s)
 	 && curvoice->ckey.nacc == 0
 	 && s->as.u.key.nacc == 0
 	 && curvoice->ckey.empty == s->as.u.key.empty
-	 && !cfmt.keywarn)			/* if not key warning,
-						 * keep all key signatures */
+	 && cfmt.keywarn)			/* (if not key warning,
+						 *  keep all key signatures) */
 		return;				/* ignore */
 
 	if (!curvoice->ckey.empty)

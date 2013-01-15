@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2012 Jean-François Moine
+ * Copyright (C) 1998-2013 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -309,6 +309,7 @@ static void do_combine(struct SYMBOL *s)
 	struct SYMBOL *s2;
 	int nhd, nhd2, type;
 
+again:
 	nhd = s->nhd;
 	s2 = s->ts_next;
 	nhd2 = s2->nhd;
@@ -385,6 +386,10 @@ delsym2:
 		s->gch = s2->gch;
 	}
 	unlksym(s2);			/* remove the next symbol */
+
+	/* there may be more voices */
+	if (!(s->sflags & S_IN_TUPLET) && may_combine(s))
+		goto again;
 }
 
 /* -- try to combine voices */
@@ -428,24 +433,21 @@ static void combine_voices(void)
 			}
 			continue;
 		}
-		if (s->as.type != ABC_T_NOTE) {
-			if (s->as.type != ABC_T_REST)
-				continue;
-			if (may_combine(s)) {
+		switch (s->as.type) {
+		case ABC_T_REST:
+			if (may_combine(s))
 				do_combine(s);
-				if (may_combine(s))	/* when 3 voices */
-					do_combine(s);
-			}
 			continue;
+		default:
+			continue;
+		case ABC_T_NOTE:
+			break;
 		}
 		if (!(s->sflags & S_BEAM_ST))
 			continue;
 		if (s->sflags & S_BEAM_END) {
-			if (may_combine(s)) {
+			if (may_combine(s))
 				do_combine(s);
-				if (may_combine(s))	/* when 3 voices */
-					do_combine(s);
-			}
 			continue;
 		}
 		s2 = s;
@@ -471,8 +473,6 @@ static void combine_voices(void)
 		s2 = s;
 		for (;;) {
 			do_combine(s2);
-			if (may_combine(s2))	/* when 3 voices */
-				do_combine(s2);
 #if 1
 //fixme: may have rests in beam
 			if (s2->sflags & S_BEAM_END)

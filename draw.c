@@ -2549,8 +2549,9 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			}
 			continue;
 		}
-		if (s2->as.u.note.slur_st
-		 || (s2->sflags & S_SL1))
+		if (s2->as.u.note.slur_st	/* if slur start/end */
+		 || s2->as.u.note.slur_end
+		 || (s2->sflags & (S_SL1 | S_SL2)))
 			some_slur = 1;
 		if (s2->staff < upstaff)
 			upstaff = s2->staff;
@@ -2565,8 +2566,23 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		next = s2;
 
 	/* draw the slurs when inside the tuplet */
-	if (some_slur)
+	if (some_slur) {
 		draw_slurs(s1, s2);
+		if (s1->as.u.note.slur_st
+		 || (s1->sflags & S_SL1))
+			return next;
+		for (sy = s1->next; sy != s2; sy++) {
+			if (sy->as.u.note.slur_st	/* if slur start/end */
+			 || sy->as.u.note.slur_end
+			 || (sy->sflags & (S_SL1 | S_SL2)))
+				return next;		/* don't draw now */
+		}
+		if (s2->as.u.note.slur_end
+		 || (s2->sflags & S_SL2))
+			return next;
+	}
+	s->sflags &= ~S_IN_TUPLET;		/* the tuplet is drawn */
+
 	if (s1 == s2) {				/* if tuplet with 1 note */
 		nb_only = 1;
 	} else if ((t->u & 0x0f0) == 0x10) {	/* 'what' == slur */
@@ -3239,7 +3255,7 @@ static void draw_all_slurs(struct VOICE_S *p_voice)
 	slur_type = p_voice->slur_st;
 	p_voice->slur_st = 0;
 
-	/* the slurs are inverted */
+	/* the starting slur types are inverted */
 	slur_st = 0;
 	while (slur_type != 0) {
 		slur_st <<= 3;
@@ -3248,7 +3264,7 @@ static void draw_all_slurs(struct VOICE_S *p_voice)
 	}
 
 	/* draw the slurs inside the music line */
-	draw_slurs(s, 0);
+	draw_slurs(s, NULL);
 
 	/* do unbalanced slurs still left over */
 	for ( ; s; s = s->next) {
@@ -3946,6 +3962,8 @@ void draw_sym_near(void)
 		if (!s)
 			continue;
 		set_sscale(s->staff);
+
+		/* draw the tuplets near the notes */
 		for (s = s->next; s; s = s->next) {
 			struct SYMBOL *g;
 
@@ -3960,6 +3978,21 @@ void draw_sym_near(void)
 			}
 		}
 		draw_all_slurs(p_voice);
+
+		/* draw the tuplets over the slurs */
+		for (s = p_voice->sym->next; s; s = s->next) {
+			struct SYMBOL *g;
+
+			if ((s->sflags & S_IN_TUPLET)
+			 && (g = s->extra) != NULL) {
+				for ( ; g; g = g->next) {
+					if (g->type == TUPLET) {
+						s = draw_tuplet(g, s);
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	/* set the top and bottom for all symbols to be out of the staves */

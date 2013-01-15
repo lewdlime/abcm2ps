@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2011-2012 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 2011-2013 Jean-François Moine (http://moinejf.free.fr)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,10 +29,10 @@
 
 static unsigned char *dst;
 static int offset, size, keep_comments;
-static int latin;
 static void (*include_f)(unsigned char *fn);
 static unsigned char *selection;
-static int skip;
+static int latin, skip;
+static char prefix = '%';
 
 /*
  * translation table from the ABC draft version 2
@@ -538,7 +538,7 @@ unsigned char *frontend(unsigned char *s,
 					goto next_eol;		/* comment */
 				goto next;
 			}
-			if (*s == '%' && s[1] == '%') {
+			if (*s == '%' && s[1] == prefix) {
 				q = s + 2;
 				while (*q == ' ' || *q == '\t')
 					q++;
@@ -586,7 +586,7 @@ unsigned char *frontend(unsigned char *s,
 		if (histo) {			/* H: continuation */
 			if ((s[1] == ':'
 			  && (isalpha(*s) || *s == '+'))
-			 || (*s == '%' && s[1] == '%')) {
+			 || (*s == '%' && s[1] == prefix)) {
 				histo = 0;
 			} else {
 				txt_add((unsigned char *) "H:", 2);
@@ -632,7 +632,7 @@ unsigned char *frontend(unsigned char *s,
 			goto info;
 		}
 		if (*s == '%') {
-			if (s[1] != '%') {		/* pure comment */
+			if (s[1] != prefix) {		/* pure comment */
 				if (keep_comments
 				 || strncmp((char *) s, "%abc", 4) == 0)
 					txt_add(s, l);
@@ -642,6 +642,13 @@ unsigned char *frontend(unsigned char *s,
 			}
 			s += 2;
 			l -= 2;
+			if (strncmp((char *) s, "abcm2ps", 7) == 0) {
+				q = s + 7;
+				while (isspace(*q))
+					q++;
+				prefix = *q;
+				goto next_eol;
+			}
 pscom:
 			while (*s == ' ' || *s == '\t') {
 				s++;

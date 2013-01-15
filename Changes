@@ -1,3 +1,13 @@
+---- Version 7.3.4 - 13/01/08 ----
+
+%%abcm2ps added.
+Bad octave in overlay voices when "octave=" in main voice
+	(reported by Colin Hume).
+Let more slurs under the tuplets
+	(asked by David Lacroix).
+Don't keep the K:'s with same key signature when %%keywarn is set
+	(reported by Henry Bley-Vroman).
+
 ---- Version 7.3.3 - 12/12/14 ----
 
 Remove some example files from the distribution.

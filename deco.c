@@ -1502,7 +1502,7 @@ void draw_deco_staff(void)
 		}
 		set_sscale(-1);		/* restore the scale parameters */
 		for (s = first_gchord; s; s = s->ts_next) {
-			if (!s->as.text)
+			if (!s->gch)
 				continue;
 			switch (s->type) {
 			case NOTEREST:
@@ -1583,7 +1583,7 @@ void draw_deco_staff(void)
 				y = y2;
 
 			/* have room for the repeat numbers */
-			if (s1->as.text) {
+			if (s1->gch) {
 				w = s1->gch->w;
 				y2 = y_get(p_voice->staff, 1, s1->x + 4, w);
 				y2 += cfmt.font_tb[REPEATFONT].size + 2;

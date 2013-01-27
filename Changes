@@ -1,3 +1,7 @@
+---- Version 7.3.5 - 13/01/15 ----
+
+Fix crash when "%%gchord hidden".
+
 ---- Version 7.3.4 - 13/01/08 ----
 
 %%abcm2ps added.

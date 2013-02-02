@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2012 Jean-François Moine
+ * Copyright (C) 1998-2013 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -781,18 +781,18 @@ static char ps_head[] =
 	"	-2 -2.5 RL -2 2.5 RL -2 -2.5 RL -2 2.5 RL fill\n"
 	"	M 3.5 0 RM 5 7 RL dlw stroke}!\n"
 
-	/* extra characters (accidentals) range c280 .. c29f */
-	"/c280_c29f[\n"
-	"	/.notdef	/sharp		/flat		/natural\n"
-	"	/dsharp		/dflat]def\n"
+	/* extra characters (accidentals) range */
+	"/accnames[\n"
+	"	/flat /natural /sharp /.notdef\n"
+	"	/dsharp	/dflat]def\n"
 
 	"/extra-draw{\n"
-	"	/sharp{460 0 setcharwidth usharp ufill}bind def\n"
-	"	/flat{460 0 setcharwidth uflat ufill}bind def\n"
-	"	/natural{400 0 setcharwidth unat ufill}bind def\n"
-	"	/dsharp{460 0 setcharwidth udblesharp ufill}bind def\n"
-	"	/dflat{500 0 setcharwidth udbleflat ufill}bind def\n"
-	" }def\n"
+	"	/sharp{460 0 setcharwidth usharp ufill}\n"
+	"	/flat{460 0 setcharwidth uflat ufill}\n"
+	"	/natural{400 0 setcharwidth unat ufill}\n"
+	"	/dsharp{460 0 setcharwidth udblesharp ufill}\n"
+	"	/dflat{500 0 setcharwidth udbleflat ufill}\n"
+	"  }def\n"
 
 	/* latin characters range c2a0 .. c5bf */
 	"/c2a0_c5bf[\n"
@@ -857,14 +857,7 @@ static char ps_head[] =
 	"/Ydieresis	/Zacute		/zacute		/Zdotaccent\n"
 	"/zdotaccent	/Zcaron		/zcaron		/longs\n"
 
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
+	"32{/.notdef}repeat\n"
 	"]def\n"
 
 	/* font for c2a0..c5bf encoding */
@@ -890,6 +883,31 @@ static char ps_head[] =
 	"	}\n"
 	"  >>definefont pop\n"
 
+	/* some musical glyphs */
+	"/e299fontdef{\n"
+	"    /e299font curfont findfont dup length\n"
+	"	dict begin\n"
+	"		{1 index/FID ne{def}{pop pop}ifelse}forall\n"
+	"		/Encoding 256 array def\n"
+	"		Encoding 0 accnames putinterval\n"
+	"		currentdict\n"
+	"	end\n"
+	"    definefont}def\n"
+
+	"/compe200def{\n"
+	"  /compe200<<\n"
+	"	/FontType 0\n"
+	"	/FontMatrix[1 0 0 1 0 0]\n"
+	"	/FMapType 6\n"
+		/* flat \u266d (e2 99 ad) .. sharp \u266f (e2 99 af) */
+	"	/SubsVector<01 99ad 0003>\n"
+	"	/Encoding[0 1 0]\n"
+	"	/FDepVector[\n"
+	"		/Error findfont\n"
+	"		accdef\n"
+	"	]\n"
+	"  >>definefont}def\n"
+
 	/* stub for utf-8 with 3 bytes */
 	"/compdef{\n"
 	"	/FontType 0\n"
@@ -901,7 +919,6 @@ static char ps_head[] =
 	"  }def\n"
 	"/compe000def{/compe000<<compdef>>definefont}def\n"
 	"/compe100def{/compe100<<compdef>>definefont}def\n"
-	"/compe200def{/compe200<<compdef>>definefont}def\n"
 #ifdef HAVE_PANGO
 	"/glypharray{{glyphshow}forall}!\n"
 #endif
@@ -921,25 +938,21 @@ void define_cmap(void)
 {
 	static char mkfont[] =
 
-	/* extra characters (accidentals) range c280 .. c29f */
+	/* extra characters (dble sharp/flat - c284 c285) */
 	"/ExtraFont 10 dict begin\n"
 	"	/FontType 3 def\n"
 	"	/FontMatrix[.001 0 0 .001 0 0]def\n"
 	"	/Encoding[256{/.notdef}repeat]def\n"
-	"	Encoding 0 c280_c29f putinterval\n"
+	"	Encoding 0 accnames putinterval\n"
 	"	/FontBBox[0 0 1000 1000]def\n"
 	"	/BuildChar{\n"
 	"		1 index/Encoding get exch get\n"
 	"		1 index/BuildGlyph get exec\n"
 	"	}bind def\n"
-	"	/CharProcs 3 dict def\n"
-	"		CharProcs begin\n"
-	"			/.notdef{}def\n"
-	"			extra-draw\n"
-	"		end\n"
+	"	/CharProcs<</.notdef{}extra-draw>>def\n"
 	"	/BuildGlyph{\n"
 	"		exch /CharProcs get exch\n"
-	"		2 copy known not{pop /.notdef}if\n"
+	"		2 copy known not{pop/.notdef}if\n"
 	"		get exec\n"
 	"	}bind def\n"
 	"	currentdict\n"
@@ -949,6 +962,13 @@ void define_cmap(void)
 	/* newfont basefont mkfont-utf8 */
 	"/mkfont-utf8{\n"
 	"	/curfont exch def\n"
+	/* if no accidentals glyphs, set the local ones */
+	"	/accdef{/ExtraFont findfont}def\n"
+	"	curfont findfont\n"
+	"	dup/CharStrings known{\n"
+	"		/CharStrings get/sharp known{\n"
+	"			/accdef e299fontdef def}if\n"
+	"	}{pop}ifelse\n"
 	/* composite font first level */
 	"	<<\n"
 	"	/FontType 0\n"

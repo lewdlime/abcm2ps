@@ -1,3 +1,18 @@
+---- Version 7.4.0 - 13/01/29 ----
+
+Do better transposition of microtonal tunes
+	(asked by David Lacroix).
+Fix bad vertical offset of some decorations (dot, tenuto) when inverted
+	stems and multi-voice
+	(reported by David Lacroix).
+Use the glyphs of the simple accidentals of PS fonts instead of internal ones
+	when they exist.
+!! Always use UTF-8 characters for simple accidentals (sharp, flat, natural)
+	in PS output !! (see the new insertion of ellipsis in sample.abc)
+Fix double tie when beam continued on next line
+	(reported by David Lacroix).
+Extend the %%voicescale possible values to [0.6 .. 1.5].
+
 ---- Version 7.3.5 - 13/01/15 ----
 
 Fix crash when "%%gchord hidden".

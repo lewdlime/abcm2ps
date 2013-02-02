@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2000-2012, Jean-François Moine.
+ * Copyright (C) 2000-2013, Jean-François Moine.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -390,9 +390,10 @@ static void d_near(struct deco_elt *de)
 
 	s = de->s;
 	dd = &deco_def_tb[de->t];
-	up = s->stem > 0 ? 0 : 1;
 	if (s->multi)
-		up = !up;
+		up = s->multi > 0;
+	else
+		up = s->stem < 0;
 	if (up)
 		y = s->ymx;
 	else

@@ -2,31 +2,23 @@
 
 U: M = !tenuto!		% abcm2ps: default M is lowermordent
 
-% abcm2ps >= 6.2.2 - definition of '...' (ellipsis) for PostScript
+% abcm2ps >= 7.4.0 - definition of '...' (ellipsis) for PostScript
 %%beginps nosvg
-/morechar[
-/ellipsis
-]def
-/morefontdef{
-    /morefont curfont findfont dup length
-	dict begin
-		{1 index/FID ne{def}{pop pop}ifelse}forall
-		/Encoding 256 array def
-		Encoding 0 morechar putinterval
-		currentdict
-	end
-    definefont}def
+/accnames[
+	/flat /natural /sharp /ellipsis
+	/dsharp /dflat]def
 /compe200def{
     /compe200<<
 	/FontType 0
 	/FontMatrix[1 0 0 1 0 0]
 	/FMapType 6
-% ellipsis - UTF-8: E2 80 A6 - unicode \u2026
-	/SubsVector<01 80a6 0001>
-	/Encoding[0 1 0]
+% ellipsis - UTF-8: e2 80 a6 - unicode \u2026 index 3 in accnames[]
+	/SubsVector<01 80a3 0004 1906 0003>
+	/Encoding[0 1 0 2 0]
 	/FDepVector[
 		/Error findfont
-		morefontdef
+		e299fontdef
+		accdef
 	]
     >>definefont}def
 %%endps

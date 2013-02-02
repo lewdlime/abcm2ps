@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2012 Jean-François Moine
+ * Copyright (C) 1998-2013 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -191,7 +191,11 @@ static int calculate_beam(struct BEAM *bm,
 				s->ts_next->ts_prev = s;
 			s2->ts_next = s;
 			s->ts_prev = s2;
-			s->sflags &= ~S_BEAM_ST;
+#if 1
+			s->sflags &= S_SEQST;
+#else
+			s->sflags &= ~(S_BEAM_ST | S_SL1 | S_TI1);
+#endif
 			s->sflags |= S_BEAM_END;
 			s->x += 12;
 			if (s->x < realwidth - 12)

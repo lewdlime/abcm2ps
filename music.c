@@ -2632,14 +2632,14 @@ if (staff > nst) {
 				continue;
 			staff = s->staff;
 			voice = s->voice;
-			if (s->multi == 0 && vtb[voice].st2 >= 0) {
+			if (!s->multi && vtb[voice].st2 >= 0) {
 				if (staff == vtb[voice].st1)
 					s->multi = -1;
 				else if (staff == vtb[voice].st2)
 					s->multi = 1;
 			}
 			if (stb[staff].nvoice <= 0) { /* voice alone on the staff */
-				if (s->multi != 0)
+				if (s->multi)
 					continue;
 /*fixme:could be done in set_float()*/
 				if (s->sflags & S_FLOATING) {
@@ -2657,7 +2657,7 @@ if (staff > nst) {
 			}
 			if (i < 0)
 				continue;		/* voice ignored */
-			if (s->multi == 0) {
+			if (!s->multi) {
 				if (i == stb[staff].nvoice) {
 					s->multi = -1;	/* last voice */
 				} else {
@@ -3453,7 +3453,7 @@ static void set_beams(struct SYMBOL *sym)
 				n = 12;
 				for (t = s->next; t; t = t->next) {
 					if (t->as.type == ABC_T_NOTE) {
-						if (t->multi != 0) {
+						if (t->multi) {
 							avg = n - t->multi;
 							break;
 						}
@@ -4192,10 +4192,8 @@ static void set_piece(void)
 		switch (p_staff->clef.stafflines) {
 		case 0:
 		case 1:
-		case 3:
-		case 4:	p_staff->topbar = 18; break;
+		case 3:	p_staff->topbar = 18; break;
 		case 2:	p_staff->topbar = 12; break;
-		case 5:	p_staff->topbar = 24; break;
 		default:
 			p_staff->topbar = 6 * (p_staff->clef.stafflines - 1);
 			break;

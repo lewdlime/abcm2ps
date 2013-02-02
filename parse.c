@@ -1012,7 +1012,7 @@ static void gen_ly(int eob)
 /* transpose a note / chord */
 static void note_transpose(struct SYMBOL *s)
 {
-	int i, j, m, n, a, dp, i1, i2, i3, i4, sf_old;
+	int i, j, m, n, d, a, dp, i1, i2, i3, i4, sf_old;
 	static signed char acc1[6] = {0, 1, 0, -1, 2, -2};
 	static char acc2[5] = {A_DF, A_FT, A_NT, A_SH, A_DS};
 
@@ -1028,7 +1028,7 @@ static void note_transpose(struct SYMBOL *s)
 		n = s->as.u.note.pits[i];
 		s->as.u.note.pits[i] += dp;
 		i1 = cde2fcg[(n + 5 + 16 * 7) % 7];	/* fcgdaeb */
-		a = s->as.u.note.accs[i];
+		a = s->as.u.note.accs[i] & 0x07;
 		if (a == 0) {
 			if (curvoice->okey.nacc == 0) {
 				if (sf_old > 0) {
@@ -1052,13 +1052,12 @@ static void note_transpose(struct SYMBOL *s)
 
 		/* accidental */
 		i1 = ((i3 + 1 + 21) / 7 + 2 - 3 + 32 * 5) % 5;
-		if (s->as.u.note.accs[i] != 0) {
-			a = acc2[(unsigned) i1];
-			s->as.u.note.accs[i] = a;
+		if ((s->as.u.note.accs[i] & 0x07) != 0) {
+			;
 		} else if (curvoice->ckey.empty != 0) {	/* key none */
 			a = acc2[(unsigned) i1];
-			if (a != A_NT)
-				s->as.u.note.accs[i] = a;
+			if (a == A_NT)
+				continue;
 		} else if (curvoice->ckey.nacc > 0) {	/* acc list */
 			i4 = cgd2cde[(unsigned) ((i3 + 16 * 7) % 7)];
 			for (j = 0; j < curvoice->ckey.nacc; j++) {
@@ -1066,11 +1065,46 @@ static void note_transpose(struct SYMBOL *s)
 							== 0)
 					break;
 			}
-			if (j >= curvoice->ckey.nacc) {
-				a = acc2[(unsigned) i1];
-				s->as.u.note.accs[i] = a;
+			if (j < curvoice->ckey.nacc)
+				continue;
+		}
+		a = acc2[(unsigned) i1];
+		i1 = s->as.u.note.accs[i] & 0x07;
+		i2 = s->as.u.note.accs[i] >> 3;
+		if (i2 != 0				/* microtone */
+		 && i1 != a) {				/* different accidental type */
+			n = micro_tb[i2];
+			d = (n & 0xff) + 1;
+			n = (n >> 8) + 1;
+			if (a == A_NT) {
+/*fixme:should treat the double sharps/flats*/
+				if (n >= d) {
+					n -= d;
+					a = i1;
+				} else {
+					n = d - n;
+					if (i1 == A_SH)
+						a = A_FT;
+					else
+						a = A_SH;
+				}
+			}
+			d--;
+			d += (n - 1) << 8;
+			for (i2 = 1; i2 < MAXMICRO; i2++) {
+				if (micro_tb[i2] == d)
+					break;
+				if (micro_tb[i2] == 0) {
+					micro_tb[i2] = d;
+					break;
+				}
+			}
+			if (i2 == MAXMICRO) {
+				error(1, s, "Too many microtone accidentals");
+				i2 = 0;
 			}
 		}
+		s->as.u.note.accs[i] = (i2 << 3) | a;
 	}
 }
 
@@ -4664,7 +4698,7 @@ center:
 			float scale;
 
 			scale = strtod(p, &q);
-			if (scale <= 0.7 || scale > 1.4
+			if (scale < 0.6 || scale > 1.5
 			 || (*q != '\0' && *q != ' ')) {
 				error(1, s, "Bad %%%%voicescale value");
 				return as;

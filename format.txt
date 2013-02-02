@@ -1264,6 +1264,7 @@ List of the format parameters
 		Set the scale of
 		- all voices when in the tune header,
 		- the current voice when found in the tune body.
+		The <float> value must be in range [0.6 .. 1.5].
 
   volume <int>
 	Default: 0

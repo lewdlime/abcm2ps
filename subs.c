@@ -828,6 +828,7 @@ void str_ft_out(char *p, int end)
 			q = p;
 			break;
 
+#if 0
 		/* is PostScript, convert the accidentals to unicode 81..85 */
 		case 0xe2:
 			if (svg || epsf == 2)
@@ -849,6 +850,7 @@ void str_ft_out(char *p, int end)
 			p += 3;
 			q = p;
 			continue;
+#endif
 		case 0xf0:
 			if (svg || epsf == 2)
 				break;

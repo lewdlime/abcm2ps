@@ -1,3 +1,13 @@
+---- Version 7.4.1 - 13/02/11 ----
+
+Better error messages when error found at end of ABC line.
+Warn on deprecated syntaxes of Q:
+	(asked by Chuck Boody).
+Fix double slurs when beam on 2 staves
+	(reported by David Lacroix).
+Extend %%repeat for working with many voices
+	(reported by Atte André Jensen).
+
 ---- Version 7.4.0 - 13/01/29 ----
 
 Do better transposition of microtonal tunes

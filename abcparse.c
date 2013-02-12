@@ -1,7 +1,7 @@
 /*
  * Generic ABC parser.
  *
- * Copyright (C) 1998-2012 Jean-François Moine
+ * Copyright (C) 1998-2013 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996, 1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1325,7 +1325,7 @@ char *get_str(char *d,		/* destination */
 static char *parse_tempo(char *p,
 			 struct abcsym *s)
 {
-	int l, have_error = 0;
+	int l;
 	char *q, str[80];
 
 	/* string before */
@@ -1340,13 +1340,17 @@ static char *parse_tempo(char *p,
 	 || *p == 'L' || *p == 'l') {
 		int len;
 
+		p++;
+		if (*p != '=')
+			goto inval;
 		p = parse_len(p + 1, &len);
 		if (len <= 0)
-			have_error++;
-		else
-			s->u.tempo.length[0] = len * ulen / BASE_LEN;
+			goto inval;
+		s->u.tempo.length[0] = len * ulen / BASE_LEN;
 		while (isspace((unsigned char) *p))
 			p++;
+		if (abc_vers >= (2 << 16))
+			syntax("Deprecated Q: value", p);
 	} else if (isdigit((unsigned char) *p) && strchr(p, '/') != 0) {
 		unsigned i;
 
@@ -1355,17 +1359,14 @@ static char *parse_tempo(char *p,
 			int top, bot, n;
 
 			if (sscanf(p, "%d /%d%n", &top, &bot, &n) != 2
-			 || bot <= 0) {
-				have_error++;
-				break;
-			}
+			 || bot <= 0)
+				goto inval;
 			l = (BASE_LEN * top) / bot;
 			if (l <= 0
 			 || i >= sizeof s->u.tempo.length
 					/ sizeof s->u.tempo.length[0])
-				have_error++;
-			else
-				s->u.tempo.length[i++] = l;
+				goto inval;
+			s->u.tempo.length[i++] = l;
 			p += n;
 			while (isspace((unsigned char) *p))
 				p++;
@@ -1398,7 +1399,17 @@ static char *parse_tempo(char *p,
 		s->u.tempo.str2 = alloc_f(strlen(str) + 1);
 		strcpy(s->u.tempo.str2, str);
 	}
-	return have_error ? "Invalid tempo" : 0;
+
+	if (!s->u.tempo.str1 && !s->u.tempo.str2
+	 && s->u.tempo.length[0] == 0) {
+		if (s->u.tempo.value == 0)
+			return "Empty tempo";
+		if (abc_vers >= (2 << 16))
+			syntax("Deprecated Q: value", p);
+	}
+	return 0;
+inval:
+	return "Invalid tempo";
 }
 
 /* -- get a user defined symbol (U:) -- */
@@ -2835,11 +2846,11 @@ static void syntax(char *msg,
 	severity = 1;
 	n = q - abc_line;
 	len = strlen(abc_line);
-	if ((unsigned) n >= (unsigned) len)
+	if ((unsigned) n > (unsigned) len)
 		n = -1;
 	print_error(msg, n);
 	if (n < 0) {
-		if (q != 0)
+		if (q != 0 && *q != '\0')
 			fprintf(stderr, " (near '%s')\n", q);
 		return;
 	}

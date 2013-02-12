@@ -1726,14 +1726,7 @@ static void set_repeat(struct SYMBOL *g,
 	if ((n = g->doty) < 0) {		/* number of notes / measures */
 		n = -n;
 		i = n;				/* number of notes to repeat */
-		for (s2 = s->ts_prev; s2; s2 = s2->ts_prev) {
-			if (s2->staff != staff)
-				continue;
-			if (s2->voice != voice
-			 && !(s2->as.flags & ABC_F_INVIS)) {
-				error(0, s2, "Other voice in sequence to repeat");
-				goto delrep;
-			}
+		for (s2 = s->prev; s2; s2 = s2->prev) {
 			if (s2->dur == 0) {
 				if (s2->type == BAR) {
 					error(0, s2, "Bar in sequence to repeat");
@@ -1750,14 +1743,7 @@ static void set_repeat(struct SYMBOL *g,
 		}
 
 		i = g->nohdix * n;		/* repeat number */
-		for (s2 = s; s2; s2 = s2->ts_next) {
-			if (s2->staff != staff)
-				continue;
-			if (s2->voice != voice
-			 && !(s2->as.flags & ABC_F_INVIS)) {
-				error(0, s2, "Other voice in repeat sequence");
-				goto delrep;
-			}
+		for (s2 = s; s2; s2 = s2->next) {
 			if (s2->dur == 0) {
 				if (s2->type == BAR) {
 					error(0, s2, "Bar in repeat sequence");
@@ -1778,13 +1764,17 @@ static void set_repeat(struct SYMBOL *g,
 			i = n;			/* number of notes/rests */
 			if (s3->dur != 0)
 				i--;
-			s2 = s3->next;
+			s2 = s3->ts_next;
 			while (i > 0) {
-				if (s2->dur != 0)
-					i--;
-				s2->extra = 0;
+				if (s2->staff != staff)
+					continue;
+				if (s2->voice == voice) {
+					if (s2->dur != 0)
+						i--;
+				}
+				s2->extra = NULL;
 				unlksym(s2);
-				s2 = s2->next;
+				s2 = s2->ts_next;
 			}
 			s3->type = NOTEREST;
 			s3->as.type = ABC_T_REST;
@@ -1804,15 +1794,8 @@ static void set_repeat(struct SYMBOL *g,
 	/* first check of the measure repeat */
 	if (!xset) {
 		i = n;				/* number of measures to repeat*/
-		for (s2 = s->ts_prev; s2; s2 = s2->ts_prev) {
-			if (s2->staff != staff)
-				continue;
-			if (s2->voice != voice) {
-				if (!(s2->as.flags & ABC_F_INVIS)) {
-					error(0, s2, "Other voice in measure to repeat");
-					goto delrep;
-				}
-			} else if (s2->type == BAR) {
+		for (s2 = s->prev; s2; s2 = s2->prev) {
+			if (s2->type == BAR) {
 				if (--i <= 0)
 					break;
 			}
@@ -1823,15 +1806,10 @@ static void set_repeat(struct SYMBOL *g,
 		}
 
 		i = g->nohdix * n;		/* repeat number */
-		for (s2 = s; s2; s2 = s2->ts_next) {
+		for (s2 = s; s2; s2 = s2->next) {
 			if (s2->staff != staff)
 				continue;
-			if (s2->voice != voice) {
-				if (!(s2->as.flags & ABC_F_INVIS)) {
-					error(0, s2, "Other voice in repeat measure");
-					goto delrep;
-				}
-			} else if (s2->type == BAR) {
+			if (s2->type == BAR) {
 				if (--i <= 0)
 					break;
 			}
@@ -1845,7 +1823,7 @@ static void set_repeat(struct SYMBOL *g,
 
 	/* second check and replace */
 	i = g->nohdix * n;			/* check if NL later in the line */
-	for (s2 = s; s2; s2 = s2->next) {
+	for (s2 = s; ; s2 = s2->next) {
 //		if (s2->sflags & S_NL)
 //			goto delrep;
 		if (s2->type == BAR) {
@@ -1856,7 +1834,7 @@ static void set_repeat(struct SYMBOL *g,
 	dur = (s2->time - s->time) / g->nohdix;	/* repeat duration */
 	s2 = s->prev->prev;			/* check if NL before */
 	if (n == 2) {				/* if repeat 2 measures */
-		for (; s2; s2 = s2->prev) {
+		for (; ; s2 = s2->prev) {
 			if (s2->type == BAR) {
 				s2 = s2->prev;
 				break;
@@ -1877,13 +1855,14 @@ static void set_repeat(struct SYMBOL *g,
 	dur /= n;
 	if (n == 2) {			/* repeat 2 measures (one time) */
 		s3 = s;
-		s2 = s->next;
-		for (;;) {
-			if (s2->type == BAR)
+		for (s2 = s->ts_next; ;s2 = s2->ts_next) {
+			if (s2->staff != staff)
+				continue;
+			if (s2->voice == voice
+			 && s2->type == BAR)
 				break;
 			s2->extra = NULL;
 			unlksym(s2);
-			s2 = s2->next;
 		}
 		s3->type = NOTEREST;
 		s3->as.type = ABC_T_REST;
@@ -1920,13 +1899,14 @@ static void set_repeat(struct SYMBOL *g,
 	/* repeat 1 measure */
 	s3 = s;
 	for (j = g->nohdix; --j >= 0; ) {
-		s2 = s3->next;
-		for (;;) {
-			if (s2->type == BAR || s2->type == CLEF)
+		for (s2 = s3->ts_next; ; s2 = s2->ts_next) {
+			if (s2->staff != staff)
+				continue;
+			if (s2->voice == voice
+			 && s2->type == BAR)
 				break;
 			s2->extra = NULL;
 			unlksym(s2);
-			s2 = s2->next;
 		}
 		s3->type = NOTEREST;
 		s3->as.type = ABC_T_REST;

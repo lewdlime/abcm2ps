@@ -152,8 +152,10 @@ static int calculate_beam(struct BEAM *bm,
 		s->x -= 12;
 		if (s->x > s1->prev->x + 12)
 			s->x = s1->prev->x + 12;
-		s->sflags &= ~S_BEAM_END;
+		s->sflags &= S_SEQST;
 		s->sflags |= S_BEAM_ST;
+		s->as.u.note.slur_st = 0;
+		s->as.u.note.slur_end = 0;
 		s1 = s;
 	}
 
@@ -191,12 +193,10 @@ static int calculate_beam(struct BEAM *bm,
 				s->ts_next->ts_prev = s;
 			s2->ts_next = s;
 			s->ts_prev = s2;
-#if 1
 			s->sflags &= S_SEQST;
-#else
-			s->sflags &= ~(S_BEAM_ST | S_SL1 | S_TI1);
-#endif
 			s->sflags |= S_BEAM_END;
+			s->as.u.note.slur_st = 0;
+			s->as.u.note.slur_end = 0;
 			s->x += 12;
 			if (s->x < realwidth - 12)
 				s->x = realwidth - 12;

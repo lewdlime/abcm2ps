@@ -26,6 +26,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
+
 #include "abc2ps.h" 
 
 #define BUFFLN	80		/* max number of lines in output buffer */
@@ -856,10 +860,8 @@ void write_buffer(void)
 	outft = outft_sav;
 }
 
-/* -- handle completed block in buffer -- */
-/* if the added stuff does not fit on current page, write it out
-   after page break and change buffer handling mode to pass though */
-void buffer_eob(void)
+/* -- add a block in the output buffer -- */
+void block_put(void)
 {
 	if (mbf == outbuf)
 		return;
@@ -901,7 +903,14 @@ void buffer_eob(void)
 		write_buffer();
 		return;
 	}
+}
 
+/* -- handle completed block in buffer -- */
+/* if the added stuff does not fit on current page, write it out
+   after page break and change buffer handling mode to pass though */
+void buffer_eob(void)
+{
+	block_put();
 	if (maxy + bposy < 0
 	 && !epsf
 	 && multicol_start == 0) {

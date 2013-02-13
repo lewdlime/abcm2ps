@@ -1,7 +1,7 @@
 /*
  * abcm2ps: a program to typeset tunes written in ABC format using PostScript
  *
- * Copyright (C) 1998-2012 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 1998-2013 Jean-François Moine (http://moinejf.free.fr)
  *
  * Adapted from abc2ps-1.2.5:
  *  Copyright (C) 1996,1997  Michael Methfessel (msm@ihp-ffo.de)
@@ -228,7 +228,7 @@ static void treat_file(char *fn, char *ext)
 	}
 
 	/* initialize if not already done */
-	frontend((unsigned char *) "\n", 0);	/* stop the %%tune/%%voice */
+//	frontend((unsigned char *) "\n", 0);	/* stop the %%tune/%%voice */
 	if (fout == 0)
 		read_def_format();
 
@@ -458,7 +458,7 @@ static void set_opt(char *w, char *v)
 {
 	if (v == 0)
 		v = "";
-	if (strlen(w) + strlen(v) >= sizeof tex_str - 2) {
+	if (strlen(w) + strlen(v) >= TEX_BUF_SZ - 10) {
 		error(1, 0, "Command line '%s' option too long", w);
 		return;
 	}
@@ -567,7 +567,7 @@ int main(int argc, char **argv)
 			if (p[1] == '\0') {		/* '-' alone */
 				if (in_fname != 0) {
 					treat_file(in_fname, "abc");
-					set_opt("select", 0);
+					frontend((unsigned char *) "select\n", 0);
 				}
 				in_fname = "";		/* read from stdin */
 				continue;
@@ -885,7 +885,7 @@ int main(int argc, char **argv)
 
 		if (in_fname != 0) {
 			treat_file(in_fname, "abc");
-			set_opt("select", 0);
+			frontend((unsigned char *) "select\n", 0);
 		}
 		in_fname = p;
 	}

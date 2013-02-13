@@ -1,4 +1,4 @@
-	Features of abcm2ps 7.3.3 (J.F. Moine, December 2012)
+	Features of abcm2ps 7.4.2 (J.F. Moine, February 2013)
 	=====================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
@@ -42,9 +42,6 @@ Features that work differently.
 ===============================
 
 File structure.
-
-	- The X: header field may be omitted in tunebooks in which case
-	  a tune starts on a T: header field.
 
 	- The T: header field may be omitted when 'X:' is present.
 

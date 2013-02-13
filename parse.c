@@ -178,7 +178,7 @@ static void mrest_expand(struct SYMBOL *s)
 static void sort_all(void)
 {
 	struct SYSTEM *sy;
-	struct SYMBOL *s, *prev;
+	struct SYMBOL *s, *prev, *s2;
 	struct VOICE_S *p_voice;
 	int fl, voice, time, w, wmin, multi, mrest_time;
 	int nv, nb, r, sysadv;
@@ -340,8 +340,11 @@ static void sort_all(void)
 		fl = wmin;	/* start a new sequence if some space */
 	}
 
+	if (!prev)
+		return;
+
 	/* if no bar or format_change at end of tune, add a dummy symbol */
-	if (prev && prev->type != BAR && prev->type != FMTCHG) {
+	if (prev->type != BAR && prev->type != FMTCHG) {
 		s = info['T' - 'A'];
 		s->type = FMTCHG;
 		s->u = -1;
@@ -357,6 +360,31 @@ static void sort_all(void)
 				break;
 			prev = prev->ts_prev;
 		}
+	}
+
+	/* if Q: from tune header, put it at start of the music */
+	s2 = info['Q' - 'A'];
+	if (!s2)
+		return;
+	info['Q' - 'A'] = NULL;
+	s = tsfirst->extra;
+	if (s) {
+		do {
+			if (s->type == TEMPO)
+				return;		/* already a tempo */
+			s = s->next;
+		} while (s);
+	}
+	s = tsfirst;
+	s2->type = TEMPO;
+	s2->voice = s->voice;
+	s2->staff = s->staff;
+	s2->time = s->time;
+	if (!s->extra) {
+		s->extra = s2;
+	} else {
+		s2->next = s->extra;
+		s2->next->prev = s2;
 	}
 }
 
@@ -699,6 +727,8 @@ static void system_init(void)
 	voice_compress();
 	voice_dup();
 	sort_all();			/* define the time / vertical sequences */
+	if (!tsfirst)
+		return;
 	parsys->nstaff = nstaff;	/* save the number of staves */
 	staves_init();
 }
@@ -1067,6 +1097,8 @@ static void note_transpose(struct SYMBOL *s)
 			}
 			if (j < curvoice->ckey.nacc)
 				continue;
+		} else {
+			continue;
 		}
 		a = acc2[(unsigned) i1];
 		i1 = s->as.u.note.accs[i] & 0x07;
@@ -2450,6 +2482,7 @@ static struct abcsym *get_info(struct abcsym *as,
 		if (!epsf)
 			bskip(cfmt.topspace);
 		write_heading(t);
+		block_put();
 
 		/* information for index
 		 * (pdfmark must be after title show for Adobe Distiller) */
@@ -2482,6 +2515,12 @@ static struct abcsym *get_info(struct abcsym *as,
 		/* switch to the 1st voice */
 		curvoice = &voice_tb[parsys->top_voice];
 
+#if 1
+		s2 = info['Q' - 'A'];
+		if (s2
+		 && !(cfmt.fields[0] & (1 << ('Q' - 'A'))))
+			info['Q' - 'A'] = NULL;
+#else
 		/* move the Q: at start of the music */
 		s2 = info['Q' - 'A'];
 		if (s2) {
@@ -2500,6 +2539,7 @@ static struct abcsym *get_info(struct abcsym *as,
 			}
 			info['Q' - 'A'] = NULL;
 		}
+#endif
 		as = get_global(as, t);
 
 		voice_filter();
@@ -2543,11 +2583,10 @@ static struct abcsym *get_info(struct abcsym *as,
 		break;
 	case 'Q':
 		switch (as->state) {
-		case ABC_S_GLOBAL:
-		case ABC_S_HEAD:
+		default:
 			info['Q' - 'A'] = s;
 			break;
-		default:
+		case ABC_S_TUNE:
 			if (curvoice != &voice_tb[parsys->top_voice])
 				break;		/* tempo only for first voice */
 			if (!(cfmt.fields[0] & (1 << ('Q' - 'A'))))
@@ -4739,8 +4778,10 @@ center:
 		}
 		if (strcmp(w, "leftmargin") == 0
 		 || strcmp(w, "rightmargin") == 0
-		 || strcmp(w, "scale") == 0)
-			gen_ly(1);
+		 || strcmp(w, "scale") == 0) {
+			generate();
+			block_put();
+		}
 	}
 	interpret_fmt_line(w, p, lock);
 	if (cfmt.alignbars && strcmp(w, "alignbars") == 0) {

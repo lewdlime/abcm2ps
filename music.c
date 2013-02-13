@@ -222,7 +222,7 @@ static void set_head_directions(struct SYMBOL *s)
 }
 
 /* -- unlink a symbol -- */
-static void unlksym(struct SYMBOL *s)
+void unlksym(struct SYMBOL *s)
 {
 	if (!s->next) {
 		if (s->extra) {
@@ -2046,20 +2046,16 @@ normal:
 	}
 	done = 0;
 	staves = extra = NULL;
-	for (; s; s = s->ts_next) {
+	for ( ; ; s = s->ts_next) {
+		if (!s)
+			return NULL;
 		if (!(s->sflags & S_SEQST))
 			continue;
 		if (done < 0)
 			break;
-		if (s->extra) {
-			if (!extra)
-				extra = s;
-			else
-				error(0, s, "Extra symbol may be misplaced");
-		}
 		if (s->type == STAVES) {	/* case "| $ %%staves K: M:" */
 			if (!s->ts_next)
-				return 0;
+				return NULL;
 			staves = s;
 			s = s->ts_next;
 		}
@@ -2071,37 +2067,42 @@ normal:
 			  && (s->as.u.bar.type & 0x07) == B_COL
 			  && !(s->sflags & S_RRBAR)))
 						/* 'xx:' (not ':xx:') */
-				break;
+				goto cut_here;
 			done = 1;
-			continue;
+			break;
 		case STBRK:
 			if (s->doty == 0) {	/* if not forced */
 				unlksym(s);	/* remove */
-				continue;
+				break;
 			}
 			done = -1;	/* keep the next symbols on the next line */
-			continue;
+			break;
 		case TIMESIG:
 			if (!cfmt.timewarn)
-				break;
-			continue;
+				goto cut_here;
+			break;
 		case CLEF:
 			if (done)
-				break;
-			continue;
+				goto cut_here;
+			break;
 		case KEYSIG:
 			if (!cfmt.keywarn)
-				break;
-			continue;
+				goto cut_here;
+			break;
 		default:
 			if (!done || (s->prev && s->prev->type == GRACE))
-				continue;
-			break;
+				break;
+			goto cut_here;
 		}
-		break;
+		if (s->extra) {
+			if (!extra)
+				extra = s;
+			else
+				error(0, s, "abcm2ps problem: "
+					"Extra symbol may be misplaced");
+		}
 	}
-	if (!s)
-		return s;
+cut_here:
 	if (extra			/* extra symbol(s) to be moved */
 	 && extra != s) {
 		s2 = extra->extra;
@@ -4461,11 +4462,12 @@ static void gen_init(void)
 			unlksym(s);
 			if (!tsfirst)
 				return;
-			break;
+			continue;	/* fix %%staves - %%vskip */
+//			break;
 		}
 		return;
 	}
-	tsfirst = 0;			/* no note */
+	tsfirst = NULL;			/* no note */
 }
 
 /* -- update the clefs at start of line -- */

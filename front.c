@@ -24,6 +24,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef WIN32
+#define strncasecmp strnicmp
+#endif
+
 #include "front.h"
 #include "slre.h"
 
@@ -32,7 +36,7 @@ static int offset, size, keep_comments;
 static void (*include_f)(unsigned char *fn);
 static unsigned char *selection;
 static int latin, skip;
-static char prefix = '%';
+static char prefix[4] = {'%'};
 
 /*
  * translation table from the ABC draft version 2
@@ -538,7 +542,7 @@ unsigned char *frontend(unsigned char *s,
 					goto next_eol;		/* comment */
 				goto next;
 			}
-			if (*s == '%' && s[1] == prefix) {
+			if (*s == '%' && strchr(prefix, s[1])) {
 				q = s + 2;
 				while (*q == ' ' || *q == '\t')
 					q++;
@@ -586,7 +590,7 @@ unsigned char *frontend(unsigned char *s,
 		if (histo) {			/* H: continuation */
 			if ((s[1] == ':'
 			  && (isalpha(*s) || *s == '+'))
-			 || (*s == '%' && s[1] == prefix)) {
+			 || (*s == '%' && strchr(prefix, s[1]))) {
 				histo = 0;
 			} else {
 				txt_add((unsigned char *) "H:", 2);
@@ -632,21 +636,26 @@ unsigned char *frontend(unsigned char *s,
 			goto info;
 		}
 		if (*s == '%') {
-			if (s[1] != prefix) {		/* pure comment */
+			if (!strchr(prefix, s[1])) {		/* pure comment */
 				if (keep_comments
 				 || strncmp((char *) s, "%abc", 4) == 0)
 					txt_add(s, l);
-				else if (state != 0)	/* if not global */
+				else if (state != 0)		/* if not global */
 					txt_add(s, 1);
 				goto next_eol;
 			}
 			s += 2;
 			l -= 2;
 			if (strncmp((char *) s, "abcm2ps", 7) == 0) {
-				q = s + 7;
-				while (isspace(*q))
-					q++;
-				prefix = *q;
+				s += 7;
+				while (*s == ' ' || *s == '\t') {
+					s++;
+					l--;
+				}
+				if (l > sizeof prefix - 1)
+					l = sizeof prefix - 1;
+				memcpy(prefix, s, l);
+				prefix[l] = '\0';
 				goto next_eol;
 			}
 pscom:
@@ -735,21 +744,26 @@ info:
 				add_lnum(nline);
 				goto next_eol;
 			}
-			if (strncmp((char *) s, "select ", 7) == 0) {
-				s += 7;
-				while (*s == ' ' || *s == '\t')
-					s++;
-				q = s;
-				while (*q != '\0'
-				    && *q != '%'
-				    && *q != '\n'
-				    && *q != '\n'
-				    && *q != '\r')
-					q++;
-				while (q[-1] == ' ')
-					q--;
-				if (strncmp((char *) q - 5, " lock", 5) == 0)
-					q -= 5;
+			if (strncmp((char *) s, "select", 6) == 0) {
+				s += 6;
+				if (*s == '\n') {	/* select clear */
+					q = s;
+				} else if (*s != ' ' && *s != '\t') {
+					goto next;
+				} else {
+					while (*s == ' ' || *s == '\t')
+						s++;
+					q = s;
+					while (*q != '\0'
+					    && *q != '%'
+					    && *q != '\n'
+					    && *q != '\r')
+						q++;
+					while (q[-1] == ' ' || q[-1] == '\t')
+						q--;
+					if (strncmp((char *) q - 5, " lock", 5) == 0)
+						q -= 5;
+				}
 				if (selection != 0) {
 					free(selection);
 					selection = 0;
@@ -798,6 +812,7 @@ info:
 					skip = !tune_select(s);
 				state = 1;
 				break;
+#if 0
 			case 'T':
 				if (state == 0) {
 					fprintf(stderr,
@@ -810,6 +825,7 @@ info:
 					state = 1;
 				}
 				break;
+#endif
 			case 'U':
 				break;
 			case 'H':

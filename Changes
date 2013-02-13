@@ -1,3 +1,28 @@
+---- Version 7.4.2 - 13/02/13 ----
+
+Fix bad vertical offset of Q: when %%text after first K:.
+Extend %%abcm2ps with up to 3 characters.
+Don't output the words after tune on %%leftmargin/rightmargin/scale.
+Fix bad horizontal place of the tune title when %%leftmargin after K:
+	(reported by Tim Goetze).
+Don't start anymore a tune on T:
+	(asked by Henry Bley-Vroman).
+Handle %%stafflines after %%score.
+Add missing definitions for Microsoft Visual Basic
+	(reported by Jean-Luc Zins).
+Fix bad test of buffer overflow on command options
+	(reported by Jean-Luc Zins).
+Remove extra invisible staff when %%score before %%vskip
+	(reported by Tim Goetze).
+Fix bad warning message when "P: K: Q:" at end of line
+	(reported by Jean-Luc Zins).
+Fix bad tune selection when many files in the command line
+	(reported by Larry).
+Fix lack of slurs when beam on 2 staves
+	(reported by David Lacroix).
+Fix abnormal natural signs after some %%transpose
+	(reported by Jean-Luc Zins).
+
 ---- Version 7.4.1 - 13/02/11 ----
 
 Better error messages when error found at end of ABC line.

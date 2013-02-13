@@ -25,6 +25,10 @@
 #include <ctype.h>
 #include <math.h>
 
+#ifdef WIN32
+#define lroundf(x) ((long) ((x) + 0.5))
+#endif
+
 #include "abc2ps.h"
 
 int defl;		/* decoration flags */

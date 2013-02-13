@@ -193,6 +193,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define S_FLOATING	0x00200000	/* symbol on a floating voice */
 #define S_NOREPBRA	0x00400000	/* don't print the repeat bracket */
 #define S_TREM1		0x00800000	/* tremolo on 1 note */
+#define S_TEMP		0x01000000	/* temporary symbol */
 	struct posit_s posit;	/* positions / directions */
 	signed char stem;	/* 1 / -1 for stem up / down */
 	signed char nflags;	/* number of note flags when > 0 */
@@ -473,6 +474,7 @@ void a2b(char *fmt, ...)
 	__attribute__ ((format (printf, 1, 2)))
 #endif
 	;
+void block_put(void);
 void buffer_eob(void);
 void marg_init(void);
 void bskip(float h);
@@ -547,6 +549,7 @@ struct tblt_s *tblt_parse(char *p);
 /* music.c */
 void output_music(void);
 void reset_gen(void);
+void unlksym(struct SYMBOL *s);
 /* parse.c */
 extern float multicol_start;
 void do_tune(struct abctune *t);

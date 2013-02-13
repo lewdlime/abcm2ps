@@ -153,7 +153,7 @@ static int calculate_beam(struct BEAM *bm,
 		if (s->x > s1->prev->x + 12)
 			s->x = s1->prev->x + 12;
 		s->sflags &= S_SEQST;
-		s->sflags |= S_BEAM_ST;
+		s->sflags |= S_BEAM_ST | S_TEMP;
 		s->as.u.note.slur_st = 0;
 		s->as.u.note.slur_end = 0;
 		s1 = s;
@@ -194,7 +194,7 @@ static int calculate_beam(struct BEAM *bm,
 			s2->ts_next = s;
 			s->ts_prev = s2;
 			s->sflags &= S_SEQST;
-			s->sflags |= S_BEAM_END;
+			s->sflags |= S_BEAM_END | S_TEMP;
 			s->as.u.note.slur_st = 0;
 			s->as.u.note.slur_end = 0;
 			s->x += 12;
@@ -702,6 +702,10 @@ static void draw_beams(struct BEAM *bm)
 				break;
 		}
 	}
+	if (s1->sflags & S_TEMP)
+		unlksym(s1);
+	else if (s2->sflags & S_TEMP)
+		unlksym(s2);
 }
 
 /* -- draw a system brace or bracket -- */
@@ -790,7 +794,7 @@ static void draw_staff(int staff,
 	/* draw the staff */
 	set_sscale(staff);
 	y = staff_tb[staff].y;
-	nlines = staff_tb[staff].clef.stafflines;
+	nlines = cursys->staff[staff].clef.stafflines;
 	switch (nlines) {
 	case 0:
 		return;
@@ -1067,15 +1071,14 @@ static int bar_cnv(int bar_type)
 }
 
 /* -- draw a measure bar -- */
-static void draw_bar(struct SYMBOL *s)
+static void draw_bar(struct SYMBOL *s, float bot, float h)
 {
 	int staff, bar_type, dotted;
-	float x, yb, h;
+	float x, yb;
 	char *psf;
 
 	staff = s->staff;
 	yb = staff_tb[staff].y;
-	h = s->ys;
 	x = s->x;
 
 	/* if measure repeat, draw the '%' like glyphs */
@@ -1103,7 +1106,6 @@ static void draw_bar(struct SYMBOL *s)
 	bar_type = bar_cnv(s->as.u.bar.type);
 	if (bar_type == 0)
 		return;				/* invisible */
-	yb += staff_tb[staff].botbar * staff_tb[staff].clef.staffscale;
 	for (;;) {
 		psf = "bar";
 		switch (bar_type & 0x07) {
@@ -1123,7 +1125,7 @@ static void draw_bar(struct SYMBOL *s)
 		switch (bar_type & 0x07) {
 		default:
 			set_sscale(-1);
-			a2b("%.1f %.1f %.1f %s ", h, x, yb, psf);
+			a2b("%.1f %.1f %.1f %s ", h, x, bot, psf);
 			break;
 		case B_COL:
 			set_sscale(staff);
@@ -3876,7 +3878,7 @@ void draw_sym_near(void)
 	struct VOICE_S *p_voice;
 	struct SYMBOL *s;
 
-	/* calculate the beams but don't draw them (the staves are undefined) */
+	/* calculate the beams but don't draw them (the staves are not yet defined) */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		struct BEAM bm;
 		int first_note = 1;
@@ -3884,8 +3886,7 @@ void draw_sym_near(void)
 		for (s = p_voice->sym; s; s = s->next) {
 			if (s->as.type != ABC_T_NOTE)
 				continue;
-			if (((s->sflags & S_BEAM_ST)
-			  && !(s->sflags & S_BEAM_END))
+			if (((s->sflags & S_BEAM_ST) && !(s->sflags & S_BEAM_END))
 			 || (first_note && !(s->sflags & S_BEAM_ST))) {
 				first_note = 0;
 				calculate_beam(&bm, s);
@@ -4355,40 +4356,48 @@ static float set_staff(void)
 	return y;
 }
 
-/* -- set the height of the measure bars -- */
-static void bar_set(float *bar_height)
+/* -- set the bottom and height of the measure bars -- */
+static void bar_set(float *bar_bot, float *bar_height)
 {
-	int staff;
-	float dy;
+	int staff, nlines;
+	float dy, staffscale;
+			/* !! max number of staff lines !! */
+	char top[10] = {18, 18, 12, 18, 18, 24, 30, 36, 42, 48};
+	char bot[10] = { 6,  6,  6,  6,  0,  0,  0,  0,  0,  0};
 
 	dy = 0;
 	for (staff = 0; staff <= nstaff; staff++) {
+		nlines = cursys->staff[staff].clef.stafflines;
+		staffscale = cursys->staff[staff].clef.staffscale;
 		if (cursys->staff[staff].empty) {
-			bar_height[staff] = 0;
+			bar_bot[staff] = bar_height[staff] = 0;
 			if (dy == 0)
 				continue;
 		} else {
 			if (dy == 0)
-				dy = staff_tb[staff].y + staff_tb[staff].topbar
-					* staff_tb[staff].clef.staffscale;
+				dy = staff_tb[staff].y + top[nlines]
+								* staffscale;
 			bar_height[staff] = dy
-				- staff_tb[staff].y - staff_tb[staff].botbar
-					* staff_tb[staff].clef.staffscale;
+				- staff_tb[staff].y - bot[nlines]
+								* staffscale;
 		}
+		bar_bot[staff] = staff_tb[staff].y + bot[nlines]
+						* staffscale;
+
 		if (cursys->staff[staff].flags & STOP_BAR)
 			dy = 0;
 		else
-			dy = staff_tb[staff].y + staff_tb[staff].botbar
-				* staff_tb[staff].clef.staffscale;
+			dy = bar_bot[staff];
 	}
 }
 
 /* -- draw the staff systems and the measure bars -- */
 float draw_systems(float indent)
 {
+	struct SYSTEM *next_sy;
 	struct SYMBOL *s;
 	int staff;
-	float xstaff[MAXSTAFF], bar_height[MAXSTAFF];
+	float xstaff[MAXSTAFF], bar_bot[MAXSTAFF], bar_height[MAXSTAFF];
 	float x, x2;
 	float line_height;
 
@@ -4398,54 +4407,49 @@ float draw_systems(float indent)
 	/* draw the staff, skipping the staff breaks */
 	for (staff = 0; staff <= nstaff; staff++)
 		xstaff[staff] = cursys->staff[staff].empty ? -1 : 0;
-	bar_set(bar_height);
+	bar_set(bar_bot, bar_height);
 	draw_lstaff(0);
 	for (s = tsfirst; s; s = s->ts_next) {
 		staff = s->staff;
 		switch (s->type) {
 		case STAVES:
-			cursys = cursys->next;
+			next_sy = cursys->next;
 			for (staff = 0; staff <= nstaff; staff++) {
-				if (cursys->staff[staff].empty) {
+				if (next_sy->staff[staff].empty
+				 || next_sy->staff[staff].clef.stafflines
+					   != cursys->staff[staff].clef.stafflines) {
 					if ((x = xstaff[staff]) >= 0) {
-#if 1
 						if (s->ts_prev->type == BAR)
 							x2 = s->ts_prev->x;
 						else
 							x2 = s->x;
-#else
-						x2 = s->ts_prev->x;
-						if (s->ts_prev->type != BAR)
-							x2 += s->ts_prev->wr;
-#endif
 						draw_staff(staff, x, x2);
-						xstaff[staff] = -1;
+						if (next_sy->staff[staff].empty)
+							xstaff[staff] = -1;
+						else
+							xstaff[staff] = x2;
 					}
 				} else if (xstaff[staff] < 0) {
-#if 1
 					if (s->ts_next->type != BAR)
 						xstaff[staff] = s->x;
 					else
 						xstaff[staff] = s->ts_next->x;
-#else
-					xstaff[staff] = s->ts_next->x
-						- s->ts_next->wl; /* (clef) */
-#endif
 				}
 			}
-			bar_set(bar_height);
+			cursys = next_sy;
+			bar_set(bar_bot, bar_height);
 			break;
 		case BAR:
-			if (s->as.flags & ABC_F_INVIS)
-				break;
 			if ((s->sflags & S_SECOND)
 			 || cursys->staff[staff].empty)
 				s->as.flags |= ABC_F_INVIS;
-			else
-				s->ys = bar_height[staff];
+			if (s->as.flags & ABC_F_INVIS)
+				break;
+			draw_bar(s, bar_bot[staff], bar_height[staff]);
+			if (annotate)
+				anno_out(s, 'B');
 			break;
 		case STBRK:
-#if 1
 			if (!s->ts_prev)
 				continue;
 			if (cursys->voice[s->voice].range != 0)
@@ -4469,26 +4473,6 @@ float draw_systems(float indent)
 				else
 					xstaff[staff] = x2;
 			}
-#else
-			if (!s->prev || (x = xstaff[staff]) < 0)
-				continue;
-			x2 = s->prev->x;
-			if (x2 <= x)
-				continue;
-			if (s->prev->type != BAR)
-				x2 += s->prev->wr;
-			draw_staff(staff, x, x2);
-			if (staff == 0
-			 && s->xmx > .5 CM)
-				draw_lstaff(s->x);
-			if (s->xmx != 0) {
-				xstaff[staff] = s->x;
-				if (s->ts_next && s->ts_next->type == STAVES)
-						s->ts_next->x = s->x;
-			} else {
-				xstaff[staff] = x2;
-			}
-#endif
 			break;
 		default:
 //fixme:does not work for "%%staves K: M: $" */
@@ -4595,10 +4579,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				anno_out(s, 'R');
 			break;
 		case BAR:
-			draw_bar(s);
-			if (annotate)
-				anno_out(s, 'B');
-			break;
+			break;			/* drawn in draw_systems */
 		case CLEF:
 			staff = s->staff;
 			if (s->sflags & S_SECOND)

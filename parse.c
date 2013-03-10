@@ -1102,10 +1102,10 @@ static void note_transpose(struct SYMBOL *s)
 		}
 		a = acc2[(unsigned) i1];
 		i1 = s->as.u.note.accs[i] & 0x07;
-		i2 = s->as.u.note.accs[i] >> 3;
-		if (i2 != 0				/* microtone */
+		i4 = s->as.u.note.accs[i] >> 3;
+		if (i4 != 0				/* microtone */
 		 && i1 != a) {				/* different accidental type */
-			n = micro_tb[i2];
+			n = micro_tb[i4];
 			d = (n & 0xff) + 1;
 			n = (n >> 8) + 1;
 			if (a == A_NT) {
@@ -1123,20 +1123,20 @@ static void note_transpose(struct SYMBOL *s)
 			}
 			d--;
 			d += (n - 1) << 8;
-			for (i2 = 1; i2 < MAXMICRO; i2++) {
-				if (micro_tb[i2] == d)
+			for (i4 = 1; i4 < MAXMICRO; i4++) {
+				if (micro_tb[i4] == d)
 					break;
-				if (micro_tb[i2] == 0) {
-					micro_tb[i2] = d;
+				if (micro_tb[i4] == 0) {
+					micro_tb[i4] = d;
 					break;
 				}
 			}
-			if (i2 == MAXMICRO) {
+			if (i4 == MAXMICRO) {
 				error(1, s, "Too many microtone accidentals");
-				i2 = 0;
+				i4 = 0;
 			}
 		}
-		s->as.u.note.accs[i] = (i2 << 3) | a;
+		s->as.u.note.accs[i] = (i4 << 3) | a;
 	}
 }
 
@@ -2553,72 +2553,68 @@ static struct abcsym *get_info(struct abcsym *as,
 	case 'M':
 		get_meter(s);
 		break;
-	case 'P':
-		switch (as->state) {
-		case ABC_S_GLOBAL:
-		case ABC_S_HEAD:
+	case 'P': {
+		struct VOICE_S *p_voice, *curvoice_sav;
+
+		if (as->state != ABC_S_TUNE) {
 			info['P' - 'A'] = s;
 			break;
-		default: {
-			struct VOICE_S *p_voice, *curvoice_sav;
-
-			if (!(cfmt.fields[0] & (1 << ('P' - 'A'))))
-				break;
-			p_voice = &voice_tb[parsys->top_voice];
-
-			/* if not main voice and if voices are synchronized
-			 * then, misplaced P:, link in the main voice */ 
-			if (curvoice != p_voice
-			 && curvoice->time == p_voice->time) {
-				curvoice_sav = curvoice;
-				curvoice = p_voice;
-				sym_link(s, PART);
-				curvoice = curvoice_sav;
-				break;
-			}
-			sym_link(s, PART);
-			break;
-		    }
 		}
+
+		if (!(cfmt.fields[0] & (1 << ('P' - 'A'))))
+			break;
+		p_voice = &voice_tb[parsys->top_voice];
+
+		/* if not main voice and if voices are synchronized
+		 * then, misplaced P:, link in the main voice */ 
+		if (curvoice != p_voice
+		 && curvoice->time == p_voice->time) {
+			curvoice_sav = curvoice;
+			curvoice = p_voice;
+			sym_link(s, PART);
+			curvoice = curvoice_sav;
+			break;
+		}
+		sym_link(s, PART);
 		break;
+	    }
 	case 'Q':
-		switch (as->state) {
-		default:
+		if (as->state != ABC_S_TUNE) {
 			info['Q' - 'A'] = s;
 			break;
-		case ABC_S_TUNE:
-			if (curvoice != &voice_tb[parsys->top_voice])
-				break;		/* tempo only for first voice */
-			if (!(cfmt.fields[0] & (1 << ('Q' - 'A'))))
-				break;
-			s2 = curvoice->last_sym;
-			if (s2) {			/* keep last Q: */
-				int tim;
-
-				tim = s2->time;
-				do {
-					if (s2->type == TEMPO) {
-						if (!s2->next)
-							curvoice->last_sym = s2->prev;
-						else
-							s2->next->prev = s2->prev;
-						if (!s2->prev)
-							curvoice->sym = s2->next;
-						else
-							s2->prev->next = s2->next;
-						break;
-					}
-					s2 = s2->prev;
-				} while (s2 && s2->time == tim);
-			}
-			sym_link(s, TEMPO);
-			break;
 		}
+		if (curvoice != &voice_tb[parsys->top_voice])
+			break;		/* tempo only for first voice */
+		if (!(cfmt.fields[0] & (1 << ('Q' - 'A'))))
+			break;
+		s2 = curvoice->last_sym;
+		if (s2) {			/* keep last Q: */
+			int tim;
+
+			tim = s2->time;
+			do {
+				if (s2->type == TEMPO) {
+					if (!s2->next)
+						curvoice->last_sym = s2->prev;
+					else
+						s2->next->prev = s2->prev;
+					if (!s2->prev)
+						curvoice->sym = s2->next;
+					else
+						s2->prev->next = s2->next;
+					break;
+				}
+				s2 = s2->prev;
+			} while (s2 && s2->time == tim);
+		}
+		sym_link(s, TEMPO);
 		break;
 	case 'r':
 	case 's':
 		break;
 	case 'T':
+		if (as->state == ABC_S_GLOBAL)
+			break;
 		if (as->state == ABC_S_HEAD)		/* in tune header */
 			goto addinfo;
 		gen_ly(1);				/* in tune */
@@ -2690,8 +2686,9 @@ addinfo:
 			s->prev = prev;
 			break;
 		}
-		error(1, s, "%s info '%c:' not treated",
-			state_txt[(int) as->state], info_type);
+		if (as->state != ABC_S_GLOBAL)
+			error(1, s, "%s info '%c:' not treated",
+				state_txt[(int) as->state], info_type);
 		break;
 	}
 	lvlarena(old_lvl);
@@ -3172,7 +3169,7 @@ static void get_clef(struct SYMBOL *s)
 					parsys->voice[voice].clef.staffscale = staffscale;
 			}
 			return;
-		case 'V':	/* clef relative to a voice definition (in the header) */
+		case 'V':	/* clef relative to a voice definition in the header */
 			p_voice = &voice_tb[(int) s->as.prev->u.voice.voice];
 			break;
 		}
@@ -3242,11 +3239,10 @@ static void get_clef(struct SYMBOL *s)
 static void clef_def(struct SYMBOL *s)
 {
 	char *p;
-	int clef, clef_line, transpose;
+	int clef, clef_line;
 	char str[80];
 
 	clef = -1;
-	transpose = 0;
 	clef_line = 2;
 	p = &s->as.text[2 + 5];		/* skip %%clef */
 	while (isspace((unsigned char) *p))
@@ -3260,24 +3256,15 @@ static void clef_def(struct SYMBOL *s)
 		strcpy(s->as.u.clef.name, str);
 		clef = TREBLE;
 		break;
-	case 'g':
-		transpose = -7;
 	case 'G':
 		clef = TREBLE;
 		p++;
 		break;
-	case 'f':
 	case 'F':
-		if (*p == 'f')
-			transpose = -14;
-		else
-			transpose = -7;
 		clef = BASS;
 		clef_line = 4;
 		p++;
 		break;
-	case 'c':
-		transpose = -7;
 	case 'C':
 		clef = ALTO;
 		clef_line = 3;
@@ -3332,16 +3319,6 @@ static void clef_def(struct SYMBOL *s)
 		return;
 	}
 
-	/* octave */
-	while (*p == ',') {
-		transpose += 7;
-		p++;
-	}
-	while (*p == '\'') {
-		transpose -= 7;
-		p++;
-	}
-
 	/* clef line */
 	switch (*p) {
 	case '1':
@@ -3353,12 +3330,20 @@ static void clef_def(struct SYMBOL *s)
 		break;
 	}
 
-	/* +/-8 */
+	/* +/-/^/_8 */
 	if (p[1] == '8') {
-		if (*p == '-')
-			s->as.u.clef.octave = -1;
-		else if (*p == '+')
+		switch (*p) {
+		case '^':
+			s->as.u.clef.transpose = -7;
+		case '+':
 			s->as.u.clef.octave = 1;
+			break;
+		case '_':
+			s->as.u.clef.transpose = 7;
+		case '-':
+			s->as.u.clef.octave = -1;
+			break;
+		}
 	}
 
 	/* handle the clef */
@@ -3367,7 +3352,6 @@ static void clef_def(struct SYMBOL *s)
 	s->as.u.clef.line = clef_line;
 	s->as.u.clef.stafflines = -1;
 	s->as.u.clef.staffscale = 0;
-	s->as.u.clef.transpose = transpose;
 	get_clef(s);
 }
 
@@ -4054,7 +4038,7 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 		if (strcmp(w, "center") == 0)
 			goto center;
 		if (strcmp(w, "clef") == 0) {
-			if (as->state == ABC_S_TUNE)
+			if (as->state != ABC_S_GLOBAL)
 				clef_def(s);
 			return as;
 		}
@@ -4269,10 +4253,10 @@ irepeat:
 					k = 1;
 				} else {
 					k = atoi(p);
-					if (k < 1
-					 || (curvoice->last_sym->type == BAR
-					  && n == 2
-					  && k > 1)) {
+					if (k < 1) {
+//					 || (curvoice->last_sym->type == BAR
+//					  && n == 2
+//					  && k > 1)) {
 						error(1, s,
 						      "Incorrect 2nd value in %%%%repeat");
 						return as;

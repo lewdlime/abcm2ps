@@ -1910,7 +1910,7 @@ void draw_measnb(void)
 	struct SYSTEM *sy;
 	char *showm;
 	int any_nb, staff, bar_num;
-	float x, y, w;
+	float x, y, w, font_size;
 
 	showm = cfmt.measurebox ? "showb" : "show";
 	any_nb = 0;
@@ -1923,6 +1923,10 @@ void draw_measnb(void)
 	}
 //fixme: must use the scale, otherwise bad y offset (y0 empty)
 	set_sscale(staff);
+
+	/* leave the measure numbers as unscaled */
+	font_size = cfmt.font_tb[MEASUREFONT].size;
+	cfmt.font_tb[MEASUREFONT].size /= staff_tb[staff].clef.staffscale;
 
 	s = tsfirst;				/* clef */
 	bar_num = nbar;
@@ -2042,6 +2046,8 @@ void draw_measnb(void)
 	if (any_nb)
 		a2b("\n");
 	nbar = bar_num;
+
+	cfmt.font_tb[MEASUREFONT].size = font_size;
 }
 
 /* -- get the beat from a time signature -- */

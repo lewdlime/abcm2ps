@@ -1368,39 +1368,33 @@ List of the pseudo-comments treated while parsed
   center <line of text>
 	Print one line of centered text.
 
-  clef <clef_name><clef_octave><clef_line><octave_indication>
+  clef <clef_name>[<clef_line>][<octave_indication>]
 	Insert a new clef.
 	<clef_name> may be:
 		treble (same as G2)
 		alto (same as C3)
 		tenor (same as C4)
-		bass (same as F,4)
+		bass (same as F4)
 		perc (same as P2)
-		g (same as G')
 		G
-		c (same as C')
 		C
-		f (same as F')
 		F
 		P
+		none (to avoid clefs on the next music lines)
 		"<user_clef_name>"
 	(<user_clef_name> is the name of a PostScript function which
 	 draws the clef glyph)
-	<clef_octave> gives the octave of the note of the clef. It has the
-	same syntax as normal notes, i.e.:
-		' (quote) one octave higher
-		, (comma) one octave lower
 	<clef_line> gives the number of the line on which the note of the
-	clef is defined.
-	<octave_indication> is either +8 or -8, in which case a '8' is drawn
-	above or below the clef. Note that this indication does not do any
-	octave transposition as in the standard K:/V: fields.
-
-	Only the clef name is mandatory.
+	clef is defined. When omitted, it defaults according to the clef name:
+	line #3 for "C", line #4 for "F" and line #2 for the other clefs.
+	<octave_indication> is either
+		- "+8" or "-8", in which case a '8' is drawn above or below
+		  the clef without octave transposition.
+		- "^8" or "_8", in which case a '8' is drawn above or below
+		  the clef with octave transposition.
 	There should be no space between the %%clef parameters.
-	Examples:
-		%%clef bass''	% abc2ps behaviour
-		%%clef G,-8	% clef for tenor voice
+	Example:
+		%%clef bass	% same as K: clef=bass
 
   EPS <eps_file>
 	Include the file <eps_file>.
@@ -1436,9 +1430,9 @@ List of the pseudo-comments treated while parsed
   repeat [<n> [k]]
 	Try to replace a sequence by one or many repeat signs.
 	When placed after a bar, <n> indicates the number of measures
-	to be repeated. It may be only one or two. If <n> is one,
+	to be repeated. It may be only one or two, and 
 	<k> indicates how many times the previous measure is to be
-	repeated. If <n> is two, <k> is not used.
+	repeated.
 	When placed after a note or rest, <n> indicates the number of
 	notes and rests to be repeated, and <k> how many times this
 	repetition occurs.

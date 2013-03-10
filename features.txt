@@ -1,4 +1,4 @@
-	Features of abcm2ps 7.4.2 (J.F. Moine, February 2013)
+	Features of abcm2ps 7.5.0 (J.F. Moine, February 2013)
 	=====================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
@@ -94,13 +94,14 @@ Tune body.
 
 Clefs.
 
-	- When 'clef=' is present, the clef name may be a note with its
-	  pitch optionnaly followed by the staff line on which it is defined.
-	  The note may be only 'G' (treble clef), 'C' (alto clef)
-	  or 'F' (bass clef).
+	- When 'clef=' is present, the clef name may be one of
+	  'G' (treble clef), 'C' (alto clef) or 'F' (bass clef).
 	  The two following definitions are equivalent:
-		K: clef=f
-		K: bass middle=d
+		K: clef=F
+		K: bass
+
+	- The suffixes "^8" and "_8" do an octave transposition
+	  (while "+8" and "-8" don't do it).
 
 Multiple voices.
 

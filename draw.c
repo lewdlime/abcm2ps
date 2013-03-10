@@ -4598,16 +4598,16 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				a2b("%c%cclef\n",
 				     s->u ? 's' : ' ',
 				     "tcbp"[(unsigned) s->as.u.clef.type]);
-			if (s->as.u.clef.octave == 0)
-				break;
+			if (s->as.u.clef.octave != 0) {
 /*fixme:break the compatibility and avoid strange numbers*/
-			if (s->as.u.clef.octave > 0)
-				y += s->ymx - 12;
-			else
-				y += s->ymn + 2;
-			putxy(x, y);
-			a2b("oct%c\n",
-			     s->as.u.clef.octave > 0 ? 'u' : 'l');
+				if (s->as.u.clef.octave > 0)
+					y += s->ymx - 12;
+				else
+					y += s->ymn + 2;
+				putxy(x, y);
+				a2b("oct%c\n",
+				     s->as.u.clef.octave > 0 ? 'u' : 'l');
+			}
 			if (annotate)
 				anno_out(s, 'c');
 			break;

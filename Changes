@@ -1,3 +1,26 @@
+---- Version 7.5.0 - 13/03/01 ----
+
+Fix loss of multi-rest when alone in a music line.
+Fix clash of rests when 3 voices per staff
+	(reported by David Lacroix).
+Fix loss of %%clef after first K:.
+Implement "^8" and "_8" in clef= and %%clef.
+Fix abnormal subtitle output when T: found outside of tune
+	(reported by Henry Bley-Vroman).
+Fix bad transposition of chords
+	(reported by Jean-Luc Zins).
+Don't scale the measure numbers when the first staff is scaled
+	(asked by Hudson Flávio Meneses Lacerda).
+!! Accept 'clef=F' as 'clef=F,' !!
+	(needed for ABC 2.1.1).
+Handle many times 'repeat 2 measures'
+	(asked by Atte André Jensen).
+Permit a measure repeat to be at start of music line
+	(asked by Atte André Jensen).
+Fix crash when measure repeat at start of music line
+	(reported by Atte André Jensen).
+Don't output error when info-like 'x:' found outside of tune.
+
 ---- Version 7.4.2 - 13/02/13 ----
 
 Fix bad vertical offset of Q: when %%text after first K:.
@@ -5,7 +28,7 @@ Extend %%abcm2ps with up to 3 characters.
 Don't output the words after tune on %%leftmargin/rightmargin/scale.
 Fix bad horizontal place of the tune title when %%leftmargin after K:
 	(reported by Tim Goetze).
-Don't start anymore a tune on T:
+!! Don't start anymore a tune on T: !!
 	(asked by Henry Bley-Vroman).
 Handle %%stafflines after %%score.
 Add missing definitions for Microsoft Visual Basic

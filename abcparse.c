@@ -267,7 +267,7 @@ void abc_insert(char *file_api,
 			break;			/* done */
 		if (*p == '\0')
 			break;			/* blank line --> done */
-/*fixme-insert: don't accept X: nor T:*/
+/*fixme-insert: don't accept X:*/
 		/* parse the music line */
 		if (parse_line(t, p))
 			break;
@@ -650,10 +650,11 @@ static void parse_clef(struct abcsym *s,
 	int clef = -1;
 	int transpose = 0;
 	int clef_line = 2;
+	char *warn = NULL;
 	char str[80];
 
 	str[0] = '\0';
-	if (name != 0 && strncmp(name, "clef=", 5) == 0) {
+	if (name && strncmp(name, "clef=", 5) == 0) {
 		name += 5;
 		switch (*name) {
 		case '\"':
@@ -663,21 +664,25 @@ static void parse_clef(struct abcsym *s,
 			clef = TREBLE;
 			break;
 		case 'g':
+			warn = name;
 			transpose = -7;
 		case 'G':
 			clef = TREBLE;
 			break;
 		case 'f':
+			warn = name;
 			transpose = -14;
 			clef = BASS;
 			clef_line = 4;
 			break;
 		case 'F':
-			transpose = -7;
+			if (name[1] == ',')	/* abc2.1.1 clef=F == clef=F, */
+				transpose = -7;
 			clef = BASS;
 			clef_line = 4;
 			break;
 		case 'c':
+			warn = name;
 			transpose = -7;
 		case 'C':
 			clef = ALTO;
@@ -689,6 +694,8 @@ static void parse_clef(struct abcsym *s,
 		}
 		if (clef >= 0) {
 			name++;
+			if (*name == ',' || *name== '\'')
+				warn = name;
 			while (*name == ',') {
 				transpose += 7;
 				name++;
@@ -699,7 +706,7 @@ static void parse_clef(struct abcsym *s,
 			}
 		}
 	}
-	if (name != 0 && clef < 0) {
+	if (name && clef < 0) {
 		if (!strncmp(name, "bass", 4)) {
 			clef = BASS;
 			clef_line = 4;
@@ -741,18 +748,27 @@ static void parse_clef(struct abcsym *s,
 			break;
 		}
 		if (name[1] == '8') {
-			if (*name == '-')
-				s->u.clef.octave = -1;
-			else if (*name == '+')
+			switch (*name) {
+			case '^':
+				transpose -= 7;
+			case '+':
 				s->u.clef.octave = 1;
+				break;
+			case '_':
+				transpose += 7;
+			case '-':
+				s->u.clef.octave = -1;
+				break;
+			}
 		}
 	}
 
-	if (middle != 0) {
+	if (middle) {
 		int pit, len, acc, nostem, l;
 		static char line_tb[7] =
 			{ALTO, TREBLE, ALTO, BASS, ALTO, BASS, ALTO};
 
+		warn = middle;
 		/* 'middle=<note pitch>' */
 		parse_basic_note(middle, &pit, &len, &acc, &nostem);
 
@@ -786,7 +802,7 @@ static void parse_clef(struct abcsym *s,
 	s->u.clef.transpose = transpose;
 	s->u.clef.stafflines = -1;
 	s->u.clef.staffscale = 0;
-	if (lines != 0) {
+	if (lines) {
 		int l;
 
 		l = atoi(lines);
@@ -795,7 +811,7 @@ static void parse_clef(struct abcsym *s,
 		else
 			syntax("Bad value of stafflines", lines);
 	}
-	if (scale != 0) {
+	if (scale) {
 		float sc;
 
 		sc = atof(scale);
@@ -803,6 +819,13 @@ static void parse_clef(struct abcsym *s,
 			s->u.clef.staffscale = sc;
 		else
 			syntax("Bad value of staffscale", scale);
+	}
+	if (warn) {
+		int sev_sav;
+
+		sev_sav = severity;
+		syntax("Warning: Deprecated or non-standard item", warn);
+		severity = sev_sav;
 	}
 }
 

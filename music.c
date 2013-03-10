@@ -635,7 +635,7 @@ static void set_clef(int staff)
 			s3 = 0;
 #endif
 #if 0
-		time = last_chg == 0 ? -1 : last_chg->time;
+		time = !last_chg ? -1 : last_chg->time;
 #endif
 		for (s2 = s->ts_prev; s2 != last_chg; s2 = s2->ts_prev) {
 #if 0
@@ -706,7 +706,7 @@ static void set_clef(int staff)
 		last_chg = s;
 
 		/* if first change, see if any note before */
-		if (s2 == 0 || s2->type == STAVES) {
+		if (!s2 || s2->type == STAVES) {
 #if 1 /*fixme:test*/
 			s4 = s3;
 #else
@@ -1449,7 +1449,7 @@ static void set_width(struct SYMBOL *s)
 	case STBRK:
 		if ((s->wl = s->xmx) == 0)
 			break;		/* no space */
-		if (s->next == 0 || s->next->type != CLEF) {
+		if (!s->next || s->next->type != CLEF) {
 			s->wr = 8;
 		} else {
 			s->wr = 2;
@@ -1477,7 +1477,7 @@ static float set_space(struct SYMBOL *s)
 	int i, len, l, stemdir, prev_time;
 	float space;
 
-	prev_time = s->ts_prev == 0 ? s->time : s->ts_prev->time;
+	prev_time = !s->ts_prev ? s->time : s->ts_prev->time;
 	len = s->time - prev_time;		/* time skip */
 	if (smallest_duration >= MINIM) {
 		if (smallest_duration >= SEMIBREVE)
@@ -1737,7 +1737,7 @@ static void set_repeat(struct SYMBOL *g,
 			if (--i <= 0)
 				break;
 		}
-		if (s2 == 0) {
+		if (!s2) {
 			error(0, s, "Not enough symbols to repeat");
 			goto delrep;
 		}
@@ -1793,30 +1793,56 @@ static void set_repeat(struct SYMBOL *g,
 
 	/* first check of the measure repeat */
 	if (!xset) {
-		i = n;				/* number of measures to repeat*/
+		i = n;				/* number of measures to repeat */
 		for (s2 = s->prev; s2; s2 = s2->prev) {
 			if (s2->type == BAR) {
 				if (--i <= 0)
 					break;
 			}
 		}
-		if (s2 == 0) {
+		if (!s2) {
 			error(0, s, "Not enough measures to repeat");
 			goto delrep;
 		}
 
-		i = g->nohdix * n;		/* repeat number */
+		/* memorize the measure duration in case the line is splitted */
+		g->dur = s->time - s2->time;
+
+		if (n == 1)
+			i = g->nohdix;		/* repeat number */
+		else
+			i = n;			/* check only 2 measures */
 		for (s2 = s; s2; s2 = s2->next) {
-			if (s2->staff != staff)
-				continue;
+//			if (s2->staff != staff)
+//				continue;
 			if (s2->type == BAR) {
 				if (--i <= 0)
 					break;
 			}
 		}
-		if (s2 == 0) {
-			error(0, s, "Not enough symbols after repeat measure");
+		if (!s2) {
+			error(0, s, "Not enough bars after repeat measure");
 			goto delrep;
+		}
+
+		/* if many 'repeat 2 measures'
+		 * insert a new %%repeat after the next bar */
+		i = g->nohdix;		/* repeat number */
+		if (n == 2 && i > 1) {
+			s2 = s2->next;
+			if (!s2) {
+				error(0, s, "Not enough bars after repeat measure");
+				goto delrep;
+			}
+			g->nohdix = 1;
+			s = (struct SYMBOL *) getarena(sizeof *s);
+			memcpy(s, g, sizeof *s);
+			s->next = s2->extra;
+			if (s->next)
+				s->next->prev = s;
+			s->prev = NULL;
+			s2->extra = s;
+			s->nohdix = i - 1;
 		}
 		return;				/* OK, treat it later */
 	}
@@ -1824,13 +1850,17 @@ static void set_repeat(struct SYMBOL *g,
 	/* second check and replace */
 	i = g->nohdix * n;			/* check if NL later in the line */
 	for (s2 = s; ; s2 = s2->next) {
-//		if (s2->sflags & S_NL)
-//			goto delrep;
+		if (!s2)
+			goto delrep;
 		if (s2->type == BAR) {
 			if (--i <= 0)
 				break;
 		}
 	}
+#if 1
+	dur = g->dur;		/* measure duration (see above) */
+#else
+--fixme: permit repeat to begin at start of line
 	dur = (s2->time - s->time) / g->nohdix;	/* repeat duration */
 	s2 = s->prev->prev;			/* check if NL before */
 	if (n == 2) {				/* if repeat 2 measures */
@@ -1839,19 +1869,15 @@ static void set_repeat(struct SYMBOL *g,
 				s2 = s2->prev;
 				break;
 			}
-//			if (s2->sflags & S_NL)
-//				goto delrep;
 		}
 	}
 	for (; s2; s2 = s2->prev) {
 		if (s2->type == BAR || s2->type == CLEF)
 			break;
-//		if (s2->sflags & S_NL)
-//			goto delrep;
 	}
-	if (s2 == 0 || s->time - s2->time != dur)
+	if (!s2 || s->time - s2->time != dur)
 		goto delrep;	/* the previous measure is not in the music line */
-
+#endif
 	dur /= n;
 	if (n == 2) {			/* repeat 2 measures (one time) */
 		s3 = s;
@@ -3276,7 +3302,7 @@ static void set_global(void)
 			case BAR:
 				if (!(s->sflags & S_BEAM_ON))
 					start_flag = 1;
-				if (s->next == 0
+				if (!s->next
 				 && s->prev->as.type == ABC_T_NOTE
 				 && s->prev->dur >= BREVE)
 					s->prev->head = H_SQUARE;
@@ -3363,7 +3389,7 @@ static float set_indent(int keep)
 			w = tex_str(p);
 			if (w > maxw)
 				maxw = w;
-			if (q == 0)
+			if (!q)
 				break;
 			*q = '\\';
 			p = q + 2;
@@ -4153,6 +4179,7 @@ static void set_piece(void)
 			break;
 		case NOTEREST:
 		case SPACE:
+		case MREST:
 			if (s->as.type != ABC_T_NOTE) {	/* rest */
 				if (cfmt.staffnonote)
 					empty[s->staff] = 0;
@@ -4539,13 +4566,15 @@ void output_music(void)
 		if (cfmt.combinevoices)
 			combine_voices();
 		set_stem_dir();		/* set the stems direction in 'multi' */
-		set_rest_offset();	/* set the vertical offset of rests */
+//		set_rest_offset();	/* set the vertical offset of rests */
 	}
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next)
 		set_beams(p_voice->sym);	/* decide on beams */
 	set_stems();			/* set the stem lengths */
-	if (first_voice->next)		/* when multi-voices */
+	if (first_voice->next) {		/* when multi-voices */
+		set_rest_offset();	/* set the vertical offset of rests */
 		set_overlap();		/* shift the notes on voice overlap */
+	}
 	set_allsymwidth(0);		/* set the width of all symbols */
 
 	lwidth = ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)

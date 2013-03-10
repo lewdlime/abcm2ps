@@ -812,20 +812,6 @@ info:
 					skip = !tune_select(s);
 				state = 1;
 				break;
-#if 0
-			case 'T':
-				if (state == 0) {
-					fprintf(stderr,
-						"Line %d: X:?? added\n",
-						nline);
-					txt_add((unsigned char *) "X:??", 4);
-					txt_add_eol();
-					add_lnum(nline);
-					txt_add_eol();
-					state = 1;
-				}
-				break;
-#endif
 			case 'U':
 				break;
 			case 'H':

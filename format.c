@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2012 Jean-François Moine
+ * Copyright (C) 1998-2013 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -300,26 +300,26 @@ static void set_infoname(char *p)
 	if (*p == 'I')
 		return;
 	s = info['I' - 'A'];
-	prev = 0;
-	while (s != 0) {
+	prev = NULL;
+	while (s) {
 		if (s->as.text[0] == *p)
 			break;
 		prev = s;
 		s = s->next;
 	}
 	if (p[1] == '\0') {		/* if delete */
-		if (s != 0) {
-			if (prev == 0)
+		if (s) {
+			if (!prev)
 				info['I' - 'A'] = s->next;
 			else if ((prev->next = s->next) != 0)
 				prev->next->prev = prev;
 		}
 		return;
 	}
-	if (s == 0) {
+	if (!s) {
 		s = (struct SYMBOL *) getarena(sizeof *s);
 		memset(s, 0, sizeof *s);
-		if (prev == 0)
+		if (!prev)
 			info['I' - 'A'] = s;
 		else {
 			prev->next = s;

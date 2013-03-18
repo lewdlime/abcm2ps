@@ -92,7 +92,7 @@ static char *std_deco_tb[] = {
 	"dot 0 stc 5 1 1",
 	"roll 3 cpu 10 6 6",
 	"fermata 3 hld 12 7 7",
-	"emphasis 3 accent 8 4 4",
+	"emphasis 3 accent 6 4 4",
 	"lowermordent 3 lmrd 10 2 2",
 	"coda 3 coda 24 10 10",
 	"uppermordent 3 umrd 10 2 2",
@@ -793,8 +793,9 @@ static unsigned char deco_build(char *text)
 	return deco;
 }
 
-/* -- set the duration of the notes of a feathered beam -- */
-static void set_feathered_beam(struct SYMBOL *s1)
+/* -- set the duration of the notes under a feathered beam -- */
+static void set_feathered_beam(struct SYMBOL *s1,
+				int accel)
 {
 	struct SYMBOL *s, *s2;
 	int n, t, tt, d, b, i;
@@ -819,7 +820,7 @@ static void set_feathered_beam(struct SYMBOL *s1)
 	a = (float) d / (n - 1);		/* delta duration */
 	tt = d * n;
 	t = 0;
-	if (s1->u == 0) {			/* !beam-accel! */
+	if (accel) {				/* !beam-accel! */
 		for (s = s1, i = n - 1;
 		     s != s2;
 		     s = (struct SYMBOL *) s->as.next, i--) {
@@ -926,8 +927,7 @@ void deco_cnv(struct deco *dc,
 				break;
 			}
 			s->sflags |= S_FEATHERED_BEAM;
-			s->u = dd->name[5] == 'r';	/* 0: accel, 1: rall */
-			set_feathered_beam(s);
+			set_feathered_beam(s, dd->name[5] == 'a');
 			break;
 		}
 		dc->t[i] = 0;			/* already treated */

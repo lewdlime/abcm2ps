@@ -558,7 +558,7 @@ List of the format parameters
 		before the first music line:
 			Rhythm (Area)
 
-  infoname <uppercase letter> <information name>
+  infoname <uppercase letter> [<information name>]
 	Default:
 		R "Rhythm: "
 		B "Book: "
@@ -570,10 +570,19 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Define the information types and names to be printed
-		after the tunes.
-		Note: each information to be displayed may be adjusted by
-		%%writefields.
+		Define the name of the information fields which may be
+		printed after the tunes.
+		Note: For being printed, a field must be set to 'on' in a
+		%%writefields parameter and have an information name.
+		When <information name> is not present, the field name is
+		removed. This is usefull to change the field order.
+		Examples:
+
+		%%infoname G "Group: "	% display the group
+		%%writefields G 1
+
+		%%infoname N		% notes after the other fields
+		%%infoname N "Notes: "
 
   infospace <unit>
 	Default: 0
@@ -1304,9 +1313,9 @@ List of the format parameters
 	Compilation: none
 	Command line: -M, -x
 	Description:
-		<list> is a list of letters, each being the type of
+		<list> is an unsorted list of letters, each being the type of
 		an information field.
-		<bool> tells if the information field may be displayed
+		<bool> tells if the information field(s) may be displayed
 		or not.
 
 
@@ -1601,12 +1610,12 @@ Pseudo-commands used for external formatting
 	'%%tune' command. The command "%%tune end" may be used to mark the
 	end of the options.
 
-	They are inserted at start of the tune(s) (after the first K:).
+	The options are inserted at start of the tunes (after the first K:)
 	which header matches the <regular expression>.
 	When an option is %%score or %%staves, it replaces a %%score or
 	%%staves of the tune. There may be many such options, each one
 	replacing one %%staves/score of the tune.
-	This command may appear only in a global definition (command line,
+	%%tune may appear only in a global definition (command line,
 	format file or file header).
 	When <regular expression> is the same as the one of a previous %%tune,
 	all the previous tune options for this regular expression are removed.
@@ -1628,11 +1637,13 @@ Pseudo-commands used for external formatting
 	Select the voice(s) to which the following options will be applied.
 
 	The options are pseudo-comments (starting with %%), up to an other
-	'%%voice' or '%%tune' command. The command "%%voice end" may be used
-	to mark the end of the options for the last voice.
-	They are inserted before the first symbol of each voice which
-	identifiers or full names match the <regular expression>.
-	This command may appear only in a global definition (command line,
+	'%%voice', '%%tune' or %%score/%%staves command.
+	The command "%%voice end" may be used to mark the end of the options
+	for the last voice.
+
+	The commands are inserted before the first symbol of each voice which
+	identifier or full name match the <regular expression>.
+	%%voice may appear only in a global definition (command line,
 	format file,r file header or %%tune option list).
 	When <regular expression> is the same as the one of a previous %%voice,
 	all the previous voice options for this regular expression are removed.

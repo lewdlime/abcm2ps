@@ -550,6 +550,9 @@ unsigned char *frontend(unsigned char *s,
 				 && strncmp((char *) q + 3,
 						(char *) begin_end, end_len) == 0) {
 					begin_end = 0;
+					txt_add((unsigned char *) "%%", 2);
+					l -= q - s;
+					s = q;
 					goto next;
 				}
 			}
@@ -557,7 +560,7 @@ unsigned char *frontend(unsigned char *s,
 				if (*s == '%')
 					goto next_eol;		/* comment */
 			} else {
-				if (*s == '%' && s[1] == '%') {
+				if (*s == '%' && strchr(prefix, s[1])) {
 					s += 2;
 					l -= 2;
 				}

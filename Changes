@@ -1,3 +1,43 @@
+---- Version 7.5.1 - 13/03/17 ----
+
+Fix some clashes of accidentals when same notes in 2 voices on the same staff
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix loss of line at end of %%tune/%%voice
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix bad handling of many %%voice's in %%tune
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix bad horizontal space when note with stem up followed by note
+	with stem down
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix bad accidentals of tied notes when transpose with K:none
+	(reported by David Lacroix).
+Have smaller vertical space for !emphasis! (accent)
+	(asked by Hudson Flávio Meneses Lacerda).
+Have thicker slurs
+	(asked by Hudson Flávio Meneses Lacerda).
+Have one more beam in feathered beams
+	(asked by Hudson Flávio Meneses Lacerda).
+Fix bad note head when !beam-rall! on quavers
+	(reported by Hudson Flávio Meneses Lacerda).
+Replace the clef of V: in case of voice filter with %%clef
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix bad handling of %%score/%%staves when found after %%voice
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix bad handling of %%beginxx/%%endxx with different abcm2ps
+	pseudo-comment prefixes.
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix bad music line cut when less notes in the master voice
+	and no bar at end of line
+	(reported by Hudson Flávio Meneses Lacerda).
+Add 'true' and 'false' in the PS to SVG interpreter
+	(asked by Hudson Flávio Meneses Lacerda).
+Fix bad PS output when 2 empty lines at end of a justified text sequence
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix crash when %%clef in %%voice
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix overlay voice inheritance (%%transpose and glyph placements).
+Apply %%transpose in tune header or after first K: to all voices.
+
 ---- Version 7.5.0 - 13/03/01 ----
 
 Fix loss of multi-rest when alone in a music line.

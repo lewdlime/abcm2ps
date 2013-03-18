@@ -345,13 +345,10 @@ static void sort_all(void)
 
 	/* if no bar or format_change at end of tune, add a dummy symbol */
 	if (prev->type != BAR && prev->type != FMTCHG) {
-		s = info['T' - 'A'];
-		s->type = FMTCHG;
+		s = sym_add(first_voice, FMTCHG);
 		s->u = -1;
+		s->time = s->prev->time + s->prev->dur;
 		s->sflags = S_SEQST;
-		s->time = prev->time + prev->dur;
-		s->next = NULL;
-		s->ts_next = NULL;
 		prev->ts_next = s;
 		s->ts_prev = prev;
 		for (;;) {
@@ -759,7 +756,7 @@ static struct SYMBOL *go_global_time(struct SYMBOL *s,
 			break;
 	}
 	if (!s)
-		return 0;
+		return NULL;
 	if (symsel->seq != 0) {
 		int seq;
 
@@ -1039,6 +1036,27 @@ static void gen_ly(int eob)
 		buffer_eob();
 }
 
+/* check if a note is tied to a previous one */
+static int tied_note(int pitch)
+{
+	struct SYMBOL *prev;
+	int i;
+
+	prev = curvoice->last_sym;
+	while (prev && prev->as.type != ABC_T_NOTE)
+		prev = prev->prev;
+
+	if (!(prev->sflags & S_TI1))
+		return 0;
+
+	for (i = 0; i <= prev->nhd; i++) {
+		if (prev->as.u.note.ti1[i]
+		 && prev->as.u.note.pits[i] == pitch)
+			return 1;
+	}
+	return 0;
+}
+
 /* transpose a note / chord */
 static void note_transpose(struct SYMBOL *s)
 {
@@ -1087,6 +1105,8 @@ static void note_transpose(struct SYMBOL *s)
 		} else if (curvoice->ckey.empty != 0) {	/* key none */
 			a = acc2[(unsigned) i1];
 			if (a == A_NT)
+				continue;
+			if (tied_note(s->as.u.note.pits[i]))
 				continue;
 		} else if (curvoice->ckey.nacc > 0) {	/* acc list */
 			i4 = cgd2cde[(unsigned) ((i3 + 16 * 7) % 7)];
@@ -1768,6 +1788,14 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 		parsys->voice[voice2].second = 1;
 		p_voice2->scale = p_voice->scale;
 		p_voice2->octave = p_voice->octave;
+		p_voice2->transpose = p_voice->transpose;
+		memcpy(&p_voice2->key, &p_voice->key,
+					sizeof p_voice2->key);
+		memcpy(&p_voice2->ckey, &p_voice->ckey,
+					sizeof p_voice2->ckey);
+		memcpy(&p_voice2->okey, &p_voice->okey,
+					sizeof p_voice2->okey);
+		p_voice2->posit = p_voice->posit;
 		range = parsys->voice[p_voice - voice_tb].range;
 		for (voice = 0; voice < MAXVOICE; voice++) {
 			if (parsys->voice[voice].range > range)
@@ -2322,7 +2350,7 @@ static char *tune_header_rebuild(struct abcsym *as)
 static void tune_filter(struct abcsym *as)
 {
 	struct tune_opt_s *opt;
-	struct SYMBOL *s;
+	struct SYMBOL *s, *s2;
 	struct slre slre;
 	char *header, *p;
 
@@ -2365,7 +2393,9 @@ static void tune_filter(struct abcsym *as)
 				}
 				continue;
 			}
-			s = (struct SYMBOL *) process_pscomment(as2);
+			s2 = (struct SYMBOL *) getarena(sizeof *s2);
+			memcpy(s2, s, sizeof *s2);
+			process_pscomment((struct abcsym *) s2);
 		}
 		option_state = 0;
 	}
@@ -2406,8 +2436,13 @@ static void voice_filter(void)
 			goto next_voice;
 
 		/* apply the options */
-		for (s = opt->s->next; s; s = s->next)
-			s = (struct SYMBOL *) process_pscomment((struct abcsym *) s);
+		for (s = opt->s->next; s; s = s->next) {
+			struct SYMBOL *s2;
+
+			s2 = (struct SYMBOL *) getarena(sizeof *s2);
+			memcpy(s2, s, sizeof *s2);
+			process_pscomment((struct abcsym *) s2);
+		}
 next_voice:
 		opt = opt->next;
 	}
@@ -2542,6 +2577,7 @@ static struct abcsym *get_info(struct abcsym *as,
 #endif
 		as = get_global(as, t);
 
+		/* apply the filter for the voice '1' */
 		voice_filter();
 
 		/* activate the default tablature if not yet done */
@@ -2641,6 +2677,17 @@ static struct abcsym *get_info(struct abcsym *as,
 		break;
 	case 'V':
 		get_voice(s);
+
+		/* handle here the possible clef which could be replaced
+		 * in case of filter */
+		if (as->next && as->next->type == ABC_T_CLEF) {
+			as = as->next;
+			get_clef((struct SYMBOL *) as);
+		}
+		if (as->state == ABC_S_TUNE
+		 && !curvoice->last_sym
+		 && curvoice->time == 0)
+			voice_filter();
 		break;
 	case 'w':
 		if (as->state != ABC_S_TUNE
@@ -2924,7 +2971,8 @@ void do_tune(struct abctune *t)
 		marg_init();
 	}
 
-	/* set the duration of all notes/rests - this is needed for tuplets
+	/* set the duration of all notes/rests
+	 *	(this is needed for tuplets and the feathered beams)
 	 * and get the voice IDs */
 	for (as = t->first_sym; as; as = as->next) {
 		switch (as->type) {
@@ -3689,14 +3737,8 @@ static void get_voice(struct SYMBOL *s)
 	set_tblt(p_voice);
 
 	/* if in tune, switch to this voice */
-	switch (s->as.state) {
-	case ABC_S_TUNE:
+	if (s->as.state == ABC_S_TUNE)
 		curvoice = p_voice;
-		if (!curvoice->last_sym
-		 && curvoice->time == 0)
-			voice_filter();
-		break;
-	}
 }
 
 /* -- note or rest -- */
@@ -3733,8 +3775,8 @@ static void get_note(struct SYMBOL *s)
 		}
 		if (curvoice->key.mode < BAGPIPE) {
 			div = 4;
-			if (!curvoice->last_sym
-			 || !(curvoice->last_sym->as.flags & ABC_F_GRACE)) {
+			if (!prev
+			 || !(prev->as.flags & ABC_F_GRACE)) {
 				if (s->as.flags & ABC_F_GR_END)
 					div = 2;	/* one grace note */
 			}
@@ -3747,7 +3789,7 @@ static void get_note(struct SYMBOL *s)
 	}
 
 	/* convert the decorations
-	 * (!beam-accel!/!beam-rall! may change the note duration) */
+	 * (!beam-accel! and !beam-rall! may change the note duration) */
 	if (s->as.u.note.dc.n > 0)
 		deco_cnv(&s->as.u.note.dc, s, prev);
 
@@ -4490,8 +4532,25 @@ center:
 			interpret_fmt_line(w, p, 0);
 			switch (as->state) {
 			case ABC_S_GLOBAL:
-			case ABC_S_HEAD:
 				return as;
+			case ABC_S_HEAD: {
+				struct VOICE_S *p_voice;
+				int i;
+
+				for (i = MAXVOICE, p_voice = voice_tb;
+				     --i >= 0;
+				     p_voice++) {
+					p_voice->transpose = cfmt.transpose;
+					memcpy(&p_voice->key, &p_voice->okey,
+						sizeof p_voice->key);
+					key_transpose(&p_voice->key);
+					memcpy(&p_voice->ckey, &p_voice->key,
+						sizeof p_voice->ckey);
+					if (p_voice->key.empty)
+						p_voice->key.sf = 0;
+				}
+				return as;
+			    }
 			}
 			curvoice->transpose = cfmt.transpose;
 			s2 = curvoice->sym;
@@ -4607,16 +4666,18 @@ center:
 					as = process_pscomment(as->next);
 					if (as == as2)
 						break;
+					continue;
 				}
-//fixme: lack of reverse links..
 				as->next->state = ABC_S_TUNE;
+
+				/* !! no reverse link !! */
 				s->next = (struct SYMBOL *) as->next;
 				s = s->next;
 			}
 //fixme:use cur_tune_opts instead of option_state ?
 			cur_tune_opts = NULL;
 			option_state = 0;
-			return as2;
+			return as2->prev;
 		}
 		break;
 	case 'u':
@@ -4668,6 +4729,8 @@ center:
 					break;
 				if (as3->type != ABC_T_NULL
 				 && (as3->type != ABC_T_PSCOM
+				  || strncmp(&as3->text[2], "score ", 6) == 0
+				  || strncmp(&as3->text[2], "staves ", 7) == 0
 				  || strncmp(&as3->text[2], "tune ", 5) == 0
 				  || strncmp(&as3->text[2], "voice ", 6) == 0))
 					break;
@@ -4713,7 +4776,7 @@ center:
 				s->next = (struct SYMBOL *) as->next;
 				s = s->next;
 			}
-			return as;
+			return as->prev;
 		}
 		if (strcmp(w, "voicescale") == 0) {
 			int voice;
@@ -4945,11 +5008,11 @@ struct SYMBOL *sym_add(struct VOICE_S *p_voice, int type)
 	p_voice2 = curvoice;
 	curvoice = p_voice;
 	sym_link(s, type);
+	curvoice = p_voice2;
 	if (p_voice->second)
 		s->sflags |= S_SECOND;
 	if (p_voice->floating)
 		s->sflags |= S_FLOATING;
-	curvoice = p_voice2;
 	return s;
 }
 
@@ -4960,12 +5023,11 @@ static void sym_link(struct SYMBOL *s, int type)
 
 /*	memset((&s->as) + 1, 0, sizeof (struct SYMBOL) - sizeof (struct abcsym)); */
 	if (!p_voice->ignore) {
-		if (p_voice->sym) {
+		s->prev = p_voice->last_sym;
+		if (s->prev)
 			p_voice->last_sym->next = s;
-			s->prev = p_voice->last_sym;
-		} else {
+		else
 			p_voice->sym = s;
-		}
 		p_voice->last_sym = s;
 //fixme:test bug
 //	} else {

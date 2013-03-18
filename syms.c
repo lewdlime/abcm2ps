@@ -344,7 +344,7 @@ static char ps_head[] =
 	"	-3 -3 RM 6 0 RL stroke}!\n"
 
 	/* x y accent - accent */
-	"/accent{1.2 SLW M -4 2 RM\n"
+	"/accent{1.2 SLW M -4 0 RM\n"
 	"	8 2 RL -8 2 RL stroke}!\n"
 
 	/* x y turn - turn */

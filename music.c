@@ -1548,17 +1548,17 @@ static float set_space(struct SYMBOL *s)
 	}
 
 	/* reduce spacing within a beam */
-	if ((s->sflags & S_BEAM_ST) == 0)
+	if (!(s->sflags & S_BEAM_ST))
 		space *= fnnp;
 
-	/* decrease/increase spacing if stems in opposite directions */
+	/* decrease spacing if stems in opposite directions */
 /*fixme:to be done later, after x computed in sym_glue*/
-	if (s->as.type == ABC_T_NOTE && s->nflags >= 0) {
+	if (s->as.type == ABC_T_NOTE && s->nflags >= -1) {
 		stemdir = s->stem;
 		for (s2 = s->ts_prev;
 		     s2 && s2->time == prev_time;
 		     s2 = s2->ts_prev) {
-			if (s2->nflags < 0 || s2->stem == stemdir) {
+			if (s2->nflags < -1 || s2->stem == stemdir) {
 				stemdir = 0;
 				break;
 			}
@@ -1567,15 +1567,13 @@ static float set_space(struct SYMBOL *s)
 			for (s2 = s->ts_next;
 			     s2 && s2->time == s->time;
 			     s2 = s2->ts_next) {
-				if (s2->nflags < 0 || s2->stem != stemdir) {
+				if (s2->nflags < -1 || s2->stem != stemdir) {
 					stemdir = 0;
 					break;
 				}
 			}
-			if (stemdir == 1)		/* down - up */
+			if (stemdir != 0)
 				space *= 0.9;
-			else if (stemdir == -1)		/* up - down */
-				space *= 1.11;
 		}
 	}
 	return space;
@@ -2006,16 +2004,16 @@ static void custos_add(struct SYMBOL *s)
 static struct SYMBOL *set_nl(struct SYMBOL *s)
 {
 	struct SYMBOL *s2, *extra, *staves;
+	struct VOICE_S *p_voice;
 	int done;
 
 	/* if explicit EOLN, cut on the next symbol */
 	if ((s->sflags & S_EOLN) && !cfmt.keywarn && !cfmt.timewarn) {
-		for (s = s->ts_next; ; s = s->ts_next) {
-			if (!s)
-				return s;
-			if (s->sflags & S_SEQST)
-				break;
-		}
+		s = s->next;
+		if (!s)
+			return s;
+		while (!(s->sflags & S_SEQST))
+			s = s->ts_prev;
 		goto setnl;
 	}
 
@@ -2033,22 +2031,18 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 			break;
 		goto normal;
 	case GRACE:			/* don't cut on a grace note */
-		for (s = s->ts_next; ; s = s->ts_next) {
-			if (!s)
-				return s;
-			if (s->sflags & S_SEQST)
-				break;
-		}
+		s = s->next;
+		if (!s)
+			return s;
 		/* fall thru */
 	default:
 normal:
 		/* cut on the next symbol */
-		for (s = s->ts_next; ; s = s->ts_next) {
-			if (!s)
-				return s;
-			if (s->sflags & S_SEQST)
-				break;
-		}
+		s = s->next;
+		if (!s)
+			return s;
+		while (!(s->sflags & S_SEQST))
+			s = s->ts_prev;
 		switch (s->type) {
 		case NOTEREST:
 		case GRACE:
@@ -2155,8 +2149,42 @@ cut_here:
 		s = staves;
 	}
 setnl:
-	if (cfmt.custos && !first_voice->next)
+	if (cfmt.custos && !first_voice->next) {
 		custos_add(s);
+	} else {
+		switch (s->ts_prev->type) {
+		case BAR:
+		case FMTCHG:
+		case CLEF:
+		case KEYSIG:
+		case TIMESIG:
+			break;
+		default:			/* add an extra symbol at eol */
+			p_voice = &voice_tb[s->voice];
+			p_voice->last_sym = s->prev;
+//			if (!p_voice->last_sym)
+//				p_voice->sym = NULL;
+			p_voice->time = s->time;
+			extra = sym_add(p_voice, FMTCHG);
+			extra->next = s;
+			s->prev = extra;
+			extra->ts_prev = s->ts_prev;
+			extra->ts_prev->ts_next = extra;
+			extra->ts_next = s;
+			s->ts_prev = extra;
+			for (s2 = s->ts_next; ; s2 = s2->ts_next) {
+				if (s2->x != 0) {
+					extra->x = s2->x - 1;
+					break;
+				}
+			}
+			extra->u = -1;
+			extra->sflags |= S_SEQST;
+			extra->wl = 2;
+			extra->shrink = 2;
+			break;
+		}
+	}
 	s->sflags |= S_NL;
 	return s;
 }
@@ -2234,14 +2262,12 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 				if (!s2)
 					s2 = s;
 			}
-			if (s->as.type == ABC_T_NOTE
-			 && (s->sflags & (S_BEAM_ST | S_BEAM_END))
-					!= (S_BEAM_ST | S_BEAM_END)) {
-				if (s->sflags & S_BEAM_ST)
-					beam++;
-				if (s->sflags & S_BEAM_END)
-					beam--;
-			}
+			if ((s->sflags & (S_BEAM_ST | S_BEAM_END))
+						== S_BEAM_ST)
+				beam++;
+			else if ((s->sflags & (S_BEAM_ST | S_BEAM_END))
+						== S_BEAM_END)
+				beam--;
 		}
 
 		/* cut on a crotchet */
@@ -2685,8 +2711,8 @@ if (staff > nst) {
 						 && (s->sflags & (S_BEAM_ST | S_BEAM_END))
 								== (S_BEAM_ST | S_BEAM_END)
 						 && ((t = s->ts_next) == 0
-							|| t->staff != s->staff
-							|| t->time != s->time))
+						  || t->staff != s->staff
+						  || t->time != s->time))
 							s->multi = -1;
 					}
 				}
@@ -3602,23 +3628,23 @@ static void set_overlap(void)
 		/* if unison and different accidentals */
 		if (t < 0) {
 			if (s2->as.u.note.accs[i2] == 0) {
-				d1 = noteshift + 12;
+				d1 = noteshift + s2->xmx + s1->shac[i1];
 				if (s1->as.u.note.accs[i1] & 0xf8)
 					d1 += 2;
 				if (s2->dots)
 					d1 += 6;
-				for (m = s1->nhd; m >= 0; m--) {
+				for (m = 0; m <= s1->nhd; m++) {
 					s1->shhd[m] += d1;
 					s1->shac[m] -= d1;
 				}
 				s1->xmx += d1;
 			} else {
-				d2 = noteshift + 12;
+				d2 = noteshift + s1->xmx + s2->shac[i2];
 				if (s2->as.u.note.accs[i2] & 0xf8)
 					d2 += 2;
 				if (s1->dots)
 					d2 += 6;
-				for (m = s2->nhd; m >= 0; m--) {
+				for (m = 0; m <= s2->nhd; m++) {
 					s2->shhd[m] += d2;
 					s2->shac[m] -= d2;
 				}
@@ -3959,10 +3985,15 @@ static void set_stems(void)
 		 * with the other end */
 		nflags = s->nflags;
 		if ((s->sflags & (S_BEAM_ST | S_BEAM_END)) == S_BEAM_ST) {
+			if (s->sflags & S_FEATHERED_BEAM)
+				nflags = ++s->nflags;
 			for (s2 = s->next; /*s2*/; s2 = s2->next) {
-				if (s2->as.type == ABC_T_NOTE
-				 && (s2->sflags & S_BEAM_END))
-					break;
+				if (s2->as.type == ABC_T_NOTE) {
+					if (s->sflags & S_FEATHERED_BEAM)
+						s2->nflags++;
+					if (s2->sflags & S_BEAM_END)
+						break;
+				}
 			}
 /*			if (s2) */
 			    if (s2->nflags > nflags)
@@ -4566,7 +4597,6 @@ void output_music(void)
 		if (cfmt.combinevoices)
 			combine_voices();
 		set_stem_dir();		/* set the stems direction in 'multi' */
-//		set_rest_offset();	/* set the vertical offset of rests */
 	}
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next)
 		set_beams(p_voice->sym);	/* decide on beams */

@@ -139,7 +139,7 @@ static int calculate_beam(struct BEAM *bm,
 			return 0;
 	}
 
-	if (!(s1->sflags & S_BEAM_ST)) {	/* beam on two lines */
+	if (!(s1->sflags & S_BEAM_ST)) {	/* beam on two music lines */
 		s = sym_dup(s1);
 		s1->prev->next = s;
 		s->prev = s1->prev;
@@ -606,7 +606,7 @@ static void draw_beams(struct BEAM *bm)
 
 	if (s1->sflags & S_FEATHERED_BEAM) {
 		da = bshift / (s2->xs - s1->xs);
-		if (s1->u == 0) {
+		if (s1->dur > s2->dur) {
 			da = -da;
 			bshift = da * s1->xs;
 		} else {
@@ -1911,14 +1911,14 @@ static void slur_out(float x1,
 	yy2 = y2 + beta * (yy2 - y2);
 
 	dx = .03 * (x2 - x1);
-	if (dx > 10.)
-		dx = 10.;
-	dy = s;
+//	if (dx > 10.)
+//		dx = 10.;
+//	dy = s;
+	dy = 1.6 * s;
 	dz = .2 + .001 * (x2 - x1);
 	if (dz > .6)
 		dz = .6;
 	dz *= s;
-
 	
 	scale_y = scale_voice ? cur_scale : 1;
 	if (!dotted)

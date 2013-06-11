@@ -254,9 +254,9 @@ Tune body.
 	  indicated by '\n' or ';' in which case, the lines are of
 	  the same type (gchord or annotation).
 	  The 3 next notations are equivalent:
-		"_ann1" "_ann2" "G3" "4" G
-		"_ann1;ann2" "G3;4" G
-		"_ann1\nann2" "G3\n4" G
+		"_ann1" "_ann2" "G3" "4"
+		"_ann1;ann2" "G3;4"
+		"_ann1\nann2" "G3\n4"
 	  (annotation on 2 lines and guitar chord on 2 lines)
 	  The two next notations are NOT equivalent:
 		"_ann1" "G"

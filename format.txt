@@ -46,6 +46,7 @@ List of the format parameters
 	Compilation: none
 	Command line: -u
 	Description:
+		Handle old abc2ps tunes.
 		When true, set 'M' as the !tenuto! decoration and do a
 		pitch translation for the bass and alto clefs.
 
@@ -89,9 +90,6 @@ List of the format parameters
 	Description:
 		When true, set the clefs and possibly insert clef
 		changes when no clef is defined in K: or V:.
-
-  barnumbers <int>
-	Same as 'measurenb'.
 
   barsperstaff <int>
 	Default: 0
@@ -182,7 +180,7 @@ List of the format parameters
 	Description:
 		When set, the stem of the note in the middle of the
 		staff goes downwards. Otherwise, it goes upwards
-		or downwards according to the previous note.
+		or downwards according to the previous orb next note.
 
   cancelkey <bool>
 	Default: 0
@@ -202,13 +200,22 @@ List of the format parameters
 		Setting this flag makes the combination to occur in all
 		cases.
 
-  combinevoices <bool>
+  combinevoices <int>
 	Default: 0
 	Compilation: none
 	Command line: none
 	Description:
-		If set, the notes of same duration belonging to voices of
-		the same staff are combined giving chords.
+		Define how notes of different voices in a same staff
+		may be combined.
+		<int> may be:
+			- < 0: the voices are displayed as written
+			- 0: the rests of same duration are displayed
+				as one rest
+			- 1: the notes of same duration are combined
+				to chords except when there could be
+				a second, a unison or a voice inversion
+			- > 1: the notes of same duration are always combined
+				to chords
 
   composerfont <font> [<encoding>] [<size>]
 	Default: Times-Italic 14
@@ -847,6 +854,7 @@ List of the format parameters
 		for main titles only.
 
   postscript <text>
+  ps <text>
 	Default: none
 	Compilation: none
 	Command line: none
@@ -903,16 +911,19 @@ List of the format parameters
 		its default value.
 		Note: <size> is mandatory at the first definition..
 
-  shiftunison <bool>
+  shiftunison <int>
 	Default: 0
 	Compilation: none
 	Command line: none
 	Description:
-		In multivoice tunes, when voices go to unison, there
-		is often only one head. Setting this flag keeps the
-		two notes with a shift when there is a minim (half note)
-		and a note smaller than crotchet (black note), and also
-		when one note is dotted and not the other one.
+		Set the way voice unison is displayed.
+		<int> may be:
+		'0': for one note head if possible
+		'1': for two shifted notes when one note is dotted
+		     and the other one is not,
+		'2': also for two shifted notes when one note is a
+		     minim (half note) and the other one has some flags,
+		'3': for two shifted notes on all unison cases.
 
   slurheight <float>
 	Default: 1.0
@@ -1459,6 +1470,7 @@ List of the pseudo-comments treated while parsed
 
   setbarnb <int>
 	Set the number of the next measure to <int>.
+
 	When found outside a tune, this command is the same as
 	'%%measurefirst'. If it appears at the beginning of the tune
 	(after K:), only the 2nd measure will have the new number.
@@ -1468,14 +1480,16 @@ List of the pseudo-comments treated while parsed
 	(1..n - see sample4.abc for example), or on the <+int>th or
 	<-int>th staff.
 
-  staffbreak <unit> ["f"]
-	Have a break in the current staff. <unit> gives the width of the
-	break (in points, inches or cm). As a side effect, when the width
-	is bigger than 0.5 cm, the left side of the staff system is redrawn.
-	When used in a multi-voice tune, a staff break must be inserted
-	in each voice.
+  staffbreak [<unit>] ["f"]
+	Have a break in the current staff.
+
+	<unit> gives the width of the break (in points, inches or cm) and
+	defaults to 0.5 cm.
+	As a side effect, when the width is bigger than 0.5 cm and when
+	all voices have the same staffbreak, the left side of the staff
+	system is redrawn.
 	When "f" is not present, the staff break is removed if it occurs
-	at start or end of line.
+	at start or end of the music line.
 
   staves <definition>
 	See 'features.txt' for description.
@@ -1542,6 +1556,7 @@ List of the pseudo-comments treated while parsed
 
   transpose <int> [ "#" | "b" ]
 	Transpose the music.
+
 	<int> is a signed number of semitones.
 	When "#" or "b" is present, the new key signature(s) will have
 	sharps or flats in case of enharmonic keys.
@@ -1567,7 +1582,8 @@ Pseudo-commands used for external formatting
   break <symbol selection> [ [ "," | " " ] <symbol selection> ]*
 	Insert a music line break after the selected symbol(s).
 
-	This command may appear only a %%tune sequence.
+	This command may appear only in the tune header or in a %%tune
+	sequence.
 	There may be many %%break commands in a %%tune sequence.
 
   clip [ <start symbol> ]  "-" [ <end symbol> ]

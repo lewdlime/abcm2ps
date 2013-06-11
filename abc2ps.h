@@ -194,6 +194,8 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define S_NOREPBRA	0x00400000	/* don't print the repeat bracket */
 #define S_TREM1		0x00800000	/* tremolo on 1 note */
 #define S_TEMP		0x01000000	/* temporary symbol */
+#define S_SHIFTUNISON_1	0x02000000	/* %%shiftunison 1 */
+#define S_SHIFTUNISON_2	0x04000000	/* %%shiftunison 2 */
 	struct posit_s posit;	/* positions / directions */
 	signed char stem;	/* 1 / -1 for stem up / down */
 	signed char nflags;	/* number of note flags when > 0 */
@@ -258,7 +260,7 @@ struct FORMAT { 		/* struct for page layout */
 	float indent, infospace, slurheight, notespacingfactor, scale;
 	float staffsep, sysstaffsep, maxstaffsep, maxsysstaffsep, stretchlast;
 	int abc2pscompat, alignbars, aligncomposer, autoclef;
-	int barsperstaff, breakoneoln, bstemdown, cancelkey, comball;
+	int barsperstaff, breakoneoln, bstemdown, cancelkey;
 	int combinevoices, contbarnb, continueall, custos;
 	int dblrepbar, dynalign, flatbeams;
 	int infoline, gchordbox, graceslurs, gracespace, hyphencont;
@@ -299,7 +301,6 @@ struct FORMAT { 		/* struct for page layout */
 	char ndfont;		/* current index of dynamic fonts */
 	unsigned char gcf, anf, vof;	/* fonts for guitar chords,
 					 * annotations and lyrics */
-	struct posit_s posit;	/* positions / directions */
 	unsigned int fields[2];	/* info fields to print
 				 *[0] is 'A'..'Z', [1] is 'a'..'z' */
 };
@@ -413,6 +414,7 @@ struct VOICE_S {
 	struct posit_s posit;	/* positions / directions */
 	signed char octave;	/* octave while parsing */
 	signed char clone;	/* duplicate from this voice number */
+	signed char over;	/* overlay of this voice number */
 	unsigned char staff;	/* staff (0..n-1) */
 	unsigned char cstaff;	/* staff while parsing */
 	unsigned char slur_st;	/* slurs at start of staff */
@@ -502,10 +504,7 @@ void draw_all_deco_head(struct SYMBOL *s, float x, float y);
 void draw_deco_near(void);
 void draw_deco_note(void);
 void draw_deco_staff(void);
-float draw_partempo(int staff,
-			float top,
-			int any_part,
-			int any_tempo);
+float draw_partempo(int staff, float top);
 void draw_measnb(void);
 void reset_deco(void);
 void set_defl(int new_defl);
@@ -545,6 +544,7 @@ FILE *open_file(char *fn,
 void print_format(void);
 void set_font(int ft);
 void set_format(void);
+void set_voice_param(struct VOICE_S *p_voice, int state, char *w, char *p);
 struct tblt_s *tblt_parse(char *p);
 /* music.c */
 void output_music(void);
@@ -558,6 +558,7 @@ void identify_note(struct SYMBOL *s,
 		int *p_head,
 		int *p_dots,
 		int *p_flags);
+void sort_pitch(struct SYMBOL *s, int combine);
 struct SYMBOL *sym_add(struct VOICE_S *p_voice,
 			int type);
 /* subs.c */

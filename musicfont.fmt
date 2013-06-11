@@ -1,0 +1,42 @@
+% example of musical symbols by font
+
+% --- SVG definitions ---
+beginsvg
+<style type="text/css">
+	@font-face {
+	    font-family: 'MusicFont';
+	    src: local(FreeSerif);
+	    font-weight: normal;
+	    font-style: normal;
+	}
+</style>
+endsvg
+
+beginps svg
+/tclef{/MusicFont 35 selectfont M -12 0 RM(\ud834\udd1e)show}!
+/bclef{/MusicFont 35 selectfont M -12 -3 RM(\ud834\udd22)show}!
+/csig{/MusicFont 32 selectfont M -7 0 RM(\ud834\udd34)show}!
+% the brace does not work with Opera
+/brace{/MusicFont 35 selectfont
+	gsave
+		T -8 0 M -.04 mul 1 exch scale
+		(\ud834\udd14)show
+	grestore}!
+endps
+
+% --- PostScript definitions ---
+beginps nosvg
+% with FreeSerif
+/tclef{/FreeSerif 35 selectfont M -12 0 RM/g_clef glyphshow}!
+/bclef{/FreeSerif 35 selectfont M -12 -3 RM/f_clef glyphshow}!
+/csig{/FreeSerif 32 selectfont M -8 0 RM/common_time glyphshow}!
+/brace{/FreeSerif 35 selectfont 
+	gsave
+		T -8 0 M -.04 mul 1 exch scale
+		/brace glyphshow
+	grestore}!
+
+% with PMW-Music (use "GS_FONTPATH=/usr/local/src/pmw-4.21/psfonts/ gs Out.ps")
+%/tclef{/PMW-Music 15 selectfont M -10 0 RM(!)show}!
+% I let your search the other symbols..
+endps

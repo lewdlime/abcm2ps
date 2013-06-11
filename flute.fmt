@@ -1,0 +1,359 @@
+% format file for flute tablatures - this file is part of abcm2ps
+%
+% Tin whistle by Guido Gonzato
+% Galoubet and Pipe-Tabor by Michel Bellon
+%
+% tw_   : tin whistle
+% gbl_  : galoubet (3 holes pipe from Provence)
+% gblc_ : galoubet (digit only )
+% pt_   : pipe and tabor (3 holes pipe from England)
+% xi_   : txistu (3 holes pipe from Euskadi)
+%
+% you may try it running:
+%	abcm2ps sample -e1 -F flute.fmt -T1 -T3
+
+beginps
+% -- whistle drawing functions --
+%
+% start of line 
+%	string tw_head
+/tw_head{/Helvetica 8 selectfont
+	0 15 M 90 rotate(WHISTLE)show -90 rotate
+	/Helvetica-Bold 36 selectfont
+	0 15 M show .5 SLW newpath}!
+/tw_under{
+	-2.5 6.5 M 2.5 -2.5 RL 2.5 2.5 RL
+	-2.5 -2.5 RM 0 6 RL stroke}!
+/tw_over{
+	-2.5 7.5 M 2.5 2.5 RL 2.5 -2.5 RL
+	-2.5 2.5 RM 0 -6 RL stroke}!
+/tw_p{-3 0 M 6 0 RL -3 -3 RM 0 6 RL stroke}!
+/tw_pp{-3 0 M 6 0 RL
+	-1.5 -1.5 RM 0 3 RL
+	-3 0 RM 0 -3 RL stroke}!
+% holes
+/tw_0{0 0 3 0 360 arc stroke}!
+/tw_1{0 0 3 90 270 arc fill 0 0 3 270 90 arc stroke}!
+/tw_2{0 0 3 0 360 arc fill}!
+% hole table - from C to B
+/tw_holes
+	[8#222222 8#222221 8#222220 8#222210 8#222200 8#222000
+	 8#221000 8#220000 8#210000 8#200000 8#022000 8#000000]
+	def
+% draw a note
+%	octave pitch x tw_note
+/tw_note{gsave
+	7 T			% oct pit
+	cvi			% (if microtone)
+	dup 12 idiv		% oct pit pit/12
+	dup 0 eq{pop}
+		{1 eq{tw_p}
+		     {tw_pp}ifelse
+	}ifelse
+	dup 12 eq{
+		pop 8#022222	% (special case)
+	}{
+		12 mod tw_holes exch get
+	}ifelse			% oct holes
+	0 1 5{pop
+		0 7 T
+		dup 8#3 and dup 0 eq{pop tw_0}
+				    {1 eq{tw_1}
+					 {tw_2}ifelse
+		}ifelse
+		-3 bitshift
+	}for
+	pop			% oct
+	dup 0 gt{pop tw_over}
+		 {0 lt{tw_under}if
+	}ifelse
+	grestore
+}!
+% -- galoubet en Do --
+%
+% début de ligne
+%	string gbl_head
+/gbl_tete{/Helvetica 7 selectfont
+	0 10 M 90 rotate(GALOUBET)show -90 rotate
+	/Helvetica-Bold 24 selectfont
+	0 10 M show .5 SLW newpath}!
+/gbl_c{/Helvetica-utf8 14 selectfont
+	-5 10 M show .5 SLW newpath}!
+/gbl_doux{-3.5 0 M 7 0 RL stroke}!
+/gbl_fort{-3.5 0 M 7 0 RL -3.5 -3.5 RM 0 7 RL stroke}!
+/gbl_tres_fort{-5 0 M 10 0 RL
+	-2.5 -3 RM 0 6 RL
+	-5 0 RM 0 -6 RL stroke}!
+% trous
+/gbl_0{0 0 3.5 0 360 arc stroke}!
+/gbl_1{0 0 3.5 90 270 arc fill 0 0 3.5 270 90 arc stroke}!
+/gbl_2{0 0 3.5 0 360 arc fill}!
+% table des trous - de E à d'
+/gbl_trous
+	[8#22210
+% F.. B
+	 8#22200 8#22100 8#22000 8#21000 8#20000 8#10000 8#00000
+% c .. e
+	 8#22201 8#22101 8#22001 8#21001 8#20001
+% f ..b
+	 8#22202 8#00002 8#22002 8#21002 8#20002 8#10202 8#00202
+% c' .. d'
+	 8#22203 8#22103 8#22003]
+	def
+% table des doigtés chiffrés
+/gbl_dgt
+	[(3Þ)
+	(3) (2Þ) (2) (1Þ) (1) (Þ) (0)
+	(3) (2Þ) (2) (1Þ) (1)
+	(3) (0) (2) (1Þ) (1) (ÞF) (F)
+	(3) (2Þ) (2)]
+	def
+% dessin d'une note
+%	octave pitch x gbl_note
+/gbl_note{gsave
+	8 T			% oct pit
+	cvi			% (if microtone)
+	4 sub			% oct pit/'E'
+	exch			% pit/E oct
+	0 eq			% (1ere octave seulement)
+	1 index 0 ge and	% (pitch = 0 .. 22 = E .. d')
+	1 index 23 lt and{
+		dup gbl_dgt exch get
+		0 30 T gbl_c	0 -35 T		
+		gbl_trous exch get
+		dup 8#3 and 
+			dup 0 eq{pop gbl_doux}
+				{dup 1 eq{pop}
+					{2 eq{gbl_fort}
+					     {gbl_tres_fort}ifelse
+				}ifelse
+			}ifelse
+		-3 bitshift
+		0 9 T
+		dup 8#3 and 1 eq{gbl_1}if
+		-3 bitshift
+		0 1 2{pop
+			0 9 T
+			dup 8#3 and dup 0 eq{pop gbl_0}
+					    {1 eq{gbl_1}
+						 {gbl_2}ifelse
+			}ifelse
+			-3 bitshift
+		}for
+	}if
+	pop grestore
+}!
+% -- galoubet en Do Tablature chiffrée--
+%
+% début de ligne
+%	string gbl_head
+/gblc_tete{/Helvetica 7 selectfont
+	0 10 M 90 rotate(GALOUBET)show -90 rotate
+	/Helvetica-Bold 24 selectfont
+	0 10 M show .5 SLW newpath}!
+/gblc_c{/Helvetica-utf8 18 selectfont
+	-5 10 M show .5 SLW newpath}!
+/gblc_doux{-3.5 0 M 7 0 RL stroke}!
+/gblc_fort{-3.5 0 M 7 0 RL -3.5 -3.5 RM 0 7 RL stroke}!
+/gblc_tres_fort{-5 0 M 10 0 RL
+	-2.5 -3 RM 0 6 RL
+	-5 0 RM 0 -6 RL stroke}!
+% trous
+/gblc_0{0 0 3.5 0 360 arc stroke}!
+/gblc_1{0 0 3.5 90 270 arc fill 0 0 3.5 270 90 arc stroke}!
+/gblc_2{0 0 3.5 0 360 arc fill}!
+% table des trous - de E à d'
+/gblc_trous
+	[8#22210
+% F.. B
+	 8#22200 8#22100 8#22000 8#21000 8#20000 8#10000 8#00000
+% c .. e
+	 8#22201 8#22101 8#22001 8#21001 8#20001
+% f ..b
+	 8#22202 8#00002 8#22002 8#21002 8#20002 8#10202 8#00202
+% c' .. d'
+	 8#22203 8#22103 8#22003]
+	def
+% table des doigtés chiffrés
+/gblc_dgt
+	[(3Þ)
+	(3) (2Þ) (2) (1Þ) (1) (Þ) (0)
+	(3) (2Þ) (2) (1Þ) (1)
+	(3) (0) (2) (1Þ) (1) (ÞF) (F)
+	(3) (2Þ) (2)]
+	def
+% dessin d'une note
+%	octave pitch x gblc_note
+/gblc_note{gsave
+	8 T			% oct pit
+	cvi			% (if microtone)
+	4 sub			% oct pit/'E'
+	exch			% pit/E oct
+	0 eq			% (1ere octave seulement)
+	1 index 0 ge and	% (pitch = 0 .. 22 = E .. d')
+	1 index 23 lt and{
+		dup gblc_dgt exch get
+		0 10 T gblc_c	0 0 T		
+		gblc_trous exch get
+		dup 8#3 and 
+			dup 0 eq{pop gblc_doux}
+				{dup 1 eq{pop}
+					{2 eq{gblc_fort}
+					     {gblc_tres_fort}ifelse
+				}ifelse
+			}ifelse
+		-3 bitshift
+%		0 9 T
+%		dup 8#3 and 1 eq{gblc_1}if
+%		-3 bitshift
+%		0 1 2{pop
+%			0 9 T
+%			dup 8#3 and dup 0 eq{pop gblc_0}
+%					    {1 eq{gblc_1}
+%						 {gblc_2}ifelse
+%			}ifelse
+%			-3 bitshift
+%		}for
+	}if
+	pop grestore
+}!
+% -- Pipe-Tabor en Do --
+%
+% début de ligne
+%	string pt_head
+/pt_tete{/Helvetica 7 selectfont
+	0 10 M 90 rotate(PIPE-TABOR)show -90 rotate
+	/Helvetica-Bold 24 selectfont
+	0 10 M show .5 SLW newpath}!
+/pt_doux{-3.5 0 M 7 0 RL stroke}!
+/pt_fort{-3.5 0 M 7 0 RL -3.5 -3.5 RM 0 7 RL stroke}!
+/pt_tres_fort{-5 0 M 10 0 RL
+	-2.5 -3 RM 0 6 RL
+	-5 0 RM 0 -6 RL stroke}!
+% trous
+/pt_0{0 0 3.5 0 360 arc stroke}!
+/pt_1{0 0 3.5 90 270 arc fill 0 0 3.5 270 90 arc stroke}!
+/pt_2{0 0 3.5 0 360 arc fill}!
+% table des trous - de E à d'
+/pt_trous
+	[8#22210
+% F.. B
+	 8#22200 8#22100 8#22000 8#20200 8#20000 8#00000 8#22211
+% c .. e
+	 8#22201 8#22101 8#22001 8#21001 8#20001
+% f ..b
+	 8#22202 8#22102 8#22002 8#21002 8#20202 8#00202 8#22002
+% c' .. d'
+	 8#22203 8#22103 8#00203]
+	def
+% dessin d'une note
+%	octave pitch x pt_note
+/pt_note{gsave
+	8 T			% oct pit
+	cvi			% (if microtone)
+	11 sub			% oct pit/'E'
+	exch			% pit/E oct
+	0 eq			% (1ere octave seulement)
+	1 index 0 ge and	% (pitch = 0 .. 22 = E .. d')
+	1 index 23 lt and{
+		pt_trous exch get
+		dup 8#3 and 
+			dup 0 eq{pop pt_doux}
+				{dup 1 eq{pop}
+					{2 eq{pt_fort}
+					     {pt_tres_fort}ifelse
+				}ifelse
+			}ifelse
+		-3 bitshift
+		0 9 T
+		dup 8#3 and 1 eq{pt_1}if
+		-3 bitshift
+		0 1 2{pop
+			0 9 T
+			dup 8#3 and dup 0 eq{pop pt_0}
+					    {1 eq{pt_1}
+						 {pt_2}ifelse
+			}ifelse
+			-3 bitshift
+		}for
+	}if
+	pop grestore
+}!
+% -- Galoubet en dièze ou Txistu --
+%
+% début de ligne
+%	string xi_head
+/xi_tete{/Helvetica 7 selectfont
+	0 10 M 90 rotate(TXISTU)show -90 rotate
+	/Helvetica-Bold 24 selectfont
+	0 10 M show .5 SLW newpath}!
+/xi_doux{-3.5 0 M 7 0 RL stroke}!
+/xi_fort{-3.5 0 M 7 0 RL -3.5 -3.5 RM 0 7 RL stroke}!
+/xi_tres_fort{-5 0 M 10 0 RL
+	-2.5 -3 RM 0 6 RL
+	-5 0 RM 0 -6 RL stroke}!
+% trous
+/xi_0{0 0 3.5 0 360 arc stroke}!
+/xi_1{0 0 3.5 90 270 arc fill 0 0 3.5 270 90 arc stroke}!
+/xi_2{0 0 3.5 0 360 arc fill}!
+% table des trous - de E à d'
+/xi_trous
+	[8#22210
+% E.. _B
+	 8#22200 8#22100 8#22000 8#20000 8#02200 8#00200 8#22210
+% B .. ^d
+	 8#22201 8#22101 8#22001 8#20001 8#02001
+% e ..g
+	 8#22202 8#22102 8#22002 8#20002 
+% c' .. d'
+	 8#22203 8#00203 8#22213 8#22203 8#22103 8#22003]
+	def
+% dessin d'une note
+%	octave pitch xi tw_note
+/xi_note{gsave
+	8 T			% oct pit
+	cvi			% (if microtone)
+	11 sub			% oct pit/'E'
+	exch			% pit/E oct
+	0 eq			% (1ere octave seulement)
+	1 index 0 ge and	% (pitch = 0 .. 22 = E .. d')
+	1 index 23 lt and{
+		xi_trous exch get
+		dup 8#3 and 
+			dup 0 eq{pop xi_doux}
+				{dup 1 eq{pop}
+					{2 eq{xi_fort}
+					     {xi_tres_fort}ifelse
+				}ifelse
+			}ifelse
+		-3 bitshift
+		0 9 T
+		dup 8#3 and 1 eq{xi_1}if
+		-3 bitshift
+		0 1 2{pop
+			0 9 T
+			dup 8#3 and dup 0 eq{pop xi_0}
+					    {1 eq{xi_1}
+						 {xi_2}ifelse
+			}ifelse
+			-3 bitshift
+		}for
+	}if
+	pop grestore
+}!
+endps
+
+% all tin whistle transpositions
+tablature #1 pitch=D 35 0 63 tw_head tw_note
+tablature #2 pitch=C 35 0 63 tw_head tw_note
+tablature #3 pitch=Eb 60 0 63 tw_head tw_note
+%tablature #4 pitch=Bb, 60 0 63 tw_head tw_note
+%tablature #5 pitch=F, 35 0 63 tw_head tw_note
+%tablature #6 pitch=G, 35 0 63 tw_head tw_note
+%tablature #7 pitch=A, 35 0 63 tw_head tw_note
+
+% galoubet
+%tablature #3 pitch=C 30 0 60 gbl_tete gbl_note
+tablature #4 pitch=B,b 50 0 60 gbl_tete gbl_note
+tablature #5 pitch=G, 30 0 54 pt_tete pt_note
+tablature #6 pitch=C 30 0 46 gblc_tete gblc_note

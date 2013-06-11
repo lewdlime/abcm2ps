@@ -123,20 +123,20 @@ static char *std_deco_tb[] = {
 	"D.C. 3 dacs 16 10 10 D.C.",
 	"D.S. 3 dacs 16 10 10 D.S.",
 	"fine 3 dacs 16 10 10 FINE",
-	"f 6 pf 18 4 4",
-	"ff 6 pf 18 5 11",
-	"fff 6 pf 18 7 17",
-	"ffff 6 pf 18 8 24",
-	"mf 6 pf 18 5 11",
-	"mp 6 pf 18 5 11",
+	"f 6 pf 18 1 7",
+	"ff 6 pf 18 2 10",
+	"fff 6 pf 18 4 13",
+	"ffff 6 pf 18 6 16",
+	"mf 6 pf 18 6 13",
+	"mp 6 pf 18 6 16",
 	"mordent 3 lmrd 10 2 2",
 	"open 3 opend 10 2 2",
-	"p 6 pf 18 4 4",
-	"pp 6 pf 18 5 11",
-	"ppp 6 pf 18 7 17",
-	"pppp 6 pf 18 8 24",
+	"p 6 pf 18 2 8",
+	"pp 6 pf 18 5 14",
+	"ppp 6 pf 18 8 20",
+	"pppp 6 pf 18 10 25",
 	"pralltriller 3 umrd 10 2 2",
-	"sfz 6 sfz 18 7 17",
+	"sfz 6 sfz 18 4 10",
 	"turn 3 turn 10 0 5",
 	"wedge 3 wedge 8 1 1",
 	"turnx 3 turnx 10 0 5",
@@ -411,8 +411,18 @@ static void d_near(struct deco_elt *de)
 		s->ymx = y + dd->h;
 	else
 		s->ymn = y;
-	de->x = s->x + s->shhd[s->stem >= 0 ? 0 : s->nhd];
 	de->y = (float) y;
+	de->x = s->x + s->shhd[s->stem >= 0 ? 0 : s->nhd];
+	if (dd->name[0] == 'd'			/* if dot decoration */
+	 && s->nflags >= -1) {			/* on stem */
+		if (up) {
+			if (s->stem > 0)
+				de->x += STEM_XOFF;
+		} else {
+			if (s->stem < 0)
+				de->x -= STEM_XOFF;
+		}
+	}
 }
 
 /* special case for piano/forte indications */
@@ -427,6 +437,8 @@ static void d_pf(struct deco_elt *de)
 	s = de->s;
 	dd = &deco_def_tb[de->t];
 
+	de->v = dd->wl + dd->wr;
+
 	up = up_p(s, s->posit.vol);
 	if (up)
 		de->flags |= DE_UP;
@@ -440,15 +452,30 @@ static void d_pf(struct deco_elt *de)
 			if (x2 > x)
 				x = x2;
 		}
+#if 1
+//fixme:test volume shift
+	} else if (!up && s->stem < 0 && s->ymn < 10) {
+		float y;
+
+		x2 = x - (STEM_XOFF + dd->wr + 4);
+		y = y_get(s->staff, up, x2, de->v);
+		if (y > s->ymn) {
+			x = x2;
+		} else {
+			x2 -= 3;
+			y = y_get(s->staff, up, x2, de->v);
+			if (y > s->ymn)
+				x = x2;
+		}
+#endif
 	}
 
 	str = dd->name;
 	if (dd->strx != 0 && dd->strx != 255)
 		str = str_tb[dd->strx];
 
-	de->v = dd->wl + dd->wr;
 	de->x = x;
-	de->y = y_get(s->staff, up, s->x, de->v);
+	de->y = y_get(s->staff, up, x, de->v);
 	if (!up)
 		de->y -= dd->h;
 	de->str = str;
@@ -2185,49 +2212,47 @@ void write_tempo(struct SYMBOL *s,
 
 /* -- draw the parts and the tempo information -- */
 /* (the staves are being defined) */
-float draw_partempo(int staff,
-			float top,
-			int any_part,
-			int any_tempo)
+float draw_partempo(int staff, float top)
 {
 	struct SYMBOL *s, *g;
-	float h, ht, w, y, ymin, dy;
+	int beat, dosh, shift;
+	int some_part, some_tempo;
+	float h, ht, w, x, y, ymin, dy;
 
 	/* put the tempo indication at top */
 	dy = 0;
-	if (any_tempo) {
-		int beat, dosh, shift;
-		float x;
+	ht = 0;
+	some_part = some_tempo = 0;
 
-		ht = cfmt.font_tb[TEMPOFONT].size + 2 + 2;
-		str_font(TEMPOFONT);
-
-		/* get the minimal y offset */
-		ymin = staff_tb[staff].topbar + 12;
-		dosh = 0;
-		shift = 1;
-		x = 0;
-/*fixme:have tempo on other voices but the 1st?*/
-		for (s = voice_tb[cursys->top_voice].sym;
-		     s;
-		     s = s->next) {
-			g = s->extra;
-			if (!g)
-				continue;
-			for ( ; g; g = g->next)
-				if (g->type == TEMPO)
-					break;
-			if (!g)
-				continue;
-			w = tempo_width(g);
-			y = y_get(staff, 1, s->x - 5, w) + 2;
-			if (y > ymin)
-				ymin = y;
-			if (x >= s->x - 5 && !(dosh & (shift >> 1)))
-				dosh |= shift;
-			shift <<= 1;
-			x = s->x - 5 + w;
+	/* get the minimal y offset */
+	ymin = staff_tb[staff].topbar + 12;
+	dosh = 0;
+	shift = 1;
+	x = 0;
+	for (s = tsfirst; s; s = s->ts_next) {
+		g = s->extra;
+		if (!g)
+			continue;
+		for ( ; g; g = g->next)
+			if (g->type == TEMPO)
+				break;
+		if (!g)
+			continue;
+		if (!some_tempo) {
+			some_tempo = 1;
+			ht = cfmt.font_tb[TEMPOFONT].size + 2 + 2;
+			str_font(TEMPOFONT);
 		}
+		w = tempo_width(g);
+		y = y_get(staff, 1, s->x - 5, w) + 2;
+		if (y > ymin)
+			ymin = y;
+		if (x >= s->x - 5 && !(dosh & (shift >> 1)))
+			dosh |= shift;
+		shift <<= 1;
+		x = s->x - 5 + w;
+	}
+	if (some_tempo) {
 		y = 2 - ht;
 		h = y - ht;
 		if (dosh != 0)
@@ -2238,9 +2263,9 @@ float draw_partempo(int staff,
 		/* draw the tempo indications */
 		str_font(TEMPOFONT);
 		beat = 0;
-		for (s = voice_tb[cursys->top_voice].sym;
-		     s;
-		     s = s->next) {
+		for (s = tsfirst; s; s = s->ts_next) {
+			if (!(s->sflags & S_SEQST))
+				continue;
 			if (s->type == TIMESIG)
 				beat = get_beat(&s->as.u.meter);
 			g = s->extra;
@@ -2258,19 +2283,13 @@ float draw_partempo(int staff,
 			dosh >>= 1;
 			write_tempo(g, beat, 1);
 		}
-	} else {
-		ht = 0;
 	}
 
 	/* then, put the parts */
-	if (!any_part)
-		return dy;
-
 /*fixme: should reduce if parts don't overlap tempo...*/
-	h = cfmt.font_tb[PARTSFONT].size + 2 + 2;	/* + cfmt.partsspace; */
-	str_font(PARTSFONT);
+	some_part = 0;
 	ymin = staff_tb[staff].topbar + 14;
-	for (s = voice_tb[cursys->top_voice].sym; s; s = s->next) {
+	for (s = tsfirst; s; s = s->ts_next) {
 		g = s->extra;
 		if (!g)
 			continue;
@@ -2279,16 +2298,25 @@ float draw_partempo(int staff,
 				break;
 		if (!g)
 			continue;
+		if (!some_part) {
+			some_part = 1;
+			h = cfmt.font_tb[PARTSFONT].size + 2 + 2;
+						/* + cfmt.partsspace; ?? */
+			str_font(PARTSFONT);
+		}
 		w = tex_str(&g->as.text[2]);
 		y = y_get(staff, 1, s->x - 10, w + 15) + 5;
 		if (ymin < y)
 			ymin = y;
 	}
+	if (!some_part)
+		return dy;
+
 	if (top < ymin + h + ht)
 		dy = ymin + h + ht - top;
 
 	set_font(PARTSFONT);
-	for (s = voice_tb[cursys->top_voice].sym; s; s = s->next) {
+	for (s = tsfirst; s; s = s->ts_next) {
 		g = s->extra;
 		if (!g)
 			continue;
@@ -2299,11 +2327,12 @@ float draw_partempo(int staff,
 			continue;
 		w = tex_str(&g->as.text[2]);
 		a2b("%.1f %.1f M", s->x - 10, 2 - ht - h);
-		put_str(tex_buf, A_LEFT);
+		str_out(tex_buf, A_LEFT);
 		if (cfmt.partsbox)
-			a2b("%.1f %.1f %.1f %.1f box\n", 
+			a2b("%.1f %.1f %.1f %.1f box",
 				s->x - 10 - 2, 2 - ht - h - 4,
 				w + 4, h);
+		a2b("\n");
 	}
 	return dy * staff_tb[staff].clef.staffscale;
 }

@@ -211,6 +211,14 @@ static void init_ps(char *str)
 	output = fprintf;
 	user_ps_write();
 	define_fonts();
+	if (!epsf)
+		fprintf(fout, "/setpagedevice where\n"
+				"{ pop 1 dict\n"
+				"  dup /PageSize [ %.0f %.0f ] put\n"
+				"  setpagedevice\n"
+				"} if\n",
+			p_fmt->pagewidth,
+			p_fmt->pageheight);
 	fprintf(fout, "%%%%EndSetup\n");
 	file_initialized = 1;
 }
@@ -736,7 +744,7 @@ void bskip(float h)
 	a2b("0 %.2f T\n", -h);
 }
 
-/* -- clear_buffer -- */
+/* -- rewind the output buffer -- */
 void clear_buffer(void)
 {
 	bposy = 0;
@@ -854,7 +862,7 @@ void write_buffer(void)
 	}
 #if 1 //fixme:test
 	if (*p_buf != '\0')
-		fprintf(stderr, "??? buffer not empty:\n%s\n", p_buf);
+		fprintf(stderr, "??? bug - buffer not empty:\n%s\n", p_buf);
 #endif
 	clear_buffer();
 	outft = outft_sav;
@@ -914,7 +922,8 @@ void buffer_eob(void)
 	if (maxy + bposy < 0
 	 && !epsf
 	 && multicol_start == 0) {
-		maxy = 0;		/* force new page */
+		if (in_page)
+			newpage();
 		write_buffer();
 		use_buffer = 0;
 	}

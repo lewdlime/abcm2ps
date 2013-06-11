@@ -2615,6 +2615,10 @@ static char *parse_note(struct abctune *t,
 		len = 1;
 		if (isdigit((unsigned char) *p)) {
 			len = strtol(p, &q, 10);
+			if (len == 0 && len > 100) {
+				syntax("Bad number of measures", p);
+				len = 1;
+			}
 			p = q;
 		}
 		s->u.bar.type = 0;

@@ -1,3 +1,102 @@
+---- Version 7.5.5 - 13/06/06 ----
+
+Fix bad position of shifted volume decorations
+	(reported by David Lacroix).
+Fix bad %%transpose of more than one octave down.
+Extend %%shiftunison
+	(asked by David Lacroix).
+Keep the natural accidentals when transposing K:none
+	(reported by David Lacroix).
+Fix bad handling of %%splittune
+	(reported by Gerhard Schacherl).
+Allow back text insertion commands in tune header.
+Put the measure number a bit higher when at start of line with
+	a key signature with sharps.
+Look to the next note for B stem direction when at start of bar
+	(requested by Mike Scott).
+
+---- Version 7.5.4 - 13/05/27 ----
+
+Fix abnormal note shift when inverted voices in the staff
+	since previous release.
+Accept %%ps the same as %%postscript
+	(asked by David Lacroix).
+Fix crash with grace notes since previous release
+	(reported by David Lacroix).
+Fix again bad accidentals of 2nd notes in a measure when transposing K:none
+	(reported by David Lacroix).
+
+---- Version 7.5.3 - 13/05/24 ----
+
+Fix clash of stem and note when bigger stem due to beam
+	(reported by Hudson Flávio Meneses Lacerda).
+Permit %%break in tune header (i.e. out of %%tune).
+Fix abnormal error when %%tune folowed by %%break.
+Have less width of explicit key signature with same accidentals at octave.
+Better handling of %%staffbreak.
+Fix lack of staves after %%staves and new staves.
+Fix bad line splitting with measure repeat
+	(reported by Gerhard Schacherl).
+Fix bad vertical offset of tune on auto newpage
+	(reported by Gerhard Schacherl).
+Fix the behaviour of "\n" in guitar chord since version 7.x.x
+	(reported by Gerhard Schacherl).
+Don't raise error when %%textfont in tune header.
+Have smaller stems in some cases when the voices are inverted on a staff.
+Fix loss of deco/stem position/direction when declared in V:
+	after T: / %%vskip / ...
+	(reported by Colin Hume).
+Don't set natural accidentals when transposing K:none.
+Fix bad accidentals of 2nd notes in a measure when transposing K:none
+	(reported by David Lacroix).
+Have half ties when clef or staff change
+	(reported by David Webber).
+Don't shift a voice when no overlap with the previous one.
+Don't have one head when unison and different dots
+	(reported by Hudson Flávio Meneses Lacerda).
+Center the repeat measure signs.
+Don't have any slur starting from measure repeat signs
+	(reported by Søren Bak Vestergaard).
+Have a longer tie when the ending note is shifted.
+Vertically center the rests when alone in a staff
+	(reported by Hudson Flávio Meneses Lacerda).
+Shift on the left the volume decorations (ff, pp..) when under a note
+	with a stem down
+	(asked by Hudson Flávio Meneses Lacerda).
+Fix loss of rest when %%combinevoices >= 0 and invisible 1st rest.
+Extend %%combinevoices and remove %%comball.
+Put the dot decorations on the stems
+	(asked by Hudson Flávio Meneses Lacerda).
+Have a better tie vertical offset
+	(asked by Hudson Flávio Meneses Lacerda).
+Fix loss of position/direction commands when after K: or T: inside tune
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix loss of tempo when 'y' at start of tune in secondary voice
+	(reported by Hudson Flávio Meneses Lacerda).
+Don't allow text insertion commands in tune header.
+Fix bad horizontal offset of stem when unison and shifted note head
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix nested tuplets vertical offset when slurs
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix a crash when tune with only repeat bars
+	(reported by Colin Hume).
+Fix a crash when K:none and %%transpose
+	(reported by David Lacroix).
+
+---- Version 7.5.2 - 13/03/22 ----
+
+Fix bad display when %%combinevoice + %%comball and imbricated chords.
+Have wider horizontal space at end of music line when no bar.
+Fix a crash on explicit music break without a bar
+	since previous version
+	(reported by Hudson Flávio Meneses Lacerda).
+Define the page format in the PS output.
+	This fixes page size problems when converting PS to PDF
+	(asked by Martin Tarenskeen).
+Fix a loop when a tune ends with Z, a bar and a chord
+	(reported by Hudson Flávio Meneses Lacerda).
+Check the number of measures of X/Z (multi-rests).
+
 ---- Version 7.5.1 - 13/03/17 ----
 
 Fix some clashes of accidentals when same notes in 2 voices on the same staff

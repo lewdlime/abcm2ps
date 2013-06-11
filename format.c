@@ -48,7 +48,6 @@ static struct format {
 #define FORMAT_U 3	/* float with unit */
 #define FORMAT_B 4	/* boolean */
 #define FORMAT_S 5	/* string */
-#define FORMAT_P 6	/* position (auto, up/above, down/below) */
 	char subtype;		/* special cases - see code */
 	short lock;
 } format_tb[] = {
@@ -64,8 +63,7 @@ static struct format {
 	{"breakoneoln", &cfmt.breakoneoln, FORMAT_B, 0},
 	{"bstemdown", &cfmt.bstemdown, FORMAT_B, 0},
 	{"cancelkey", &cfmt.cancelkey, FORMAT_B, 0},
-	{"combinevoices", &cfmt.combinevoices, FORMAT_B, 0},
-	{"comball", &cfmt.comball, FORMAT_B, 0},
+	{"combinevoices", &cfmt.combinevoices, FORMAT_I, 0},
 	{"composerfont", &cfmt.font_tb[COMPOSERFONT], FORMAT_F, 0},
 	{"composerspace", &cfmt.composerspace, FORMAT_U, 0},
 	{"contbarnb", &cfmt.contbarnb, FORMAT_B, 0},
@@ -74,16 +72,13 @@ static struct format {
 	{"dateformat", &cfmt.dateformat, FORMAT_S, 0},
 	{"dblrepbar", &cfmt.dblrepbar, FORMAT_I, 2},
 	{"dynalign", &cfmt.dynalign, FORMAT_B, 0},
-	{"dynamic", 0, FORMAT_P, 0},
 	{"footer", &cfmt.footer, FORMAT_S, 0},
 	{"footerfont", &cfmt.font_tb[FOOTERFONT], FORMAT_F, 0},
 	{"flatbeams", &cfmt.flatbeams, FORMAT_B, 0},
-	{"gchord", 0, FORMAT_P, 1},
 	{"gchordbox", &cfmt.gchordbox, FORMAT_B, 0},
 	{"gchordfont", &cfmt.font_tb[GCHORDFONT], FORMAT_F, 3},
 	{"graceslurs", &cfmt.graceslurs, FORMAT_B, 0},
 	{"gracespace", &cfmt.gracespace, FORMAT_I, 5},
-	{"gstemdir", 0, FORMAT_P, 6},
 	{"header", &cfmt.header, FORMAT_S, 0},
 	{"headerfont", &cfmt.font_tb[HEADERFONT], FORMAT_F, 0},
 	{"historyfont", &cfmt.font_tb[HISTORYFONT], FORMAT_F, 0},
@@ -109,7 +104,6 @@ static struct format {
 	{"musicspace", &cfmt.musicspace, FORMAT_U, 0},
 	{"notespacingfactor", &cfmt.notespacingfactor, FORMAT_R, 1},
 	{"oneperpage", &cfmt.oneperpage, FORMAT_B, 0},
-	{"ornament", 0, FORMAT_P, 2},
 	{"pageheight", &cfmt.pageheight, FORMAT_U, 0},
 	{"pagewidth", &cfmt.pagewidth, FORMAT_U, 0},
 #ifdef HAVE_PANGO
@@ -131,9 +125,9 @@ static struct format {
 #if FONT_UMAX!=5
 #	error Bad number of user fonts
 #endif
-	{"shifthnote", &cfmt.shiftunison, FORMAT_B, 0},	/*to remove*/
-	{"shiftunison", &cfmt.shiftunison, FORMAT_B, 0},
-	{"shiftunisson", &cfmt.shiftunison, FORMAT_B, 0}, /*to remove*/
+//	{"shifthnote", &cfmt.shiftunison, FORMAT_B, 0},	/*to remove*/
+	{"shiftunison", &cfmt.shiftunison, FORMAT_I, 0},
+	{"shiftunisson", &cfmt.shiftunison, FORMAT_I, 0}, /*to remove*/
 	{"slurheight", &cfmt.slurheight, FORMAT_R, 0},
 	{"splittune", &cfmt.splittune, FORMAT_B, 0},
 	{"squarebreve", &cfmt.squarebreve, FORMAT_B, 0},
@@ -141,7 +135,6 @@ static struct format {
 	{"staffsep", &cfmt.staffsep, FORMAT_U, 0},
 	{"staffwidth", &staffwidth, FORMAT_U, 1},
 	{"stemheight", &cfmt.stemheight, FORMAT_R, 0},
-	{"stemdir", 0, FORMAT_P, 5},
 	{"straightflags", &cfmt.straightflags, FORMAT_B, 0},
 	{"stretchlast", &cfmt.stretchlast, FORMAT_R, 2},
 	{"stretchstaff", &cfmt.stretchstaff, FORMAT_B, 0},
@@ -163,11 +156,9 @@ static struct format {
 	{"topspace", &cfmt.topspace, FORMAT_U, 0},
 	{"transpose", &cfmt.transpose, FORMAT_I, 1},
 	{"tuplets", &cfmt.tuplets, FORMAT_I, 3},
-	{"vocal", 0, FORMAT_P, 3},
 	{"vocalfont", &cfmt.font_tb[VOCALFONT], FORMAT_F, 0},
 	{"vocalspace", &cfmt.vocalspace, FORMAT_U, 0},
 	{"voicefont", &cfmt.font_tb[VOICEFONT], FORMAT_F, 0},
-	{"volume", 0, FORMAT_P, 4},
 	{"wordsfont", &cfmt.font_tb[WORDSFONT], FORMAT_F, 0},
 	{"wordsspace", &cfmt.wordsspace, FORMAT_U, 0},
 	{"writefields", &cfmt.fields, FORMAT_B, 1},
@@ -432,7 +423,6 @@ void print_format(void)
 {
 	struct format *fd;
 static char *yn[2] = {"no","yes"};
-static char *posit[4] = {"auto", "above", "below", "hidden"};
 
 	for (fd = format_tb; fd->name; fd++) {
 		printf("%-15s ", fd->name);
@@ -565,22 +555,6 @@ static char *posit[4] = {"auto", "above", "below", "hidden"};
 			printf("\"%s\"\n",
 				*((char **) fd->v) != 0 ? *((char **) fd->v) : "");
 			break;
-		case FORMAT_P: {
-			int i;
-
-			switch (fd->subtype) {
-			case 0: i = cfmt.posit.dyn; break;
-			case 1: i = cfmt.posit.gch; break;
-			case 2: i = cfmt.posit.orn; break;
-			case 3: i = cfmt.posit.voc; break;
-			case 4: i = cfmt.posit.vol; break;
-			case 5: i = cfmt.posit.std; break;
-			default:
-			case 6: i = cfmt.posit.gsd; break;
-			}
-			printf("%s\n", posit[i]);
-			break;
-		    }
 		}
 	}
 }
@@ -877,6 +851,111 @@ err:
 	return 0;
 }
 
+/* functions to set a voice parameter */
+#define F_SET_PAR(param) \
+static void set_ ## param(struct VOICE_S *p_voice, int val)\
+{\
+	p_voice->posit.param = val;\
+}
+F_SET_PAR(dyn)
+F_SET_PAR(gch)
+F_SET_PAR(orn)
+F_SET_PAR(voc)
+F_SET_PAR(vol)
+F_SET_PAR(std)
+F_SET_PAR(gsd)
+
+struct vpar {
+	char *name;
+	void (*f)(struct VOICE_S *p_voice, int val);
+	int max;
+};
+static struct vpar vpar_tb[] = {
+	{"dynamic", set_dyn, 3},	/* 0 */
+	{"gchord", set_gch, 3},		/* 1 */
+	{"gstemdir", set_gsd, 2},	/* 2 */
+	{"ornament", set_orn, 3},	/* 3 */
+	{"stemdir", set_std, 2},	/* 4 */
+	{"vocal", set_voc, 3},		/* 5 */
+	{"volume", set_vol, 3},		/* 6 */
+	{}
+};
+/* -- set a voice parameter -- */
+void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
+			int state,		/* tune state */
+			char *w,		/* keyword */
+			char *p)		/* argument */
+{
+	struct vpar *vpar, *vpar2 = NULL;
+	int i, val;
+
+	for (vpar = vpar_tb; vpar->name; vpar++) {
+		if (strcmp(w, vpar->name))
+			continue;
+		if (!isdigit(*p))
+			val = get_posit(p);
+		else
+			val = strtod(p, 0);
+		if ((unsigned) val > vpar->max)
+			goto err;
+		vpar->f(p_voice, val);
+		break;
+	}
+	if (!vpar->name) {	/* compatibility with previous versions */
+		val = -1;
+		switch (*w) {
+		case 'e':
+			if (strcmp(w, "exprabove") == 0) {
+				vpar = &vpar[0];	/* dyn */
+				vpar = &vpar[6];	/* vol */
+				if (g_logv(p))
+					val = SL_ABOVE;
+				else
+					val = SL_BELOW;
+				break;
+			}
+			if (strcmp(w, "exprbelow") == 0) {
+				vpar = &vpar[0];	/* dyn */
+				vpar = &vpar[6];	/* vol */
+				if (g_logv(p))
+					val = SL_BELOW;
+				else
+					val = SL_ABOVE;
+				break;
+			}
+			break;
+		case 'v':
+			if (strcmp(w, "vocalabove") == 0) {	/* compatibility */
+				vpar = &vpar[5];	/* voc */
+				if (g_logv(p))
+					val = SL_ABOVE;
+				else
+					val = SL_BELOW;
+				break;
+			}
+			break;
+		}
+		if (val < 0)
+			goto err;
+	}
+	if (state == ABC_S_TUNE) {
+		vpar->f(p_voice, val);
+		if (vpar2)
+			vpar2->f(p_voice, val);
+		return;
+	}
+	for (i = MAXVOICE, p_voice = voice_tb;	/* global */
+	     --i >= 0;
+	     p_voice++) {
+		vpar->f(p_voice, val);
+		if (vpar2)
+			vpar2->f(p_voice, val);
+	}
+	return;
+err:
+	error(1, 0, "Bad value %%%%%s %s", w, p);
+}
+
 /* -- parse a format line -- */
 void interpret_fmt_line(char *w,		/* keyword */
 			char *p,		/* argument */
@@ -884,30 +963,14 @@ void interpret_fmt_line(char *w,		/* keyword */
 {
 	struct format *fd;
 
-	switch (w[0]) {
+	switch (*w) {
 	case 'b':
-		if (strcmp(w, "barnumbers") == 0)
+		if (strcmp(w, "barnumbers") == 0)	/* compatibility */
 			w = "measurenb";
 		break;
-	case 'e':
-		if (strcmp(w, "exprabove") == 0) {	/* compatibility */
-			if (g_logv(p)) {
-				cfmt.posit.dyn = SL_ABOVE;
-				cfmt.posit.vol = SL_ABOVE;
-			} else {
-				cfmt.posit.dyn = SL_BELOW;
-				cfmt.posit.vol = SL_BELOW;
-			}
-			return;
-		}
-		if (strcmp(w, "exprbelow") == 0) {	/* compatibility */
-			if (g_logv(p)) {
-				cfmt.posit.dyn = SL_BELOW;
-				cfmt.posit.vol = SL_BELOW;
-			} else {
-				cfmt.posit.dyn = SL_ABOVE;
-				cfmt.posit.vol = SL_ABOVE;
-			}
+	case 'c':
+		if (strcmp(w, "comball") == 0) {	/* compatibility */
+			cfmt.combinevoices = 2;
 			return;
 		}
 		break;
@@ -986,15 +1049,6 @@ void interpret_fmt_line(char *w,		/* keyword */
 				cfmt.fields[0] |= (1 << ('Q' - 'A'));
 			else
 				cfmt.fields[0] &= ~(1 << ('Q' - 'A'));
-			return;
-		}
-		break;
-	case 'v':
-		if (strcmp(w, "vocalabove") == 0) {	/* compatibility */
-			if (g_logv(p))
-				cfmt.posit.voc = SL_ABOVE;
-			else
-				cfmt.posit.voc = SL_BELOW;
 			return;
 		}
 		break;
@@ -1116,8 +1170,10 @@ void interpret_fmt_line(char *w,		/* keyword */
 			cfmt.textoption = get_textopt(p);
 		else if (fd->subtype == 2)		/* dblrepbar */
 			cfmt.dblrepbar = get_dblrepbar(p);
-		else
+		else if (isdigit(*p) || *p == '-' || *p == '+')
 			sscanf(p, "%d", (int *) fd->v);
+		else
+			*((int *) fd->v) = g_logv(p);
 		switch (fd->subtype) {
 		case 1:					/* transpose */
 			cfmt.transpose *= 3;
@@ -1224,34 +1280,6 @@ void interpret_fmt_line(char *w,		/* keyword */
 			get_str(*((char **) fd->v), p, l);
 		else
 			strcpy(*((char **) fd->v), p);
-		break;
-	    }
-	case FORMAT_P: {			/* staff position */
-		int i;
-
-		if (!isdigit(*p))
-			i = get_posit(p);
-		else
-			i = strtod(p, 0);
-		if ((unsigned) i > 3)
-			goto bad;
-		switch (fd->subtype) {
-		case 0: cfmt.posit.dyn = i; break;
-		case 1: cfmt.posit.gch = i; break;
-		case 2: cfmt.posit.orn = i; break;
-		case 3: cfmt.posit.voc = i; break;
-		case 4: cfmt.posit.vol = i; break;
-		case 5:
-			if (i > 2)
-				goto bad;
-			cfmt.posit.std = i;
-			break;
-		case 6:
-			if (i > 2)
-				goto bad;
-			cfmt.posit.gsd = i;
-			break;
-		}
 		break;
 	    }
 	}

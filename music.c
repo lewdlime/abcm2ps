@@ -106,11 +106,15 @@ static void set_head_directions(struct SYMBOL *s)
 	nac = 0;
 	for (i = i1; i != i2; i += sig) {
 		d = s->pits[i] - s->pits[i - sig];
+		if (d == 0 && shift) {		/* unison on shifted note */
+			s->shhd[i] = s->shhd[i - sig] + dx;
+			continue;
+		}
 		if (d < 0)
 			d = -d;
-		if (d > 3 || (d >= 2 && s->head < H_SQUARE))
+		if (d > 3 || (d >= 2 && s->head < H_SQUARE)) {
 			shift = 0;
-		else {
+		} else {
 			shift = !shift;
 			if (shift) {
 				s->shhd[i] = dx;
@@ -1051,9 +1055,9 @@ static float ly_width(struct SYMBOL *s, float wlw)
 				if (shift > align)
 					align = shift;
 			}
-		} else if (*p == LY_HYPH || *p == LY_UNDER)
+		} else if (*p == LY_HYPH || *p == LY_UNDER) {
 			shift = 0;
-		else {
+		} else {
 			shift = xx * VOCPRE;
 			if (shift > 20)
 				shift = 20;
@@ -1461,12 +1465,6 @@ static float set_space(struct SYMBOL *s)
 
 	prev_time = !s->ts_prev ? s->time : s->ts_prev->time;
 	len = s->time - prev_time;		/* time skip */
-	if (smallest_duration >= MINIM) {
-		if (smallest_duration >= SEMIBREVE)
-			len /= 4;
-		else
-			len /= 2;
-	}
 	if (len == 0) {
 		switch (s->type) {
 		case MREST:
@@ -1479,11 +1477,18 @@ static float set_space(struct SYMBOL *s)
 					i = 0;
 				return space_tb[i];
 			}
+			break;
 		}
 		return 0;
 	}
 	if (s->prev && s->prev->type == MREST)
 		return s->prev->wr + 16;
+	if (smallest_duration >= MINIM) {
+		if (smallest_duration >= SEMIBREVE)
+			len /= 4;
+		else
+			len /= 2;
+	}
 	if (len >= CROTCHET) {
 		if (len < MINIM)
 			i = 5;
@@ -1597,8 +1602,13 @@ static void set_allsymwidth(struct SYMBOL *last_s)
 
 			/* calculate the minimum space before the symbol,
 			 * looping in the previous time sequence */
-			ymx1 = s2->ymx;
-			ymn1 = s2->ymn;
+			if (s2->type == BAR) {
+				ymx1 = 50;
+				ymn1 = -50;
+			} else {
+				ymx1 = s2->ymx;
+				ymn1 = s2->ymn;
+			}
 			wl = s2->wl;
 			new_val = 0;
 			for (s3 = s->ts_prev; s3; s3 = s3->ts_prev) {
@@ -1702,10 +1712,10 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 	if ((n = g->doty) < 0) {		/* number of notes / measures */
 		n = -n;
 		i = n;				/* number of notes to repeat */
-		for (s2 = s->prev; s2; s2 = s2->prev) {
-			if (s2->dur == 0) {
-				if (s2->type == BAR) {
-					error(0, s2, "Bar in sequence to repeat");
+		for (s3 = s->prev; s3; s3 = s3->prev) {
+			if (s3->dur == 0) {
+				if (s3->type == BAR) {
+					error(0, s3, "Bar in sequence to repeat");
 					goto delrep;
 				}
 				continue;
@@ -1713,12 +1723,12 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 			if (--i <= 0)
 				break;
 		}
-		if (!s2) {
+		if (!s3) {
 			error(0, s, "Not enough symbols to repeat");
 			goto delrep;
 		}
 
-		i = g->nohdix * n;		/* repeat number */
+		i = g->nohdix * n;	/* number of notes/rests to repeat */
 		for (s2 = s; s2; s2 = s2->next) {
 			if (s2->dur == 0) {
 				if (s2->type == BAR) {
@@ -1731,9 +1741,15 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 				break;
 		}
 		if (!s2
-		 || !s2->next) {		/* should have a measure bar */
+		 || !s2->next) {		/* should have some symbol */
 			error(0, s, "Not enough symbols after repeat sequence");
 			goto delrep;
+		}
+		for (s2 = s->prev; s2 != s3; s2 = s2->prev) {
+			if (s2->as.type == ABC_T_NOTE) {
+				s2->sflags |= S_BEAM_END;
+				break;
+			}
 		}
 		s3 = s;
 		for (j = g->nohdix; --j >= 0; ) {
@@ -1756,8 +1772,12 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 			s3->as.type = ABC_T_REST;
 			s3->dur = s3->as.u.note.lens[0]
 				= s2->time - s3->time;
-			s3->sflags |= S_REPEAT | S_BEAM_ST;
+			s3->sflags &= S_NL | S_SEQST;
+//			s3->sflags |= S_REPEAT | S_BEAM_ST;
+			s3->sflags |= S_REPEAT;
+			s3->as.u.note.slur_st = s3->as.u.note.slur_end = 0;
 			s3->doty = -1;
+			s3->extra = NULL;
 			set_width(s3);
 			if (s3->sflags & S_SEQST)
 				s3->space = set_space(s3);
@@ -1879,8 +1899,10 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 		s3->as.type = ABC_T_REST;
 		s3->dur = s3->as.u.note.lens[0] = dur;
 		s3->sflags &= S_NL | S_SEQST;
-		s3->sflags |= S_REPEAT | S_BEAM_ST;
+//		s3->sflags |= S_REPEAT | S_BEAM_ST;
+		s3->sflags |= S_REPEAT;
 		s3->as.u.note.slur_st = s3->as.u.note.slur_end = 0;
+		s3->extra = NULL;
 /*fixme: should set many parameters for set_width*/
 //		set_width(s3);
 		if (s3->sflags & S_SEQST)
@@ -3357,7 +3379,7 @@ static void set_global(void)
 	}
 	init_music_line();
 	insert_meter &= ~1;		/* keep the 'first line' flag */
-	set_pitch(0);			/* adjust the note pitches */
+	set_pitch(NULL);		/* adjust the note pitches */
 }
 
 /* -- return the left indentation of the staves -- */
@@ -4402,6 +4424,7 @@ static void set_sym_glue(float width)
 				error(0, s,
 				      "Line too much shrunk (%.0f/%0.fpt of %.0fpt)",
 					xmin, x, width);
+// uncomment for staff greater than music line
 //				alfa = 1;
 			}
 		}
@@ -4422,26 +4445,30 @@ static void set_sym_glue(float width)
 	/* set the final x offsets */
 	s = tsfirst;
 	if (alfa != 0) {
-		x = xmin = 0;
-		for (;;) {
-			if (s->sflags & S_SEQST) {
-				xmin += s->shrink * alfa;
-				x = xmin + s->x * (1 - alfa);
+		if (alfa < 1) {
+			x = xmin = 0;
+			for (; s; s = s->ts_next) {
+				if (s->sflags & S_SEQST) {
+					xmin += s->shrink * alfa;
+					x = xmin + s->x * (1 - alfa);
+				}
+				s->x = x;
 			}
-			s->x = x;
-			if (!s->ts_next)
-				break;
-			s = s->ts_next;
+		} else {
+			alfa = realwidth / x;
+			x = 0;
+			for (; s; s = s->ts_next) {
+				if (s->sflags & S_SEQST)
+					x = s->x * alfa;
+				s->x = x;
+			}
 		}
 	} else {
 		x = 0;
-		for (;;) {
+		for (; s; s = s->ts_next) {
 			if (s->sflags & S_SEQST)
 				x = s->xmax * beta + s->x * (1 - beta);
 			s->x = x;
-			if (!s->ts_next)
-				break;
-			s = s->ts_next;
 		}
 	}
 
@@ -4461,7 +4488,7 @@ static void set_sym_glue(float width)
 }
 
 /* -- initialize a new music line -- */
-static void cut_symbols(void)
+static void new_music_line(void)
 {
 	struct VOICE_S *p_voice;
 	struct SYMBOL *s;
@@ -4482,7 +4509,7 @@ static void cut_symbols(void)
 	}
 
 	init_music_line();	/* add the first symbols of the line */
-	insert_meter = 0;
+	insert_meter = 0;	/* not first line */
 }
 /* -- initialize the start of generation / new music line -- */
 static void gen_init(void)
@@ -4517,7 +4544,7 @@ static void gen_init(void)
 		}
 		return;
 	}
-	tsfirst = NULL;			/* no note */
+	tsfirst = NULL;			/* no more notes */
 }
 
 /* -- update the clefs at start of line -- */
@@ -4583,7 +4610,7 @@ void output_music(void)
 	gen_init();
 	if (!tsfirst)
 		return;
-	check_buffer();	/* dump buffer if not enough space for a music line */
+	check_buffer();
 	set_global();			/* initialize the generator */
 	if (first_voice->next) {	/* if many voices */
 		if (cfmt.combinevoices > 0)
@@ -4631,8 +4658,8 @@ void output_music(void)
 		gen_init();
 		if (!tsfirst)
 			break;
-		cut_symbols();
 		buffer_eob();
+		new_music_line();
 	}
 	outft = -1;
 }

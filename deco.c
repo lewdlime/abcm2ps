@@ -452,8 +452,10 @@ static void d_pf(struct deco_elt *de)
 			if (x2 > x)
 				x = x2;
 		}
-#if 1
+#if 0
 //fixme:test volume shift
+// does not work with
+//	cE!p!E !fff!Ceg|
 	} else if (!up && s->stem < 0 && s->ymn < 10) {
 		float y;
 

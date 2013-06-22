@@ -133,7 +133,7 @@ static void mrest_expand(struct SYMBOL *s)
 
 	/* change the multi-rest (type bar) to a single rest */
 	memcpy(&dc, &s->as.u.bar.dc, sizeof dc);
-	memset(&s->as.u.note, 0, sizeof &s->as.u.note);
+	memset(&s->as.u.note, 0, sizeof s->as.u.note);
 	s->type = NOTEREST;
 	s->as.type = ABC_T_REST;
 	s->as.u.note.nhd = 0;
@@ -2482,14 +2482,6 @@ next_voice:
 static int check_header(struct abcsym *as)
 {
 	switch (as->text[2]) {
-//	case 'b':
-//		if (strncmp(as->text + 3, "egintext", 8) == 0)
-//			return 0;
-//		break;
-//	case 'c':
-//		if (strncmp(as->text + 3, "enter", 5) == 0)
-//			return 0;
-//		break;
 	case 'E':
 		if (strncmp(as->text + 3, "PS", 2) == 0)
 			return 0;
@@ -2498,22 +2490,6 @@ static int check_header(struct abcsym *as)
 		if (strncmp(as->text + 3, "ulticol", 7) == 0)
 			return 0;
 		break;
-//	case 'n':
-//		if (strncmp(as->text + 3, "ewpage", 6) == 0)
-//			return 0;
-//		break;
-//	case 's':
-//		if (strncmp(as->text + 3, "ep", 2) == 0)
-//			return 0;
-//		break;
-//	case 't':
-//		if (strncmp(as->text + 3, "ext ", 4) == 0)
-//			return 0;
-//		break;
-//	case 'v':
-//		if (strncmp(as->text + 3, "skip", 4) == 0)
-//			return 0;
-//		break;
 	}
 	return 1;
 }

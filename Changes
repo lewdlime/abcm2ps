@@ -1,3 +1,17 @@
+---- Version 7.5.6 - 13/06/17 ----
+
+Have better horizontal spacing when music line is too much shrunk.
+Fix bad horizontal spacing when high long notes before measure bars
+	(reported by Mike Scott).
+Handle more than 2 unison notes in chords
+	(asked by Hudson Flávio Meneses Lacerda).
+Remove the shift of volume decorations which does not work well
+	(reported by Jean-Luc Zins).
+Fix crash when beam to a repeated sequence
+	(reported by Søren Bak Vestergaard).
+Fix abnormal slur when tuplet or slur over a repeated sequence
+	(reported by Søren Bak Vestergaard).
+
 ---- Version 7.5.5 - 13/06/06 ----
 
 Fix bad position of shifted volume decorations

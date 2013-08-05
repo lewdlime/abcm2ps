@@ -42,7 +42,7 @@ struct elt_s {
 	struct elt_s *next;
 	char type;
 	union {
-		double v;
+		float v;
 		char *s;
 		struct elt_s *e;
 	} u;
@@ -183,7 +183,7 @@ static struct {
 #define D_pclef 10
 {	"<path id=\"pclef\" d=\"m-2.7 -2h5.4v-20h-5.4v20\" stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.4\"/>\n"},
 #define D_hd 11
-{	"<ellipse id=\"hd\" rx=\"4.2\" ry=\"3.2\"\n"
+{	"<ellipse id=\"hd\" rx=\"4.2\" ry=\"3\"\n"
 	"	transform=\"rotate(-20)\" fill=\"currentColor\"/>\n"},
 #define D_Hd 12
 {	"<path id=\"Hd\" fill=\"currentColor\" d=\"m3 -1.6\n"
@@ -1154,7 +1154,7 @@ static void xysym(char *op, int use)
 		x, y, op);
 }
 
-static void setxory(char *s, int v)
+static void setxory(char *s, float v)
 {
 	struct elt_s *e;
 	struct ps_sym_s *sym;
@@ -1255,7 +1255,8 @@ static void stem(char *op)
 	sym = ps_sym_lookup("y");
 	y = yoffs - sym->e->u.v;
 
-	fprintf(fout, "<path d=\"M%.2f %.2fv%.2f\" stroke=\"currentColor\" fill=\"none\"/>\n",
+	fprintf(fout,
+		"<path d=\"M%.2f %.2fv%.2f\" stroke=\"currentColor\" fill=\"none\"/>\n",
 		x, y, -h);
 }
 

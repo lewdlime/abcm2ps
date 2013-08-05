@@ -8,13 +8,13 @@ The options may be grouped when they have no argument, but the
 last one (ex: "-lnGI20").
 
 The options may be disabled when starting with '+' or ending with '-'
-(ex: "+MT1" is the same as "-MT1-"
+(ex: "+MT1" is the same as "-MT1-").
 
 The general output format is the last found in the command line.
-It may be
-	"-E" for Encapsulated PostScript one file per tune
-	"-g" for XHTML/SVG one file per tune
-	"-v" for XHTML/SVG one file per page
+It may be:
+	"-E" for Encapsulated PostScript, one file per tune
+	"-g" for XHTML/SVG, one file per tune
+	"-v" for XHTML/SVG, one file per page
 	"-X" for XHTML/SVG
 	(none) for PostScript
 (see below for more information)
@@ -105,6 +105,12 @@ List of the options
 
   -j <int>[b], +j
 	See: format.txt - measurenb <int>
+
+  -k <int>
+	Set the size of the PostScript output buffer in Kibytes.
+	Setting this value to a higher value permits the
+	generation of big tunes with -E or -g.
+	The default value is 64.
 
   -l, +l
 	See: format.txt - landscape <bool>

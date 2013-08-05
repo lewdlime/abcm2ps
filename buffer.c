@@ -47,6 +47,7 @@ static float maxy;		/* remaining vertical space in page */
 static float bposy;		/* current position in buffered data */
 static int nepsf;		/* counter for epsf/svg output files */
 static int nbpages;		/* number of pages in the output file */
+static int outbufsz;		/* size of outbuf */
 static char outfnam[FILENAME_MAX]; /* internal file name for open/close */
 static struct FORMAT *p_fmt;	/* current format while treating a new page */
 
@@ -723,9 +724,10 @@ void a2b(char *fmt, ...)
 {
 	va_list args;
 
-	if (mbf + BSIZE > outbuf + BUFFSZ) {
+	if (mbf + BSIZE > outbuf + outbufsz) {
 		if (epsf) {
-			error(1, 0, "Possible buffer overflow - abort");
+			error(1, 0, "Output buffer overflow - increase outbufsz");
+			fprintf(stderr, "*** abort\n");
 			exit(EXIT_FAILURE);
 		}
 		error(0, 0, "Possible buffer overflow");
@@ -733,7 +735,7 @@ void a2b(char *fmt, ...)
 		use_buffer = 0;
 	}
 	va_start(args, fmt);
-	mbf += vsnprintf(mbf, outbuf + BUFFSZ - mbf, fmt, args);
+	mbf += vsnprintf(mbf, outbuf + outbufsz - mbf, fmt, args);
 	va_end(args);
 }
 
@@ -744,13 +746,21 @@ void bskip(float h)
 	a2b("0 %.2f T\n", -h);
 }
 
-/* -- rewind the output buffer -- */
-void clear_buffer(void)
+/* -- initialize the output buffer -- */
+void init_outbuf(int kbsz)
 {
+	if (outbuf)
+		free(outbuf);
+	outbufsz = kbsz * 1024;
+	if (outbufsz < 0x10000)
+		outbufsz = 0x10000;
+	outbuf = malloc(outbufsz);
+	if (!outbuf) {
+		error(1, 0, "Out of memory for outbuf - abort");
+		exit(EXIT_FAILURE);
+	}
 	bposy = 0;
 	ln_num = 0;
-	if (outbuf == 0)
-		outbuf = malloc(BUFFSZ);
 	mbf = outbuf;
 }
 
@@ -864,8 +874,10 @@ void write_buffer(void)
 	if (*p_buf != '\0')
 		fprintf(stderr, "??? bug - buffer not empty:\n%s\n", p_buf);
 #endif
-	clear_buffer();
 	outft = outft_sav;
+	bposy = 0;
+	ln_num = 0;
+	mbf = outbuf;
 }
 
 /* -- add a block in the output buffer -- */
@@ -932,9 +944,9 @@ void buffer_eob(void)
 /* -- dump buffer if not enough place for a music line -- */
 void check_buffer(void)
 {
-	if (mbf + 5000 > outbuf + BUFFSZ) { /* assume music line < 5000 bytes */
+	if (mbf + 5000 > outbuf + outbufsz) { /* assume music line < 5000 bytes */
 		error(0, 0,
-		      "Possibly bad page breaks, BUFFSZ exceeded");
+		      "Possibly bad page breaks, outbufsz exceeded");
 		write_buffer();
 		use_buffer = 0;
 	}

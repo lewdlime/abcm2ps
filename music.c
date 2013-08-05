@@ -554,7 +554,7 @@ static void set_clef(int staff)
 	clef_type = TREBLE;
 	sy->staff[staff].clef.type = clef_type;
 	sy->staff[staff].clef.line = clef_type == TREBLE ? 2 : 4;
-	last_chg = 0;
+	last_chg = NULL;
 	for (s = tsfirst; s; s = s->ts_next) {
 		struct SYMBOL *s2, *s3, *s4;
 
@@ -616,7 +616,7 @@ static void set_clef(int staff)
 		 && voice_tb[s->voice].staff == staff)
 			s3 = s;
 		else
-			s3 = 0;
+			s3 = NULL;
 #endif
 #if 0
 		time = !last_chg ? -1 : last_chg->time;
@@ -628,7 +628,8 @@ static void set_clef(int staff)
 #endif
 			if (s2->staff != staff)
 				continue;
-			if (s2->type == BAR) {
+			if (s2->type == BAR
+			 && s2->voice == s->voice) {
 #if 0 /*fixme:test*/
 				if (voice_tb[s2->voice].second
 				 || voice_tb[s2->voice].staff != staff)
@@ -645,7 +646,7 @@ static void set_clef(int staff)
 				continue;
 
 			/* exit loop if a clef change cannot occur */
-			if (s2->as.type == ABC_T_NOTE) {
+//			if (s2->as.type == ABC_T_NOTE) {
 				if (clef_type == TREBLE) {
 					if (s2->pits[0] >= 19)		/* F */
 						break;
@@ -653,7 +654,7 @@ static void set_clef(int staff)
 					if (s2->pits[s2->nhd] <= 13)	/* G, */
 						break;
 				}
-			}
+//			}
 
 #if 1 /*fixme:test*/
 			/* have a 2nd choice on beam start */
@@ -681,7 +682,7 @@ static void set_clef(int staff)
 			 && voice_tb[s2->voice].staff == staff) {
 				if ((s2->sflags & S_BEAM_ST)
 				 || !s3
-				 || (s3->sflags & S_BEAM_ST) == 0)
+				 || !(s3->sflags & S_BEAM_ST))
 					s3 = s2;
 			}
 #endif
@@ -694,7 +695,7 @@ static void set_clef(int staff)
 #if 1 /*fixme:test*/
 			s4 = s3;
 #else
-			if ((s4 = s3) == 0)
+			if ((s4 = s3) == NULL)
 				s4 = s;
 #endif
 			for (s4 = s4->ts_prev; s4 != s2; s4 = s4->ts_prev) {
@@ -722,7 +723,7 @@ static void set_clef(int staff)
 #if 1 /*fixme:test*/
 		    else if (s3->time == s2->time)
 #else
-		if (s3 == 0 || s3 == s2)
+		if (!s3 || s3 == s2)
 #endif
 			continue;
 
@@ -2009,6 +2010,9 @@ normal:
 			return s;
 		while (!(s->sflags & S_SEQST))
 			s = s->ts_prev;
+#if 1
+		goto setnl;
+#else
 		switch (s->type) {
 		case NOTEREST:
 		case GRACE:
@@ -2016,6 +2020,7 @@ normal:
 			goto setnl;
 		}
 		break;
+#endif
 	}
 
 	/* go back to handle the staff breaks at end of line */
@@ -2213,14 +2218,15 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 
 		/* try to avoid to cut a beam */
 		beam = 0;
+		bar_time = s2->time;
 		s = s2;				/* restart on the last bar */
-		bar_time = s->time;
-		s2 = 0;
+		s2 = NULL;
 		for ( ; s != last; s = s->ts_next) {
 			x = s->x;
 			if (x != 0 && x >= xmin) {
 				if (x > xmax)
 					break;
+#if 0
 				if (beam <= 0) {
 					for (s = s->ts_prev ; ; s = s->ts_prev) {
 						if (s->x != 0)
@@ -2228,6 +2234,7 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 					}
 					goto cut_here;
 				}
+#endif
 				if (!s2)
 					s2 = s;
 			}
@@ -2238,11 +2245,15 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 						== S_BEAM_END)
 				beam--;
 		}
+		if (s2 && beam <= 0) {
+			s = s2;
+			goto cut_here;
+		}
 
 		/* cut on a crotchet */
 		s = s2;
 		if (!s) {
-//fixme:test - this should occur very rarely
+//fixme:test - this should not occur very often
 			fprintf(stderr, "*** cut_tune limit 1!\n");
 			s = s2 = first->ts_next;
 		}
@@ -2504,7 +2515,12 @@ static void set_pitch(struct SYMBOL *last_s)
 			s->ymn = -2;
 			break;
 		case NOTEREST:
+#if 1 /* test rest offset */
+			if (s->as.type != ABC_T_NOTE
+			 && !first_voice->next) {
+#else
 			if (s->as.type != ABC_T_NOTE) {
+#endif
 				s->y = 12;		/* rest */
 				s->ymx = 12 + 8;
 				s->ymn = 12 - 8;
@@ -2522,6 +2538,9 @@ static void set_pitch(struct SYMBOL *last_s)
 			s->yav = 3 * pav / (np + 1) - 3 * 18;
 			s->ymx = 3 * (s->pits[np] - 18) + 4;
 			s->ymn = 3 * (s->pits[0] - 18) - 4;
+// test rest offset
+			if (s->as.type != ABC_T_NOTE)
+				s->y = s->yav;
 			if (s->dur < dur)
 				dur = s->dur;
 			break;
@@ -2717,7 +2736,7 @@ if (staff > nst) {
 	}
 }
 
-/* -- adjust the vertical offset of the rests -- */
+/* -- adjust the vertical offset of the rests when many voices -- */
 /* this function is called only once per tune */
 static void set_rest_offset(void)
 {
@@ -2797,8 +2816,8 @@ if (staff > nst) {
 					if (rvoice < stb[staff].st[i].voice) {
 						memmove(&stb[staff].st[i + 1],
 							&stb[staff].st[i],
-							sizeof stb[staff].st[i]
-								* (stb[staff].nvoice - i));
+							sizeof stb[staff].st[i] *
+								(stb[staff].nvoice - i));
 						stb[staff].st[i].ymx = 0;
 						stb[staff].st[i].ymn = 24;
 						break;
@@ -2835,8 +2854,12 @@ if (staff > nst) {
 				continue;
 			staff = s->staff;
 			voice = s->voice;
-			if (stb[staff].nvoice <= 0)	/* voice alone on the staff */
+			if (stb[staff].nvoice <= 0) {	/* voice alone on the staff */
+				s->y = 12;
+				s->ymx = 12 + 8;
+				s->ymn = 12 - 8;
 				continue;
+			}
 			rvoice = sy->voice[voice].range;
 			for (i = stb[staff].nvoice; i >= 0; i--) {
 				if (stb[staff].st[i].voice == rvoice)
@@ -2882,7 +2905,7 @@ if (staff > nst) {
 					not_alone--;
 				}
 				if (not_alone == 0) {
-					if (!s4) {	/* combinevaoices == 0 */
+					if (!s4) {	/* combinevoices == 0 */
 						for (s4 = s->ts_next;
 						     s4 != s3;
 						     s4 = s4->ts_next)
@@ -2912,15 +2935,19 @@ if (staff > nst) {
 						if (y < stb[staff].st[j].ymx)
 							y = stb[staff].st[j].ymx;
 					}
-					s->y = (y + ls + 3 + 12) / 6 * 6 - 12;
-					if (s->y < 12)
-						s->y = 12;
+					y = (y + ls + 3) / 6 * 6;
+					if (y < 12)
+						y = 12;
+					if (y > s->y)
+						s->y = y;
 				} else {		/* voices inverted */
 					y = (stb[staff].st[0].ymx
 						+ stb[staff].st[0].ymn) / 2;
-					s->y = (y - us + 24) / 6 * 6 - 24;
-					if (s->y > 12)
-						s->y = 12;
+					y = (y - us) / 6 * 6;
+					if (y > 12)
+						y = 12;
+					if (y < s->y)
+						s->y = y;
 				}
 			} else if (i == stb[staff].nvoice) { /* last voice */
 				if (stb[staff].st[i].ymx < stb[staff].st[i].ymn
@@ -2930,21 +2957,26 @@ if (staff > nst) {
 						if (y > stb[staff].st[j].ymn)
 							y = stb[staff].st[j].ymn;
 					}
-					s->y = (y - us + 24) / 6 * 6 - 24;
-					if (s->y > 12)
-						s->y = 12;
+					y = (y - us) / 6 * 6;
+					if (y > 12)
+						y = 12;
+					if (y < s->y)
+						s->y = y;
 				} else {		/* voices inverted */
 					y = (stb[staff].st[i].ymx
 						+ stb[staff].st[i].ymn) / 2;
-					s->y = (y + ls + 12) / 6 * 6 - 12;
-					if (s->y < 12)
-						s->y = 12;
+					y = (y + ls) / 6 * 6;
+					if (y < 12)
+						y = 12;
+					if (y > s->y)
+						s->y = y;
 				}
 			} else {			/* middle voice */
 /*fixme: may be too high*/
-				s->y = (stb[staff].st[i - 1].ymn
-					+ stb[staff].st[i + 1].ymx + 24)
-					/ 12 * 6 - 12;
+				y = (stb[staff].st[i - 1].ymn
+						+ stb[staff].st[i + 1].ymx)
+					/ 12 * 6;
+				s->y = y;
 				s3 = s->ts_next;
 				if ((s3
 				  && s3->staff == staff
@@ -4580,11 +4612,11 @@ static void error_show(void)
 	}
 }
 
-/* -- buffer information until the staves are defined -- */
+/* -- delay output until the staves are defined (by draw_systems) -- */
 static float delayed_output(float indent)
 {
 	float line_height;
-	char *outbuf_sav, *mbf_sav, tmpbuf[BUFFSZ];
+	char *outbuf_sav, *mbf_sav, tmpbuf[20 * 1024];
 
 	outbuf_sav = outbuf;
 	mbf_sav = mbf;

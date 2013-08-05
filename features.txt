@@ -1,5 +1,5 @@
-	Features of abcm2ps 7.5.0 (J.F. Moine, February 2013)
-	=====================================================
+	Features of abcm2ps 7.5.7 (J.F. Moine, July 2013)
+	=================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
 
@@ -146,6 +146,24 @@ File structure.
 	  compatibility).
 
 Information fields.
+
+	- The field 'L:' may contain 'auto' in which case the duration of
+	  each note is adjusted to fulfill the measures.
+	  This value works when the measures are regular (fixed duration).
+	  'L:auto' may be used in each case the measure is regular in a
+	  compatible way.
+	  For instance, the three following lines give a same result:
+	  - standard ABC:
+		L:1/4
+		cccd | e2d2 | cedd | c4 |
+	  - auto L:
+		M:C				% required
+		L:auto
+		cccd | ed | cedd | c |
+	  - compatible
+		M:C				% required
+		L:auto
+		cccd | e2d2 | cedd | c4 |
 
 	- The field 'M:' may specify more complex meters with a
 	  combination of digits, parenthesis, slashes and blanks.

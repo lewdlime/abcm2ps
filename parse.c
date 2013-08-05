@@ -48,7 +48,6 @@ struct tune_opt_s {			/* tune options */
 	struct tune_opt_s *next;
 	struct voice_opt_s *voice_opts;
 	struct SYMBOL *s;		/* list of options (%%xxx) */
-	struct symsel_s clip_start, clip_end;
 };
 
 struct STAFF_S staff_tb[MAXSTAFF];	/* staff table */
@@ -68,6 +67,8 @@ int nbar;				/* current measure number */
 static struct voice_opt_s *voice_opts;
 static struct tune_opt_s *tune_opts, *cur_tune_opts;
 static struct brk_s *brks;
+static struct symsel_s clip_start, clip_end;
+
 
 static INFO info_glob;			/* global info definitions */
 
@@ -146,6 +147,7 @@ static void mrest_expand(struct SYMBOL *s)
 	p_voice = &voice_tb[s->voice];
 	p_voice->last_sym = s;
 	p_voice->time = s->time + dt;
+	p_voice->cstaff = s->staff;
 	s2 = s;
 	while (--nb > 0) {
 		s2 = sym_add(p_voice, BAR);
@@ -736,8 +738,8 @@ static struct SYMBOL *go_global_time(struct SYMBOL *s,
 	struct SYMBOL *s2;
 	int bar_time;
 
-	if (symsel->bar <= 1		/* special case: there is no measure 0/1 */
-	 && nbar == -1) {		/* see set_bar_num */
+	if (symsel->bar <= 1) {		/* special case: there is no measure 0/1 */
+//	 && nbar == -1) {		/* see set_bar_num */
 		if (symsel->bar == 0)
 			goto chk_time;
 		for (s2 = s; s2; s2 = s2->ts_next) {
@@ -796,9 +798,9 @@ static void do_clip(void)
 
 	/* remove the beginning of the tune */
 	s = tsfirst;
-	if (cur_tune_opts->clip_start.bar > 0
-	 || cur_tune_opts->clip_start.time > 0) {
-		s = go_global_time(s, &cur_tune_opts->clip_start);
+	if (clip_start.bar > 0
+	 || clip_start.time > 0) {
+		s = go_global_time(s, &clip_start);
 		if (!s) {
 			tsfirst = NULL;
 			return;
@@ -841,7 +843,7 @@ static void do_clip(void)
 	}
 
 	/* remove the end of the tune */
-	s = go_global_time(s, &cur_tune_opts->clip_end);
+	s = go_global_time(s, &clip_end);
 	if (!s)
 		return;
 
@@ -970,9 +972,9 @@ static void set_bar_num(void)
 	}
 
 	/* do the %%clip stuff */
-	if (cur_tune_opts) {
-		if (bar_num <= cur_tune_opts->clip_start.bar
-		 || nbar > cur_tune_opts->clip_end.bar) {
+	if (clip_start.bar >= 0) {
+		if (bar_num <= clip_start.bar
+		 || nbar > clip_end.bar) {
 			tsfirst = NULL;
 			return;
 		}
@@ -982,11 +984,15 @@ static void set_bar_num(void)
 	/* do the %%break stuff */
 	{
 		struct brk_s *brk;
+		int nbar_min;
 
-		if (nbar == 1)
-			nbar = -1;	/* see go_global_time */
+//		if (nbar == 1)
+//			nbar = -1;	/* see go_global_time */
+		nbar_min = nbar;
+		if (nbar_min == 1)
+			nbar_min = -1;
 		for (brk = brks; brk; brk = brk->next) {
-			if (brk->symsel.bar <= nbar
+			if (brk->symsel.bar <= nbar_min
 			 || brk->symsel.bar > bar_num)
 				continue;
 			s = go_global_time(tsfirst, &brk->symsel);
@@ -994,6 +1000,8 @@ static void set_bar_num(void)
 				s->sflags |= S_EOLN;
 		}
 	}
+	if (cfmt.measurenb < 0)		/* if no display of measure bar */
+		nbar = bar_num;		/* update in case of more music to come */
 }
 
 /* -- generate a piece of tune -- */
@@ -2633,6 +2641,7 @@ static struct abcsym *get_info(struct abcsym *as,
 			set_tblt(first_voice);
 		break;
 	case 'L':
+		curvoice->auto_len = as->u.length.base_length < 0;
 		break;
 	case 'M':
 		get_meter(s);
@@ -2844,6 +2853,44 @@ void identify_note(struct SYMBOL *s,
 	*p_dots = dots;
 }
 
+/* -- adjust the duration and time of symbols in a measure when L:auto -- */
+static void adjust_dur(struct SYMBOL *s)
+{
+	struct SYMBOL *s2;
+	int time, mul;
+
+	/* search the start of the measure */
+	s2 = curvoice->last_sym;
+	if (!s2)
+		return;
+	while (s2->type != BAR && s2->prev)
+		s2 = s2->prev;
+	time = s2->time;
+	mul = curvoice->wmeasure / (curvoice->time - time);
+	while (s2) {
+		if (s2->dur != 0) {
+			s2->time = time;
+			s2->dur *= mul;
+			time += s2->dur;
+			if (s2->type == NOTEREST) {
+				int i, head, dots, nflags;
+
+				for (i = 0; i <= s2->nhd; i++)
+					s2->as.u.note.lens[i] *= mul;
+				identify_note(s2, s2->as.u.note.lens[0],
+						&head, &dots, &nflags);
+				s2->head = head;
+				s2->dots = dots;
+				s2->nflags = nflags;
+				if (s2->nflags <= -2)
+					s2->as.flags |= ABC_F_STEMLESS;
+			}
+		}
+		s2 = s2->next;
+	}
+	curvoice->time = s->time = time;
+}
+
 /* -- measure bar -- */
 static void get_bar(struct SYMBOL *s)
 {
@@ -2852,6 +2899,8 @@ static void get_bar(struct SYMBOL *s)
 
 	if (curvoice->norepbra && s->as.u.bar.repeat_bar)
 		s->sflags |= S_NOREPBRA;
+	if (curvoice->auto_len)
+		adjust_dur(s);
 
 	bar_type = s->as.u.bar.type;
 	s3 = NULL;
@@ -3000,6 +3049,8 @@ void do_tune(struct abctune *t)
 	curvoice = first_voice = voice_tb;
 	micro_tb = t->micro_tb;		/* microtone values */
 	abc2win = 0;
+	clip_start.bar = -1;
+	clip_end.bar = (short unsigned) ~0 >> 1;
 
 	parsys = NULL;
 	system_new();			/* create the 1st staff system */
@@ -4160,7 +4211,7 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 
 			/* %%clip <symbol selection> "-" <symbol selection> */
 			if (*p != '-') {
-				p = get_symsel(&cur_tune_opts->clip_start, p);
+				p = get_symsel(&clip_start, p);
 				if (!p) {
 					error(1, s, "Bad start in %%%%%s", w);
 					return as;
@@ -4171,15 +4222,15 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 				}
 			}
 			p++;
-			p = get_symsel(&cur_tune_opts->clip_end, p);
+			p = get_symsel(&clip_end, p);
 			if (!p) {
 				error(1, s, "Bad end in %%%%%s", w);
 				return as;
 			}
-			if (cur_tune_opts->clip_end.bar < cur_tune_opts->clip_start.bar
-			 || (cur_tune_opts->clip_end.bar == cur_tune_opts->clip_start.bar
-			  && cur_tune_opts->clip_end.time <= cur_tune_opts->clip_start.time)) {
-				cur_tune_opts->clip_end.bar = (short unsigned) ~0 >> 1;
+			if (clip_end.bar < clip_start.bar
+			 || (clip_end.bar == clip_start.bar
+			  && clip_end.time <= clip_start.time)) {
+				clip_end.bar = (short unsigned) ~0 >> 1;
 			}
 			return as;
 		}
@@ -4211,6 +4262,7 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 			}
 
 			/* get the bounding box */
+			x1 = x2 = 0;
 			while (fgets(line, sizeof line, fp)) {
 				if (strncmp(line, "%%BoundingBox:", 14) == 0) {
 					if (sscanf(&line[14], "%f %f %f %f",
@@ -4219,7 +4271,7 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 				}
 			}
 			fclose(fp);
-			if (strncmp(line, "%%BoundingBox:", 14) != 0) {
+			if (x1 == x2) {
 				error(1, s,
 				      "No bounding box in '%s'", fn);
 				return as;
@@ -4237,7 +4289,7 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 			}
 			a2b("\001");	/* include file (must be the first after eob) */
 			bskip(y2 - y1);
-			a2b("%.2f %.2f%%%s\n", -x1, -y1, fn);
+			a2b("%.2f %.2f%%%s\n", x1, -y1, fn);
 			buffer_eob();
 			return as;
 		}
@@ -4749,7 +4801,6 @@ center:
 				opt->next = tune_opts;
 				tune_opts = opt;
 			}
-			opt->clip_end.bar = (short unsigned) ~0 >> 1;
 
 			/* link the options */
 			opt->s = s;

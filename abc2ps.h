@@ -70,7 +70,6 @@
 #define STRL1		256	/* string length for file names */
 #define MAXSTAFF	16	/* max staves */
 #define BSIZE		512	/* buffer size for one input string */
-#define BUFFSZ		64000	/* size of output buffer */
 
 #define BREVE		(BASE_LEN * 2)	/* double note (square note) */
 #define SEMIBREVE	BASE_LEN	/* whole note */
@@ -391,12 +390,12 @@ struct VOICE_S {
 	struct SYMBOL *rtie;	/* note with ties before 1st repeat bar */
 	struct tblt_s *tblts[2]; /* tablatures */
 	float scale;		/* scale */
-	int time;		/* current time while parsing */
+	int time;		/* current time (parsing) */
 	struct clef_s clef;	/* current clef */
 	struct key_s key;	/* current key signature */
 	struct meter_s meter;	/* current time signature */
 	struct key_s ckey;	/* key signature while parsing */
-	struct key_s okey;	/* original key signature while parsing */
+	struct key_s okey;	/* original key signature (parsing) */
 	unsigned hy_st;		/* lyrics hyphens at start of line (bit array) */
 	unsigned ignore:1;	/* ignore this voice (%%staves) */
 	unsigned forced_clef:1;	/* explicit clef */
@@ -408,15 +407,16 @@ struct VOICE_S {
 	unsigned new_name:1;	/* redisplay the voice name */
 	unsigned space:1;	/* have a space before the next note (parsing) */
 	unsigned perc:1;	/* percussion */
-	short wmeasure;		/* measure duration while parsing */
-	short transpose;	/* transposition while parsing */
+	unsigned auto_len:1;	/* auto L: (parsing) */
+	short wmeasure;		/* measure duration (parsing) */
+	short transpose;	/* transposition (parsing) */
 	short bar_start;	/* bar type at start of staff / 0 */
 	struct posit_s posit;	/* positions / directions */
-	signed char octave;	/* octave while parsing */
+	signed char octave;	/* octave (parsing) */
 	signed char clone;	/* duplicate from this voice number */
 	signed char over;	/* overlay of this voice number */
 	unsigned char staff;	/* staff (0..n-1) */
-	unsigned char cstaff;	/* staff while parsing */
+	unsigned char cstaff;	/* staff (parsing) */
 	unsigned char slur_st;	/* slurs at start of staff */
 };
 extern struct VOICE_S voice_tb[MAXVOICE]; /* voice table */
@@ -481,7 +481,7 @@ void buffer_eob(void);
 void marg_init(void);
 void bskip(float h);
 void check_buffer(void);
-void clear_buffer(void);
+void init_outbuf(int kbsz);
 void close_output_file(void);
 void close_page(void);
 float get_bposy(void);

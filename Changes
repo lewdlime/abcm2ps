@@ -1,3 +1,21 @@
+---- Version 7.5.7 - 13/07/16 ----
+
+Fix bad horizontal offset of EPS images
+	(reported by Gerhard Schacherl).
+Fix bad clef change when 2 voices on the staff and invisible rests.
+Add 'L:auto'.
+Better vertical offset of rests when many voices per staff
+	(reported by David Lacroix).
+Fix bad staff on multi-rest expansion when the voice goes later
+	to an other staff.
+Fix bad line break when asked before a bar.
+Do %%clip work again.
+Fix bad music line breaks with %%break after generation restart.
+Fix bad music line breaks with %%barperline and generation restart
+	(reported by David Lacroix).
+Add the command line option '-k'.
+Fix bad horizontal offset of stems in SVG output.
+
 ---- Version 7.5.6 - 13/06/17 ----
 
 Have better horizontal spacing when music line is too much shrunk.

@@ -228,7 +228,6 @@ static void treat_file(char *fn, char *ext)
 	}
 
 	/* initialize if not already done */
-//	frontend((unsigned char *) "\n", 0);	/* stop the %%tune/%%voice */
 	if (fout == 0)
 		read_def_format();
 
@@ -359,6 +358,7 @@ static void usage(void)
 		"     -O fff  set outfile name to fff\n"
 		"     -O =    make outfile name from infile/title\n"
 		"     -i      indicate where are the errors\n"
+		"     -k kk   size of the PS output buffer in Kibytes\n"
 		"  .output formatting:\n"
 		"     -s xx   set scale factor to xx\n"
 		"     -w xx   set staff width (cm/in/pt)\n"
@@ -386,7 +386,7 @@ static void usage(void)
 		"     -B n    break every n bars\n"
 		"  .input file selection/options:\n"
 		"     -e pattern\n"
-		"             xref list of tunes to select\n"
+		"             tune selection\n"
 		"     -u      abc2ps behaviour\n"
 		"  .help/configuration:\n"
 		"     -V      show program version\n"
@@ -456,7 +456,7 @@ static struct cmdtblt_s *cmdtblt_parse(char *p)
 /* set a command line option */
 static void set_opt(char *w, char *v)
 {
-	if (v == 0)
+	if (!v)
 		v = "";
 	if (strlen(w) + strlen(v) >= TEX_BUF_SZ - 10) {
 		error(1, 0, "Command line '%s' option too long", w);
@@ -479,6 +479,7 @@ int main(int argc, char **argv)
 	/* set the global flags */
 	s_argc = argc;
 	s_argv = argv;
+	aaa = NULL;
 	while (--argc > 0) {
 		argv++;
 		p = *argv;
@@ -516,6 +517,15 @@ int main(int argc, char **argv)
 				svg = 2;	/* SVG/XHTML */
 				epsf = 0;
 				break;
+			case 'k':
+				if (p[1] == '\0') {
+					if (--argc > 0)
+						aaa = *argv++;
+				} else {
+					aaa = p + 1;
+					p += strlen(p) - 1;
+				}
+				break;
 			default:
 				if (strchr("aBbDdeFfIjmNOsTw", c)) /* if with arg */
 					p += strlen(p) - 1;	/* skip */
@@ -531,7 +541,14 @@ int main(int argc, char **argv)
 	clrarena(0);				/* global */
 	clrarena(1);				/* tunes */
 	clrarena(2);				/* generation */
-	clear_buffer();
+	if (aaa) {				/* '-k' output buffer size */
+		int kbsz;
+
+		sscanf(aaa, "%d", &kbsz);
+		init_outbuf(kbsz);
+	} else {
+		init_outbuf(0);
+	}
 	abc_init(getarena,			/* alloc */
 		0,				/* free */
 		(void (*)(int level)) lvlarena, /* new level */
@@ -772,6 +789,7 @@ int main(int argc, char **argv)
 				case 'F':
 				case 'I':
 				case 'j':
+				case 'k':
 				case 'L':
 				case 'm':
 				case 'O':
@@ -793,7 +811,7 @@ int main(int argc, char **argv)
 							p++;
 					}
 
-					if (strchr("BbfjNs", c)) {	/* check num args */
+					if (strchr("BbfjkNs", c)) {	/* check num args */
 						for (j = 0; j < strlen(aaa); j++) {
 							if (!strchr("0123456789.",
 								    aaa[j])) {
@@ -840,6 +858,8 @@ int main(int argc, char **argv)
 							cfmt.measurebox = 0;
 						lock_fmt(&cfmt.measurebox);
 						break;
+					case 'k':
+						break;
 					case 'm':
 						set_opt("leftmargin", aaa);
 						break;
@@ -866,7 +886,7 @@ int main(int argc, char **argv)
 						struct cmdtblt_s *cmdtblt;
 
 						cmdtblt = cmdtblt_parse(aaa);
-						if (cmdtblt != 0)
+						if (cmdtblt)
 							cmdtblt->active = 1;
 						break;
 					    }

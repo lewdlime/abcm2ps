@@ -1192,10 +1192,12 @@ static void note_transpose(struct SYMBOL *s)
 static void gch_transpose(struct SYMBOL *s)
 {
 	char *p, *q, *new_txt;
-	int l;
+	int l, latin;
 	int n, a, i1, i2, i3, i4;
-	static char note_names[] = "CDEFGAB";
-	static char *acc_name[5] = {"bb", "b", "", "#", "##"};
+	static const char note_names[] = "CDEFGAB";
+	static const char *latin_names[7] =
+			{ "Do", "Ré", "Mi", "Fa", "Sol", "La", "Si" };
+	static const char *acc_name[5] = {"bb", "b", "", "#", "##"};
 
 	p = s->as.text;
 
@@ -1211,21 +1213,68 @@ static void gch_transpose(struct SYMBOL *s)
 	}
 
 	/* main chord */
-	q = strchr(note_names, *p);
-	if (!q)
+	q = p + 1;
+	latin = 0;
+	switch (*p) {
+	case 'A':
+	case 'B':
+		n = *p - 'A' + 5;
+		break;
+	case 'C':
+	case 'E':
+	case 'G':
+		n = *p - 'C';
+		break;
+	case 'D':
+		if (p[1] == 'o') {
+			latin = 1;
+			n = 0;		/* Do */
+			break;
+		}
+		n = 1;
+		break;
+	case 'F':
+		if (p[1] == 'a')
+			latin = 1;	/* Fa */
+		n = 3;
+		break;
+	case 'L':
+		latin = 1;		/* La */
+		n = 6;
+		break;
+	case 'M':
+		latin = 1;		/* Mi */
+		n = 2;
+		break;
+	case 'R':
+		latin = 1;
+		if (p[1] != 'e')
+			latin++;	/* Ré */
+		n = 1;			/* Re */
+		break;
+	case 'S':
+		latin = 1;
+		if (p[1] == 'o') {
+			latin++;
+			n = 4;		/* Sol */
+		} else {
+			n = 6;		/* Si */
+		}
+		break;
+	default:
 		return;
+	}
+	q += latin;
 
 	/* allocate a new string */
-	/* we need only 2 extra accidentals */
-	new_txt = getarena(strlen(s->as.text) + 2);
+	new_txt = getarena(strlen(s->as.text) + 6);
 	l = p - s->as.text;
 	memcpy(new_txt, s->as.text, l);
 	s->as.text = new_txt;
 	new_txt += l;
-	p++;
+	p = q;
 
 	i2 = curvoice->ckey.sf - curvoice->okey.sf;
-	n = q - note_names;
 	i1 = cde2fcg[n];			/* fcgdaeb */
 	a = 0;
 	if (*p == '#') {
@@ -1247,7 +1296,10 @@ static void gch_transpose(struct SYMBOL *s)
 	}
 	i3 = i1 + i2 + a * 7;
 	i4 = cgd2cde[(unsigned) ((i3 + 16 * 7) % 7)];
-	*new_txt++ = note_names[i4];
+	if (!latin)
+		*new_txt++ = note_names[i4];
+	else
+		new_txt += sprintf(new_txt, "%s", latin_names[i4]);
 	i1 = ((i3 + 1 + 21) / 7 + 2 - 3 + 32 * 5) % 5;
 						/* accidental */
 	new_txt += sprintf(new_txt, "%s", acc_name[i1]);
@@ -1257,6 +1309,7 @@ static void gch_transpose(struct SYMBOL *s)
 		*new_txt++ = *p++;
 	if (*p == '/') {
 		*new_txt++ = *p++;
+//fixme: latin names not treated
 		q = strchr(note_names, *p);
 		if (q) {
 			p++;
@@ -1295,7 +1348,6 @@ static void gch_build(struct SYMBOL *s)
 	s->gch = getarena(sizeof *s->gch * MAXGCH);
 	memset(s->gch, 0, sizeof *s->gch * MAXGCH);
 
-//fixme: do transpose after split?
 	if (curvoice->transpose != 0)
 		gch_transpose(s);
 
@@ -2137,6 +2189,7 @@ static void get_staves(struct SYMBOL *s)
 	}
 	staves_found = maxtime;
 
+	memset(staves, 0, sizeof staves);
 	parse_staves(s, staves);
 
 	/* initialize the voices */
@@ -2186,6 +2239,9 @@ static void get_staves(struct SYMBOL *s)
 		     i++, p_staff++) {
 			flags = p_staff->flags;
 			if (!(flags & (OPEN_BRACE | OPEN_BRACE2)))
+				continue;
+			if (flags & (OPEN_BRACE | CLOSE_BRACE)
+			 || flags & (OPEN_BRACE2 | CLOSE_BRACE2))
 				continue;
 			if (p_staff[1].flags != 0)
 				continue;
@@ -2569,6 +2625,7 @@ static struct abcsym *get_info(struct abcsym *as,
 		     struct abctune *t)
 {
 	struct SYMBOL *s, *s2;
+	struct VOICE_S *p_voice;
 	char *p;
 	char info_type;
 	int old_lvl;
@@ -2641,13 +2698,28 @@ static struct abcsym *get_info(struct abcsym *as,
 			set_tblt(first_voice);
 		break;
 	case 'L':
-		curvoice->auto_len = as->u.length.base_length < 0;
+		switch (as->state) {
+		case ABC_S_HEAD: {
+			int i, auto_len;
+
+			auto_len = as->u.length.base_length < 0;
+
+			for (i = MAXVOICE, p_voice = voice_tb;
+			     --i >= 0;
+			     p_voice++)
+				p_voice->auto_len = auto_len;
+			break;
+		    }
+		case ABC_S_TUNE:
+			curvoice->auto_len = as->u.length.base_length < 0;
+			break;
+		}
 		break;
 	case 'M':
 		get_meter(s);
 		break;
 	case 'P': {
-		struct VOICE_S *p_voice, *curvoice_sav;
+		struct VOICE_S *curvoice_sav;
 
 		if (as->state != ABC_S_TUNE) {
 			info['P' - 'A'] = s;
@@ -2659,7 +2731,7 @@ static struct abcsym *get_info(struct abcsym *as,
 		p_voice = &voice_tb[parsys->top_voice];
 
 		/* if not main voice and if voices are synchronized
-		 * then, misplaced P:, link in the main voice */ 
+		 * then, misplaced P: goes in the main voice */ 
 		if (curvoice != p_voice
 		 && curvoice->time == p_voice->time) {
 			curvoice_sav = curvoice;
@@ -2857,7 +2929,7 @@ void identify_note(struct SYMBOL *s,
 static void adjust_dur(struct SYMBOL *s)
 {
 	struct SYMBOL *s2;
-	int time, mul;
+	int time, auto_time;
 
 	/* search the start of the measure */
 	s2 = curvoice->last_sym;
@@ -2866,17 +2938,18 @@ static void adjust_dur(struct SYMBOL *s)
 	while (s2->type != BAR && s2->prev)
 		s2 = s2->prev;
 	time = s2->time;
-	mul = curvoice->wmeasure / (curvoice->time - time);
+	auto_time = curvoice->time - time;
 	while (s2) {
 		if (s2->dur != 0) {
+			s2->dur = s2->dur * curvoice->wmeasure / auto_time;
 			s2->time = time;
-			s2->dur *= mul;
 			time += s2->dur;
 			if (s2->type == NOTEREST) {
 				int i, head, dots, nflags;
 
 				for (i = 0; i <= s2->nhd; i++)
-					s2->as.u.note.lens[i] *= mul;
+					s2->as.u.note.lens[i] = s2->as.u.note.lens[i]
+						 * curvoice->wmeasure / auto_time;
 				identify_note(s2, s2->as.u.note.lens[0],
 						&head, &dots, &nflags);
 				s2->head = head;
@@ -2884,6 +2957,8 @@ static void adjust_dur(struct SYMBOL *s)
 				s2->nflags = nflags;
 				if (s2->nflags <= -2)
 					s2->as.flags |= ABC_F_STEMLESS;
+				else
+					s2->as.flags &= ~ABC_F_STEMLESS;
 			}
 		}
 		s2 = s2->next;
@@ -2929,14 +3004,6 @@ static void get_bar(struct SYMBOL *s)
 				return;
 			}
 		}
-
-#if 0
-		/* the bar must be before any key signature */
-/*fixme:and time signature??*/
-		if ((s2->type == KEYSIG /*|| s2->type == TIMESIG*/)
-		 && (!s2->prev || s2->prev->type != BAR))
-			s3 = s2;
-#endif
 	}
 
 	/* link the bar in the voice */
@@ -3149,6 +3216,9 @@ void do_tune(struct abctune *t)
 					break;
 				switch (as->next->text[0]) {
 				case 'w':
+					as = get_info(as->next, t);
+					s = (struct SYMBOL *) as;
+					continue;
 				case 'd':
 				case 's':
 					as = as->next;
@@ -3708,7 +3778,7 @@ static void get_meter(struct SYMBOL *s)
 	case ABC_S_GLOBAL:
 		/*fixme: keep the values and apply to all tunes?? */
 		break;
-	case ABC_S_HEAD: {
+	case ABC_S_HEAD:
 		for (i = MAXVOICE, p_voice = voice_tb;
 		     --i >= 0;
 		     p_voice++) {
@@ -3717,7 +3787,6 @@ static void get_meter(struct SYMBOL *s)
 			p_voice->wmeasure = s->as.u.meter.wmeasure;
 		}
 		break;
-	    }
 	case ABC_S_TUNE:
 		curvoice->wmeasure = s->as.u.meter.wmeasure;
 		if (is_tune_sig()) {
@@ -4227,6 +4296,8 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 				error(1, s, "Bad end in %%%%%s", w);
 				return as;
 			}
+			if (clip_start.bar < 0)
+				clip_start.bar = 0;
 			if (clip_end.bar < clip_start.bar
 			 || (clip_end.bar == clip_start.bar
 			  && clip_end.time <= clip_start.time)) {
@@ -4295,12 +4366,13 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 		}
 		break;
 	case 'g':
-		if (strcmp(w, "gchord") == 0) {
+		if (strcmp(w, "gchord") == 0
+		 || strcmp(w, "gstemdir") == 0) {
 			set_voice_param(curvoice, as->state, w, p);
 			return as;
 		}
-		if (strcmp(w, "gstemdir") == 0) {
-			set_voice_param(curvoice, as->state, w, p);
+		if (strcmp(w, "glyph") == 0) {
+			glyph_add(p);
 			return as;
 		}
 		break;

@@ -126,7 +126,7 @@ ABC Stylesheet specification.
 	- The star ('*' = floating voice) is not treated in '%%score'.
 
 	- '%%staves' coexists with '%%score'.
-	  The differences in '%%staves' are:
+	  The differences of '%%staves' are:
 		- measure bars are drawn between staves when there is
 		  no '|' between the voice names (this feature is inverted
 		  in %%score).
@@ -307,26 +307,27 @@ Clefs.
 
 Multiple voices.
 
-	- 'stem=auto' and 'gstem=auto' in a V: field re-enables the
-	  automatic computation of the direction of the stems (default
-	  values).
+	- 'stem=auto' in a V: field re-enables the automatic computation
+	  of the direction of the stems (default).
 
-	- 'gstem=up' or 'gstem=down' in a V: field forces the direction
-	  of the stems of the grace notes.
-
-	- For compatibility with previous abcm2ps version, V: fields may
+	- For compatibility with previous abcm2ps versions, the V: fields may
 	  contain:
 		- 'gchord=up' (default) and 'gchord=down'
 		  which forces the display of guitar chords above or
-		  below the staff,
+		  below the staff (see 'gchord' in format.txt).
+
+		- 'gstem=up' or 'gstem=down'
+		  which forces the direction of the stems of the grace notes
+		  (see 'gstemdir' in format.txt).
 
 		- 'dyn=up', 'dyn=down' or 'dyn=auto'
 		  which forces the place of the dynamic marks (above
-		  or below the staff - default is 'auto').
+		  or below the staff - default is 'auto' -
+		  see 'dynamic' in format.txt)
 
 		- 'lyrics=up', 'lyrics=down' or 'lyrics=auto'
 		  which forces the place of the lyrics (above or below
-		  the staff - default is 'auto').
+		  the staff - default is 'auto' - see 'vocal' in format.txt).
 	  (use pseudo comments instead - see format.txt)
 
 	- 'merge' in a V: field makes the voice to go on the same staff

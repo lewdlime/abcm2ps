@@ -2151,9 +2151,10 @@ static int parse_line(struct abctune *t,
 			if (strncasecmp(p, "linebreak ", 10) == 0) {
 				for (i = 0; i < sizeof char_tb; i++) {
 					if (char_tb[i] == CHAR_LINEBREAK)
-						char_tb[i] = CHAR_BAD;
+						char_tb[i] = i != '!' ?
+								CHAR_BAD :
+								CHAR_DECOS;
 				}
-				char_tb['!'] = CHAR_DECOS;
 				p += 10;
 				for (;;) {
 					while (isspace((unsigned char) *p))
@@ -2273,7 +2274,7 @@ static int parse_line(struct abctune *t,
 			break;
 		case CHAR_DECOS:
 			if (p[-1] == '!'
-			 && char_tb['$'] != CHAR_LINEBREAK
+			 && char_tb['\n'] == CHAR_LINEBREAK
 			 && check_nl(p)) {
 				s = abc_new(t, NULL, NULL);	/* abc2win EOL */
 				s->type = ABC_T_EOLN;

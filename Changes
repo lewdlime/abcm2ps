@@ -1,3 +1,24 @@
+---- Version 7.6.0 - 13/08/20 ----
+
+Add build with ninja-build and clang.
+Fix %%staves parsing problem which could give bad PS output.
+%%glyph added.
+Change PS utf-8 handling !!compatibility!!.
+
+---- Version 7.5.8 - 13/08/07 ----
+
+Fix bad offset of rests when under the duration of an upper voice
+	(reported by David Lacroix).
+Check '!' as linebreak only when <EOL> does a linebreak.
+Accept latin names of guitar chords on %%transpose.
+Fix loss of lyrics under staff when %%alignbars.
+Do %%clip without start work again.
+Fix bad PS output when many lines in program command line.
+Apply L:auto to all voices when declared in the tune header.
+Fix L:auto when duration of auto measure > M: duration.
+Add more explanations in the file format.txt
+	(thanks to Seymour Shlien).
+
 ---- Version 7.5.7 - 13/07/16 ----
 
 Fix bad horizontal offset of EPS images

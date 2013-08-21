@@ -535,6 +535,7 @@ void set_sscale(int staff);
 /* format.c */
 void define_fonts(void);
 int get_textopt(char *p);
+int get_font_encoding(int ft);
 void interpret_fmt_line(char *w, char *p, int lock);
 void lock_fmt(void *fmt);
 void make_font_list(void);
@@ -546,6 +547,9 @@ void set_font(int ft);
 void set_format(void);
 void set_voice_param(struct VOICE_S *p_voice, int state, char *w, char *p);
 struct tblt_s *tblt_parse(char *p);
+/* glyph.c */
+char *glyph_out(char *p);
+void glyph_add(char *p);
 /* music.c */
 void output_music(void);
 void reset_gen(void);
@@ -583,7 +587,6 @@ void str_font(int ft);
 #define A_ANNOT 5
 #define A_GCHEXP 6
 void str_out(char *p, int action);
-void str_ft_out(char *p, int end);
 void put_str(char *str, int action);
 float tex_str(char *s);
 extern char tex_buf[];	/* result of tex_str() */
@@ -605,6 +608,5 @@ int svg_output(FILE *out, const char *fmt, ...)
 void svg_write(char *buf, int len);
 void svg_close();
 /* syms.c */
-void define_cmap(void);
 void define_font(char *name, int num, int enc);
 void define_symbols(void);

@@ -41,7 +41,10 @@ static char *strop;		/* current string output operation */
 static float strlw;		/* line width */
 static int curft;		/* current (wanted) font */
 static int defft;		/* default font */
-static int strtx;		/* PostScript text outputing */
+static char strtx;		/* PostScript text outputing (bits) */
+#define TX_STR 1			/* string started */
+#define TX_ARR 2			/* glyph/string array started */
+#define TX_EXT 4			/* glyph/string array needed */
 
 /* width of characters according to the encoding */
 /* these are the widths for Times-Roman, extracted from the 'a2ps' package */
@@ -380,21 +383,8 @@ static void pg_line_output(PangoLayoutLine *line)
 			if (c == PANGO_GLYPH_EMPTY)
 				continue;
 			if (c & PANGO_GLYPH_UNKNOWN_FLAG) {
-//fixme: works only for extra chars (accidentals)
 				c &= ~PANGO_GLYPH_UNKNOWN_FLAG;
-				if ((unsigned) (c - 0x80) >= 0x20) {
-					error(0, 0, "char %04x not treated\n", c);
-					continue;
-				}
-				if (glypharray)
-					a2b("]glypharray");
-//				else if (mbf[-1] != '\n')
-					a2b("\n");
-				a2b("/ExtraFont %.1f selectfont(%c)show",
-					(float) wi / PG_SCALE,
-					c - 0x80);
-				glypharray = 0;
-				fontname = 0;
+				error(0, 0, "char %04x not treated\n", c);
 				continue;
 			}
 
@@ -402,13 +392,12 @@ static void pg_line_output(PangoLayoutLine *line)
 					c,		// PangoGlyph = index
 					FT_LOAD_NO_SCALE);
 			if (ret != 0) {
-				fprintf(stdout, "%%%% freetype error %d\n", ret);
+				error(0, 0, "freetype error %d\n", ret);
 			} else if (FT_HAS_GLYPH_NAMES(face)) {
 				if (FT_Get_Postscript_Name(face) != fontname) {
 					fontname = FT_Get_Postscript_Name(face);
 					if (glypharray)
 						a2b("]glypharray");
-//					else if (mbf[-1] != '\n')
 						a2b("\n");
 					a2b("/%s %.1f selectfont[",
 						fontname,
@@ -617,29 +606,14 @@ static void pg_para_output(int job)
 						a2b("]glypharray");
 						glypharray = 0;
 					}
-//					  else if (mbf[-1] != '\n') {
-						a2b("\n");
-//					}
+					a2b("\n");
 					a2b("%.2f %.2f M ",
 						(float) x / PANGO_SCALE, -y);
 				}
 				x += glyph_info->geometry.width;
 				if (g & PANGO_GLYPH_UNKNOWN_FLAG) {
-//fixme: works only for extra chars (accidentals)
 					g &= ~PANGO_GLYPH_UNKNOWN_FLAG;
-					if ((unsigned) (g - 0x80) >= 0x20) {
-						error(0, 0, "char %04x not treated\n", g);
-						continue;
-					}
-					if (glypharray)
-						a2b("]glypharray");
-//					else if (mbf[-1] != '\n')
-						a2b("\n");
-					a2b("/ExtraFont %.1f selectfont(%c)show",
-						(float) wi / PG_SCALE,
-						g - 0x80);
-					glypharray = 0;
-					fontname = 0;
+					error(0, 0, "char %04x not treated\n", g);
 					continue;
 				}
 
@@ -653,9 +627,7 @@ static void pg_para_output(int job)
 						fontname = FT_Get_Postscript_Name(face);
 						if (glypharray)
 							a2b("]glypharray");
-//						else if (mbf[-1] != '\n')
-							a2b("\n");
-						a2b("/%s %.1f selectfont[",
+						a2b("\n/%s %.1f selectfont[",
 							fontname,
 							(float) wi / PG_SCALE);
 						glypharray = 1;
@@ -773,32 +745,68 @@ void set_str_font(int cft, int dft)
 	defft = dft;
 }
 
+/* close a string */
+static void str_end(int end)
+{
+	if (strtx & TX_STR) {
+		a2b(")");
+		strtx &= ~TX_STR;
+		if (!(strtx & TX_ARR))
+			a2b("%s", strop);
+	}
+	if (!end || !(strtx & TX_ARR))
+		return;
+	strtx &= ~TX_ARR;
+	a2b("]arrayshow");
+}
+
 /* -- output one string -- */
 static void str_ft_out1(char *p, int l)
 {
 	if (curft != outft) {
-		if (strtx) {
-			a2b(")%s ", strop);
-			strtx = 0;
-		}
-//		if (curft == 0)
-//			curft = defft;
+		str_end(1);
+		a2b(" ");
 		set_font(curft);
 	}
-	if (!strtx) {
+	if (!(strtx & TX_STR)) {
 		a2b("(");
-		strtx = 1;
+		strtx |= TX_STR;
 	}
 	a2b("%.*s", l, p);
 }
 
-/* -- output a string and the font changes -- */
-void str_ft_out(char *p, int end)
-{
-	char *q, tmp[2];
+static char *strop_tb[] = {	/* index = action (A_xxxx) */
+	"show",
+	"showc",
+	"showr",
+	"lyshow",
+	"gcshow",
+	"anshow",
+	"gxshow",
+};
 
+/* -- output a string and the font changes -- */
+static void str_ft_out(char *p, int end)
+{
+	int use_glyph;
+	char *q;
+
+	use_glyph = !svg && epsf != 2 &&		/* not SVG */
+		 get_font_encoding(curft) == 0;		/* utf-8 */
 	q = p;
 	while (*p != '\0') {
+		if ((unsigned char) *p >= 0x80
+		 && use_glyph) {
+			if (p > q)
+				str_ft_out1(q, p - q);
+			str_end(0);
+			if (!(strtx & TX_ARR)) {
+				a2b("[");
+				strtx |= TX_ARR;
+			}
+			q = p = glyph_out(p);
+			continue;
+		}
 		switch ((unsigned char) *p) {
 		case '$':
 			if (isdigit((unsigned char) p[1])
@@ -809,6 +817,8 @@ void str_ft_out(char *p, int end)
 					curft = p[1] - '0';
 					if (curft == 0)
 						curft = defft;
+					use_glyph = !svg && epsf != 2 &&
+						 get_font_encoding(curft) == 0;
 				}
 				p += 2;
 				q = p;
@@ -827,77 +837,32 @@ void str_ft_out(char *p, int end)
 			str_ft_out1("\\", 1);
 			q = p;
 			break;
-
-#if 0
-		/* is PostScript, convert the accidentals to unicode 81..85 */
-		case 0xe2:
-			if (svg || epsf == 2)
-				break;
-			if ((unsigned char) p[1] != 0x99)
-				break;
-			if ((unsigned char) p[2] == 0xaf)
-				tmp[1] = 0x81;
-			else if ((unsigned char) p[2] == 0xad)
-				tmp[1] = 0x82;
-			else if ((unsigned char) p[2] == 0xae)
-				tmp[1] = 0x83;
-			else
-				break;
-			if (p > q)
-				str_ft_out1(q, p - q);
-			tmp[0] = 0xc2;
-			str_ft_out1(tmp, 2);
-			p += 3;
-			q = p;
-			continue;
-#endif
-		case 0xf0:
-			if (svg || epsf == 2)
-				break;
-			if ((unsigned char) p[1] != 0x9d
-			 || (unsigned char) p[2] != 0x84)
-				break;
-			if ((unsigned char) p[3] == 0xaa)
-				tmp[1] = 0x84;
-			else if ((unsigned char) p[3] == 0xab)
-				tmp[1] = 0x85;
-			else
-				break;
-			if (p > q)
-				str_ft_out1(q, p - q);
-			tmp[0] = 0xc2;
-			str_ft_out1(tmp, 2);
-			p += 4;
-			q = p;
-			continue;
 		}
 		p++;
 	}
 	if (p > q)
 		str_ft_out1(q, p - q);
-	if (end && strtx) {
-		a2b(")%s ", strop);
-		strtx = 0;
+	if (end && strtx)
+		str_end(1);
+}
+
+/* check if some non ASCII characters */
+static int non_ascii_p(char *p)
+{
+	while (*p != '\0') {
+		if ((signed char) *p++ < 0)
+			return 1;
 	}
+	return 0;
 }
 
 /* -- output a string, handling the font changes -- */
 void str_out(char *p, int action)
 {
-	static char *strop_tb[] = {	/* index = action (A_xxxx) */
-		"show",
-		"showc",
-		"showr",
-		"lyshow",
-		"gcshow",
-		"anshow",
-		"gxshow",
-	};
 	if (curft <= 0)		/* first call */
 		curft = defft;
 
 	/* special case when font change at start of text */
-/*---fixme: authorize 2 chars?*/
 	if (*p == '$' && isdigit((unsigned char) p[1])
 	 && (unsigned) (p[1] - '0') < FONT_UMAX) {
 		if (curft != p[1] - '0') {
@@ -919,8 +884,10 @@ void str_out(char *p, int action)
 	}
 #endif
 
-	/* direct output if no font change */
-	if (strchr(p, '$') == 0) {
+	/* direct output if no font change
+	 * nor non ASCII characters */
+	if (strchr(p, '$') == 0
+	 && !non_ascii_p(p)) {
 		strop = strop_tb[action];
 		str_ft_out(p, 1);		/* output the string */
 		return;
@@ -949,10 +916,10 @@ void str_out(char *p, int action)
 		return;
 	if (action == A_CENTER || action == A_RIGHT) {
 		a2b("}def\n"
-			"/strop/strw load def/w 0 def str w ");
+			"strw w");
 		if (action == A_CENTER)
-			a2b("0.5 mul ");
-		a2b("neg 0 RM/strop/show load def str ");
+			a2b(" 0.5 mul");
+		a2b(" neg 0 RM str");
 	}
 }
 
@@ -1062,13 +1029,13 @@ void write_text(char *cmd, char *s, int job)
 			bskip(baseskip);
 			switch (job) {
 			case A_LEFT:
-				a2b("0 0 M ");
+				a2b("0 0 M");
 				break;
 			case A_CENTER:
-				a2b("%.1f 0 M ", strlw * 0.5);
+				a2b("%.1f 0 M", strlw * 0.5);
 				break;
 			default:
-				a2b("%.1f 0 M ", strlw);
+				a2b("%.1f 0 M", strlw);
 				break;
 			}
 			put_str(s, job);
@@ -1099,7 +1066,7 @@ void write_text(char *cmd, char *s, int job)
 
 		if (nw == 0) {			/* if new paragraph */
 			bskip(baseskip);
-			a2b("0 0 M ");
+			a2b("0 0 M");
 			if (job == T_FILL) {
 				strop = "show";
 			} else {
@@ -1111,8 +1078,7 @@ void write_text(char *cmd, char *s, int job)
 		}
 		if (*s == '\n') {		/* empty line */
 			if (strtx) {
-				a2b(")%s", strop);
-				strtx = 0;
+				str_end(1);
 				if (job == T_JUSTIFY)
 					a2b("}def\n"
 					    "/strop/show load def str");
@@ -1146,25 +1112,23 @@ void write_text(char *cmd, char *s, int job)
 
 		lw = tex_str(s);
 		if (strw + lw > strlw) {
-			if (strtx) {
-				a2b(")%s ", strop);
-				strtx = 0;
-			}
+			str_end(1);
 			if (job == T_JUSTIFY) {
 				if (svg || epsf == 2)
 					a2b("}def\n"
 						"%.1f jshow"
-						"/strop/show load def str ",
+						" str",
 						strlw);
 				else
 					a2b("}def\n"
-						"/strop/strw load def/w 0 def str"
+						"strw"
 						"/w %.1f w sub %d div def"
-						"/strop/jshow load def str ",
+						"/strop/jshow load def str",
 						strlw, nw);
 			}
+			a2b("\n");
 			bskip(cfmt.font_tb[curft].size * cfmt.lineskipfac);
-			a2b("0 0 M ");
+			a2b("0 0 M");
 			if (job == T_JUSTIFY) {
 				a2b("/str{");
 				outft = -1;
@@ -1184,8 +1148,7 @@ void write_text(char *cmd, char *s, int job)
 		s = p;
 	}
 	if (strtx) {
-		a2b(")%s", strop);
-		strtx = 0;
+		str_end(1);
 		if (job == T_JUSTIFY)
 			a2b("}def\n"
 				"/strop/show load def str");
@@ -1232,12 +1195,12 @@ static int put_wline(char *p,
 	if (r != 0) {
 		sep = *r;
 		*r = '\0';
-		a2b("%.1f 0 M ", x);
+		a2b("%.1f 0 M", x);
 		put_str(q,  A_RIGHT);
 		*r = sep;
 	}
 	if (*p != '\0') {
-		a2b("%.1f 0 M ", x + 5);
+		a2b("%.1f 0 M", x + 5);
 		put_str(p, A_LEFT);
 	}
 	return *p == '\0' && r == 0;

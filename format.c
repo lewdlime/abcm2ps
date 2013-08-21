@@ -227,7 +227,7 @@ static void fontspec(struct FONTSPEC *f,
 		     int encoding,
 		     float size)
 {
-	if (name != 0)
+	if (name)
 		f->fnum = get_font(name, encoding);
 	else
 		name = fontnames[f->fnum];
@@ -257,11 +257,24 @@ static void fontspec(struct FONTSPEC *f,
 }
 
 /* -- output the font definitions with their encodings -- */
+/* This output must occurs after user PostScript definitions because
+ * these ones may change the default behaviour */
 void define_fonts(void)
 {
 	int i;
-
-	define_cmap();
+	static char *mkfont =
+	"/mkfont{ findfont dup length 1 add dict begin\n"
+	"	{1 index/FID ne{def}{pop pop}ifelse}forall\n"
+	"	CharStrings/double_sharp known not{\n"
+	"		/CharStrings CharStrings dup length dict copy def\n"
+	"		CharStrings/sharp{pop 460 0 setcharwidth usharp ufill}bind put\n"
+	"		CharStrings/flat{pop 460 0 setcharwidth uflat ufill}bind put\n"
+	"		CharStrings/natural{pop 400 0 setcharwidth unat ufill}bind put\n"
+	"		CharStrings/double_sharp{pop 460 0 setcharwidth udblesharp ufill}bind put\n"
+	"		CharStrings/double_flat{pop 500 0 setcharwidth udbleflat ufill}bind put\n"
+	"	}if currentdict definefont pop end}!\n";
+	
+	fputs(mkfont, fout);
 	make_font_list();
 	for (i = 0; i < nfontnames; i++) {
 		if (used_font[i])
@@ -530,9 +543,7 @@ static char *yn[2] = {"no","yes"};
 
 			s = (struct FONTSPEC *) fd->v;
 			printf("%s", fontnames[s->fnum]);
-//			if (font_enc[s->fnum] != cfmt.encoding)
-				printf(" %s", font_enc[s->fnum] ?
-						"native" : "utf-8");
+			printf(" %s", font_enc[s->fnum] ? "native" : "utf-8");
 			printf(" %.1f", s->size);
 			if ((fd->subtype == 1 && cfmt.partsbox)
 			 || (fd->subtype == 2 && cfmt.measurebox)
@@ -560,17 +571,9 @@ static char *yn[2] = {"no","yes"};
 }
 
 /* -- get an encoding -- */
-static int get_encoding(char *p)
+static int parse_encoding(char *p)
 {
-	int l;
-
-	l = 0;
-	while (p[l] != '\0' && !isspace((unsigned char) p[l]))
-		l++;
-	if (strncasecmp(p, "native", l) == 0)
-		return 1;
-	/* no error */
-	return 0;
+	return strncasecmp(p, "native", 6) == 0;
 }
 
 /* -- get a position -- */
@@ -677,7 +680,7 @@ static void g_fspc(char *p,
 		if (*p == '*')
 			encoding = font_enc[f->fnum];
 		else
-			encoding = get_encoding(p);
+			encoding = parse_encoding(p);
 		while (*p != '\0' && !isspace((unsigned char) *p))
 			p++;
 		while (isspace((unsigned char) *p))
@@ -990,7 +993,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 			encoding = 0;
 			if (*p != '\0') {
 				if (isalpha((unsigned char) *p)) {
-					encoding = get_encoding(p);
+					encoding = parse_encoding(p);
 					while (*p != '\0'
 					    && !isspace((unsigned char) *p))
 						p++;
@@ -1337,4 +1340,10 @@ void set_font(int ft)
 		f->size = 8;
 	}
 	a2b("%.1f F%d ", f->size, fnum);
+}
+
+/* -- get the encoding of a font -- */
+int get_font_encoding(int ft)
+{
+	return font_enc[ft];
 }

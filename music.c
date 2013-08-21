@@ -2774,16 +2774,18 @@ static void set_rest_offset(void)
 		for (i = 0; i < MAXVOICE; i++)
 			vtb[i].st1 = vtb[i].st2 = -1;
 
-		/* get the max/min offsets in the measure */
+		/* get the max/min offsets in the sequence */
 /*fixme: the stem height is not calculated yet*/
 		next_time = s->time + delta_time;
 		for (s2 = s;
 		     s2 && s2->time < next_time
-				&& s2->type != BAR && s2->type != STAVES;
+			&& s2->type != BAR && s2->type != STAVES;
 		     s2 = s2->ts_next) {
 			if (s2->type != NOTEREST
 			 || (s2->as.flags & ABC_F_INVIS))
 				continue;
+			if (s2->time + s2->dur > next_time)
+				next_time = s2->time + s2->dur;
 			staff = s2->staff;
 #if 1
 /*fixme:test*/

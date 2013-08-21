@@ -181,9 +181,23 @@ static void init_ps(char *str)
 		"%%%%EndComments\n"
 		"%%CommandLine:");
 	for (i = 1; i < (unsigned) s_argc; i++) {
-		fprintf(fout,
-			strchr(s_argv[i], ' ') != 0 ? " \'%s\'" : " %s",
-			s_argv[i]);
+		char *p, *q;
+		int space;
+
+		p = s_argv[i];
+		space = strchr(p, ' ') != NULL || strchr(p, '\n') != NULL;
+		if (space)
+			fputc('\'', fout);
+		for (;;) {
+			q = strchr(p, '\n');
+			if (!q)
+				break;
+			fprintf(fout, " %.*s\n%%", q - p, p);
+			p = q + 1;
+		}
+		fprintf(fout, " %s", p);
+		if (space)
+			fputc('\'', fout);
 	}
 	fprintf(fout, "\n\n");
 	if (epsf)
@@ -213,13 +227,9 @@ static void init_ps(char *str)
 	user_ps_write();
 	define_fonts();
 	if (!epsf)
-		fprintf(fout, "/setpagedevice where\n"
-				"{ pop 1 dict\n"
-				"  dup /PageSize [ %.0f %.0f ] put\n"
-				"  setpagedevice\n"
-				"} if\n",
-			p_fmt->pagewidth,
-			p_fmt->pageheight);
+		fprintf(fout, "/setpagedevice where{pop\n"
+			"	<</PageSize[%.0f %.0f]>>setpagedevice}if\n",
+				p_fmt->pagewidth, p_fmt->pageheight);
 	fprintf(fout, "%%%%EndSetup\n");
 	file_initialized = 1;
 }

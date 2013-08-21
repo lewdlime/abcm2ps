@@ -1907,13 +1907,11 @@ static void draw_gchord(struct SYMBOL *s,
 		}
 		putxy(x, y + h * 0.2);		/* (descent) */
 		a2b("y%d M ", s->staff);
-		if (gch->type == 'g' && box == 1)
-			a2b("boxstart ");
 		if (action == A_GCHEXP)
 			a2b("%.2f ", expdx);
 		str_out(tex_buf, action);
 		if (gch->type == 'g' && box > 0)
-			a2b("boxstart");
+			a2b(" boxstart");
 		a2b("\n");
 	}
 
@@ -2331,7 +2329,7 @@ float draw_partempo(int staff, float top)
 		a2b("%.1f %.1f M", s->x - 10, 2 - ht - h);
 		str_out(tex_buf, A_LEFT);
 		if (cfmt.partsbox)
-			a2b("%.1f %.1f %.1f %.1f box",
+			a2b(" %.1f %.1f %.1f %.1f box",
 				s->x - 10 - 2, 2 - ht - h - 4,
 				w + 4, h);
 		a2b("\n");

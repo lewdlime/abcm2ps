@@ -378,12 +378,11 @@ static void sort_all(void)
 	s2->voice = s->voice;
 	s2->staff = s->staff;
 	s2->time = s->time;
-	if (!s->extra) {
-		s->extra = s2;
-	} else {
+	if (s->extra) {
 		s2->next = s->extra;
 		s2->next->prev = s2;
 	}
+	s->extra = s2;
 }
 
 /* -- move the symbols with no width to the next symbol -- */
@@ -2240,8 +2239,10 @@ static void get_staves(struct SYMBOL *s)
 			flags = p_staff->flags;
 			if (!(flags & (OPEN_BRACE | OPEN_BRACE2)))
 				continue;
-			if (flags & (OPEN_BRACE | CLOSE_BRACE)
-			 || flags & (OPEN_BRACE2 | CLOSE_BRACE2))
+			if ((flags & (OPEN_BRACE | CLOSE_BRACE))
+					== (OPEN_BRACE | CLOSE_BRACE)
+			 || (flags & (OPEN_BRACE2 | CLOSE_BRACE2))
+					== (OPEN_BRACE2 | CLOSE_BRACE2))
 				continue;
 			if (p_staff[1].flags != 0)
 				continue;
@@ -2818,9 +2819,17 @@ static struct abcsym *get_info(struct abcsym *as,
 			voice_filter();
 		break;
 	case 'w':
-		if (as->state != ABC_S_TUNE
-		 || !(cfmt.fields[1] & (1 << ('w' - 'a'))))
+		if (as->state != ABC_S_TUNE)
 			break;
+		if (!(cfmt.fields[1] & (1 << ('w' - 'a')))) {
+			while (as->next) {
+				if (as->next->type != ABC_T_INFO
+				 || as->next->text[0] != '+')
+					break;
+				as = as->next;
+			}
+			break;
+		}
 		as = get_lyric(as);
 		break;
 	case 'W':
@@ -2939,6 +2948,23 @@ static void adjust_dur(struct SYMBOL *s)
 		s2 = s2->prev;
 	time = s2->time;
 	auto_time = curvoice->time - time;
+
+	/* remove the invisible rest at start of tune */
+	if (time == 0) {
+		while (s2 && s2->dur == 0)
+			s2 = s2->next;
+		if (s2 && s2->as.type == ABC_T_REST
+		 && (s2->as.flags & ABC_F_INVIS)) {
+			time += s2->dur * curvoice->wmeasure / auto_time;
+			if (s2->prev)
+				s2->prev->next = s2->next;
+			else
+				curvoice->sym = s2->next;
+			if (s2->next)
+				s2->next->prev = s2->prev;
+			s2 = s2->next;
+		}
+	}
 	while (s2) {
 		if (s2->dur != 0) {
 			s2->dur = s2->dur * curvoice->wmeasure / auto_time;

@@ -2571,10 +2571,23 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			}
 			continue;
 		}
+#if 1
+		if (s2 == s) {
+			if (s2->as.u.note.slur_end	/* if slur end */
+			 || (s2->sflags & S_SL2))
+				some_slur = 1;
+		} else {
+			if (s2->as.u.note.slur_st	/* if slur start/end */
+			 || s2->as.u.note.slur_end
+			 || (s2->sflags & (S_SL1 | S_SL2)))
+				some_slur = 1;
+		}
+#else
 		if (s2->as.u.note.slur_st	/* if slur start/end */
 		 || s2->as.u.note.slur_end
 		 || (s2->sflags & (S_SL1 | S_SL2)))
 			some_slur = 1;
+#endif
 		if (s2->staff < upstaff)
 			upstaff = s2->staff;
 		if (!s1)
@@ -2599,9 +2612,11 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			 || (sy->sflags & (S_SL1 | S_SL2)))
 				return next;		/* don't draw now */
 		}
+#if 0 /* draw the tuplet when a slur ends on the last note */
 		if (s2->as.u.note.slur_end
 		 || (s2->sflags & S_SL2))
 			return next;
+#endif
 	}
 	s->sflags &= ~S_IN_TUPLET;		/* the tuplet is drawn */
 

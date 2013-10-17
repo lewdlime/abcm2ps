@@ -1,3 +1,22 @@
+---- Version 7.6.1 - 13/10/16 ----
+
+Fix bad staff system when %%staves with floating voices.
+Permit unlimited PS elements in SVG rendering.
+Fix memory overflow with PS 'getinterval' in SVG rendering.
+Fix loss of tempo when tune starts with invisible symbol (n-plet, P:..).
+Don't raise errors when "%%writefields w 0" and "+:xxx" lines of w:.
+Accept a string in 'cvx' for SVG output.
+Fix tuplet number vertical offset when slur starting/ending on a same note
+	(reported by David Lacroix).
+Set a correct approximate width of the unicode characters of which
+		the ending bits are ASCII control characters
+	(reported by Mike Scott).
+Adjust the SVG output closer to PS:
+	- greater font sizes,
+	- smaller note heads,
+	- thiner staff lines and stems.
+Update documentation about %%continueall.
+
 ---- Version 7.6.0 - 13/08/20 ----
 
 Add build with ninja-build and clang.

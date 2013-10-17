@@ -1539,28 +1539,29 @@ static float set_space(struct SYMBOL *s)
 	if (!(s->sflags & S_BEAM_ST))
 		space *= fnnp;
 
-	/* decrease spacing if stems in opposite directions */
+	/* decrease spacing when stem down followed by stem up */
 /*fixme:to be done later, after x computed in sym_glue*/
-	if (s->as.type == ABC_T_NOTE && s->nflags >= -1) {
-		stemdir = s->stem;
+	if (s->as.type == ABC_T_NOTE && s->nflags >= -1
+	 && s->stem > 0) {
+		stemdir = 1;
 		for (s2 = s->ts_prev;
 		     s2 && s2->time == prev_time;
 		     s2 = s2->ts_prev) {
-			if (s2->nflags < -1 || s2->stem == stemdir) {
+			if (s2->nflags < -1 || s2->stem > 0) {
 				stemdir = 0;
 				break;
 			}
 		}
-		if (stemdir != 0) {
+		if (stemdir) {
 			for (s2 = s->ts_next;
 			     s2 && s2->time == s->time;
 			     s2 = s2->ts_next) {
-				if (s2->nflags < -1 || s2->stem != stemdir) {
+				if (s2->nflags < -1 || s2->stem < 0) {
 					stemdir = 0;
 					break;
 				}
 			}
-			if (stemdir != 0)
+			if (stemdir)
 				space *= 0.9;
 		}
 	}

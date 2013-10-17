@@ -521,7 +521,8 @@ List of the format parameters
 	Scope: generation
 	Description:
 		When true, all line breaks of the tune are ignored.
-		This parameter is deprecated in favour of '%%linebreak <none>'.
+		This parameter is deprecated in favour of '%%linebreak <none>'
+		plus 'linewarn 0'.
 
   custos <bool>
 	Default: 0

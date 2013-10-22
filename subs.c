@@ -241,6 +241,38 @@ float tex_str(char *s)
 				s++;
 			}
 			break;
+		case '&':
+			if (*s == '#' && !svg && epsf != 2) {	/* XML char ref */
+				int j;
+				long v;
+
+				if (s[1] == 'x')
+					i = sscanf(s, "#x%lx;%n", &v, &j);
+				else
+					i = sscanf(s, "#%ld;%n", &v, &j);
+				if (i != 1) {
+					error(0, 0, "Bad XML char reference");
+					break;
+				}
+				if (v < 0x80) {	/* convert to UTF-8 */
+					*d++ = v;
+				} else if (v < 0x800) {
+					*d++ = 0xc0 | (v >> 6);
+					*d++ = 0x80 | (v & 0x3f);
+				} else if (v < 0x10000) {
+					*d++ = 0xe0 | (v >> 12);
+					*d++ = 0x80 | ((v >> 6) & 0x3f);
+					*d++ = 0x80 | (v & 0x3f);
+				} else {
+					*d++ = 0xf0 | (v >> 18);
+					*d++ = 0x80 | ((v >> 12) & 0x3f);
+					*d++ = 0x80 | ((v >> 6) & 0x3f);
+					*d++ = 0x80 | (v & 0x3f);
+				}
+				s += j;
+				continue;
+			}
+			break;
 		}
 		if (c1 < 0) {
 			if ((c1 & 0xc0) == 0x80) {

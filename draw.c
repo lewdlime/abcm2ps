@@ -3299,8 +3299,12 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 
 		/* search the end of the tie */
 		for (s2 = s1->next; s2; s2 = s2->next) {
-			if (s2->as.type == ABC_T_NOTE
-			 || s2->type == GRACE)
+			if (s2->as.type == ABC_T_NOTE) {
+				if (s2->time != s1->time + s1->dur)
+					s2 = NULL;	/* %%combinevoices */
+				break;
+			}
+			if (s2->type == GRACE)
 				break;
 			if (s2->type == BAR) {
 				if ((s2->sflags & S_RRBAR)
@@ -3318,6 +3322,14 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			}
 		}
 		if (!s2) {
+
+			/* special case: tie to a combined note */
+			if (s1->ts_prev && s1->ts_prev->next
+			 && s1->ts_prev->next->type == ABC_T_NOTE
+			 && s1->ts_prev->next->time == s1->time + s1->dur) {
+				draw_ties(s1, s1->ts_prev->next, 1);
+				break;
+			}
 			draw_ties(s1, s1, 2);
 			p_voice->tie = s1;
 			break;

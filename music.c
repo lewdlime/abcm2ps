@@ -293,6 +293,8 @@ static int may_combine(struct SYMBOL *s)
 				sizeof s->as.u.note.dc) != 0)
 			return 0;
 	}
+	if (s->gch && s2->gch)
+		return 0;
 	if (s->as.type == ABC_T_REST)
 		return 1;
 	if (s2->ly
@@ -364,7 +366,6 @@ again:
 	if ((type & 0x03) == SL_AUTO)
 		s->as.u.note.ti1[nhd] = SL_ABOVE | (type & ~SL_DOTTED);
 delsym2:
-/*fixme: KO if gchord/annot in both symbols*/
 	if (s2->as.text && !s->as.text) {
 		s->as.text = s2->as.text;
 		s->gch = s2->gch;

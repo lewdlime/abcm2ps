@@ -1,3 +1,16 @@
+---- Version 7.6.2 - 13/10/18 ----
+
+Fix bad tie when ending note is combined with previous voice
+	(reported by Brian J. Dumont).
+Fix loss of gchord/annotation when combine voices and
+		both notes have guitar chord/annotation
+	(reported by Atte André Jensen).
+Fix bad dash lines with SVG output
+	(reported by David Lacroix).
+Accept XML character references in texts.
+Fix bad glyph names of characters greater than latin2
+	(reported by David Lacroix).
+
 ---- Version 7.6.1 - 13/10/16 ----
 
 Fix bad staff system when %%staves with floating voices.

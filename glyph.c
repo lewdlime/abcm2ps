@@ -59,39 +59,39 @@ static char *c3[64] = {
 	"udieresis",	"yacute",	"thorn",	"ydieresis"
 };
 static char *c4[64] = {
-	"Amacron",	"amacron",	"Abreve",	"abreve"
-	"Aogonek",	"aogonek",	"Cacute",	"cacute"
-	"Ccircumflex",	"ccircumflex",	"Cdotaccent",	"cdotaccent"
-	"Ccaron",	"ccaron",	"Dcaron",	"dcaron"
-	"Dcroat",	"dcroat",	"Emacron",	"emacron"
-	"Ebreve",	"ebreve",	"Edotaccent",	"edotaccent"
-	"Eogonek",	"eogonek",	"Ecaron",	"ecaron"
-	"Gcircumflex",	"gcircumflex",	"Gbreve",	"gbreve"
-	"Gdotaccent",	"gdotaccent",	"Gcommaaccent",	"gcommaaccent"
-	"Hcircumflex",	"hcircumflex",	"Hbar",		"hbar"
-	"Itilde",	"itilde",	"Imacron",	"imacron"
-	"Ibreve",	"ibreve",	"Iogonek",	"iogonek"
-	"Idotaccent",	"dotlessi",	"IJ",		"ij"
-	"Jcircumflex",	"jcircumflex",	"Kcedilla",	"kcedilla"
-	"kgreenlandic",	"Lacute",	"lacute",	"Lcedilla"
+	"Amacron",	"amacron",	"Abreve",	"abreve",
+	"Aogonek",	"aogonek",	"Cacute",	"cacute",
+	"Ccircumflex",	"ccircumflex",	"Cdotaccent",	"cdotaccent",
+	"Ccaron",	"ccaron",	"Dcaron",	"dcaron",
+	"Dcroat",	"dcroat",	"Emacron",	"emacron",
+	"Ebreve",	"ebreve",	"Edotaccent",	"edotaccent",
+	"Eogonek",	"eogonek",	"Ecaron",	"ecaron",
+	"Gcircumflex",	"gcircumflex",	"Gbreve",	"gbreve",
+	"Gdotaccent",	"gdotaccent",	"Gcommaaccent",	"gcommaaccent",
+	"Hcircumflex",	"hcircumflex",	"Hbar",		"hbar",
+	"Itilde",	"itilde",	"Imacron",	"imacron",
+	"Ibreve",	"ibreve",	"Iogonek",	"iogonek",
+	"Idotaccent",	"dotlessi",	"IJ",		"ij",
+	"Jcircumflex",	"jcircumflex",	"Kcedilla",	"kcedilla",
+	"kgreenlandic",	"Lacute",	"lacute",	"Lcedilla",
 	"lcedilla",	"Lcaron",	"lcaron",	"Ldot"
 };
 static char *c5[64] = {
-	"ldot",		"Lslash",	"lslash",	"Nacute"
-	"nacute",	"Ncedilla",	"ncedilla",	"tmacron"
-	"ncaron",	"napostrophe",	"Eng",	"eng"
-	"Omacron",	"omacron",	"Obreve",	"obreve"
-	"Ohungarumlaut","ohungarumlaut","OE",		"oe"
-	"Racute",	"racute",	"Rcommaaccent",	"rcommaaccent"
-	"Rcaron",	"rcaron",	"Sacute",	"sacute"
-	"Scircumflex",	"scircumflex",	"Scedilla",	"scedilla"
-	"Scaron",	"scaron",	"Tcedilla",	"tcedilla"
-	"Tcaron",	"tcaron",	"Tbar",		"tbar"
-	"Utilde",	"utilde",	"Umacron",	"umacron"
-	"Ubreve",	"ubreve",	"Uring",	"uring"
-	"Uhungarumlaut","uhungarumlaut","Uogonek",	"uogonek"
-	"Wcircumflex",	"wcircumflex",	"Ycircumflex",	"ycircumflex"
-	"Ydieresis",	"Zacute",	"zacute",	"Zdotaccent"
+	"ldot",		"Lslash",	"lslash",	"Nacute",
+	"nacute",	"Ncedilla",	"ncedilla",	"tmacron",
+	"ncaron",	"napostrophe",	"Eng",		"eng",
+	"Omacron",	"omacron",	"Obreve",	"obreve",
+	"Ohungarumlaut","ohungarumlaut","OE",		"oe",
+	"Racute",	"racute",	"Rcommaaccent",	"rcommaaccent",
+	"Rcaron",	"rcaron",	"Sacute",	"sacute",
+	"Scircumflex",	"scircumflex",	"Scedilla",	"scedilla",
+	"Scaron",	"scaron",	"Tcedilla",	"tcedilla",
+	"Tcaron",	"tcaron",	"Tbar",		"tbar",
+	"Utilde",	"utilde",	"Umacron",	"umacron",
+	"Ubreve",	"ubreve",	"Uring",	"uring",
+	"Uhungarumlaut","uhungarumlaut","Uogonek",	"uogonek",
+	"Wcircumflex",	"wcircumflex",	"Ycircumflex",	"ycircumflex",
+	"Ydieresis",	"Zacute",	"zacute",	"Zdotaccent",
 	"zdotaccent",	"Zcaron",	"zcaron",	"longs"
 };
 
@@ -183,15 +183,13 @@ char *glyph_out(char *p)
 		i3 = -1;
 		i4 = -1;
 	}
-	if (i1 >= 0) {
-		g = (char **) utf_1[i1];
-		if (g) {
-			g = (char **) g[i2];
-			if (i3 >= 0 && g) {
-				g = (char **) g[i3];
-				if (i4 >= 0 && g)
-					g = (char **) g[i4];
-			}
+	g = (char **) utf_1[i1];
+	if (g) {
+		g = (char **) g[i2];
+		if (i3 >= 0 && g) {
+			g = (char **) g[i3];
+			if (i4 >= 0 && g)
+				g = (char **) g[i4];
 		}
 	}
 	q = (char *) g;

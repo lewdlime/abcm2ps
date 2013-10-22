@@ -1097,7 +1097,9 @@ static void defg1(void)
 	if (gcur.rgb != 0)
 		fprintf(fout, " style=\"color:#%06x;fill:#%06x\"",
 				gcur.rgb, gcur.rgb);
-	fprintf(fout, "%s>\n", gcur.dash);
+//jfm test
+//	fprintf(fout, "%s>\n", gcur.dash);
+	fprintf(fout, ">\n");
 	g = 1;
 	memcpy(&gold, &gcur, sizeof gold);
 }
@@ -1301,7 +1303,11 @@ static void xml_str_out(char *p)
 		case '>': r = "&gt;"; break;
 		case '\'': r = "&apos;"; break;
 		case '"': r = "&quot;"; break;
-		case '&': r = "&amp;"; break;
+		case '&':
+			if (*p == '#')
+				continue;
+			r = "&amp;";
+			break;
 		default:
 			continue;
 		}
@@ -3457,7 +3463,8 @@ rmoveto:
 				return;
 			}
 			in_path = 0;
-			fprintf(fout, "\t\" stroke=\"currentColor\" fill=\"none\"/>\n");
+			fprintf(fout, "\t\" stroke=\"currentColor\" fill=\"none\"%s/>\n",
+					gcur.dash);
 			return;
 		}
 		if (strcmp(op, "su") == 0

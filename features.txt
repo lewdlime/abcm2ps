@@ -1,5 +1,5 @@
-	Features of abcm2ps 7.5.7 (J.F. Moine, July 2013)
-	=================================================
+	Features of abcm2ps 7.6.2 (J.F. Moine, October 2013)
+	====================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
 
@@ -30,7 +30,7 @@ Tune body.
 	- Multiple measure overlay (as '&&') is not implemented.
 	  Use the '(& .. & .. & .. &) extension instead.
 
-Data format.
+Text strings.
 
 	- The HTML sequences are not implemented.
 
@@ -339,16 +339,19 @@ Multiple voices.
 	- The operator '(&...&...&)' permits voice overlay on many
 	  measures. See sample3.abc for an example.
 
-Data format.
+Text strings.
 
 	- The guitar chords and annotations may contain '\#', '\b' and '\='
 	  to display accidentals.
 
-	- Strings may contain characters from '\001' to '\005' to display
-	  accidentals. For compatibility, the values '\201' to '\205'
-	  are handled the same way.
+	- The strings may contain characters from '\001' to '\005' to display
+	  accidentals. For compatibility, the values '\201' to '\205' are
+	  handled the same way.
 
 	- In quoted string, the '%' does not need to be escaped.
+
+	- The strings may contain XML character references like "&#xe9;"
+	  or "&#x1d15f;"
 
 Deprecated ABC syntax.
 

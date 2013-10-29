@@ -1,3 +1,17 @@
+---- Version 7.6.3 - 13/10/25 ----
+
+Fix loss of line break when %%postscript at start of line.
+Fix bad SVG output when 'show' before 'stroke' or 'fill'
+	(reported by David Lacroix).
+Fix bad position of elements built from PostScript code with 'ltr'
+		in SVG rendering.
+	(reported by David Lacroix).
+Update config.guess and config.sub from http://git.savannah.gnu.org/
+	(asked by Deepak C Shetty and Snehal).
+Add 'color="black"' in <svg> tag.
+Fix bad font of string starting with non-ascii character (PS output)
+	(reported by David Lacroix).
+
 ---- Version 7.6.2 - 13/10/18 ----
 
 Fix bad tie when ending note is combined with previous voice

@@ -64,7 +64,8 @@ static int n_sym;
 static int ps_error;
 static int in_cnt;			/* in [..] or {..} */
 static float cx, cy;			/* current point */
-static int in_path;
+static char *path;
+static char path_buf[256];
 
 static float xoffs, yoffs;
 
@@ -971,7 +972,7 @@ void define_svg_symbols(char *title, float w, float h)
 			"<svg xmlns=\"http://www.w3.org/2000/svg\"\n"
 			"	xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
 			"	xml:space='preserve'\n"
-			"\twidth=\"%.0f\" height=\"%.0f\">\n"
+			"\twidth=\"%.0f\" height=\"%.0f\" color=\"black\">\n"
 			"<title>%s</title>\n",
 			w, h, title);
 	} else {				/* -g or -v */
@@ -981,9 +982,9 @@ void define_svg_symbols(char *title, float w, float h)
 				"\t\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
 		fprintf(fout,
 			"<svg xmlns=\"http://www.w3.org/2000/svg\"\n"
-			"     xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
-			"     xml:space='preserve'\n"
-			"\twidth=\"%.0f\" height=\"%.0f\">\n"
+			"\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
+			"\txml:space='preserve'\n"
+			"\twidth=\"%.0f\" height=\"%.0f\" color=\"black\">\n"
 			"<title>%s</title>\n",
 			w, h, title);
 		if (cfmt.bgcolor != 0 && cfmt.bgcolor[0] != '\0')
@@ -1000,7 +1001,7 @@ void define_svg_symbols(char *title, float w, float h)
 	n_sym = 0;
 
 	in_cnt = 0;
-	in_path = 0;
+	path = NULL;
 	ps_error = 0;
 
 	s = strdup("/defl 0 def\n"
@@ -1116,12 +1117,14 @@ static void defg1(void)
  */
 static void setg(int newg)
 {
+#if 0 //path change
 	if (in_path) {
 		fputs("\"/>\n", fout);
 		fprintf(stderr, "svg setg: No stroke nor fill\n");
 //		ps_error = 1;
 		in_path = 0;
 	}
+#endif
 	if (g == 2) {
 		fputs("</text>\n", fout);
 		g = 1;
@@ -1142,14 +1145,44 @@ static void setg(int newg)
 	}
 }
 
+/* graphic path */
+static void path_print(char *fmt, ...)
+{
+	va_list args;
+	char *p;
+
+	va_start(args, fmt);
+	vsnprintf(path_buf, sizeof path_buf, fmt, args);
+	va_end(args);
+	if (!path) {
+		path = malloc(strlen(path_buf) + 1);
+		p = path;
+	} else {
+		path = realloc(path, strlen(path) + strlen(path_buf) + 1);
+		p = path + strlen(path);
+	}
+	if (!path) {
+		fprintf(stderr, "Out of memory.\n");
+		exit(EXIT_FAILURE);
+	}
+	strcpy(p, path_buf);
+}
+
 static void path_def(void)
 {
-	if (in_path)
+	if (path)
 		return;
 	setg(1);
-	in_path = 1;
-	fprintf(fout, "<path d=\"m%.2f %.2f\n",
+	path_print("<path d=\"m%.2f %.2f\n",
 		xoffs + cx, yoffs - cy);
+}
+
+static void path_end(void)
+{
+	setg(1);
+	fputs(path, fout);
+	free(path);
+	path = NULL;
 }
 
 static void def_use(int def)
@@ -1176,9 +1209,9 @@ static void xysym(char *op, int use)
 {
 	float x, y;
 
+	def_use(use);
 	y = yoffs - pop_free_val();
 	x = xoffs + pop_free_val();
-	def_use(use);
 	fprintf(fout, "<use x=\"%.2f\" y=\"%.2f\" xlink:href=\"#%s\"/>\n",
 		x, y, op);
 }
@@ -1245,11 +1278,11 @@ static void arp_ltr(char type)
 	float x, y, t, w;
 	int n;
 
+	def_use(D_ltr);
 	y = yoffs - pop_free_val();
 	x = xoffs + pop_free_val();
 	w = pop_free_val();
 	n = (w + 5) / 6;
-	def_use(D_ltr);
 	if (type == 'a') {
 		fprintf(fout, "<g transform=\"rotate(270)\">\n");
 		t = x;
@@ -1258,7 +1291,7 @@ static void arp_ltr(char type)
 	}
 	y -= 4;
 	while (--n >= 0) {
-		    fprintf(fout, "<use x=\"%.2f\" y=\"%.2f\" xlink:href=\"#ltr\"/>\n",
+		fprintf(fout, "<use x=\"%.2f\" y=\"%.2f\" xlink:href=\"#ltr\"/>\n",
 			x, y);
 			x += 6;
 	}
@@ -1591,16 +1624,16 @@ stack_dump();
 				a1 -= 360;
 			if (a2 >= 360)
 				a2 -= 360;
-			fputs("\t", fout);
+			path_print("\t", fout);
 			if (x1 != cx || y1 != cy)
-				fprintf(fout, "m%.2f %.2f", 
+				path_print("m%.2f %.2f", 
 					x1 - cx, -(y1 - cy));
 			if (a1 == a2) {			/* circle */
 				a2 = 180 - a1;
 				x2 = x + r * cosf(a2 * M_PI / 180);
 				y2 = y + r * sinf(a2 * M_PI / 180);
-				fprintf(fout, "a%.2f %.2f 0 0 %d %.2f %.2f"
-							"a%.2f %.2f 0 0 %d %.2f %.2f\n",
+				path_print("a%.2f %.2f 0 0 %d %.2f %.2f"
+						"a%.2f %.2f 0 0 %d %.2f %.2f\n",
 					r, r, op[3] == 'n', x2 - x1, -(y2 - y1),
 					r, r, op[3] == 'n', x1 - x2, -(y1 - y2));
 				cx = x1;
@@ -1608,7 +1641,7 @@ stack_dump();
 			} else {
 				x2 = x + r * cosf(a2 * M_PI / 180);
 				y2 = y + r * sinf(a2 * M_PI / 180);
-				fprintf(fout, "a%.2f %.2f 0 0 %d %.2f %.2f\n",
+				path_print("a%.2f %.2f 0 0 %d %.2f %.2f\n",
 					r, r, op[3] == 'n', x2 - x1, -(y2 - y1));
 				cx = x2;
 				cy = y2;
@@ -1747,10 +1780,10 @@ stack_dump();
 			return;
 		}
 		if (strcmp(op, "brace") == 0) {
+			def_use(D_brace);
 			y = yoffs - pop_free_val();
 			x = xoffs + pop_free_val();
 			h = pop_free_val() * 0.01;
-			def_use(D_brace);
 			fprintf(fout,
 				"<g transform=\"translate(%.2f,%.2f) scale(1,%.2f)\">\n"
 				"	<use xlink:href=\"#brace\"/>\n"
@@ -1798,7 +1831,7 @@ curveto:
 			c3 = xoffs + pop_free_val();
 			c2 = yoffs - pop_free_val();
 			c1 = xoffs + pop_free_val();
-			fprintf(fout, "\tC%.2f %.2f %.2f %.2f %.2f %.2f\n",
+			path_print("\tC%.2f %.2f %.2f %.2f %.2f %.2f\n",
 				c1, c2, c3, c4, xoffs + x, yoffs - y);
 			cx = x;
 			cy = y;
@@ -1824,7 +1857,7 @@ curveto:
 		}
 		if (strcmp(op, "closepath") == 0) {
 			path_def();
-			fprintf(fout, "\tz");
+			path_print("\tz");
 			return;
 		}
 		if (strcmp(op, "composefont") == 0) {
@@ -2076,12 +2109,12 @@ curveto:
 			return;
 		}
 		if (strcmp(op, "eofill") == 0) {
-			if (!in_path) {
+			if (!path) {
 				fprintf(stderr, "svg eofill: No path\n");
 				ps_error = 1;
 				return;
 			}
-			in_path = 0;
+			path_end();
 			fprintf(fout, "\t\" fill-rule=\"evenodd\" fill=\"currentColor\"/>\n");
 			return;
 		}
@@ -2133,12 +2166,12 @@ curveto:
 			return;
 		}
 		if (strcmp(op, "fill") == 0) {
-			if (!in_path) {
+			if (!path) {
 				fprintf(stderr, "svg fill: No path\n");
 //				ps_error = 1;
 				return;
 			}
-			in_path = 0;
+			path_end();
 			fprintf(fout, "\t\" fill=\"currentColor\"/>\n");
 			return;
 		}
@@ -2532,11 +2565,11 @@ lineto:
 			y = pop_free_val();
 			x = pop_free_val();
 			if (x == cx)
-				fprintf(fout, "\tv%.2f\n", cy - y);
+				path_print("\tv%.2f\n", cy - y);
 			else if (y == cy)
-				fprintf(fout, "\th%.2f\n", x - cx);
+				path_print("\th%.2f\n", x - cx);
 			else
-				fprintf(fout, "\tl%.2f %.2f\n",
+				path_print("\tl%.2f %.2f\n",
 					x - cx, cy - y);
 			cx = x;
 			cy = y;
@@ -2619,17 +2652,12 @@ lineto:
 moveto:
 			cy = pop_free_val();
 			cx = pop_free_val();
-			if (in_path)
-				fprintf(fout, "	M%.2f %.2f\n", xoffs + cx, yoffs - cy);
-			else
-#if 1	/*fixme:test*/
-				if (g == 2) {
-					fputs("</text>\n", fout);
-					g = 1;
-				}
-#else
-				setg(1);
-#endif
+			if (path) {
+				path_print("\tM%.2f %.2f\n", xoffs + cx, yoffs - cy);
+			} else if (g == 2) {
+				fputs("</text>\n", fout);
+				g = 1;
+			}
 			return;
 		}
 		break;
@@ -2660,6 +2688,7 @@ moveto:
 			return;
 		}
 		if (strcmp(op, "mrest") == 0) {
+			def_use(D_mrest);
 			y = yoffs - pop_free_val();
 			x = xoffs + pop_free_val();
 			s = pop_free_str();
@@ -2668,7 +2697,6 @@ moveto:
 				ps_error = 1;
 				return;
 			}
-			def_use(D_mrest);
 			fprintf(fout, "<use x=\"%.2f\" y=\"%.2f\" xlink:href=\"#mrest\"/>\n"
 				"<text font-family=\"Times\" font-size=\"15\" font-weight=\"bold\" font-style=\"normal\"\n"
 				"	x=\"%.2f\" y=\"%.2f\" text-anchor=\"middle\">%s</text>\n",
@@ -2742,9 +2770,9 @@ moveto:
 		break;
 	case 'p':
 		if (strcmp(op, "pclef") == 0) {
+			def_use(D_pclef);
 			y = yoffs - pop_free_val();
 			x = xoffs + pop_free_val();
-			def_use(D_pclef);
 			fprintf(fout, "<use x=\"%.2f\" y=\"%.2f\" xlink:href=\"#%s\"/>\n",
 				x, y, op);
 			return;
@@ -2841,7 +2869,7 @@ rcurveto:
 			c3 = pop_free_val();
 			c2 = pop_free_val();
 			c1 = pop_free_val();
-			fprintf(fout, "\tc%.2f %.2f %.2f %.2f %.2f %.2f\n",
+			path_print("\tc%.2f %.2f %.2f %.2f %.2f %.2f\n",
 				c1, -c2, c3, -c4, x, -y);
 			cx += x;
 			cy += y;
@@ -2853,11 +2881,11 @@ rlineto:
 			y = pop_free_val();
 			x = pop_free_val();
 			if (x == 0)
-				fprintf(fout, "\tv%.2f\n", -y);
+				path_print("\tv%.2f\n", -y);
 			else if (y == 0)
-				fprintf(fout, "\th%.2f\n", x);
+				path_print("\th%.2f\n", x);
 			else
-				fprintf(fout, "\tl%.2f %.2f\n", x, -y);
+				path_print("\tl%.2f %.2f\n", x, -y);
 			cx += x;
 			cy += y;
 			return;
@@ -2866,17 +2894,12 @@ rlineto:
 rmoveto:
 			y = pop_free_val();
 			x = pop_free_val();
-			if (in_path)
-				fprintf(fout, "\tm%.2f %.2f\n", x, -y);
-			else
-#if 1	/*fixme:test*/
-				if (g == 2) {
-					fputs("</text>\n", fout);
-					g = 1;
-				}
-#else
-				setg(1);
-#endif
+			if (path) {
+				path_print("\tm%.2f %.2f\n", x, -y);
+			} else if (g == 2) {
+				fputs("</text>\n", fout);
+				g = 1;
+			}
 			cx += x;
 			cy += y;
 			return;
@@ -3040,8 +3063,13 @@ rmoveto:
 		}
 		if (strcmp(op, "rotate") == 0) {
 			setg(0);
+#if 1
+			h = 360 - pop_free_val();
+			gcur.rotate += h;
+#else
 			h = pop_free_val();
 			gcur.rotate -= h;
+#endif
 			h = h * M_PI / 180;
 			x = cx;
 			cx = x * cos(h) + cy * sin(h);
@@ -3397,9 +3425,9 @@ rmoveto:
 			return;
 		}
 		if (strcmp(op, "showerror") == 0) {
+			def_use(D_showerror);
 			y = yoffs - pop_free_val();
 			x = xoffs + pop_free_val();
-			def_use(D_showerror);
 			fprintf(fout, "<use x=\"%.2f\" y=\"%.2f\" xlink:href=\"#%s\"/>\n",
 				x, y, op);
 			return;
@@ -3417,9 +3445,9 @@ rmoveto:
 			return;
 		}
 		if (strcmp(op, "spclef") == 0) {
+			def_use(D_pclef);
 			y = yoffs - pop_free_val();
 			x = xoffs + pop_free_val();
-			def_use(D_pclef);
 			fprintf(fout, "<use x=\"%.2f\" y=\"%.2f\" xlink:href=\"#pclef\"/>\n",
 				x, y);
 			return;
@@ -3457,12 +3485,12 @@ rmoveto:
 			return;
 		}
 		if (strcmp(op, "stroke") == 0) {
-			if (!in_path) {
+			if (!path) {
 				fprintf(stderr, "svg: 'stroke' with no path\n");
 //				ps_error = 1;
 				return;
 			}
-			in_path = 0;
+			path_end();
 			fprintf(fout, "\t\" stroke=\"currentColor\" fill=\"none\"%s/>\n",
 					gcur.dash);
 			return;

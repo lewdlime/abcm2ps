@@ -4142,10 +4142,12 @@ static void ps_def(struct SYMBOL *s,
 		s->u = PSSEQ;
 		s->as.text = p;
 		s->as.flags |= ABC_F_INVIS;
+#if 0
 		if (s->prev && (s->prev->sflags & S_EOLN)) {
 			s->sflags |= S_EOLN;
 			s->prev->sflags &= ~S_EOLN;
 		}
+#endif
 		return;
 	}
 	if (file_initialized || mbf != outbuf)

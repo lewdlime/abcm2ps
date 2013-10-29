@@ -829,8 +829,13 @@ static void str_ft_out(char *p, int end)
 	while (*p != '\0') {
 		if ((unsigned char) *p >= 0x80
 		 && use_glyph) {
-			if (p > q)
+			if (p > q) {
 				str_ft_out1(q, p - q);
+			} else if (curft != outft) {
+				str_end(1);
+				a2b(" ");
+				set_font(curft);
+			}
 			str_end(0);
 			if (!(strtx & TX_ARR)) {
 				a2b("[");

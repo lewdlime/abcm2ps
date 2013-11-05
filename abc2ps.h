@@ -599,7 +599,7 @@ void write_heading(struct abctune *t);
 void write_user_ps(void);
 void write_text(char *cmd, char *s, int job);
 /* svg.c */
-void define_svg_symbols(char *title, float w, float h);
+void define_svg_symbols(char *title, int num, float w, float h);
 int svg_output(FILE *out, const char *fmt, ...)
 #ifdef __GNUC__
 	__attribute__ ((format (printf, 2, 3)))

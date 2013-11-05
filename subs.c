@@ -118,7 +118,7 @@ static struct SYMBOL *t;
 		fprintf(stderr, "   - In tune '%s':\n", p);
 	}
 	fprintf(stderr, sev == 0 ? "Warning " : "Error ");
-	if (s != 0) {
+	if (s) {
 		fprintf(stderr, "in line %d.%d",
 			s->as.linenum, s->as.colnum);
 		s->as.flags |= ABC_F_ERROR;
@@ -387,7 +387,7 @@ static void pg_line_output(PangoLayoutLine *line)
 	GSList *runs_list;
 	PangoGlyphInfo *glyph_info;
 	char tmp[256];
-	const char *fontname = 0;
+	const char *fontname = NULL;
 	int ret, glypharray;
 
 	outft = -1;
@@ -407,7 +407,7 @@ static void pg_line_output(PangoLayoutLine *line)
 
 		if (pango_font_description_get_size(ftdesc) != wi) {
 			wi = pango_font_description_get_size(ftdesc);
-			fontname = 0;
+			fontname = NULL;
 		}
 		for (i = 0; i < glyphs->num_glyphs; i++) {
 			glyph_info = &glyphs->glyphs[i];
@@ -542,7 +542,7 @@ static void str_pg_out(char *p, int action)
 		w = atof(q);
 		for (;;) {
 			q = strchr(p, '\t');
-			if (q == 0)
+			if (!q)
 				break;
 			*q = '\0';
 			str_pg_out(p, A_LEFT);
@@ -583,7 +583,7 @@ static void pg_para_output(int job)
 	PangoLayoutLine *line;
 	PangoGlyphInfo *glyph_info;
 	char tmp[256];
-	const char *fontname = 0;
+	const char *fontname = NULL;
 	int ret, glypharray;
 	int wi;
 	float y;
@@ -620,7 +620,7 @@ static void pg_para_output(int job)
 
 			if (pango_font_description_get_size(ftdesc) != wi) {
 				wi = pango_font_description_get_size(ftdesc);
-				fontname = 0;
+				fontname = NULL;
 			}
 //printf("font size: %.2f\n", (float) wi / PG_SCALE);
 
@@ -988,14 +988,14 @@ static void put_inf2r(struct SYMBOL *s1,
 {
 	char buf[256], *p, *q;
 
-	if (s1 == 0) {
+	if (!s1) {
 		s1 = s2;
-		s2 = 0;
+		s2 = NULL;
 	}
 	p = &s1->as.text[2];
 	if (s1->as.text[0] == 'T')
 		p = trim_title(p, s1);
-	if (s2 != 0) {
+	if (s2) {
 		buf[sizeof buf - 1] = '\0';
 		strncpy(buf, p, sizeof buf - 1);
 		q = buf + strlen(buf);
@@ -1304,21 +1304,21 @@ void put_words(struct SYMBOL *words)
 	bskip(cfmt.wordsspace);
 	for (s = words; s != 0 || s2 != 0; ) {
 //fixme:should also permit page break on stanza start
-		if (s != 0 && s->as.text[2] == '\0')
+		if (s && s->as.text[2] == '\0')
 			buffer_eob();
 		bskip(cfmt.lineskipfac * cfmt.font_tb[WORDSFONT].size);
-		if (s != 0) {
+		if (s) {
 			put_wline(&s->as.text[2], 45., 0);
 			s = s->next;
 			if (s == s_end)
-				s = 0;
+				s = NULL;
 		}
-		if (s2 != 0) {
+		if (s2) {
 			if (put_wline(&s2->as.text[2], 20. + middle, 1)) {
 				if (--n == 0) {
-					if (s != 0) {
+					if (s) {
 						n++;
-					} else if (s2->next != 0) {
+					} else if (s2->next) {
 
 						/* center the last words */
 /*fixme: should compute the width average.. */
@@ -1342,10 +1342,10 @@ void put_history(void)
 	char tmp[265];
 
 	font = 0;
-	for (s = info['I' - 'A']; s != 0; s = s->next) {
+	for (s = info['I' - 'A']; s; s = s->next) {
 		u = s->as.text[0] - 'A';
 		if (!(cfmt.fields[0] & (1 << u))
-		 || (s2 = info[u]) == 0)
+		 || (s2 = info[u]) == NULL)
 			continue;
 		if (!font) {
 			bskip(cfmt.textspace);
@@ -1359,7 +1359,7 @@ void put_history(void)
 		a2b("0 0 M(%s)show ", tex_buf);
 		for (;;) {
 			put_inf(s2);
-			if ((s2 = s2->next) == 0)
+			if ((s2 = s2->next) == NULL)
 				break;
 			bskip(h);
 			a2b("%.2f 0 M ", w);
@@ -1375,26 +1375,26 @@ char *trim_title(char *p, struct SYMBOL *title)
 	char *b, *q, *r;
 static char buf[STRL1];
 
-	q = 0;
+	q = NULL;
 	if (cfmt.titletrim) {
 		q = strrchr(p, ',');
-		if (q != 0) {
+		if (q) {
 			if (q[1] != ' ' || !isupper((unsigned char) q[2])
 			 || strlen(q) > 7	/* word no more than 4 characters */
-			 || strchr(q + 2, ' ') != 0)
-				q = 0;
+			 || strchr(q + 2, ' '))
+				q = NULL;
 		}
 	}
 	if (title != info['T' - 'A']
 	 || !(cfmt.fields[0] & (1 << ('X' - 'A'))))
 		title = 0;
-	if (q == 0
-	 && title == 0
+	if (!q
+	 && !title
 	 && !cfmt.titlecaps)
 		return p;		/* keep the title as it is */
 	b = buf;
 	r = &info['X' - 'A']->as.text[2];
-	if (title != 0
+	if (title
 	 && *r != '\0') {
 		if (strlen(p) + strlen(r) + 3 >= sizeof buf) {
 			error(1, 0, "Title or X: too long");
@@ -1407,7 +1407,7 @@ static char buf[STRL1];
 			return p;
 		}
 	}
-	if (q != 0)
+	if (q)
 		sprintf(b, "%s %.*s", q + 2, (int) (q - p), p);
 	else
 		strcpy(b, p);
@@ -1628,7 +1628,7 @@ static void write_headform(float lwidth)
 			}
 			s = s->next;
 			if (inf_nb[i] == 1) {
-				while (s != 0) {
+				while (s) {
 					y += sz;
 					a2b("%.1f %.1f M ", x, -y);
 					put_inf2r(s, 0, align);
@@ -1668,7 +1668,7 @@ void write_heading(struct abctune *t)
 
 	/* titles */
 	if (cfmt.fields[0] & (1 << ('T' - 'A'))) {
-		for (s = info['T' - 'A']; s != 0; s = s->next)
+		for (s = info['T' - 'A']; s; s = s->next)
 			write_title(s);
 	}
 
@@ -1692,9 +1692,9 @@ void write_heading(struct abctune *t)
 		else
 			author = info['A' - 'A'];
 	}
-	composer = (cfmt.fields[0] & (1 << ('C' - 'A'))) ? info['C' - 'A'] : 0;
-	origin = (cfmt.fields[0] & (1 << ('O' - 'A'))) ? info['O' - 'A'] : 0;
-	if (composer != 0 || origin != 0 || author != 0) {
+	composer = (cfmt.fields[0] & (1 << ('C' - 'A'))) ? info['C' - 'A'] : NULL;
+	origin = (cfmt.fields[0] & (1 << ('O' - 'A'))) ? info['O' - 'A'] : NULL;
+	if (composer || origin || author) {
 		float xcomp;
 		int align;
 
@@ -1711,17 +1711,17 @@ void write_heading(struct abctune *t)
 			align = A_RIGHT;
 		}
 		down2 = down1;
-		if (author != 0) {
+		if (author) {
 			for (;;) {
 				bskip(cfmt.font_tb[COMPOSERFONT].size);
 				down2 += cfmt.font_tb[COMPOSERFONT].size;
 				a2b("0 0 M ");
 				put_inf(author);
-				if ((author = author->next) == 0)
+				if ((author = author->next) == NULL)
 					break;
 			}
 		}
-		if (composer != 0 || origin != 0) {
+		if (composer || origin) {
 			if (cfmt.aligncomposer >= 0
 			 && down1 != down2)
 				bskip(down1 - down2);
@@ -1730,11 +1730,11 @@ void write_heading(struct abctune *t)
 				bskip(cfmt.font_tb[COMPOSERFONT].size);
 				a2b("%.1f 0 M ", xcomp);
 				put_inf2r(s,
-					  (s == 0 || s->next == 0) ? origin : 0,
+					  (!s || !s->next) ? origin : NULL,
 					  align);
-				if (s == 0)
+				if (!s)
 					break;
-				if ((s = s->next) == 0)
+				if ((s = s->next) == NULL)
 					break;
 				down1 += cfmt.font_tb[COMPOSERFONT].size;
 			}
@@ -1797,11 +1797,11 @@ void user_ps_add(char *s, char use)
 		t = malloc(sizeof *user_ps - sizeof user_ps->text + l + 2);
 		sprintf(t->text, "%c%s", use, s);
 	}
-	t->next = 0;
-	if ((r = user_ps) == 0) {
+	t->next = NULL;
+	if ((r = user_ps) == NULL) {
 		user_ps = t;
 	} else {
-		while (r->next != 0)
+		while (r->next)
 			r = r->next;
 		r->next = t;
 	}
@@ -1811,26 +1811,30 @@ void user_ps_add(char *s, char use)
 void user_ps_write(void)
 {
 	struct u_ps *t;
+	char *p;
 
-	for (t = user_ps; t != 0; t = t->next) {
-		switch (t->text[0]) {
+	for (t = user_ps; t; t = t->next) {
+		p = t->text;
+		switch (*p) {
 		case '\001': {		/* PS file */
 			FILE *f;
 			char line[BSIZE];
 
-			if ((f = fopen(&t->text[1], "r")) == 0) {
+			if ((f = fopen(p + 1, "r")) == NULL) {
 				error(1, 0, "Cannot open PS file '%s'",
 					&t->text[1]);
 			} else {
 				while (fgets(line, sizeof line, f))	/* copy the file */
-					fwrite(line, 1, strlen(line), fout);
+					fputs(line, fout);
 				fclose(f);
 			}
 			continue;
 		    }
-		case '%':		/* SVG code */
+		case '%':		/* "%svg " = SVG code */
 //			if (svg || epsf == 2)
-				svg_write(t->text, strlen(t->text));
+//				svg_write(t->text, strlen(t->text));
+			fputs(p + 5, fout);
+			fputc('\n', fout);
 			continue;
 		case 'p':		/* PS code for PS output only */
 //			if (secure || svg || epsf == 2)
@@ -1838,7 +1842,7 @@ void user_ps_write(void)
 			break;
 		case 'b':		/* PS code for both PS and SVG */
 			if (svg || epsf == 2) {
-				svg_write(&t->text[1], strlen(&t->text[1]));
+				svg_write(p + 1, strlen(p + 1));
 				continue;
 			}
 //			if (secure)
@@ -1847,10 +1851,10 @@ void user_ps_write(void)
 		case 's':		/* PS code for SVG output only */
 //			if (!svg && epsf != 2)
 //				continue;
-			svg_write(&t->text[1], strlen(&t->text[1]));
+			svg_write(p + 1, strlen(&t->text[1]));
 			continue;
 		}
-		fputs(&t->text[1], fout);
-		fputs("\n", fout);
+		fputs(p + 1, fout);
+		fputc('\n', fout);
 	}
 }

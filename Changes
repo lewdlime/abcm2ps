@@ -1,3 +1,26 @@
+---- Version 7.6.7 - 13/11/03 ----
+
+Fix again bad <meta> tag in XHTML output
+	(reported by David Lacroix).
+
+---- Version 7.6.6 - 13/11/03 ----
+
+Add page/sequence information in the SVG headers.
+Fix bad <meta> tag in XHTML output
+	(reported by David Lacroix).
+
+---- Version 7.6.5 - 13/11/02 ----
+
+Fix bad SVG/XHTML output when '--' in the command line.
+Put program information in XHTML header only.
+
+---- Version 7.6.4 - 13/11/01 ----
+
+Add more information in svg images (program, command line,
+	title for building index).
+Set no margin for XHTML printing.
+Adjust the scale of the SVG images.
+
 ---- Version 7.6.3 - 13/10/25 ----
 
 Fix loss of line break when %%postscript at start of line.

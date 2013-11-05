@@ -925,12 +925,55 @@ static void cond(int type)
 	}
 }
 
-/* -- output the symbol definitions -- */
-void define_svg_symbols(char *title, float w, float h)
+/* -- output information about the generation in the XHTML/SVG headers -- */
+static void gen_info(void)
 {
-//	struct elt_s *e;
+	unsigned i;
+	time_t ltime;
+
+	time(&ltime);
+#ifndef WIN32
+	strftime(tex_buf, TEX_BUF_SZ, "%b %e, %Y %H:%M", localtime(&ltime));
+#else
+	strftime(tex_buf, TEX_BUF_SZ, "%b %#d, %Y %H:%M", localtime(&ltime));
+#endif
+	fprintf(fout, "<!-- CreationDate: %s -->\n"
+			"<!-- CommandLine:",
+			tex_buf);
+
+	for (i = 1; i < (unsigned) s_argc; i++) {
+		char *p;
+		int space;
+
+		p = s_argv[i];
+		space = strchr(p, ' ') != NULL || strchr(p, '\n') != NULL;
+		fputc(' ', fout);
+		if (space)
+			fputc('\'', fout);
+
+		/* cannot have '--' inside comment ! */
+		if (*p == '-' && p[1] == '-') {
+			fputs("-\\", fout);
+			p++;
+		}
+		fputs(p, fout);
+		if (space)
+			fputc('\'', fout);
+	}
+	fputs(" -->\n", fout);
+}
+
+/* -- output the symbol definitions -- */
+void define_svg_symbols(char *title, int num, float w, float h)
+{
 	char *s;
 	unsigned i;
+	static const char *svg_head =
+		"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\"\n"
+		"\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
+		"\txml:space='preserve' color=\"black\"\n"
+		"\twidth=\"%.2fin\" height=\"%.2fin\" viewBox=\"0 0 %.0f %.0f\">\n"
+		"<title>%s %s %d</title>\n";
 
 	xoffs = yoffs = x_rot = y_rot = 0;
 	memset(&gcur, 0, sizeof gcur);
@@ -943,50 +986,39 @@ void define_svg_symbols(char *title, float w, float h)
 
 	if (svg == 2) {			/* if XHTML */
 		if (!file_initialized) {
-			if ((s = strrchr(in_fname, DIRSEP)) == 0)
+			if ((s = strrchr(in_fname, DIRSEP)) == NULL)
 				s = in_fname;
 			else
 				s++;
-#if 1
-			fprintf(fout, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\n"
+			fprintf(fout,
+				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\n"
 				"\"http://www.w3.org/TR/xhtml1/DTD/xhtml1.dtd\">\n"
 				"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
 				"<head>\n"
 				"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n"
+				"<meta name=\"generator\" content=\"abcm2ps-" VERSION "\"/>\n");
+			gen_info();
+			fprintf(fout,
+				"<style type=\"text/css\">\n"
+				"\tbody {margin:0; padding:0; border:0;}\n"
+				"\t@page {margin:0;}\n"
+				"</style>\n"
 				"<title>%s</title>\n"
 				"</head>\n"
 				"<body>\n",
 				s);
-#else
-			fprintf(fout, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-				"<!DOCTYPE html PUBLIC\n"
-				"	\"-//W3C//DTD XHTML 1.0 Strict//EN\"\n"
-				"	\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-				"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
-				"<head><title>%s</title></head>\n"
-				"<body>\n",
-				s);
-#endif
 		}
-		fprintf(fout, "<p>\n"
-			"<svg xmlns=\"http://www.w3.org/2000/svg\"\n"
-			"	xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
-			"	xml:space='preserve'\n"
-			"\twidth=\"%.0f\" height=\"%.0f\" color=\"black\">\n"
-			"<title>%s</title>\n",
-			w, h, title);
+		fprintf(fout, "<p>\n");
+		fprintf(fout, svg_head, w / 72, h / 72, w, h, title, "page", num);
 	} else {				/* -g or -v */
 		if (fout != stdout)
 			fprintf(fout, "<?xml version=\"1.0\" standalone=\"no\"?>\n"
 				"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n"
 				"\t\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
-		fprintf(fout,
-			"<svg xmlns=\"http://www.w3.org/2000/svg\"\n"
-			"\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
-			"\txml:space='preserve'\n"
-			"\twidth=\"%.0f\" height=\"%.0f\" color=\"black\">\n"
-			"<title>%s</title>\n",
-			w, h, title);
+		fprintf(fout, svg_head, w / 72, h / 72, w, h, title,
+			epsf ? "tune" : "page", num);
+		fprintf(fout, "<!-- Creator: abcm2ps-" VERSION " -->\n");
+		gen_info();
 		if (cfmt.bgcolor != 0 && cfmt.bgcolor[0] != '\0')
 			fprintf(fout,
 				"<rect width=\"100%%\" height=\"100%%\" fill=\"%s\"/>\n",
@@ -3790,11 +3822,13 @@ void svg_write(char *buf, int len)
 		return;
 
 	p = (unsigned char *) buf;
-	if (strncmp((char *) p, "%svg ", 5) == 0) { /* %%beginsvg */
+#if 0
+	if (strncmp((char *) p, "%svg ", 5) == 0) {	/* %%beginsvg */
 		fwrite(p + 5, 1, len - 5, fout);
 		fputs("\n", fout);
 		return;
 	}
+#endif
 
 	/* scan the string */
 	while (--len >= 0) {
@@ -3866,7 +3900,7 @@ void svg_write(char *buf, int len)
 			}
 			if ((char *) q != &buf[1] && q[-2] != '\n')
 				break;
-			if (strncmp((char *) q, "A ", 2) == 0) { /* annotation */
+			if (strncmp((char *) q, "A ", 2) == 0) {	/* annotation */
 				char type;
 				int row , col, h;
 				float x, y, w;
@@ -3883,6 +3917,29 @@ void svg_write(char *buf, int len)
 				}
 					fprintf(fout, "<abc type=\"%c\" row=\"%d\" col=\"%d\" x=\"%.2f\" y=\"%.2f\" width=\"%.2f\" height=\"%d\"/>\n",
 						type, row, col, xoffs + x, yoffs - y - h, w, h);
+				break;
+			}
+			if (strncmp((char *) q, " --- ", 5) == 0	/* title info */
+			 && strncmp((char *) p - 6, ") ---", 5) == 0) {
+				setg(1);
+				if (q[5] == '+') {		/* subtitle */
+					q += 8;		/* % --- + (%s) ... */
+					r = (unsigned char *) strchr((char *) q, ')');
+//					if (!r)
+//						break;
+					fprintf(fout, "<!-- subtitle: %.*s -->\n",
+							r - q, q);
+					break;
+				}
+				q = (unsigned char *) strchr((char *) q, '(');
+//				if (!q)
+//					break;
+				q++;
+				r = (unsigned char *) strchr((char *) q, ')');
+//				if (!r)
+//					break;
+				fprintf(fout, "<!-- title: %.*s -->\n",
+						r - q, q);
 				break;
 			}
 			break;

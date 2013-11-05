@@ -41,11 +41,11 @@ static float ln_lmarg[BUFFLN];	/* left margin of buffered lines */
 static float ln_scale[BUFFLN];	/* scale of buffered lines */
 static signed char ln_font[BUFFLN];	/* font of buffered lines */
 static float cur_lmarg = 0;	/* current left margin */
-static float min_lmarg, max_rmarg;	/* for eps (-E) and svg (-g) */
+static float min_lmarg, max_rmarg;	/* margins for -E/-g */
 static float cur_scale = 1.0;	/* current scale */
 static float maxy;		/* remaining vertical space in page */
 static float bposy;		/* current position in buffered data */
-static int nepsf;		/* counter for epsf/svg output files */
+static int nepsf;		/* counter for -E/-g output files */
 static int nbpages;		/* number of pages in the output file */
 static int outbufsz;		/* size of outbuf */
 static char outfnam[FILENAME_MAX]; /* internal file name for open/close */
@@ -116,7 +116,7 @@ static void open_fout(void)
 	close_output_file();
 	strcpy(outfnam, fnm);
 	if (i != 0 || fnm[0] != '-') {
-		if ((fout = fopen(fnm, "w")) == 0) {
+		if ((fout = fopen(fnm, "w")) == NULL) {
 			error(1, 0, "Cannot create output file %s - abort", fnm);
 			exit(EXIT_FAILURE);
 		}
@@ -143,7 +143,7 @@ void marg_init(void)
 	max_rmarg = cfmt.pagewidth;
 }
 
-/* -- initialize the postscript file -- */
+/* -- initialize the postscript file (PS or EPS) -- */
 static void init_ps(char *str)
 {
 	time_t ltime;
@@ -159,7 +159,7 @@ static void init_ps(char *str)
 			-bposy);
 		marg_init();
 	} else {
-		if (fout == 0)
+		if (!fout)
 			open_fout();
 		fprintf(fout, "%%!PS-Adobe-2.0\n");
 		fprintf(fout, "%%%%BoundingBox: 0 0 %.0f %.0f\n",
@@ -186,6 +186,7 @@ static void init_ps(char *str)
 
 		p = s_argv[i];
 		space = strchr(p, ' ') != NULL || strchr(p, '\n') != NULL;
+		fputc(' ', fout);
 		if (space)
 			fputc('\'', fout);
 		for (;;) {
@@ -195,7 +196,7 @@ static void init_ps(char *str)
 			fprintf(fout, " %.*s\n%%", q - p, p);
 			p = q + 1;
 		}
-		fprintf(fout, " %s", p);
+		fprintf(fout, "%s", p);
 		if (space)
 			fputc('\'', fout);
 	}
@@ -243,7 +244,7 @@ static void init_svg(char *str)
 	if (file_initialized)
 		fprintf(stderr, "??? init_svg: file_initialized");
 #endif
-	define_svg_symbols(str,
+	define_svg_symbols(str, nepsf,
 		(p_fmt->landscape ? p_fmt->pageheight : p_fmt->pagewidth)
 				- cur_lmarg - max_rmarg + 10,
 		-bposy);
@@ -273,7 +274,7 @@ static void close_fout(void)
 out1:
 	fclose(fout);
 out2:
-	fout = 0;
+	fout = NULL;
 	file_initialized = 0;
 }
 
@@ -518,40 +519,26 @@ static float headfooter(int header,
 	return wsize;
 }
 
-/* -- initialize postscript page -- */
-/* the flag 'in_page' is always false */
+/* -- initialize the first page or a new page for svg -- */
+/* the flag 'in_page' is always false and epsf is always null */
 static void init_page(void)
 {
 	float pheight, pwidth;
 
 	p_fmt = info['X' - 'A'] == 0 ? &cfmt : &dfmt;	/* global format */
 
+	nbpages++;
 	if (svg) {
 		if (!file_initialized) {
-#if 1
-			if (fout == 0)
+			if (!fout)
 				open_fout();
-#else
-			if (svg == 1 && fout == 0) {
-				int i;
-
-				i = strlen(outfnam) - 7;
-				sprintf(&outfnam[i], "%03d.svg", ++nepsf);
-				if ((fout = fopen(outfnam, "w")) == 0) {
-					error(1, 0,
-						"Cannot create output file %s - abort",
-						outfnam);
-					exit(EXIT_FAILURE);
-				}
-			}
-#endif
-			define_svg_symbols(in_fname,
+			define_svg_symbols(in_fname, nbpages,
 				cfmt.landscape ? p_fmt->pageheight : p_fmt->pagewidth,
 				cfmt.landscape ? p_fmt->pagewidth : p_fmt->pageheight);
 			file_initialized = 1;
 			output = svg_output;
 		} else {
-			define_svg_symbols(in_fname,
+			define_svg_symbols(in_fname, nbpages,
 				cfmt.landscape ? p_fmt->pageheight : p_fmt->pagewidth,
 				cfmt.landscape ? p_fmt->pagewidth : p_fmt->pageheight);
 		}
@@ -560,7 +547,6 @@ static void init_page(void)
 		init_ps(in_fname);
 	}
 	in_page = 1;
-	nbpages++;
 	outft = -1;
 
 	if (!svg)
@@ -697,7 +683,7 @@ void write_eps(void)
 			sprintf(&outfnam[i + 1], "%03d", ++nepsf);
 		}
 		strcat(outfnam, epsf == 1 ? ".eps" : ".svg");
-		if ((fout = fopen(outfnam, "w")) == 0) {
+		if ((fout = fopen(outfnam, "w")) == NULL) {
 			error(1, 0, "Cannot open output file %s - abort",
 					outfnam);
 			exit(EXIT_FAILURE);
@@ -845,7 +831,7 @@ void write_buffer(void)
 			*p++ = '\0';
 			q = strchr(p, '\n');
 			*q = '\0';
-			if ((f = fopen(p, "r")) == 0) {
+			if ((f = fopen(p, "r")) == NULL) {
 				error(1, 0, "Cannot open EPS file '%s'", p);
 			} else {
 				if (epsf == 2 || svg) {

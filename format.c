@@ -263,7 +263,7 @@ void define_fonts(void)
 {
 	int i;
 	static char *mkfont =
-	"/mkfont{ findfont dup length 1 add dict begin\n"
+	"/mkfont{findfont dup length 1 add dict begin\n"
 	"	{1 index/FID ne{def}{pop pop}ifelse}forall\n"
 	"	CharStrings/double_sharp known not{\n"
 	"		/CharStrings CharStrings dup length dict copy def\n"

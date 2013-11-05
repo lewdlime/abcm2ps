@@ -1,6 +1,6 @@
 # rules for ninja (ninja-build)
 
-VERSION = 7.6.3
+VERSION = 7.6.7
 
 cflags = -g -O2 -Wall -pipe -DHAVE_CONFIG_H  -I.
 ldflags = -lm

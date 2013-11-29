@@ -79,12 +79,16 @@ static void open_fout(void)
 	i = strlen(fnm) - 1;
 	if (i < 0) {
 		strcpy(fnm, svg ? "Out.xhtml" : OUTPUTFILE);
+#if 1
+	} else if (i != 0 || fnm[0] != '-') {
+#else
 	} else if (i == 0 && fnm[0] == '-') {
 		if (svg == 1) {
 			error(1, 0, "Cannot use stdout with '-v' - abort");
 			exit(EXIT_FAILURE);
 		}
 	} else {
+#endif
 		if (fnm[i] == '=') {
 			char *p;
 
@@ -103,7 +107,8 @@ static void open_fout(void)
 		else	...
 #endif
 	}
-	if (svg == 1) {
+	if (svg == 1
+	 && (i != 0 || fnm[0] != '-')) {
 		cutext(fnm);
 		i = strlen(fnm) - 1;
 		if (strncmp(fnm, outfnam, i) != 0)
@@ -315,14 +320,21 @@ void close_page(void)
 	in_page = 0;
 	if (svg) {
 		svg_close();
-		if (svg == 1)
+		if (svg == 1 && fout != stdout)
 			close_fout();
 		else
 			fputs("</p>\n", fout);
 	} else {
+#if 1
+		fprintf(fout, "grestore\n"
+				"showpage\n"
+				"%%%%EndPage: %d %d\n",
+				nbpages, nbpages);
+#else
 		fputs("%%PageTrailer\n"
 			"grestore\n"
 			"showpage\n", fout);
+#endif
 	}
 	cur_lmarg = 0;
 	cur_scale = 1.0;

@@ -990,34 +990,47 @@ void define_svg_symbols(char *title, int num, float w, float h)
 				s = in_fname;
 			else
 				s++;
-			fprintf(fout,
-				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\n"
+			fputs("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\n"
 				"\"http://www.w3.org/TR/xhtml1/DTD/xhtml1.dtd\">\n"
 				"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
 				"<head>\n"
 				"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n"
-				"<meta name=\"generator\" content=\"abcm2ps-" VERSION "\"/>\n");
+				"<meta name=\"generator\" content=\"abcm2ps-" VERSION "\"/>\n",
+				fout);
 			gen_info();
 			fprintf(fout,
 				"<style type=\"text/css\">\n"
-				"\tbody {margin:0; padding:0; border:0;}\n"
+				"\tbody {margin:0; padding:0; border:0;");
+			if (cfmt.bgcolor != 0 && cfmt.bgcolor[0] != '\0')
+				fprintf(fout, " background-color:%s",
+						cfmt.bgcolor);
+			fprintf(fout,
+				"}\n"
 				"\t@page {margin:0;}\n"
 				"</style>\n"
 				"<title>%s</title>\n"
 				"</head>\n"
 				"<body>\n",
+				
 				s);
 		}
-		fprintf(fout, "<p>\n");
+		fputs("<p>\n", fout);
 		fprintf(fout, svg_head, w / 72, h / 72, w, h, title, "page", num);
+		if (cfmt.bgcolor != 0 && cfmt.bgcolor[0] != '\0')
+			fprintf(fout,
+				"<rect width=\"100%%\" height=\"100%%\" fill=\"%s\"/>\n",
+				cfmt.bgcolor);
 	} else {				/* -g or -v */
 		if (fout != stdout)
-			fprintf(fout, "<?xml version=\"1.0\" standalone=\"no\"?>\n"
+			fputs("<?xml version=\"1.0\" standalone=\"no\"?>\n"
 				"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n"
-				"\t\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
+				"\t\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n",
+				fout);
+		else if (svg)
+			fputs("<p>\n", fout);
 		fprintf(fout, svg_head, w / 72, h / 72, w, h, title,
 			epsf ? "tune" : "page", num);
-		fprintf(fout, "<!-- Creator: abcm2ps-" VERSION " -->\n");
+		fputs("<!-- Creator: abcm2ps-" VERSION " -->\n", fout);
 		gen_info();
 		if (cfmt.bgcolor != 0 && cfmt.bgcolor[0] != '\0')
 			fprintf(fout,
@@ -1205,8 +1218,7 @@ static void path_def(void)
 	if (path)
 		return;
 	setg(1);
-	path_print("<path d=\"m%.2f %.2f\n",
-		xoffs + cx, yoffs - cy);
+	path_print("<path d=\"m%.2f %.2f\n", xoffs + cx, yoffs - cy);
 }
 
 static void path_end(void)

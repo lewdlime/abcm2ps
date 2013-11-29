@@ -2571,23 +2571,10 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			}
 			continue;
 		}
-#if 1
-		if (s2 == s) {
-			if (s2->as.u.note.slur_end	/* if slur end */
-			 || (s2->sflags & S_SL2))
-				some_slur = 1;
-		} else {
-			if (s2->as.u.note.slur_st	/* if slur start/end */
-			 || s2->as.u.note.slur_end
-			 || (s2->sflags & (S_SL1 | S_SL2)))
-				some_slur = 1;
-		}
-#else
 		if (s2->as.u.note.slur_st	/* if slur start/end */
 		 || s2->as.u.note.slur_end
 		 || (s2->sflags & (S_SL1 | S_SL2)))
 			some_slur = 1;
-#endif
 		if (s2->staff < upstaff)
 			upstaff = s2->staff;
 		if (!s1)
@@ -2600,6 +2587,8 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	if (s2->time > next->time)
 		next = s2;
 
+//-- ici test
+#if 0
 	/* draw the slurs when inside the tuplet */
 	if (some_slur) {
 		draw_slurs(s1, s2);
@@ -2612,15 +2601,13 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			 || (sy->sflags & (S_SL1 | S_SL2)))
 				return next;		/* don't draw now */
 		}
-#if 0 /* draw the tuplet when a slur ends on the last note */
 		if (s2->as.u.note.slur_end
 		 || (s2->sflags & S_SL2))
 			return next;
-#endif
 	}
-	s->sflags &= ~S_IN_TUPLET;		/* the tuplet is drawn */
+#endif
 
-	if (s1 == s2) {				/* if tuplet with 1 note */
+	if (s1 == s2) {				/* tuplet with 1 note (!) */
 		nb_only = 1;
 	} else if ((t->u & 0x0f0) == 0x10) {	/* 'what' == slur */
 		nb_only = 1;
@@ -2679,7 +2666,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		if ((t->u & 0x0f) == 1)		/* if 'value' == none */
 			return next;
 		xm = (s2->x + s1->x) * .5;
-		if (s1 == s2)			/* if tuplet with 1 note */
+		if (s1 == s2)			/* tuplet with 1 note */
 			a = 0;
 		else
 			a = (s2->ys - s1->ys) / (s2->x - s1->x);
@@ -2696,6 +2683,10 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 				b += ym - yy;
 			b -= 12;
 		}
+		for (sy = s1; ; sy = sy->next) {
+			if (sy->x >= xm)
+				break;
+		}
 		if (s1->stem * s2->stem > 0) {
 			if (s1->stem > 0)
 				xm += GSTEM_XOFF;
@@ -2711,10 +2702,6 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		putxy(xm, ym);
 		a2b("y%d bnum\n", s1->staff);
 
-		for (sy = s1; ; sy = sy->next) {
-			if (sy->x >= xm)
-				break;
-		}
 		if (s1->stem > 0) {
 			ym += 8;
 			if (sy->ymx < ym)
@@ -2725,9 +2712,31 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 				sy->ymn = (short) ym;
 			y_set(s1->staff, 0, xm - 3, 6, ym);
 		}
+		s->sflags &= ~S_IN_TUPLET;		/* the tuplet is drawn */
 		return next;
 	}
 
+//-- ici test
+#if 1
+	/* draw the slurs when inside the tuplet */
+	if (some_slur) {
+		draw_slurs(s1, s2);
+		if (s1->as.u.note.slur_st
+		 || (s1->sflags & S_SL1))
+			return next;
+		for (sy = s1->next; sy != s2; sy = sy->next) {
+			if (sy->as.u.note.slur_st	/* if slur start/end */
+			 || sy->as.u.note.slur_end
+			 || (sy->sflags & (S_SL1 | S_SL2)))
+				return next;		/* don't draw now */
+		}
+//-- ici
+		/* don't draw the tuplet when a slur ends on the last note */
+		if (s2->as.u.note.slur_end
+		 || (s2->sflags & S_SL2))
+			return next;
+	}
+#endif
 	if ((t->u & 0x0f0) != 0)	/* if 'what' != square */
 		fprintf(stderr, "'what' value of %%%%tuplets not yet coded\n");
 
@@ -2950,7 +2959,8 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
     } /* lower voice */
 
 	if ((t->u & 0x0f) == 1) {	/* if 'value' == none */
-		a2b("\n");
+		a2b("%%tuplet\n");
+		s->sflags &= ~S_IN_TUPLET;
 		return next;
 	}
 	yy = .5 * (y1 + y2);
@@ -2961,6 +2971,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		     t->as.u.tuplet.q_plet);
 	putxy(xm, yy);
 	a2b("y%d bnumb\n", upstaff);
+	s->sflags &= ~S_IN_TUPLET;
 	return next;
 }
 
@@ -2972,7 +2983,7 @@ static void draw_note_ties(struct SYMBOL *k1,
 			   int *mhead2,
 			   int job)
 {
-	int i, s, m1, m2, p, p1, p2, y;
+	int i, s, m1, m2, p, p1, p2, y, staff;
 	float x1, x2, h, sh;
 
 	for (i = 0; i < ntie; i++) {
@@ -3011,6 +3022,7 @@ static void draw_note_ties(struct SYMBOL *k1,
 		}
 		x2 += sh;
 
+		staff = k1->staff;
 		switch (job) {
 		case 0:
 			if (p1 == p2 || (p1 & 1))
@@ -3018,13 +3030,17 @@ static void draw_note_ties(struct SYMBOL *k1,
 			else
 				p = p2;
 			break;
-		case 1:			/* no starting note */
+		case 1:				/* no starting note */
+		case 3:				/* clef or staff change */
 			x1 = k1->x;
 			if (x1 > x2 - 20)
 				x1 = x2 - 20;
 			p = p2;
+			staff = k2->staff;
+			if (job == 3)
+				s = -s;
 			break;
-/*		case 2:			 * no ending note */
+/*		case 2:				 * no ending note */
 		default:
 			if (k1 != k2) {
 				x2 -= k2->wl;
@@ -3050,7 +3066,7 @@ static void draw_note_ties(struct SYMBOL *k1,
 		}
 
 		y = 3 * (p - 18);
-		if (job != 1) {
+		if (job != 1 && job != 3) {
 			if (k1->nhd != 0) {
 				x1 += 4.5;
 				y += ((p & 1) ? 2 : 0) * s;
@@ -3087,27 +3103,10 @@ static void draw_note_ties(struct SYMBOL *k1,
 //					s > 0 ? SL_ABOVE : SL_BELOW;
 //			}
 		}
-#if 0
-		/* tie between 2 staves */
-/*fixme: should also do that when clef change?*/
-/*fixme:dotted not treated*/
-		if (k1->staff != k2->staff) {
-			s = k1->staff - k2->staff;
-			y1 = 3 * (p1 - 18) + 3 * s;
-			y2 = 3 * (p2 - 18) - 3 * s;
-			x1 += 4;
-			x2 -= 4;
-			putxy(x1, staff_tb[k1->staff].y + y1);
-			a2b("M ");
-			putxy(x2, staff_tb[k2->staff].y + y2);
-			a2b("lineto stroke\n");
-			continue;
-		}
-#endif
 
 		h = (.04 * (x2 - x1) + 10) * s;
-		slur_out(x1, staff_tb[k1->staff].y + y,
-			 x2, staff_tb[k1->staff].y + y,
+		slur_out(x1, staff_tb[staff].y + y,
+			 x2, staff_tb[staff].y + y,
 			 s, h, k1->as.u.note.ti1[m1] & SL_DOTTED, -1);
 	}
 }
@@ -3117,7 +3116,8 @@ static void draw_ties(struct SYMBOL *k1,
 		      struct SYMBOL *k2,
 		      int job)		/* 0: normal
 					 * 1: no starting note
-					 * 2: no ending note */
+					 * 2: no ending note
+					 * 3: no start for clef or staff change */
 {
 	struct SYMBOL *k3;
 	int i, m1, nh1, pit, ntie, tie2, ntie3, time;
@@ -3297,8 +3297,18 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 		if (!s1)
 			break;
 
-		/* search the end of the tie */
-		for (s2 = s1->next; s2; s2 = s2->next) {
+		/* search the end of the tie
+		 * and notice the clef changes */
+		for (s2 = s1->ts_next; s2; s2 = s2->ts_next) {
+			if (s2->staff != s1->staff
+			 && s2->voice != s1->voice)
+				continue;
+			if (s2->type == CLEF) {
+				clef_chg = 1;
+				continue;
+			}
+			if (s2->voice != s1->voice)
+				continue;
 			if (s2->as.type == ABC_T_NOTE) {
 				if (s2->time != s1->time + s1->dur)
 					s2 = NULL;	/* %%combinevoices */
@@ -3317,13 +3327,11 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 				if (s2->as.text[0] != '1')
 					break;
 				rtie = s1;		/* 1st repeat bar */
-			} else if (s2->type == CLEF) {
-				clef_chg = 1;
 			}
 		}
 		if (!s2) {
 
-			/* special case: tie to a combined note */
+			/* special case: tie to a combined chord */
 			if (s1->ts_prev && s1->ts_prev->next
 			 && s1->ts_prev->next->type == ABC_T_NOTE
 			 && s1->ts_prev->next->time == s1->time + s1->dur) {
@@ -3335,37 +3343,24 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			break;
 		}
 
-		/* ties with clef change or staff change */
+		/* ties with clef or staff change */
 		if (clef_chg || s1->staff != s2->staff) {
-			struct SYMBOL *s3;
-			int staff;
-			float x;
+			float x, dx;
 
 			clef_chg = 0;
-			for (s3 = s1->ts_next; ; s3 = s3->ts_next) {
-				if (s3->sflags & S_SEQST) {
-					draw_ties(s1, s3, 2);
-					break;
-				}
-			}
-			s3 = s2;
-			while (!(s3->sflags & S_SEQST))
-				s3 = s3->ts_prev;
-			for (s3 = s3->ts_prev; ; s3 = s3->ts_prev) {
-				if (s3->sflags & S_SEQST) {
-					x = s1->x;
-					staff = s1->staff;
-					if (s1->x == s3->x)
-						s1->x += (s2->x - s1->x) * 2 / 3;
-					else
-						s1->x = s3->x;
-					s1->staff = s2->staff;
-					draw_ties(s1, s2, 1);
-					s1->x = x;
-					s1->staff = staff;
-					break;
-				}
-			}
+			dx = (s2->x - s1->x) * 0.4;
+			x = s2->x;
+			s2->x -= dx;
+			if (s2->x > s1->x + 32.)
+				s2->x = s1->x + 32.;
+			draw_ties(s1, s2, 2);
+			s2->x = x;
+			x = s1->x;
+			s1->x += dx;
+			if (s1->x < s2->x - 24.)
+				s1->x = s2->x - 24.;
+			draw_ties(s1, s2, 3);
+			s1->x = x;
 			continue;
 		}
 		draw_ties(s1, s2, s2->as.type == ABC_T_NOTE ? 0 : 2);
@@ -4237,46 +4232,21 @@ static void draw_vname(float indent)
 	}
 }
 
-/* -- set the y offset of the staves and return the whole height -- */
-static float set_staff(void)
+/* -- adjust the empty flag in a staff system -- */
+static void set_empty(struct SYSTEM *sy)
 {
-	struct SYSTEM *sy;
-	struct SYMBOL *s;
 	int staff;
-	float y, staffsep, dy, maxsep, mbot;
-	struct {
-		float mtop;
-		int not_empty;
-	} delta_tb[MAXSTAFF], *p_delta;
-
-	/* search the empty staves in each parts */
-	memset(delta_tb, 0, sizeof delta_tb);
-	sy = cursys;
-	for (staff = 0; staff <= nstaff; staff++) {
-		staff_tb[staff].empty = 0;
-		if (!sy->staff[staff].empty)
-			delta_tb[staff].not_empty = 1;
-	}
-	for (s = tsfirst; s; s = s->ts_next) {
-		if (s->type != STAVES)
-			continue;
-		sy = sy->next;
-		for (staff = 0; staff <= nstaff; staff++) {
-			if (!sy->staff[staff].empty)
-				delta_tb[staff].not_empty = 1;
-		}
-	}
 
 	/* if a system brace has empty and non empty staves, keep all staves */
 	for (staff = 0; staff <= nstaff; staff++) {
 		int i, empty_fl;
 
-		if (!(cursys->staff[staff].flags & (OPEN_BRACE | OPEN_BRACE2)))
+		if (!(sy->staff[staff].flags & (OPEN_BRACE | OPEN_BRACE2)))
 			continue;
 		empty_fl = 0;
 		i = staff;
 		while (staff <= nstaff) {
-			if (delta_tb[staff].not_empty)
+			if (sy->staff[staff].empty)
 				empty_fl |= 1;
 			else
 				empty_fl |= 2;
@@ -4287,9 +4257,46 @@ static float set_staff(void)
 		if (empty_fl == 3) {	/* if empty and not empty staves */
 /*fixme: add measure bars on empty main voices*/
 			while (i <= staff)
-				delta_tb[i++].not_empty = 1;
+				sy->staff[i++].empty = 0;
 		}
 	}
+}
+
+/* -- set the y offset of the staves and return the whole height -- */
+static float set_staff(void)
+{
+	struct SYSTEM *sy;
+	struct SYMBOL *s;
+	int staff;
+	float y, staffsep, dy, maxsep, mbot;
+	struct {
+		float mtop;
+		int empty;
+	} delta_tb[MAXSTAFF], *p_delta;
+
+	/* search the empty staves in each parts */
+	memset(delta_tb, 0, sizeof delta_tb);
+	for (staff = 0; staff <= nstaff; staff++) {
+		delta_tb[staff].empty = 1;
+		staff_tb[staff].empty = 0;
+	}
+	sy = cursys;
+	set_empty(sy);
+	for (staff = 0; staff <= nstaff; staff++) {
+		if (!sy->staff[staff].empty)
+			delta_tb[staff].empty = 0;
+	}
+	for (s = tsfirst; s; s = s->ts_next) {
+		if (s->type != STAVES)
+			continue;
+		sy = sy->next;
+		set_empty(sy);
+		for (staff = 0; staff <= nstaff; staff++) {
+			if (!sy->staff[staff].empty)
+				delta_tb[staff].empty = 0;
+		}
+	}
+
 	{
 		int i, prev_staff;
 		float v;
@@ -4298,7 +4305,7 @@ static float set_staff(void)
 		for (staff = 0, p_delta = delta_tb;
 		     staff <= nstaff;
 		     staff++, p_delta++) {
-			if (!p_delta->not_empty) {
+			if (p_delta->empty) {
 				staff_tb[staff].empty = 1;
 				continue;
 			}
@@ -4383,7 +4390,7 @@ static float set_staff(void)
 				delta_tb[staff + 1].mtop += hu;
 			else
 				mbot -= hu;
-			delta_tb[staff].not_empty = 1;
+			delta_tb[staff].empty = 0;
 		}
 	}
 
@@ -4417,14 +4424,6 @@ static float set_staff(void)
 		y += dy;
 		staff_tb[staff].y = -y;
 /*fixme: handle tablature?*/
-		if (staff_tb[staff].clef.staffscale != 1
-		 && staff_tb[staff].clef.staffscale != 0) {
-			a2b("/scst%d{gsave 0 %.2f T %.2f dup scale}!\n",
-			     staff, -y, staff_tb[staff].clef.staffscale);
-			a2b("/y%d{}!\n", staff);
-		} else {
-			a2b("/y%d{%.1f add}!\n", staff, -y);
-		}
 		if (staff_tb[staff].empty)
 			staffsep = 0;
 		else if (sy->staff[staff].sep != 0)
@@ -4437,9 +4436,27 @@ static float set_staff(void)
 			maxsep = cfmt.maxsysstaffsep;
 		dy = 0;
 	}
+
+	/* output the staff offsets */
+	dy = staff_tb[nstaff].y;
+	for (staff = nstaff; staff >= 0; staff--) {
+		if (staff_tb[staff].y == 0)
+			staff_tb[staff].y = dy;
+		else
+			dy = staff_tb[staff].y;
+		if (staff_tb[staff].clef.staffscale != 1
+		 && staff_tb[staff].clef.staffscale != 0) {
+			a2b("/scst%d{gsave 0 %.2f T %.2f dup scale}!\n",
+			     staff, dy, staff_tb[staff].clef.staffscale);
+			a2b("/y%d{}!\n", staff);
+		} else {
+			a2b("/y%d{%.1f add}!\n", staff, dy);
+		}
+	}
+
 	if (mbot == 0) {
 		for (staff = nstaff; staff >= 0; staff--) {
-			if (delta_tb[staff].not_empty)
+			if (!delta_tb[staff].empty)
 				break;
 		}
 		if (staff < 0)		/* no symbol in this system ! */

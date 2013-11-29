@@ -1,3 +1,20 @@
+---- Version 7.6.8 - 13/11/21 ----
+
+Don't display the staves which contain only invisible rests.
+Keep the brace staff systems when '%%staffnonote 0' and
+	at least one staff has some notes.
+Have better ties when clef or staff change.
+Have better vertical offset of rests in multi-voice tunes
+	(reported by Eric Reinbold).
+Fix bad slur endpoint when above/below a tuplet.
+Have better display of mixed slurs and tuplets
+	(asked by David Lacroix).
+Accept %%bgcolor for .xhtml output.
+Adjust the offset of elements in empty staves when '%%staffnonote 0'.
+Fix bad handling of tuplets with %%combinevoices, sometimes
+	giving a program crash.
+Permit output to stdout with option '-v'.
+
 ---- Version 7.6.7 - 13/11/03 ----
 
 Fix again bad <meta> tag in XHTML output

@@ -355,7 +355,6 @@ List of the format parameters
 	Scope: page
 	Description:
 		This parameter defines the background color of SVG images.
-		It is used only on pure SVG output (options '-g' or '-v').
 		The <color> may be a color name (like 'white') or
 		a hexadecimal RGB color (like '#faf0e6').
 		When not set, the SVG images are transparent.

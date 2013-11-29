@@ -384,14 +384,18 @@ static void combine_voices(void)
 	int i, r;
 
 	for (s = tsfirst; s->ts_next; s = s->ts_next) {
-		g = s->extra;
-		if (g && (s->sflags & S_IN_TUPLET)) {
+		if (s->sflags & S_IN_TUPLET) {
+			g = s->extra;
+			if (!g)
+				continue;	/* tuplet already treated */
 			r = 0;
 			for ( ; g; g = g->next) {
 				if (g->type == TUPLET
 				 && g->as.u.tuplet.r_plet > r)
 					r = g->as.u.tuplet.r_plet;
 			}
+			if (r == 0)
+				continue;
 			i = r;
 			for (s2 = s; s2; s2 = s2->next) {
 				if (!s2->ts_next)
@@ -403,13 +407,9 @@ static void combine_voices(void)
 				if (--i <= 0)
 					break;
 			}
-			if (i > 0) {
-				while (--r > 0)
-					s = s->next;
+			if (i > 0)
 				continue;
-			}
-			r = s->as.u.tuplet.r_plet;
-			for (s2 = s; s2; s2 = s2->next) {
+			for (s2 = s; /*s2*/; s2 = s2->next) {
 				if (s2->type != NOTEREST)
 					continue;
 				do_combine(s2);
@@ -417,6 +417,7 @@ static void combine_voices(void)
 					break;
 			}
 			continue;
+			
 		}
 		switch (s->as.type) {
 		case ABC_T_REST:
@@ -2542,7 +2543,7 @@ static void set_pitch(struct SYMBOL *last_s)
 			s->ymn = 3 * (s->pits[0] - 18) - 4;
 // test rest offset
 			if (s->as.type != ABC_T_NOTE)
-				s->y = s->yav;
+				s->y = s->yav / 6 * 6;
 			if (s->dur < dur)
 				dur = s->dur;
 			break;
@@ -2738,13 +2739,121 @@ if (staff > nst) {
 	}
 }
 
+static void shift_rest(struct SYMBOL *s,	/* rest */
+			struct SYMBOL *s2,	/* other note/rest */
+			struct SYSTEM *sy)
+{
+	int y, us, ls, ymx, ymn;
+
+	us = rest_sp[C_XFLAGS - s->nflags].u;
+	ls = rest_sp[C_XFLAGS - s->nflags].l;
+
+	/* check if clash */
+	ymx = s->y + us;
+	ymn = s->y - ls;
+	if (ymx < s2->ymn
+	 || ymn > s2->ymx)
+		return;			/* no */
+
+	/* decide to move the rest upper or lower
+	 * according to the voice ranges */
+	if (sy->voice[s->voice].range > sy->voice[s2->voice].range)
+		ymx = s2->ymn;			/* lower */
+	else
+		ymx = s2->ymx;			/* upper */
+
+	/* change the rest vertical offset */
+	if (ymx >= s2->ymx) {
+		y = (s2->ymx + ls + 3) / 6 * 6;
+		if (y < 12)
+			y = 12;
+		if (s->y < y)
+			s->y = y;
+	} else {
+		y = (s2->ymn - us - 3) / 6 * 6;
+		if (y > 12)
+			y = 12;
+		if (s->y > y)
+			s->y = y;
+	}
+	s->ymx = s->y + us;
+	s->ymn = s->y - ls;
+}
+
 /* -- adjust the vertical offset of the rests when many voices -- */
 /* this function is called only once per tune */
 static void set_rest_offset(void)
 {
+#if 1 // 13/11/18
+	struct SYSTEM *sy;
+	struct SYMBOL *s, *s2;
+	int nvoice, voice, end_time, not_alone;
+	struct {
+		struct SYMBOL *s;
+		int staff;
+		int end_time;
+	} vtb[MAXVOICE], *v;
+
+	memset(vtb, 0, sizeof vtb);
+	
+	sy = cursys;
+	nvoice = 0;
+	for (s = tsfirst; s; s = s->ts_next) {
+		v = &vtb[s->voice];
+		if (s->as.flags & ABC_F_INVIS)
+			continue;
+		switch (s->type) {
+		case STAVES:
+			sy = sy->next;
+		default:
+			continue;
+		case NOTEREST:
+			break;
+		}
+		if (s->voice > nvoice)
+			nvoice = s->voice;
+		v->s = s;
+		v->staff = s->staff;
+		v->end_time = s->time + s->dur;
+		if (s->as.type != ABC_T_REST)
+			continue;
+
+		/* check if clash with previous symbols */
+		not_alone = 0;
+		for (voice = 0, v = vtb; voice <= nvoice; voice++, v++) {
+			if (!v->s
+			 || v->staff != s->staff
+			 || voice == s->voice)
+				continue;
+			if (v->end_time <= s->time)
+				continue;
+			not_alone++;
+			shift_rest(s, v->s, sy);
+		}
+
+		/* check if clash with next symbols */
+		end_time = s->time + s->dur;
+		for (s2 = s->ts_next; s2; s2 = s2->ts_next) {
+			if (s2->time >= end_time)
+				break;
+			if (s2->staff != s->staff
+			 || s2->type != NOTEREST
+			 || (s2->as.flags & ABC_F_INVIS))
+				continue;
+			not_alone++;
+			if (s2->as.type != ABC_T_REST)
+				shift_rest(s, s2, sy);
+		}
+		if (!not_alone) {
+			s->y = 12;
+			s->ymx = 12 + 8;
+			s->ymn = 12 - 8;
+		}
+	}
+#else
 	struct SYSTEM *sy;
 	struct SYMBOL *s, *s2, *s3, *s4;
-	int i, j, staff, nst, rvoice, voice;
+	int i, j, staff, nstaff, rvoice, voice;
 	int next_time, delta_time;
 	struct {
 		int nvoice;
@@ -2760,12 +2869,22 @@ static void set_rest_offset(void)
 
 	s = tsfirst;
 	sy = cursys;
-	nst = sy->nstaff;
+	nstaff = sy->nstaff;
 	delta_time = BASE_LEN / 4;	/* crotchet */
 	if (voice_tb[cursys->top_voice].meter.wmeasure > BASE_LEN)
 		delta_time *= 2;	/* measure longer than 4/4 */
 	while (s) {
-		for (staff = nst; staff >= 0; staff--) {
+
+		/* skip to the next visible note/rest */
+		for ( ; s; s = s->ts_next) {
+			if (s->type == NOTEREST
+			 && !(s->as.flags & ABC_F_INVIS))
+				break;
+		}
+		if (!s)
+			break;
+
+		for (staff = nstaff; staff >= 0; staff--) {
 			stb[staff].nvoice = -1;
 			for (i = 4; --i >= 0; ) {
 				stb[staff].st[i].voice = -1;
@@ -2791,7 +2910,7 @@ static void set_rest_offset(void)
 			staff = s2->staff;
 #if 1
 /*fixme:test*/
-if (staff > nst) {
+if (staff > nstaff) {
 	bug("set_rest_offset(): bad staff number\n", 1);
 }
 #endif
@@ -2834,7 +2953,7 @@ if (staff > nst) {
 
 				/* avoid clash of rest on a whole measure */
 				if (s2->next && s2->next->type == BAR
-				 && s2->next->time  > next_time)
+				 && s2->next->time > next_time)
 					next_time = s2->next->time;
 				continue;
 			}
@@ -3009,7 +3128,7 @@ if (staff > nst) {
 			switch (s->type) {
 			case STAVES:
 				sy = sy->next;
-//				for (staff = nst + 1; staff <= sy->nstaff; staff++) {
+//				for (staff = nstaff + 1; staff <= sy->nstaff; staff++) {
 //					stb[staff].nvoice = -1;
 //					for (i = 4; --i >= 0; ) {
 //						stb[staff].st[i].voice = -1;
@@ -3017,7 +3136,7 @@ if (staff > nst) {
 //						stb[staff].st[i].ymn = 24;
 //					}
 //				}
-				nst = sy->nstaff;
+				nstaff = sy->nstaff;
 				/*fall thru*/
 			case BAR:
 				s = s->ts_next;
@@ -3026,6 +3145,7 @@ if (staff > nst) {
 			break;
 		}
 	}
+#endif
 }
 
 /* -- create a starting symbol -- */
@@ -4261,14 +4381,9 @@ static void set_piece(void)
 		case NOTEREST:
 		case SPACE:
 		case MREST:
-			if (s->as.type != ABC_T_NOTE) {	/* rest */
-				if (cfmt.staffnonote)
-					empty[s->staff] = 0;
-			} else {
-				if (cfmt.staffnonote
-				 || !(s->as.flags & ABC_F_INVIS))
-					empty[s->staff] = 0;
-			}
+			if (!(s->as.flags & ABC_F_INVIS)
+			 || (s->as.type == ABC_T_NOTE && cfmt.staffnonote))
+				empty[s->staff] = 0;
 			break;
 		}
 	}

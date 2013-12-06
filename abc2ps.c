@@ -739,8 +739,6 @@ int main(int argc, char **argv)
 					lock_fmt(&cfmt.fields);
 					break;
 				case 'p':
-					bagpipe = 1;
-					break;
 				case 'q':
 				case 'S':
 					break;

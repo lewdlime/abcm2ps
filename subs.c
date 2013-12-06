@@ -1674,7 +1674,7 @@ void write_heading(struct abctune *t)
 
 	/* rhythm, composer, origin */
 	down1 = cfmt.composerspace + cfmt.font_tb[COMPOSERFONT].size;
-	rhythm = (first_voice->key.mode >= BAGPIPE
+	rhythm = ((first_voice->key.mode >= BAGPIPE || bagpipe)
 			&& !cfmt.infoline
 			&& (cfmt.fields[0] & (1 << ('R' - 'A'))))
 					? info['R' - 'A'] : 0;

@@ -332,6 +332,7 @@ extern int pagenumbers; 	/* write page numbers */
 extern int epsf;		/* EPSF (1) / SVG (2) output */
 extern int svg;			/* SVG (1) or XML (2 - HTML + SVG) output */
 extern int showerror;		/* show the errors */
+extern int bagpipe;		/* force formatting as a bagpipe tune even if the key is not HP */
 
 extern char outfn[FILENAME_MAX]; /* output file name */
 extern char *in_fname;		/* current input file name */

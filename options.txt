@@ -150,6 +150,12 @@ List of the options
 	If <name> is '-', the result is output to stdout (not for EPS).
 	'+O' resets the output file directory and name to their defaults.
 
+  -p
+	Bagpipe formatting
+	When present, format the output as a bagpipe tune, whatever the
+	key signature is. This mostly has to do with rendering grace notes
+	and the direction of the stems on melody notes.
+
   -q
 	Quiet mode.
 	When present, only the errors are shown.

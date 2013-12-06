@@ -8,7 +8,7 @@
 /* #undef HAVE_STRTOL */
 
 /* Define if you have the <malloc.h> header file.  */
-#define HAVE_MALLOC_H 1
+/* #undef HAVE_MALLOC_H */
 
 /* Define to handle the european A4 format.  */
 /* #undef A4_FORMAT */

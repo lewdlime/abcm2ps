@@ -1,3 +1,28 @@
+---- Version 7.6.10 - 14/01/23 ----
+
+Fix crash with rests in previous release
+	(reported by David Lacroix).
+
+---- Version 7.6.9 - 14/01/23 ----
+
+Change the function name to 'fraction of tone' instead of 'fraction of
+	semitone' when no 'microscale=', but '%%micronewps 1'
+	!!compatibility!!.
+Add line number when 'Too many words in lyric line' error
+	(reported by Seymour Shlien).
+Fix bad PS functions when K: with explicit list of microtone accidentals.
+Include glyphs for microscale=4.
+Set %%micronewps when 'microscale=' in K: or V:.
+Fix erroneous 'bad tie' when tie at end of line and clef change
+	in the upper voice.
+Do %%tablature work again.
+Fix clash of rest with notes when rest between notes since 7.6.8
+	(reported by David Lacroix).
+Change the behaviour of %%staffnonote
+	(asked by Atte André Jensen and Steve West).
+Fix crash when last music line contains only invisible rests
+	and %%cfmt.measurenb >= 0.
+
 ---- Version 7.6.8 - 13/11/21 ----
 
 Don't display the staves which contain only invisible rests.

@@ -131,7 +131,7 @@ static struct format {
 	{"slurheight", &cfmt.slurheight, FORMAT_R, 0},
 	{"splittune", &cfmt.splittune, FORMAT_B, 0},
 	{"squarebreve", &cfmt.squarebreve, FORMAT_B, 0},
-	{"staffnonote", &cfmt.staffnonote, FORMAT_B, 0},
+	{"staffnonote", &cfmt.staffnonote, FORMAT_I, 0},
 	{"staffsep", &cfmt.staffsep, FORMAT_U, 0},
 	{"staffwidth", &staffwidth, FORMAT_U, 1},
 	{"stemheight", &cfmt.stemheight, FORMAT_R, 0},

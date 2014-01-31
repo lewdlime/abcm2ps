@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2013 Jean-François Moine
+ * Copyright (C) 1998-2014 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1590,7 +1590,7 @@ static struct SYMBOL *next_lyric_note(struct SYMBOL *s)
 /* -- parse lyric (vocal) lines (w:) -- */
 static struct abcsym *get_lyric(struct abcsym *as)
 {
-	struct SYMBOL *s;
+	struct SYMBOL *s, *s2;
 	char word[128], *p, *q;
 	int ln, cont;
 	struct FONTSPEC *f;
@@ -1639,10 +1639,12 @@ static struct abcsym *get_lyric(struct abcsym *as)
 			}
 			switch (*p) {
 			case '|':
-				while (s && s->type != BAR)
+				while (s && s->type != BAR) {
+					s2 = s;
 					s = s->next;
+				}
 				if (!s) {
-					error(1, s,
+					error(1, s2,
 						"Not enough bar lines for lyric line");
 					goto ly_next;
 				}
@@ -1714,9 +1716,10 @@ static struct abcsym *get_lyric(struct abcsym *as)
 			}
 
 			/* store the word in the next note */
+			s2 = s;				/* for error */
 			s = next_lyric_note(s);
 			if (!s) {
-				error(1, s, "Too many words in lyric line");
+				error(1, s2, "Too many words in lyric line");
 				goto ly_next;
 			}
 			if (word[0] != '*'
@@ -2219,7 +2222,7 @@ static void get_staves(struct SYMBOL *s)
 			memcpy(p_voice2, p_voice, sizeof *p_voice2);
 			p_voice2->next = NULL;
 			p_voice2->sym = p_voice2->last_sym = NULL;
-			p_voice2->tblts[0] = p_voice2->tblts[1] = 0;
+			p_voice2->tblts[0] = p_voice2->tblts[1] = NULL;
 			p_voice2->clone = -1;
 			while (p_voice->clone > 0)
 				p_voice = &voice_tb[p_voice->clone];
@@ -2695,7 +2698,7 @@ static struct abcsym *get_info(struct abcsym *as,
 		voice_filter();
 
 		/* activate the default tablature if not yet done */
-		if (first_voice->tblts[0] == 0)
+		if (!first_voice->tblts[0])
 			set_tblt(first_voice);
 		break;
 	case 'L':
@@ -4752,6 +4755,7 @@ center:
 
 			switch (as->state) {
 			case ABC_S_TUNE:
+			case ABC_S_HEAD:
 				for (i = 0; i < ncmdtblt; i++) {
 					if (cmdtblts[i].active)
 						continue;
@@ -4763,13 +4767,13 @@ center:
 				if (curvoice->tblts[0] == tblt
 				 || curvoice->tblts[1] == tblt)
 					break;
-				if (curvoice->tblts[1] != 0) {
+				if (curvoice->tblts[1]) {
 					error(1, s,
 						"Too many tablatures for voice %s",
 						curvoice->id);
 					break;
 				}
-				if (curvoice->tblts[0] == 0)
+				if (!curvoice->tblts[0])
 					curvoice->tblts[0] = tblt;
 				else
 					curvoice->tblts[1] = tblt;

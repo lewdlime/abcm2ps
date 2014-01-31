@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2013 Jean-François Moine
+ * Copyright (C) 1998-2014 Jean-François Moine
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2299,6 +2299,14 @@ curveto:
 			xysym(op, D_ft1);
 			return;
 		}
+		if (strcmp(op, "ft4") == 0) {
+			n = pop_free_val();
+			if (n == 1)
+				xysym(op, D_ft1);
+			else
+				xysym(op, D_ft513);
+			return;
+		}
 		if (strcmp(op, "ft513") == 0) {
 			xysym(op, D_ft513);
 			return;
@@ -3586,6 +3594,14 @@ rmoveto:
 		}
 		if (strcmp(op, "sh1") == 0) {
 			xysym(op, D_sh1);
+			return;
+		}
+		if (strcmp(op, "sh4") == 0) {
+			n = pop_free_val();
+			if (n == 1)
+				xysym(op, D_sh1);
+			else
+				xysym(op, D_sh513);
 			return;
 		}
 		if (strcmp(op, "sh513") == 0) {

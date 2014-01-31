@@ -56,6 +56,7 @@ struct note {		/* note or rest */
 	unsigned char slur_st;	/* slurs starting here (2 bits array) */
 	char slur_end;		/* number of slurs ending here */
 	signed char brhythm;	/* broken rhythm */
+	unsigned char microscale; /* microtone denominator - 1 */
 	struct deco dc;		/* decorations */
 };
 
@@ -109,7 +110,8 @@ struct abcsym {
 			signed char nacc;	/* number  of explicit accidentals */
 						/* (-1) if no accidental */
 			signed char octave;	/* 'octave=' */
-#define NO_OCTAVE (10)				/* no 'octave=' */
+#define NO_OCTAVE 10				/* no 'octave=' */
+			unsigned char microscale; /* microtone denominator - 1 */
 			signed char pits[8];
 			unsigned char accs[8];
 		} key;

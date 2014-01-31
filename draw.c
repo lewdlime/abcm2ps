@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2013 Jean-François Moine
+ * Copyright (C) 1998-2014 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -900,6 +900,27 @@ static void draw_timesig(float x,
 	}
 }
 
+/* -- draw an accidental -- */
+static void draw_acc(int acc, int microscale)
+{
+	int n, d;
+
+	n = micro_tb[acc >> 3];
+	if (acc >> 3 != 0
+	 && (cfmt.micronewps || microscale)) {
+		if (microscale) {
+			d = microscale;
+			n = acc >> 3;
+		} else {
+			d = ((n & 0xff) + 1) * 2;
+			n = (n >> 8) + 1;
+		}
+		a2b("%d %s%d ", n, acc_tb[acc & 0x07], d);
+	} else {
+		a2b("%s%d ", acc_tb[acc & 0x07], n);
+	}
+}
+
 /* -- draw a key signature -- */
 static void draw_keysig(struct VOICE_S *p_voice,
 			float x,
@@ -1010,14 +1031,15 @@ static void draw_keysig(struct VOICE_S *p_voice,
 			x += 5.5;
 		}
 	} else {
-		int last_acc, last_shift, n, d;
+		int acc, last_acc, last_shift;
 
 		/* explicit accidentals */
 		last_acc = s->as.u.key.accs[0];
 		last_shift = 100;
 		for (i = 0; i < s->as.u.key.nacc; i++) {
-			if (s->as.u.key.accs[i] != last_acc) {
-				last_acc = s->as.u.key.accs[i];
+			acc = s->as.u.key.accs[i];
+			if (acc != last_acc) {
+				last_acc = acc;
 				x += 3;
 			}
 			shift = s->pits[0] * 3
@@ -1031,15 +1053,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 				x -= 5.5;		/* octave */
 			last_shift = shift;
 			putxy(x, staffb + shift);
-			n = micro_tb[i >> 3];
-			if (n != 0 && cfmt.micronewps) {
-				d = (n & 0xff) + 1;
-				n = (n >> 8) + 1;
-				a2b("%d %s%d", n, acc_tb[i & 0x07], d);
-			} else {
-				a2b("%s%d ", acc_tb[last_acc & 0x07],
-					micro_tb[last_acc >> 3]);
-			}
+			draw_acc(acc, s->as.u.key.microscale);
 			x += 5.5;
 		}
 	}
@@ -1624,23 +1638,16 @@ static void draw_basic_note(float x,
 	/* draw the accidental */
 	if ((i = s->as.u.note.accs[m]) != 0
 	 && !(s->sflags & S_PERC)) {
-		int n, d;
-
 		x -= s->shac[m] * cur_scale;
 		a2b(" ");
 		putx(x);
-		n = micro_tb[i >> 3];
-		if (n != 0 && cfmt.micronewps) {
-			d = (n & 0xff) + 1;
-			n = (n >> 8) + 1;
-			a2b((s->as.flags & ABC_F_GRACE)
-					? "gsc %d %s%d grestore" : "y %d %s%d",
-				n, acc_tb[i & 0x07], d);
-		} else {
-			a2b((s->as.flags & ABC_F_GRACE)
-					? "gsc %s%d grestore" : "y %s%d",
-				acc_tb[i & 0x07], n);
-		}
+		if (s->as.flags & ABC_F_GRACE)
+			a2b("gsc ");
+		else
+			a2b("y ");
+		draw_acc(i, s->as.u.note.microscale);
+		if (s->as.flags & ABC_F_GRACE)
+			a2b(" grestore");
 	}
 }
 
@@ -3298,7 +3305,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			break;
 
 		/* search the end of the tie
-		 * and notice the clef changes */
+		 * and notice the clef changes (may occur in an other voice) */
 		for (s2 = s1->ts_next; s2; s2 = s2->ts_next) {
 			if (s2->staff != s1->staff
 			 && s2->voice != s1->voice)
@@ -3333,7 +3340,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 
 			/* special case: tie to a combined chord */
 			if (s1->ts_prev && s1->ts_prev->next
-			 && s1->ts_prev->next->type == ABC_T_NOTE
+			 && s1->ts_prev->next->as.type == ABC_T_NOTE
 			 && s1->ts_prev->next->time == s1->time + s1->dur) {
 				draw_ties(s1, s1->ts_prev->next, 1);
 				break;

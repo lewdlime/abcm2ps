@@ -1412,14 +1412,19 @@ List of the format parameters
 	Description:
 		Set the number of lines of the staff of the current voice.
 
-  staffnonote <bool>
-	Default: 1
+  staffnonote <int>
+	Default: 2
 	Compilation: none
 	Command line: none
 	Scope: generation
 	Description:
-		If not set, do not display the staves which have no notes
-		in the music lines.
+		This parameter is used to decide if a staff must be displayed
+		when it contains no note.
+		The possible values are:
+		- 0: don't display the staff when it contains only rests
+		     (visible or not).
+		- 1: display the staff when there is at least one visible rest.
+		- 2: always display the staff.
 
   staffscale <float>
 	Default: 1

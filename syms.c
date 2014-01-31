@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2013 Jean-François Moine
+ * Copyright (C) 1998-2014 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -561,6 +561,11 @@ static char ps_head[] =
 	/* 3/4 ton flat */
 	"/ft513{2 copy gsave -1 1 scale exch neg 3 add exch M ftx grestore\n"
 	"	M 1.5 0 RM ftx}!\n"
+	/* microscale= 4 */
+	"/sh4tb[/.notdef/sh1/sh0/sh513/dsh0]def\n"
+	"/sh4{sh4tb exch get cvx exec}!\n"
+	"/ft4tb[/.notdef/ft1/ft0/ft513/dft0]def\n"
+	"/ft4{ft4tb exch get cvx exec}!\n"
 
 	/* str gcshow - guitar chord */
 	"/gcshow{show}!\n"

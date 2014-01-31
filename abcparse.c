@@ -1,7 +1,7 @@
 /*
  * Generic ABC parser.
  *
- * Copyright (C) 1998-2013 Jean-François Moine
+ * Copyright (C) 1998-2014 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996, 1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -41,8 +41,8 @@ int severity;			/* error severity */
 static int abc_vers;		/* abc version */
 static short abc_state;		/* parse state */
 static short ulen;		/* unit note length set by M: or L: */
-static short microscale;	/* current microtone scale */
 static short meter;		/* upper value of time sig for n-plets */
+static unsigned char microscale; /* current microtone scale */
 static signed char vover;	/* voice overlay (1: single bar, -1: multi-bar */
 static char lyric_started;	/* lyric started */
 static char *gchord;		/* guitar chord */
@@ -64,7 +64,7 @@ static struct {			/* voice table and current pointer */
 	char id[VOICE_ID_SZ];		/* voice ID */
 	struct abcsym *last_note;	/* last note or rest */
 	short ulen;			/* unit note length */
-	short microscale;		/* microtone scale */
+	unsigned char microscale;	/* microtone scale */
 	unsigned char mvoice;		/* main voice when voice overlay */
 } voice_tb[MAXVOICE], *curvoice;
 
@@ -501,8 +501,7 @@ static char *parse_extra(char *p,
 			char **p_middle,
 			char **p_lines,
 			char **p_scale,
-			char **p_octave,
-			char **p_microscale)
+			char **p_octave)
 {
 	for (;;) {
 		if (strncmp(p, "clef=", 5) == 0
@@ -517,13 +516,11 @@ static char *parse_extra(char *p,
 		} else if (strncmp(p, "microscale=", 11) == 0) {
 			int i;
 
-			if (*p_microscale)
-				syntax("Double microscale=", p);
 			i = atoi(p + 11);
-			if (i < 4 || i > 255)
+			if (i < 4 || i > 256)
 				syntax("Invalid value in microscale=", p);
 			else
-				*p_microscale = p + 11;
+				microscale = i;
 		} else if (strncmp(p, "middle=", 7) == 0
 			|| strncmp(p, "m=", 2) == 0) {
 			if (*p_middle)
@@ -636,6 +633,7 @@ static char *parse_acc(char *p,
 		if (*p != '^' && *p != '_' && *p != '=')
 			break;
 	}
+	s->u.key.microscale = microscale;
 	if (s->u.key.empty != 2)
 		s->u.key.nacc = nacc;
 	return p;
@@ -854,7 +852,7 @@ static void parse_key(char *p,
 {
 	int sf, mode;
 	char *clef_name, *clef_middle, *clef_lines, *clef_scale;
-	char *p_octave, *p_microscale;
+	char *p_octave;
 
 	if (*p == '\0') {
 		s->u.key.empty = 2;
@@ -869,9 +867,9 @@ static void parse_key(char *p,
 			return;
 	}
 	clef_name = clef_middle = clef_lines = clef_scale = NULL;
-	p_octave = p_microscale = NULL;
+	p_octave = NULL;
 	p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
-			&clef_scale, &p_octave, &p_microscale);
+			&clef_scale, &p_octave);
 	sf = 0;
 	mode = MAJOR;
 	switch (*p++) {
@@ -924,7 +922,7 @@ static void parse_key(char *p,
 		if (*p == '\0')
 			break;
 		p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
-				&clef_scale, &p_octave, &p_microscale);
+				&clef_scale, &p_octave);
 		if (*p == '\0')
 			break;
 		switch (*p) {
@@ -1021,9 +1019,6 @@ static void parse_key(char *p,
 	s->u.key.sf = sf;
 	s->u.key.mode = mode;
 	s->u.key.octave = parse_octave(p_octave);
-
-	if (p_microscale)
-		microscale = atoi(p_microscale);
 
 	if (clef_name || clef_middle || clef_lines || clef_scale) {
 		s = abc_new(s->tune, NULL, NULL);
@@ -1504,7 +1499,7 @@ static char *parse_voice(char *p,
 	char *error_txt = NULL;
 	char name[VOICE_NAME_SZ];
 	char *clef_name, *clef_middle, *clef_lines, *clef_scale;
-	char *p_octave, *p_microscale;
+	char *p_octave;
 	signed char *p_stem;
 static struct kw_s {
 	char *name;
@@ -1583,7 +1578,7 @@ static struct kw_s {
 
 	/* parse the other parameters */
 	clef_name = clef_middle = clef_lines = clef_scale = NULL;
-	p_octave = p_microscale = NULL;
+	p_octave = NULL;
 	p_stem = &s->u.voice.stem;
 	for (;;) {
 		while (isspace((unsigned char) *p))
@@ -1591,7 +1586,7 @@ static struct kw_s {
 		if (*p == '\0')
 			break;
 		p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
-				&clef_scale, &p_octave, &p_microscale);
+				&clef_scale, &p_octave);
 		if (*p == '\0')
 			break;
 		for (kw = kw_tb; kw->name; kw++) {
@@ -1658,9 +1653,6 @@ static struct kw_s {
 	}
 
 	s->u.voice.octave = parse_octave(p_octave);
-
-	if (p_microscale)
-		microscale = atoi(p_microscale);
 
 	if (clef_name || clef_middle || clef_lines || clef_scale) {
 		s = abc_new(s->tune, NULL, NULL);
@@ -1809,7 +1801,8 @@ static char *parse_basic_note(char *p,
 
 	/* look for microtone value */
 	if (acc != 0
-	 && (isdigit((unsigned char) *p) || *p == '/')) {
+	 && (isdigit((unsigned char) *p)
+	  || (*p == '/' && microscale == 0))) {
 		int n, d;
 		char *q;
 
@@ -1818,9 +1811,7 @@ static char *parse_basic_note(char *p,
 			n = strtol(p, &q, 10);
 			p = q;
 		}
-		if (microscale != 0) {
-			d = microscale;
-		} else if (*p == '/') {
+		if (*p == '/') {
 			p++;
 			if (!isdigit((unsigned char) *p)) {
 				d = 2;
@@ -1829,19 +1820,21 @@ static char *parse_basic_note(char *p,
 				p = q;
 			}
 		}
-		d--;
-		d += (n - 1) << 8;	/* short [ (n-1) | (d-1) ] */
-		for (n = 1; n < MAXMICRO; n++) {
-			if (p_micro[n] == d)
-				break;
-			if (p_micro[n] == 0) {
-				p_micro[n] = d;
-				break;
+		if (microscale == 0) {
+			d--;
+			d += (n - 1) << 8;	/* short [ (n-1) | (d-1) ] */
+			for (n = 1; n < MAXMICRO; n++) {
+				if (p_micro[n] == d)
+					break;
+				if (p_micro[n] == 0) {
+					p_micro[n] = d;
+					break;
+				}
 			}
-		}
-		if (n == MAXMICRO) {
-			syntax("Too many microtone accidentals", p);
-			n = 0;
+			if (n == MAXMICRO) {
+				syntax("Too many microtone accidentals", p);
+				n = 0;
+			}
 		}
 		acc += (n << 3);
 	}
@@ -2778,6 +2771,7 @@ static char *parse_note(struct abctune *t,
 		}
 		return p;
 	}
+	s->u.note.microscale = microscale;
 	s->u.note.nhd = m - 1;
 do_brhythm:
 	if (curvoice->last_note

@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2013 Jean-François Moine
+ * Copyright (C) 1998-2014 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -2739,6 +2739,7 @@ if (staff > nst) {
 	}
 }
 
+/* -- shift a rest vertically or horizontally -- */
 static void shift_rest(struct SYMBOL *s,	/* rest */
 			struct SYMBOL *s2,	/* other note/rest */
 			struct SYSTEM *sy)
@@ -2780,13 +2781,13 @@ static void shift_rest(struct SYMBOL *s,	/* rest */
 	s->ymn = s->y - ls;
 }
 
-/* -- adjust the vertical offset of the rests when many voices -- */
+/* -- adjust the offset of the rests when many voices -- */
 /* this function is called only once per tune */
 static void set_rest_offset(void)
 {
-#if 1 // 13/11/18
+#if 1 // 7.6.8
 	struct SYSTEM *sy;
-	struct SYMBOL *s, *s2;
+	struct SYMBOL *s, *s2, *prev;
 	int nvoice, voice, end_time, not_alone;
 	struct {
 		struct SYMBOL *s;
@@ -2820,6 +2821,7 @@ static void set_rest_offset(void)
 
 		/* check if clash with previous symbols */
 		not_alone = 0;
+		prev = NULL;
 		for (voice = 0, v = vtb; voice <= nvoice; voice++, v++) {
 			if (!v->s
 			 || v->staff != s->staff
@@ -2829,6 +2831,8 @@ static void set_rest_offset(void)
 				continue;
 			not_alone++;
 			shift_rest(s, v->s, sy);
+			if (voice < s->voice && v->s->time == s->time)
+				prev = v->s;
 		}
 
 		/* check if clash with next symbols */
@@ -2841,8 +2845,25 @@ static void set_rest_offset(void)
 			 || (s2->as.flags & ABC_F_INVIS))
 				continue;
 			not_alone++;
-			if (s2->as.type != ABC_T_REST)
+			if (s2->as.type != ABC_T_REST) {
 				shift_rest(s, s2, sy);
+
+				/* shift to the right if clash */
+				if (prev
+				 && (s2->ymx > s->ymn
+				  || prev->ymn < s->ymx)) {
+					int y;
+
+					s->shhd[0] = 10;
+					s->xmx = 10;
+					y = (prev->ymn + s2->ymx) / 2;
+					if (y < 12)
+						y += 5;
+					s->y = y / 6 * 6;
+					s->ymx = s->y + 8;
+					s->ymn = s->y - 8;
+				}
+			}
 		}
 		if (!not_alone) {
 			s->y = 12;
@@ -3684,7 +3705,7 @@ static void set_beams(struct SYMBOL *sym)
 	}
 }
 
-/* -- shift the notes when voices overlap -- */
+/* -- shift the notes horizontally when voices overlap -- */
 /* this routine is called only once per tune */
 static void set_overlap(void)
 {
@@ -4354,7 +4375,7 @@ static void set_piece(void)
 
 	/* search the next end of line,
 	 * set the repeat measures, (remove some dble bars?)
-	 * and search the empty staves
+	 * and flag the empty staves
 	 */
 	memset(empty, 1, sizeof empty);
 	for (s = tsfirst; s; s = s->ts_next) {
@@ -4381,8 +4402,11 @@ static void set_piece(void)
 		case NOTEREST:
 		case SPACE:
 		case MREST:
-			if (!(s->as.flags & ABC_F_INVIS)
-			 || (s->as.type == ABC_T_NOTE && cfmt.staffnonote))
+			if (s->as.type == ABC_T_NOTE
+			 || cfmt.staffnonote > 1)
+				empty[s->staff] = 0;
+			else if (!(s->as.flags & ABC_F_INVIS)
+			      && cfmt.staffnonote)
 				empty[s->staff] = 0;
 			break;
 		}

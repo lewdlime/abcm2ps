@@ -221,9 +221,9 @@
 /gcshow{
 	dup 0 get
 	dup dup 65 ge exch 71 le and{
-		65 sub[(La)(Si)(Do)(Re)(Mi)(Fa)(Sol)]exch get
-	}if show
-	dup length 1 sub 1 exch getinterval show}!
+		65 sub[(La)(Si)(Do)(Re)(Mi)(Fa)(Sol )]exch get show
+		dup length 1 sub 1 exch getinterval
+	}if show}!
 %
 % -- 'tr' + long trill
 /trtrill{	% usage: w x y trtrill

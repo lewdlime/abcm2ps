@@ -1,4 +1,4 @@
-	Features of abcm2ps 7.6.2 (J.F. Moine, October 2013)
+	Features of abcm2ps 7.6.9 (J.F. Moine, January 2014)
 	====================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
@@ -191,18 +191,24 @@ Tune body.
 	- Microtone pitches are indicated by a number or a fraction after
 	  an accidental (and before the note).
 
-	  By default, these pitches are indicated by a fraction of
-	  a semitone as "^3/4c" (3/4 of a sharp).
-	  When omitted, the numerator defaults to 1 and the denominator
-	  to 2 ("^/c" is the same as "^1/2c").
-	  Support exists for 1/2 and 3/2 sharps and flats. For other
-	  values, PostScript functions must be defined (%%postscript
-	  or %%beginps - see below).
+	  There are two ways to define microtone pitches:
 
-	  The microtone pitches may be indicated by a fraction of tone
-	  (! not semitone !) using "microscale=<denominator>" in K:
-	  or V: information fields. In this case, only the numerator
-	  is to be set after the accidental as "^3c".
+	  - old method (default)
+		The pitches are indicated by a fraction of semitone as
+		"^3/4c" (3/4 of a sharp).
+		When omitted, the numerator defaults to 1 and the
+		denominator to 2 ("^/c" is the same as "^1/2c").
+		Support exists for 1/2 and 3/2 sharps and flats. For other
+		values, PostScript functions must be defined (%%postscript
+		or %%beginps - see below).
+
+	  - new method
+		The pitches are indicated by a fraction of tone
+		(! not semitone !) when "microscale=<denominator>"
+		is set in K: or V: information fields.
+		With this method, only the numerator is to be set after the
+		accidental as "^3c".
+
 	  For instance, the two declarations
 		- without microscale:	^3/2c
 		- with microscale=4:	^3c
@@ -210,19 +216,28 @@ Tune body.
 
 	  Note: the numerator and denominator cannot be greater than 255.
 
-	  By default, the name of the PostScript function which draws
-	  a microtone accidental is:
-		<accidental_type><micro_value>
-	  where:
-		  - <accidental_type> is "sh" (sharp) or "ft" (flat)
-			(may be also "nt", "dsh" or "dft" !)
-		  - <micro_value> is computed from the fraction as:
-			( <numerator> - 1 ) * 256 + <denominator> - 1
-	  and it is called with <x> and <y>.
+	  There are also two ways to implement the accidental drawing
+	  function:
 
-	  Setting %%micronewps to 1, the function name is:
-		<accidental_type><denominator>
-	  and it is called with <x> <y> <numerator>.
+	  - old method 
+		When neither "microscale=" nor "%%micronewps" are set,
+		the name of the PostScript function which draws
+		a microtone accidental is:
+			<accidental_type><micro_value>
+		where:
+			- <accidental_type> is "sh" (sharp) or "ft" (flat)
+				(may be also "nt", "dsh" or "dft" !)
+			- <micro_value> is computed from the fraction as:
+				(<numerator> - 1) * 256 + <denominator> - 1
+		and it is called with <x> and <y>.
+
+	  - new method
+		When either "microscale=" or "%%micronewps" is set,
+		the name of the PostScript function is:
+			<accidental_type><fraction of tone>
+		and it is called with <x> <y> <numerator>.
+		Note that the <fraction of tone> is two times the pitch
+		denominator when "microscale=" is not set.
 
 	- A note length starting with '0' (zero') indicates a stemless
 	  note.

@@ -1317,7 +1317,7 @@ static void deco_create(struct SYMBOL *s,
 		case 6:				/* d_pf */
 			posit = s->posit.vol;
 			break;
-		case 7:				/* d_cresh */
+		case 7:				/* d_cresc */
 			posit = s->posit.dyn;
 			break;
 		}
@@ -1944,10 +1944,12 @@ void draw_measnb(void)
 
 	/* search the first staff */
 	sy = cursys;
-	for (staff = 0; staff < nstaff; staff++) {
+	for (staff = 0; staff <= nstaff; staff++) {
 		if (!sy->staff[staff].empty)
 			break;
 	}
+	if (staff > nstaff)
+		return;				/* no visible staff */
 //fixme: must use the scale, otherwise bad y offset (y0 empty)
 	set_sscale(staff);
 

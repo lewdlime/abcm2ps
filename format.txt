@@ -1,6 +1,10 @@
 			Format parameters
 			=================
 
+Note: This file will be soon removed from the abcm2ps distribution.
+====  The format parameters documentation is now online:
+	http://moinejf.free.fr/abcm2ps-doc/index.html
+
 The general layout of the printed scores may be changed in many ways.
 
 For example, when running the program, one or more format files may
@@ -168,7 +172,7 @@ List of the format parameters
   abc2pscompat <bool>
 	Default: 0
 	Compilation: none
-	Command line: -u
+	Command line: none
 	Scope: generation
 	Description:
 		Handle old abc2ps tunes.
@@ -801,6 +805,7 @@ List of the format parameters
 			0 or 'auto' for automatic position
 			1 or 'up' stem up
 			2 or 'down' stem down
+			3 or 'opposite' opposite direction of the next note
 		When this parameter appears outside a tune or inside a tune
 		header, it applies to all voices. When inside a tune body,
 		it applies to the current voice only.
@@ -1413,17 +1418,18 @@ List of the format parameters
 		Set the number of lines of the staff of the current voice.
 
   staffnonote <int>
-	Default: 2
+	Default: 1
 	Compilation: none
 	Command line: none
 	Scope: generation
 	Description:
 		This parameter is used to decide if a staff must be displayed
-		when it contains no note.
+		when it contains no visible note.
 		The possible values are:
-		- 0: don't display the staff when it contains only rests
-		     (visible or not).
-		- 1: display the staff when there is at least one visible rest.
+		- 0: don't display the staff when it contains only
+		     invisible rests and notes,
+		- 1: don't display the staff when it contains only
+		     rests and invisible notes,
 		- 2: always display the staff.
 
   staffscale <float>

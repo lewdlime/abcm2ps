@@ -1,7 +1,7 @@
 /*
  * abcm2ps: a program to typeset tunes written in ABC format using PostScript
  *
- * Copyright (C) 1998-2013 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 1998-2014 Jean-François Moine (http://moinejf.free.fr)
  *
  * Adapted from abc2ps-1.2.5:
  *  Copyright (C) 1996,1997  Michael Methfessel (msm@ihp-ffo.de)
@@ -37,7 +37,7 @@
 /* -- global variables -- */
 
 INFO info;
-unsigned char deco_glob[256], deco_tune[256];
+unsigned char deco[256];
 struct SYMBOL *sym;		/* (points to the symbols of the current voice) */
 
 int tunenum;			/* number of current tune */
@@ -96,17 +96,17 @@ static FILE *open_ext(char *fn, char *ext)
 	FILE *fp;
 	char *p;
 
-	if ((fp = fopen(fn, "rb")) != 0)
+	if ((fp = fopen(fn, "rb")) != NULL)
 		return fp;
-	if ((p = strrchr(fn, DIRSEP)) == 0)
+	if ((p = strrchr(fn, DIRSEP)) == NULL)
 		p = fn;
-	if (strrchr(p, '.') != 0)
-		return 0;
+	if (strrchr(p, '.') != NULL)
+		return NULL;
 	strcat(p, ".");
 	strcat(p, ext);
-	if ((fp = fopen(fn, "rb")) != 0)
+	if ((fp = fopen(fn, "rb")) != NULL)
 		return fp;
-	return 0;
+	return NULL;
 }
 
 /* -- open a file for reading -- */
@@ -119,31 +119,29 @@ FILE *open_file(char *fn,	/* file name */
 	int l;
 
 	/* if there was some ABC file, try its directory */
-	if (in_fname != 0 && in_fname != fn
-	 && (p = strrchr(in_fname, DIRSEP)) != 0) {
+	if (in_fname && in_fname != fn
+	 && (p = strrchr(in_fname, DIRSEP)) != NULL) {
 		l = p - in_fname + 1;
 		strncpy(rfn, in_fname, l);
 		strcpy(&rfn[l], fn);
-		if ((fp = open_ext(rfn, ext)) != 0)
+		if ((fp = open_ext(rfn, ext)) != NULL)
 			return fp;
 	}
 
 	/* try locally */
 	strcpy(rfn, fn);
-	if ((fp = open_ext(rfn, ext)) != 0)
+	if ((fp = open_ext(rfn, ext)) != NULL)
 		return fp;
 
 	/* try a format in the format directory */
 	if (*ext != 'f' || *styd == '\0')
-		return 0;
+		return NULL;
 	l = strlen(styd) - 1;
 	if (styd[l] == DIRSEP)
 		sprintf(rfn, "%s%s", styd, fn);
 	else
 		sprintf(rfn, "%s%c%s", styd, DIRSEP, fn);
-	if ((fp = open_ext(rfn, ext)) != 0)
-		return fp;
-	return 0;
+	return open_ext(rfn, ext);
 }
 
 /* -- read a whole input file -- */
@@ -178,23 +176,23 @@ static char *read_file(char *fn, char *ext)
 		struct stat sbuf;
 
 		fin = open_file(fn, ext, tex_buf);
-		if (fin == 0)
-			return 0;
+		if (fin == NULL)
+			return NULL;
 		if (fseek(fin, 0L, SEEK_END) < 0) {
 			fclose(fin);
-			return 0;
+			return NULL;
 		}
 		fsize = ftell(fin);
 		rewind(fin);
-		if ((file = malloc(fsize + 2)) == 0) {
+		if ((file = malloc(fsize + 2)) == NULL) {
 			fclose(fin);
-			return 0;
+			return NULL;
 		}
 
 		if (fread(file, 1, fsize, fin) != fsize) {
 			fclose(fin);
 			free(file);
-			return 0;
+			return NULL;
 		}
 		fstat(fileno(fin), &sbuf);
 		memcpy(&fmtime, &sbuf.st_mtime, sizeof fmtime);
@@ -228,17 +226,17 @@ static void treat_file(char *fn, char *ext)
 	}
 
 	/* initialize if not already done */
-	if (fout == 0)
+	if (!fout)
 		read_def_format();
 
 	/* read the file into memory */
 	/* the real/full file name is in tex_buf[] */
-	if ((file = read_file(fn, ext)) == 0) {
+	if ((file = read_file(fn, ext)) == NULL) {
 		if (strcmp(fn, "default.fmt") != 0) {
 #if defined(unix) || defined(__unix__)
 			perror("read_file error: ");
 #endif
-			error(1, 0, "Cannot read the input file '%s'", fn);
+			error(1, NULL, "Cannot read the input file '%s'", fn);
 		}
 		return;
 	}
@@ -270,7 +268,7 @@ static void treat_file(char *fn, char *ext)
 	if (nbfiles > 0)		/* if %%format */
 		return;			/* don't free the preprocessed buffer */
 
-	memcpy(&deco_tune, &deco_glob, sizeof deco_tune);
+//	memcpy(&deco_tune, &deco_glob, sizeof deco_tune);
 	if (file_type == FE_ABC) {		/* if ABC file */
 //		if (!epsf)
 //			open_output_file();
@@ -279,14 +277,14 @@ static void treat_file(char *fn, char *ext)
 	t = abc_parse(file2);
 	free(file2);
 	front_init(0, 0, include_cb);		/* reinit the front-end */
-	if (t == 0) {
+	if (!t) {
 		if (file_type == FE_ABC)
-			error(1, 0, "File '%s' is empty!", tex_buf);
+			error(1, NULL, "File '%s' is empty!", tex_buf);
 		return;
 	}
 
-	while (t != 0) {
-		if (t->first_sym != 0)		/*fixme:last tune*/
+	while (t) {
+		if (t->first_sym)		/*fixme:last tune*/
 			do_tune(t);		/* generate */
 		t = t->next;
 	}
@@ -307,9 +305,9 @@ void strext(char *fn, char *ext)
 {
 	char *p, *q;
 
-	if ((p = strrchr(fn, DIRSEP)) == 0)
+	if ((p = strrchr(fn, DIRSEP)) == NULL)
 		p = fn;
-	if ((q = strrchr(p, '.')) == 0)
+	if ((q = strrchr(p, '.')) == NULL)
 		strcat(p, ".");
 	else
 		q[1] = '\0';
@@ -387,7 +385,6 @@ static void usage(void)
 		"  .input file selection/options:\n"
 		"     -e pattern\n"
 		"             tune selection\n"
-		"     -u      abc2ps behaviour\n"
 		"  .help/configuration:\n"
 		"     -V      show program version\n"
 		"     -h      show this command summary\n"
@@ -407,7 +404,7 @@ static void wherefmtdir(void)
 
 	if ((l = readlink("/proc/self/exe", exe, sizeof exe)) <= 0)
 		return;
-	if ((p = strrchr(exe, '/')) == 0)
+	if ((p = strrchr(exe, '/')) == NULL)
 		return;
 	p++;
 	if (p > &exe[5] && strncmp(p - 5, "/bin", 4) == 0) {
@@ -418,7 +415,7 @@ static void wherefmtdir(void)
 
 	/* check if a format file is present */
 	strcpy(p, "tight.fmt");
-	if ((f = fopen(exe, "r")) == 0)
+	if ((f = fopen(exe, "r")) == NULL)
 		return;
 	fclose(f);
 
@@ -435,15 +432,15 @@ static struct cmdtblt_s *cmdtblt_parse(char *p)
 	short val;
 
 	if (ncmdtblt >= MAXCMDTBLT) {
-		error(1, 0, "++++ Too many '-T'");
-		return 0;
+		error(1, NULL, "++++ Too many '-T'");
+		return NULL;
 	}
 	if (*p == '\0')
 		val = -1;
 	else {
 		val = *p++ - '0' - 1;
 		if ((unsigned) val > MAXTBLT) {
-			error(1, 0, "++++ Bad tablature number in '-T'\n");
+			error(1, NULL, "++++ Bad tablature number in '-T'\n");
 			return 0;
 		}
 	}
@@ -456,6 +453,8 @@ static struct cmdtblt_s *cmdtblt_parse(char *p)
 /* set a command line option */
 static void set_opt(char *w, char *v)
 {
+	static char prefix = '%';	/* pseudo-comment prefix */
+
 	if (!v)
 		v = "";
 	if (strlen(w) + strlen(v) >= TEX_BUF_SZ - 10) {
@@ -463,7 +462,9 @@ static void set_opt(char *w, char *v)
 		return;
 	}
 	sprintf(tex_buf,		/* this buffer is available */
-		"%%%%%s %s lock\n", w, v);
+		"%%%c%s %s lock\n", prefix, w, v);
+	if (strcmp(w, "abcm2ps") == 0)
+		prefix = *v;
 	frontend((unsigned char *) tex_buf, 0);
 }
 
@@ -582,7 +583,7 @@ int main(int argc, char **argv)
 			int i;
 
 			if (p[1] == '\0') {		/* '-' alone */
-				if (in_fname != 0) {
+				if (in_fname) {
 					treat_file(in_fname, "abc");
 					frontend((unsigned char *) "select\n", 0);
 				}
@@ -685,7 +686,7 @@ int main(int argc, char **argv)
 			if (p[1] == '-') {		/* long argument */
 				p += 2;
 				if (--argc <= 0) {
-					error(1, 0, "No argument for '--'");
+					error(1, NULL, "No argument for '--'");
 					return EXIT_FAILURE;
 				}
 				argv++;
@@ -716,7 +717,7 @@ int main(int argc, char **argv)
 				case 'g':
 					break;
 				case 'H':
-					if (fout == 0) {
+					if (!fout) {
 						read_def_format();
 						make_font_list();
 					}
@@ -736,10 +737,6 @@ int main(int argc, char **argv)
 				case 'q':
 				case 'S':
 					break;
-				case 'u':
-					cfmt.abc2pscompat = 1;
-					lock_fmt(&cfmt.abc2pscompat);
-					break;
 				case 'v':
 				case 'X':
 					break;
@@ -755,25 +752,10 @@ int main(int argc, char **argv)
 					cfmt.oneperpage = 1;
 					lock_fmt(&cfmt.oneperpage);
 					break;
-				case 'e':		/* filtering */
-					if (p[1] == '\0') {
-						if (--argc <= 0) {
-							error(1, 0,
-								"No filter for '-e'");
-							break;
-						}
-						argv++;
-						set_opt("select", *argv);
-					} else {
-						set_opt("select", p + 1);
-						while (p[1] != '\0')	/* stop */
-							p++;
-					}
-					break;
 
 					/* flag with optional parameter */
 				case 'N':
-					if (p[1] == 0
+					if (p[1] == '\0'
 					 && (argc <= 1
 					  || !isdigit((unsigned) argv[1][0]))) {
 						pagenumbers = 2; /* old behaviour */
@@ -786,6 +768,7 @@ int main(int argc, char **argv)
 				case 'b':
 				case 'D':
 				case 'd':
+				case 'e':
 				case 'F':
 				case 'I':
 				case 'j':
@@ -801,7 +784,7 @@ int main(int argc, char **argv)
 						aaa = *++argv;
 						if (--argc <= 0
 						 || (*aaa == '-' && c != 'O')) {
-							error(1, 0,
+							error(1, NULL,
 								"Missing parameter after flag -%c",
 								c);
 							return EXIT_FAILURE;
@@ -819,7 +802,7 @@ int main(int argc, char **argv)
 								 && aaa[j + 1] == '\0'
 								 && c == 'j')
 									break;
-								error(1, 0,
+								error(1, NULL,
 									"Invalid parameter <%s> for flag -%c",
 									aaa, c);
 								return EXIT_FAILURE;
@@ -842,6 +825,9 @@ int main(int argc, char **argv)
 						break;
 					case 'd':
 						set_opt("staffsep", aaa);
+						break;
+					case 'e':
+						set_opt("select", aaa);
 						break;
 					case 'F':
 						treat_file(aaa, "fmt");
@@ -866,7 +852,7 @@ int main(int argc, char **argv)
 					case 'N':
 						sscanf(aaa, "%d", &pagenumbers);
 						if ((unsigned) pagenumbers > 4) {
-							error(1, 0,
+							error(1, NULL,
 								"'-N' value %s - changed to 2",
 								aaa);
 							pagenumbers = 2;
@@ -874,7 +860,7 @@ int main(int argc, char **argv)
 						break;
 					case 'O':
 						if (strlen(aaa) >= sizeof outfn) {
-							error(1, 0, "'-O' too large");
+							error(1, NULL, "'-O' too large");
 							exit(EXIT_FAILURE);
 						}
 						strcpy(outfn, aaa);
@@ -896,32 +882,33 @@ int main(int argc, char **argv)
 					}
 					break;
 				default:
-					error(1, 0, "Unknown flag: -%c ignored", c);
+					error(1, NULL,
+						"Unknown flag: -%c ignored", c);
 					break;
 				}
 			}
 			continue;
 		}
 
-		if (in_fname != 0) {
+		if (in_fname) {
 			treat_file(in_fname, "abc");
 			frontend((unsigned char *) "select\n", 0);
 		}
 		in_fname = p;
 	}
 
-	if (in_fname != 0)
+	if (in_fname)
 		treat_file(in_fname, "abc");
 	if (multicol_start != 0) {		/* lack of %%multicol end */
 		error(1, 0, "Lack of %%%%multicol end");
 		multicol_start = 0;
 		buffer_eob();
-		if (info['X' - 'A'] == 0
+		if (!info['X' - 'A']
 		 && !epsf)
 			write_buffer();
 	}
-	if (!epsf && fout == 0) {
-		error(1, 0, "No input file specified");
+	if (!epsf && !fout) {
+		error(1, NULL, "No input file specified");
 		return EXIT_FAILURE;
 	}
 	close_output_file();
@@ -933,7 +920,7 @@ void clrarena(int level)
 {
 	struct str_a *a_p;
 
-	if ((a_p = str_r[level]) == 0) {
+	if ((a_p = str_r[level]) == NULL) {
 		str_r[level] = a_p = malloc(sizeof *str_r[0] + AREANASZ - 2);
 		a_p->sz = AREANASZ;
 		a_p->n = 0;
@@ -963,7 +950,7 @@ void *getarena(int len)
 	len = (len + 7) & ~7;		/* align at 64 bits boundary */
 	if (len > a_p->r) {
 		if (len > MAXAREANASZ) {
-			error(1, 0,
+			error(1, NULL,
 				"getarena - data too wide %d - aborting",
 				len);
 			exit(EXIT_FAILURE);

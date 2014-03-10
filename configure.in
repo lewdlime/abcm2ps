@@ -3,8 +3,8 @@ dnl Copyright (C) 2001-2014 JF Moine.
 
 AC_INIT(abc2ps.h)
 
-VERSION=7.6.10
-VDATE='January 23, 2014'
+VERSION=7.7.2
+VDATE='March 7, 2014'
 
 AC_CANONICAL_SYSTEM
 

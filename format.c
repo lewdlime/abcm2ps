@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2013 Jean-François Moine
+ * Copyright (C) 1998-2014 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,7 @@ static struct format {
 	char subtype;		/* special cases - see code */
 	short lock;
 } format_tb[] = {
-	{"abc2pscompat", &cfmt.abc2pscompat, FORMAT_B, 0},
+	{"abc2pscompat", &cfmt.abc2pscompat, FORMAT_B, 3},
 	{"alignbars", &cfmt.alignbars, FORMAT_I, 0},
 	{"aligncomposer", &cfmt.aligncomposer, FORMAT_I, 0},
 	{"autoclef", &cfmt.autoclef, FORMAT_B, 0},
@@ -450,6 +450,7 @@ static char *yn[2] = {"no","yes"};
 				}
 				/* fall thru */
 #endif
+			default:
 			case 0:
 				printf("%s\n", yn[*((int *) fd->v)]);
 				break;
@@ -585,7 +586,8 @@ static int get_posit(char *p)
 	if (strcmp(p, "down") == 0
 	 || strcmp(p, "below") == 0)
 		return SL_BELOW;
-	if (strcmp(p, "hidden") == 0)
+	if (strcmp(p, "hidden") == 0
+	 || strcmp(p, "opposite") == 0)
 		return SL_HIDDEN;
 	return 0;			/* auto (!= SL_AUTO) */
 }
@@ -745,7 +747,9 @@ struct tblt_s *tblt_parse(char *p)
 			return tblts[n];
 		while (isspace((unsigned char) *p))
 			p++;
-	} else	n = -1;
+	} else {
+		n = -1;
+	}
 
 	/* pitch */
 	tblt = malloc(sizeof *tblt);
@@ -873,10 +877,10 @@ struct vpar {
 	void (*f)(struct VOICE_S *p_voice, int val);
 	int max;
 };
-static struct vpar vpar_tb[] = {
+static const struct vpar vpar_tb[] = {
 	{"dynamic", set_dyn, 3},	/* 0 */
 	{"gchord", set_gch, 3},		/* 1 */
-	{"gstemdir", set_gsd, 2},	/* 2 */
+	{"gstemdir", set_gsd, 3},	/* 2 */
 	{"ornament", set_orn, 3},	/* 3 */
 	{"stemdir", set_std, 2},	/* 4 */
 	{"vocal", set_voc, 3},		/* 5 */
@@ -889,7 +893,7 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 			char *w,		/* keyword */
 			char *p)		/* argument */
 {
-	struct vpar *vpar, *vpar2 = NULL;
+	const struct vpar *vpar, *vpar2 = NULL;
 	int i, val;
 
 	for (vpar = vpar_tb; vpar->name; vpar++) {
@@ -1111,8 +1115,16 @@ void interpret_fmt_line(char *w,		/* keyword */
 			}
 			/* fall thru */
 #endif
+		default:
 		case 0:
+		case 3:				/* %%abc2pscompat */
 			*((int *) fd->v) = g_logv(p);
+			if (fd->subtype == 3) {
+				if (cfmt.abc2pscompat)
+					deco['M'] = deco_define("tenuto");
+				else
+					deco['M'] = deco_define("lowermordent");
+			}
 			break;
 		case 1:	{			/* %%writefields */
 			char *q;

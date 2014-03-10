@@ -1,3 +1,43 @@
+---- Version 7.7.2 - 14/03/07 ----
+
+Fix loss of parameters after '--abcm2ps x' in command line.
+Fix loss of lyric word when note as last music line symbol.
+Fix bad handling of multi-rests when L:auto.
+Fix bad vertical of rests when no notes in voice and clef != treble.
+Fix lack of time signature at start of line when %%timewarn.
+Fix %%stretchstaff which did not work.
+Fix %%parskipfac for non fill/justified texts.
+Fix %%infoline in some cases.
+Fix %%combinevoices 0 and the rests.
+Fix %%break which could not be put in the tune header.
+Fix bad generation when SVG output of justified text.
+Fix bad %%voice filtering.
+Remove option '-u' (abs2pscompat in command line).
+Fix bad 'M' decoration when abc2pscompat.
+Fix bad duration of notes when grace notes and L:auto.
+Fix bad behaviour of '%%gstemdir 3' when at start of n-plet
+	(reported by David Lacroix).
+
+---- Version 7.7.1 - 14/02/18 ----
+
+Fix crash when decoration at start of tune
+	(reported by Jean-Luc Zins).
+
+---- Version 7.7.0 - 14/02/17 ----
+
+Fix bad indentation when new name of a voice appearing later in the
+	music line.
+Fix bad rest offset when in 2nd voice and longer than notes of 1st voice.
+Fix bad tie when combinevoices and chord behind measure bar.
+Change again the behaviour of %%staffnonote.
+Set correct vertical space for elements of invisible staves.
+Don't output errors when w: found in ignored voice (not in %%staves).
+Add option 'opposite' in %%gstemdir
+	(requested by David Lacroix).
+Fix documentation about the default value of %%staffnonote.
+Add line number in more 'Too many words..' error messages.
+Fix compilation warning.
+
 ---- Version 7.6.10 - 14/01/23 ----
 
 Fix crash with rests in previous release

@@ -89,7 +89,7 @@
 
 #define YSTEP	128		/* number of steps for y offsets */
 
-extern unsigned char deco_glob[256], deco_tune[256];
+extern unsigned char deco[256];
 
 struct FONTSPEC {
 	int fnum;		/* index to font tables in format.c */
@@ -125,7 +125,7 @@ struct gch {
 
 /* positions / directions */
 /* 0: auto, 1: above/up (SL_ABOVE), 2: below/down (SL_BELOW)
- * 3: hidden (SL_AUTO) */
+ * 3: hidden (SL_AUTO) or opposite for gstemdir */
 #define SL_HIDDEN SL_AUTO
 struct posit_s {
 	unsigned short dyn:2;	/* %%dynamic */
@@ -496,6 +496,7 @@ void write_eps(void);
 void deco_add(char *text);
 void deco_cnv(struct deco *dc, struct SYMBOL *s, struct SYMBOL *prev);
 unsigned char deco_intern(unsigned char deco);
+unsigned char deco_define(char *name);
 void deco_update(struct SYMBOL *s, float dx);
 float deco_width(struct SYMBOL *s);
 void draw_all_deco(void);

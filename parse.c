@@ -71,6 +71,7 @@ static struct symsel_s clip_start, clip_end;
 
 
 static INFO info_glob;			/* global info definitions */
+static unsigned char deco_glob[256];	/* global decoration table */
 
 static int over_time;			/* voice overlay start time */
 static int over_mxtime;			/* voice overlay max time */
@@ -1600,6 +1601,28 @@ static struct abcsym *get_lyric(struct abcsym *as)
 	f = &cfmt.font_tb[cfmt.vof];
 	str_font(cfmt.vof);			/* (for tex_str) */
 
+	if (curvoice->ignore) {
+		for (;;) {
+			if (!as->next)
+				return as;
+			switch (as->next->type) {
+			case ABC_T_PSCOM:
+				as = process_pscomment(as->next);
+				f = &cfmt.font_tb[cfmt.vof];	/* may have changed */
+				str_font(cfmt.vof);
+				continue;
+			case ABC_T_INFO:
+				if (as->next->text[0] == 'w'
+				 || as->next->text[0] == '+') {
+					as = as->next;
+					continue;
+				}
+				break;
+			}
+			return as;
+		}
+	}
+
 	/* treat all w: lines */
 	s = curvoice->lyric_start;
 	if (!s) {
@@ -1608,10 +1631,11 @@ static struct abcsym *get_lyric(struct abcsym *as)
 			error(1, s, "w: without music");
 			return as;
 		}
-		curvoice->lyric_start = s;
-	}
-	if (s->ly)			/* prev music line ended by a note */
+	} else if (s->ly) {		/* prev music line ended with a note */
 		s = s->next;
+	}
+	curvoice->lyric_start = s;
+	s2 = s;				/* for #line in error messages */
 	cont = 0;
 	ln = -1;
 	for (;;) {
@@ -1621,6 +1645,7 @@ static struct abcsym *get_lyric(struct abcsym *as)
 				ln--;
 			}
 			ln++;
+			s2 = s;
 			s = curvoice->lyric_start;
 		} else {
 			cont = 0;
@@ -1648,6 +1673,7 @@ static struct abcsym *get_lyric(struct abcsym *as)
 						"Not enough bar lines for lyric line");
 					goto ly_next;
 				}
+				s2 = s;
 				s = s->next;
 				p++;
 				continue;
@@ -1716,8 +1742,10 @@ static struct abcsym *get_lyric(struct abcsym *as)
 			}
 
 			/* store the word in the next note */
-			s2 = s;				/* for error */
-			s = next_lyric_note(s);
+			if (s) {				/* for error */
+				s2 = s;
+				s = next_lyric_note(s);
+			}
 			if (!s) {
 				error(1, s2, "Too many words in lyric line");
 				goto ly_next;
@@ -1769,6 +1797,7 @@ static struct abcsym *get_lyric(struct abcsym *as)
 					q++;
 				}
 			}
+			s2 = s;
 			s = s->next;
 		}
 
@@ -2798,13 +2827,9 @@ static struct abcsym *get_info(struct abcsym *as,
 		reset_gen();		/* (display the time signature) */
 		as = get_global_def(as, t);
 		break;
-	case 'U': {
-		unsigned char *deco;
-
-		deco = as->state == ABC_S_GLOBAL ? deco_glob : deco_tune;
+	case 'U':
 		deco[as->u.user.symbol] = deco_intern(as->u.user.value);
 		break;
-	    }
 	case 'u':
 		break;
 	case 'V':
@@ -2844,9 +2869,9 @@ static struct abcsym *get_info(struct abcsym *as,
 			buffer_eob();	/* flush stuff left from %% lines */
 			write_buffer();
 		}
-		dfmt = cfmt;		/* save format and info */
+		memcpy(&dfmt, &cfmt, sizeof dfmt); /* save global values */
 		memcpy(&info_glob, &info, sizeof info_glob);
-		memcpy(&deco_tune, &deco_glob, sizeof deco_tune);
+		memcpy(deco_glob, deco, sizeof deco_glob);
 		info['X' - 'A'] = s;
 		if (tune_opts)
 			tune_filter(as);
@@ -2947,10 +2972,14 @@ static void adjust_dur(struct SYMBOL *s)
 	s2 = curvoice->last_sym;
 	if (!s2)
 		return;
+	if (s2->type == MREST)
+		return;
 	while (s2->type != BAR && s2->prev)
 		s2 = s2->prev;
 	time = s2->time;
 	auto_time = curvoice->time - time;
+	if (curvoice->wmeasure == auto_time)
+		return;				/* already good duration */
 
 	/* remove the invisible rest at start of tune */
 	if (time == 0) {
@@ -2968,29 +2997,29 @@ static void adjust_dur(struct SYMBOL *s)
 			s2 = s2->next;
 		}
 	}
-	while (s2) {
-		if (s2->dur != 0) {
-			s2->dur = s2->dur * curvoice->wmeasure / auto_time;
-			s2->time = time;
-			time += s2->dur;
-			if (s2->type == NOTEREST) {
-				int i, head, dots, nflags;
+	for (; s2; s2 = s2->next) {
+		int i, head, dots, nflags;
 
-				for (i = 0; i <= s2->nhd; i++)
-					s2->as.u.note.lens[i] = s2->as.u.note.lens[i]
-						 * curvoice->wmeasure / auto_time;
-				identify_note(s2, s2->as.u.note.lens[0],
-						&head, &dots, &nflags);
-				s2->head = head;
-				s2->dots = dots;
-				s2->nflags = nflags;
-				if (s2->nflags <= -2)
-					s2->as.flags |= ABC_F_STEMLESS;
-				else
-					s2->as.flags &= ~ABC_F_STEMLESS;
-			}
-		}
-		s2 = s2->next;
+		if (s2->dur == 0
+		 || (s2->as.flags & ABC_F_GRACE))
+			continue;
+		s2->dur = s2->dur * curvoice->wmeasure / auto_time;
+		s2->time = time;
+		time += s2->dur;
+		if (s2->type != NOTEREST)
+			continue;
+		for (i = 0; i <= s2->nhd; i++)
+			s2->as.u.note.lens[i] = s2->as.u.note.lens[i]
+					 * curvoice->wmeasure / auto_time;
+		identify_note(s2, s2->as.u.note.lens[0],
+				&head, &dots, &nflags);
+		s2->head = head;
+		s2->dots = dots;
+		s2->nflags = nflags;
+		if (s2->nflags <= -2)
+			s2->as.flags |= ABC_F_STEMLESS;
+		else
+			s2->as.flags &= ~ABC_F_STEMLESS;
 	}
 	curvoice->time = s->time = time;
 }
@@ -3226,7 +3255,7 @@ void do_tune(struct abctune *t)
 			break;
 		case ABC_T_EOLN:
 			if (cfmt.breakoneoln
-			 || (s->as.flags & ABC_F_SPACE))
+			 || (as->flags & ABC_F_SPACE))
 				curvoice->space = 1;
 			if (cfmt.continueall || cfmt.barsperstaff
 			 || as->u.eoln.type == 1)	/* if '\' */
@@ -3351,8 +3380,9 @@ void do_tune(struct abctune *t)
 		write_buffer();
 
 	if (info['X' - 'A']) {
-		memcpy(&cfmt, &dfmt, sizeof cfmt); /* restore format and info */
+		memcpy(&cfmt, &dfmt, sizeof cfmt); /* restore global values */
 		memcpy(&info, &info_glob, sizeof info);
+		memcpy(deco, deco_glob, sizeof deco);
 		info['X' - 'A'] = NULL;
 	}
 
@@ -4003,23 +4033,24 @@ static void get_note(struct SYMBOL *s)
 	} else {			/* grace note - adjust its duration */
 		int div;
 
-		switch (curvoice->posit.gsd) {
-		case SL_ABOVE: s->stem = 1; break;
-		case SL_BELOW: s->stem = -1; break;
-		}
 		if (curvoice->key.mode < BAGPIPE) {
-			div = 4;
+			div = 2;
 			if (!prev
 			 || !(prev->as.flags & ABC_F_GRACE)) {
 				if (s->as.flags & ABC_F_GR_END)
-					div = 2;	/* one grace note */
+					div = 1;	/* one grace note */
 			}
 		} else {
-			div = 8;
+			div = 4;
 		}
 		for (i = 0; i <= m; i++)
 			s->as.u.note.lens[i] /= div;
 		s->dur /= div;
+		switch (curvoice->posit.gsd) {
+		case SL_ABOVE: s->stem = 1; break;
+		case SL_BELOW: s->stem = -1; break;
+		case SL_HIDDEN:	s->stem = 2; break;	/* opposite */
+		}
 	}
 
 	/* convert the decorations
@@ -4273,7 +4304,7 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 		if (strcmp(w, "break") == 0) {
 			struct brk_s *brk;
 
-			if (as->state != ABC_S_TUNE) {
+			if (as->state != ABC_S_HEAD) {
 				error(1, s, "%%%%%s ignored", w);
 				return as;
 			}
@@ -4305,7 +4336,7 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 		}
 		if (strcmp(w, "clip") == 0) {
 			if (!cur_tune_opts) {
-				error(1, s, "No %%%%tune before %%%%%s", w);
+				error(1, s, "%%%%%s not in %%%%tune sequence", w);
 				return as;
 			}
 
@@ -4918,7 +4949,7 @@ center:
 						break;
 					continue;
 				}
-				as->next->state = ABC_S_TUNE;
+				as->next->state = ABC_S_HEAD;
 
 				/* !! no reverse link !! */
 				s->next = (struct SYMBOL *) as->next;
@@ -4930,9 +4961,6 @@ center:
 		break;
 	case 'u':
 		if (strcmp(w, "user") == 0) {
-			unsigned char *deco;
-
-			deco = as->state == ABC_S_GLOBAL ? deco_glob : deco_tune;
 			deco[as->u.user.symbol] = deco_intern(as->u.user.value);
 			return as;
 		}
@@ -5028,7 +5056,7 @@ center:
 				s->next = (struct SYMBOL *) as->next;
 				s = s->next;
 			}
-			return as->prev;
+			return as;
 		}
 		if (strcmp(w, "voicescale") == 0) {
 			int voice;

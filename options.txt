@@ -172,9 +172,6 @@ List of the options
 	Ex: '-T1flute +T2'
 	See: format.txt - tablature
 
-  -u
-	See: format.txt - abc2pscompat <bool>
-
   -V
 	Show the version number.
 

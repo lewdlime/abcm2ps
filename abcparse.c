@@ -764,7 +764,7 @@ static void parse_clef(struct abcsym *s,
 
 	if (middle) {
 		int pit, len, acc, nostem, l;
-		static char line_tb[7] =
+		static const char line_tb[7] =
 			{ALTO, TREBLE, ALTO, BASS, ALTO, BASS, ALTO};
 
 		warn = middle;
@@ -1868,7 +1868,6 @@ static char *parse_basic_note(char *p,
 		p++;
 	}
 	p = parse_len(p, &len);
-	len = len * ulen / BASE_LEN;
 
 	*pitch = pit;
 	*length = len;
@@ -2695,10 +2694,11 @@ static char *parse_note(struct abctune *t,
 			dc.s = dc.n;
 		}
 		p = parse_basic_note(p, &pit, &len, &acc, &tmp);
-		if (flags & ABC_F_GRACE) {
-			len = len * BASE_LEN / 4 / ulen;
-			tmp = 0;
-		}
+		if (!(flags & ABC_F_GRACE))
+			len = len * ulen / BASE_LEN;
+		else
+			len /= 8;		/* for grace note alone */
+
 		s->u.note.pits[m] = pit;
 		s->u.note.lens[m] = len;
 		s->u.note.accs[m] = acc;

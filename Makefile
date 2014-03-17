@@ -1,6 +1,6 @@
 # Makefile source for abcm2ps
 
-VERSION = 6.6.21
+VERSION = 6.6.22
 
 CC = gcc
 INSTALL = /usr/bin/install -c

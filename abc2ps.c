@@ -570,6 +570,10 @@ int main(int argc, char **argv)
 				svg = 2;	/* SVG/XHTML */
 				epsf = 0;
 				break;
+			default:
+				if (strchr("aBbDdeFfIjmNOsTw", c)) /* if with arg */
+					p += strlen(p) - 1;	/* skip */
+				break;
 			}
 		}
 	}

@@ -8,14 +8,14 @@ The options may be grouped when they have no argument, but the
 last one (ex: "-lnGI20").
 
 The options may be disabled when starting with '+' or ending with '-'
-(ex: "+MT1" is the same as "-MT1-"
+(ex: "+MT1" is the same as "-MT1-").
 
 The general output format is the last found in the command line.
-It may be
-	"-E" for Encapsulated PostScript one file per tune
-	"-g" for XHTML/SVG one file per tune
-	"-v" for XHTML/SVG one file per page
-	"-X" for XHTML/SVG
+It may be:
+	"-E" for Encapsulated PostScript, one file per tune
+	"-g" for SVG, one file per tune
+	"-v" for SVG, one file per page
+	"-X" for XHTML+SVG
 	(none) for PostScript
 (see below for more information)
 
@@ -28,7 +28,7 @@ List of the options
   --<format> <value>
 	Set the format parameter to <value>. See format.txt.
 
-  -a<float>
+  -a <float>
 	See: format.txt - maxshrink <float>
 
   -A
@@ -36,19 +36,19 @@ List of the options
 	This option inserts reference elements in the PostScript
 	or SVG output.
 
-  -B<int>, +B
+  -B <int>, +B
 	See: format.txt - barsperstaff <int>
 
-  -b<int>
+  -b <int>
 	See: format.txt - measurefirst <int>
 
   -c, +c
 	See: format.txt - continueall <bool>
 
-  -D<dir>
+  -D <dir>
 	Search the format files in the directory <dir>.
 
-  -d<unit>
+  -d <unit>
 	See: format.txt - staffsep <unit>
 
   -E
@@ -68,19 +68,10 @@ List of the options
 	 the .eps, multiplied by (80 / 72), where 80 is the value
 	 for -r, and 72 is the default resolution)
 
-  -e<list>
-	Select the tunes inside an ABC file.
-	<list> is a comma separated list of items (tune numbers).
-	Each selector applies to the previous associated ABC file.
-	An item may be a single index value (as indicated in the 'X:'
-	field), or a range of such values. A range is indicated as
-	<first_index>-<last_index>. The last index may be omitted
-	meaning 'last tune of file'.
-	Example:
-		abcm2ps voices -e 5,2-4 newfeatures -e5-
-	Note: Filtering may raise problems, mainly on global definitions.
+  -e [ <tune index list> ] [ <regular expression> ]
+	See: format.txt - select [ <tune index list> ] [ <regular expression> ]
 
-  -F<file>, +F
+  -F <file>, +F
 	Read the format (or PostScript) file <file>.
 	When omitted, the default type of a format file is '.fmt'.
 	In the form '+F', the default format file ('default.fmt') is not
@@ -106,14 +97,20 @@ List of the options
 	Quick help, equivalent to "abcm2ps" without any arguments.
 	This also shows the default settings for some parameters.
 
-  -I<unit>
+  -I <unit>
 	See: format.txt - indent <unit>
 
   -i, +i
 	Insert a red cercle around the errors in the PostScript output.
 
-  -j<int>[b], +j
+  -j <int>[b], +j
 	See: format.txt - measurenb <int>
+
+  -k <int>
+	Set the size of the PostScript output buffer in Kibytes.
+	Setting this value to a higher value permits the
+	generation of big tunes with -E or -g.
+	The default value is 64.
 
   -l, +l
 	See: format.txt - landscape <bool>
@@ -121,10 +118,10 @@ List of the options
   -M, +M
 	See: format.txt - writefields w <bool>
 
-  -m<unit>
+  -m <unit>
 	See: format.txt - leftmargin <unit>
 
-  -N<int>, +N
+  -N <int>, +N
 	Number the pages.
 	<int> indicates the mode:
 		0  no page numbers
@@ -139,24 +136,29 @@ List of the options
   -n, +n
 	See: format.txt - writehistory <bool>
 
-  -O[<directory>][<name>], +O
+  -O [ <directory> ] [ <name> ], +O
 	Define the output file directory and/or name.
+	The directory must end with the directory separator
+	('/' for unix/windows, '\' for mac).
 	By default, the output file goes to the current directory
-	with a name 'Out.ps' for PS, 'Outnnn.eps' for EPS (see
-	option '-E'), 'Outnnn.svg' for SVG (see options '-g' and '-v')
-	or 'Out.xhtml' for XHTML + SVG (see option '-X').
-	When <name> is present, it replaces 'Out' in the file name.
+	with the name:
+		'Out.ps' for PS,
+		'Outnnn.eps' for EPS (see option '-E'),
+		'Outnnn.svg' for SVG (see options '-g' and '-v') or
+		'Out.xhtml' for XHTML+SVG (see option '-X').
+	'nnn' being a sequence number.
+	When <name> is present, it is the name of the file, or it
+	replaces 'Out' in the file name.
 	If <name> is '=', it is replaced by the name of the ABC
 	source file.
-	If <name> is '-', the result is output to stdout (standard PS and
-	embeddable SVG - '-g' - only).
+	If <name> is '-', the result is output to stdout (not for EPS).
 	'+O' resets the output file directory and name to their defaults.
 
   -q
 	Quiet mode.
 	When present, only the errors are shown.
 
-  -s<float>
+  -s <float>
 	See: format.txt - scale <float>
 
   -S
@@ -164,7 +166,7 @@ List of the options
 	When present, file inclusion (%%format and %%EPS) and PostScript
 	injection (%%beginps and %%postscript) are disabled.
 
-  -T<int>[<voice>], +T[<int>[<voice>]]
+  -T <int> [ <voice> ], +T [ <int> [<voice> ] ]
 	Activate or deactivate tablature drawing.
 	<int> is the tablature number as defined in %%tablature.
 		There may be only 8 different tablatures.
@@ -174,18 +176,15 @@ List of the options
 	Ex: '-T1flute +T2'
 	See: format.txt - tablature
 
-  -u
-	See: format.txt - abc2pscompat <bool>
-
   -V
 	Show the version number.
 
   -v
 	Produce SVG output instead of simple PS.
 	In this mode each page goes to a different file which name
-	is 'Outnnn.svg' (see option '-O' - output to stdout is forbidden).
+	is 'Outnnn.svg' (see option '-O').
 
-  -w<unit>
+  -w <unit>
 	See: format.txt - staffwidth <unit>
 
   -X

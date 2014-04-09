@@ -64,12 +64,15 @@ M:4/4
 L:1/8
 %%staves (melody1 chords melody2)
 K:F
-V:melody1 stem=down
+V:melody1
+%%stemdir down
 e3/d/ d6 | z2 d/d3/ cB/A/- AG |
 w: far a-way, | Now it looks as though_ they're |
 V:chords
 "Dm"x4 "Dm/C"x4 | "Bb"x4  "C7"x4 |
-V:melody2 stem=up scale=0.8
+V:melody2
+%%stemdir up
+%%voicescale 0.8
 ie3/id/ id6 | x2 d/dc/.- c/B3/ AG |
 w: used to be, | There's a shad-_ow hang-ing |
 
@@ -80,7 +83,7 @@ M:C
 L:1/8
 %%staves [recit GO pos ped]
 K:Eb
-V:recit name=Récit
+V:recit name="Récit"
 z8|z8|z8|
 V:GO treble name="Grand\nOrgue"
 z2[G,B,E][I:staff 3][G,B,E] \
@@ -91,7 +94,7 @@ z2[G,B,E][I:staff 3][G,B,E] \
  [I:staff 2][EGB][I:staff 3][EGB] [I:staff 2][DFA][I:staff 3][DFA]|
 V:pos treble name=Positif
 z2x6|x8|x8|
-V:ped name=Pédale
+V:ped name="Pédale"
 E,,8-|E,,8-|E,,2G,,2B,,2=B,,2|
 
 X:5
@@ -103,10 +106,14 @@ K:Cm
 V:1 stem=up
 [CGceg]6[C-,G-,ceg]3-|[CGceg]3[CGceg]6|
 % tablature
-V:2 clef=none stafflines=6 staffscale=1.6
+V:2 clef=none
+%%stafflines 6
+%%staffscale 1.6
+%%staffnonote 2
 [K:none][M:none]i[jGlBldkfja]6i[jGlBldkfja]3|iA3i[jGlBldkfja]6|
 % percussion
-V:3 clef=perc stafflines=1
+V:3 clef=perc
+%%stafflines 1
 [K:none]^c3^c3^c^c^c|^c3^c3^c^c^c|
 V:4 clef=perc stafflines=1
 [K:none]A3A3A3|A6A3|

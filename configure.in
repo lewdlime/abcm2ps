@@ -1,10 +1,10 @@
 dnl Configure source for abcm2ps -*- sh -*-
-dnl Copyright (C) 2001-2012 JF Moine.
+dnl Copyright (C) 2001-2014 JF Moine.
 
 AC_INIT(abc2ps.h)
 
-VERSION=6.6.22
-VDATE='November 28, 2012'
+VERSION=7.8.1
+VDATE='April 2, 2014'
 
 AC_CANONICAL_SYSTEM
 
@@ -41,7 +41,8 @@ dnl Checks freetype2
 dnl Checks pangocairo
 		if pkg-config --exists pangocairo ; then
 			$as_echo "yes" >&6
-	CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1 `pkg-config pango cairo freetype2 --cflags`"
+			CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1"
+			CPPPANGO="`pkg-config pango cairo freetype2 --cflags`"
 			LDFLAGS="$LDFLAGS `pkg-config pangocairo pangoft2 freetype2 --libs`"
 		else
 			$as_echo "no" >&6
@@ -73,6 +74,7 @@ AC_ARG_WITH(def-fdir,
 
 dnl Build characteristics
 AC_SUBST(VERSION)
+AC_SUBST(CPPPANGO)
 
 AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
 AC_DEFINE_UNQUOTED(VDATE, "$VDATE")

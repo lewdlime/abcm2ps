@@ -56,6 +56,7 @@ struct note {		/* note or rest */
 	unsigned char slur_st;	/* slurs starting here (2 bits array) */
 	char slur_end;		/* number of slurs ending here */
 	signed char brhythm;	/* broken rhythm */
+	unsigned char microscale; /* microtone denominator - 1 */
 	struct deco dc;		/* decorations */
 };
 
@@ -81,8 +82,6 @@ struct abcsym {
 #define ABC_S_GLOBAL 0			/* global */
 #define ABC_S_HEAD 1			/* in header (after X:) */
 #define ABC_S_TUNE 2			/* in tune (after K:) */
-#define ABC_S_EMBED 3			/* embedded header (between [..]) */
-	unsigned short colnum;	/* ABC source column number */
 	unsigned short flags;
 #define ABC_F_ERROR	0x0001		/* error around this symbol */
 #define ABC_F_INVIS	0x0002		/* invisible symbol */
@@ -92,7 +91,9 @@ struct abcsym {
 #define ABC_F_GRACE	0x0020		/* grace note */
 #define ABC_F_GR_END	0x0040		/* end of grace note sequence */
 #define ABC_F_SAPPO	0x0080		/* short appoggiatura */
+	unsigned short colnum;	/* ABC source column number */
 	int linenum;		/* ABC source line number */
+	char *fn;		/* ABC source file name */
 	char *text;		/* main text (INFO, PSCOM),
 				 * guitar chord (NOTE, REST, BAR) */
 	char *comment;		/* comment part (when keep_comment) */
@@ -109,6 +110,9 @@ struct abcsym {
 #define BAGPIPE 9				/* bagpipe when >= 8 */
 			signed char nacc;	/* number  of explicit accidentals */
 						/* (-1) if no accidental */
+			signed char octave;	/* 'octave=' */
+#define NO_OCTAVE 10				/* no 'octave=' */
+			unsigned char microscale; /* microtone denominator - 1 */
 			signed char pits[8];
 			unsigned char accs[8];
 		} key;
@@ -137,6 +141,7 @@ struct abcsym {
 			char *nname;		/* nick name */
 			float scale;		/* != 0 when change */
 			unsigned char voice;	/* voice number */
+			signed char octave;	/* 'octave=' - same as in K: */
 			char merge;		/* merge with previous voice */
 			signed char stem;	/* have stems up or down (2 = auto) */
 			signed char gstem;	/* have grace stems up or down (2 = auto) */
@@ -145,11 +150,11 @@ struct abcsym {
 			signed char gchord;	/* have gchord above or below the staff */
 		} voice;
 		struct {		/* bar, mrest or mrep */
-			struct deco dc;		/* decorations */
 			int type;
 			char repeat_bar;
 			char len;		/* len if mrest or mrep */
 			char dotted;
+			struct deco dc;		/* decorations */
 		} bar;
 		struct clef_s {		/* clef (and staff!) */
 			char *name;		/* PS drawing function */
@@ -162,6 +167,7 @@ struct abcsym {
 #define PERC 3
 			char line;
 			signed char octave;
+			signed char transpose;
 			char invis;
 			char check_pitch;	/* check if old abc2ps transposition */
 		} clef;
@@ -191,7 +197,6 @@ struct abcsym {
 /* tune definition */
 struct abctune {
 	struct abctune *next;	/* next tune */
-	struct abctune *prev;	/* previous tune */
 	struct abcsym *first_sym; /* first symbol */
 	struct abcsym *last_sym; /* last symbol */
 	int abc_vers;		/* ABC version = (H << 16) + (M << 8) + L */

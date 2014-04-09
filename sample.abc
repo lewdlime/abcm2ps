@@ -2,34 +2,8 @@
 
 U: M = !tenuto!		% abcm2ps: default M is lowermordent
 
-% abcm2ps >= 6.2.2 - definition of '...' (ellipsis) for PostScript
-%%beginps nosvg
-/morechar[
-/ellipsis
-]def
-/morefontdef{
-    /morefont curfont findfont dup length
-	dict begin
-		{1 index/FID ne{def}{pop pop}ifelse}forall
-		/Encoding 256 array def
-		Encoding 0 morechar putinterval
-		currentdict
-	end
-    definefont}def
-/compe200def{
-    /compe200<<
-	/FontType 0
-	/FontMatrix[1 0 0 1 0 0]
-	/FMapType 6
-% ellipsis - UTF-8: E2 80 A6 - unicode \u2026
-	/SubsVector<01 80a6 0001>
-	/Encoding[0 1 0]
-	/FDepVector[
-		/Error findfont
-		morefontdef
-	]
-    >>definefont}def
-%%endps
+% abcm2ps >= 7.6.0 - definition of '...' (ellipsis) for PostScript
+%%glyph 2026 ellipsis
 
 X:1
 T:Scale
@@ -84,7 +58,7 @@ T: Title with funny chars like \005 Çéñô Àçäßö © …
 M:C|
 K:Ebm
 [| (CDEF) ((3efg) ((3gag)| (C2 EF) (ef(ga)) | ((c2 (3(d)ef) e2)\
- A2-|A4 (c4|(c4)(e4)|a8) |]
+ A2-|A4 c4-|(c4(e4)|a8) |]
 
 X:8
 T:Changing Time or Key Signatures, Guitar Chords

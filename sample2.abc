@@ -39,7 +39,7 @@ L:1/4
 K:C
 "^no time""^signature"CD"gchord""^on bar"|EF\
 "^appogiattura"{B}c "^acciaccatura"{/B}c \
-"^three;chord;lines"G "^and""^four""^chord""^lines!"c| \
+"^three;annot;lines"G "^and""^four""^annot""^lines!"c| \
 "^Fa#"^F "^Sib"_B "^Fa="=F \
 "F#"^F "Bb"_B||
 
@@ -127,10 +127,6 @@ T:No transposition
 "^clef=treble""A,"A,"B,"B,"C"C"D"D|\
 [K:alto]"^alto""A,"A,"B,"B,"C"C"D"D|\
 [K:bass]"^bass""A,"A,"B,"B,"C"C"D"D|
-T:Explicit clef transposition
-[K:clef=G]"^clef=G""A,"A,"B,"B,"C"C"D"D|\
-[K:clef=c]"^clef=c""A"A"B"B"c"c"d"d|\
-[K:clef=f]"^clef=f""a"a"b"b"c'"c'"d'"d'|
 T:abc2ps compatible clef transposition
 %%abc2pscompat 1
 [K:treble]"^treble""A,"A,"B,"B,"C"C"D"D|\

@@ -43,9 +43,11 @@ K:Eb
 %%staves {M A1 A2}
 V:M	% Melody
 x6z2z(B3|\
-V:A1 scale=0.8
+V:A1
+%%voicescale 0.8
 z(G,[B,E]) z(G,[B,E]) z(G,[B,E]) z(G,[B,E])|\
-V:A2 staffscale=0.8
+V:A2
+%%staffscale 0.8
 E,,3G,,3B,,3G,,3|\
 %%staves M
 A2GF2EE3)E3|(E3c6)(B2A|G3F3B3F3)|
@@ -58,21 +60,24 @@ M:none
 L:1/8
 K:Cm
 %%rightmargin 0.5cm
-%%leftmargin 0cm
+%%leftmargin 0.5cm
 %%staves 1s 3s | {(1 2) 3}
-V:1s name="Ossia" staffscale=0.8
-V:3s staffscale=0.8
+V:1s name="Ossia"
+%%staffscale 0.8
+V:3s
+%%staffscale 0.8
+%%clef bass
 V:1
 gc fe/d/ e>e d=e\
 V:2
-B_A/G/ c/[I:staff 4]C/[I:staff 3]G- G/G/=A B/cD/\
+B_A/G/ c/[I:staff +1]C/[I:staff -1]G- G/G/=A B/cD/\
 V:3
 B,/G,/ C=A,=B, CF, _B,_A,/G,/\
 %%staves (1s 2) 3s | {(1 2) 3}
 V:1s
 |fB _e_d/c/ dG\
-V:3s bass
-|_A,_D- D/C/F/E/ D/C/D\
+V:3s
+|_A,_D- D/C/F/E/ D/C/D-\
 V:1
 |fB _ed/c/ dG\
 V:2

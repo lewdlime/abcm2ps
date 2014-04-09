@@ -99,7 +99,7 @@ Q:1/4=66
 %%staves [1 (2 3) 4]
 V:1 nm="Rückpos"
 V:2 nm="Organo"
-K:C
+K:Am
 V:1
 %%MIDI program 53
 A3B    c2c2    |d2e2    de/f/P ^c3/d/|d8    |z8		  |

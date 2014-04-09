@@ -601,6 +601,7 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+CPPPANGO
 VERSION
 EGREP
 GREP
@@ -1982,8 +1983,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-VERSION=6.6.22
-VDATE='November 28, 2012'
+VERSION=7.8.1
+VDATE='April 2, 2014'
 
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
@@ -3446,7 +3447,8 @@ if which pkg-config > /dev/null ; then
 	if pkg-config --exists freetype2 ; then
 		if pkg-config --exists pangocairo ; then
 			$as_echo "yes" >&6
-	CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1 `pkg-config pango cairo freetype2 --cflags`"
+			CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1"
+			CPPPANGO="`pkg-config pango cairo freetype2 --cflags`"
 			LDFLAGS="$LDFLAGS `pkg-config pangocairo pangoft2 freetype2 --libs`"
 		else
 			$as_echo "no" >&6
@@ -3481,6 +3483,7 @@ DEFAULT_FDIR="$prefix/share/abcm2ps"
 if test "${with_def_fdir+set}" = set; then :
   withval=$with_def_fdir; DEFAULT_FDIR="$withval"
 fi
+
 
 
 

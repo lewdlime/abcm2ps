@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2012 Jean-François Moine
+ * Copyright (C) 1998-2014 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -38,21 +38,9 @@ static char ps_head[] =
 	"/showb{	dup currentpoint 3 -1 roll show\n"
 	"	.6 SLW\n"
 	"	exch 2 sub exch 3 sub 3 -1 roll\n"
-#if 1
 	"	stringwidth pop 4 add\n"
-	"	currentfont /ScaleMatrix get 0 get .8 mul\n"
+	"	currentfont/ScaleMatrix get 0 get .8 mul\n"
 	"	4 add rectstroke}!\n"
-#else
-	"	stringwidth pop 4 add fh 4 add rectstroke}!\n"
-#endif
-
-#if 0
-	"/showcb{ % usage: str showcb - show centered in box\n"
-	"	dup stringwidth pop dup .5 mul neg 0 RM currentpoint 4 -1 roll show\n"
-	"	.6 SLW\n"
-	"	exch 2 sub exch 3 sub 3 -1 roll\n"
-	"	4 add fh 4 add rectstroke}!\n"
-#endif
 
 	/* x y tclef - treble clef */
 	"/utclef{<95200072\n"
@@ -356,7 +344,7 @@ static char ps_head[] =
 	"	-3 -3 RM 6 0 RL stroke}!\n"
 
 	/* x y accent - accent */
-	"/accent{1.2 SLW M -4 2 RM\n"
+	"/accent{1.2 SLW M -4 0 RM\n"
 	"	8 2 RL -8 2 RL stroke}!\n"
 
 	/* x y turn - turn */
@@ -573,6 +561,11 @@ static char ps_head[] =
 	/* 3/4 ton flat */
 	"/ft513{2 copy gsave -1 1 scale exch neg 3 add exch M ftx grestore\n"
 	"	M 1.5 0 RM ftx}!\n"
+	/* microscale= 4 */
+	"/sh4tb[/.notdef/sh1/sh0/sh513/dsh0]def\n"
+	"/sh4{sh4tb exch get cvx exec}!\n"
+	"/ft4tb[/.notdef/ft1/ft0/ft513/dft0]def\n"
+	"/ft4{ft4tb exch get cvx exec}!\n"
 
 	/* str gcshow - guitar chord */
 	"/gcshow{show}!\n"
@@ -713,8 +706,11 @@ static char ps_head[] =
 	"	RC stroke [] 0 setdash}!\n"
 
 	/* -- text -- */
-	"/strw{stringwidth pop w add/w exch def}!\n"
+	"/strw{	gsave 0 1000 M/strop/show load def 1 setgray str\n"
+	"	0 setgray currentpoint pop/w exch def grestore}!\n"
 	"/jshow{w 0 32 4 -1 roll widthshow}!\n"
+	"/strop/show load def\n"
+	"/arrayshow{{dup type/stringtype eq{strop}{glyphshow}ifelse}forall}def\n"
 
 	/* -- note heads -- */
 	/* x y hd - full head */
@@ -788,216 +784,22 @@ static char ps_head[] =
 	/* x1 y2 x2 y2 x3 y3 x0 y0 gsl - grace note slur */
 	"/gsl{dlw M RC stroke}!\n"
 
-	/* extra characters (accidentals) range c280 .. c29f */
-	"/c280_c29f[\n"
-	"	/.notdef	/sharp		/flat		/natural\n"
-	"	/dsharp		/dflat]def\n"
+	/* x y custos */
+	"/custos{2 copy M -4 0 RM 2 2.5 RL 2 -2.5 RL 2 2.5 RL 2 -2.5 RL\n"
+	"	-2 -2.5 RL -2 2.5 RL -2 -2.5 RL -2 2.5 RL fill\n"
+	"	M 3.5 0 RM 5 7 RL dlw stroke}!\n"
 
-	"/extra-draw{\n"
-	"	/sharp{460 0 setcharwidth usharp ufill}bind def\n"
-	"	/flat{460 0 setcharwidth uflat ufill}bind def\n"
-	"	/natural{400 0 setcharwidth unat ufill}bind def\n"
-	"	/dsharp{460 0 setcharwidth udblesharp ufill}bind def\n"
-	"	/dflat{500 0 setcharwidth udbleflat ufill}bind def\n"
-	" }def\n"
-
-	/* latin characters range c2a0 .. c5bf */
-	"/c2a0_c5bf[\n"
-	/*% c2a0..c2bf */
-	"/LA140000	/exclamdown	/cent		/sterling\n"
-	"/currency	/yen		/brokenbar	/section\n"
-	"/dieresis	/copyright	/ordfeminine	/guillemotleft\n"
-	"/logicalnot	/LI120000	/registered	/LI180000\n"
-	"/degree	/plusminus	/twosuperior	/threesuperior\n"
-	"/acute		/LO200000	/paragraph	/SA070000\n"
-	"/cedilla	/onesuperior	/ordmasculine	/guillemotright\n"
-	"/onequarter	/onehalf	/threequarters	/questiondown\n"
-	/* c380..c3bf */
-	"/Agrave	/Aacute		/Acircumflex	/Atilde\n"
-	"/Adieresis	/Aring		/AE		/Ccedilla\n"
-	"/Egrave	/Eacute		/Ecircumflex	/Edieresis\n"
-	"/Igrave	/Iacute		/Icircumflex	/Idieresis\n"
-	"/Eth		/Ntilde		/Ograve		/Oacute\n"
-	"/Ocircumflex	/Otilde		/Odieresis	/multiply\n"
-	"/Oslash	/Ugrave		/Uacute		/Ucircumflex\n"
-	"/Udieresis	/Yacute		/Thorn		/germandbls\n"
-	"/agrave	/aacute		/acircumflex	/atilde\n"
-	"/adieresis	/aring		/ae		/ccedilla\n"
-	"/egrave	/eacute		/ecircumflex	/edieresis\n"
-	"/igrave	/iacute		/icircumflex	/idieresis\n"
-	"/eth		/ntilde		/ograve		/oacute\n"
-	"/ocircumflex	/otilde		/odieresis	/divide\n"
-	"/oslash	/ugrave		/uacute		/ucircumflex\n"
-	"/udieresis	/yacute		/thorn		/ydieresis\n"
-	/* c480..c4bf */
-	"/Amacron	/amacron	/Abreve		/abreve\n"
-	"/Aogonek	/aogonek	/Cacute		/cacute\n"
-	"/Ccircumflex	/ccircumflex	/Cdotaccent	/cdotaccent\n"
-	"/Ccaron	/ccaron		/Dcaron		/dcaron\n"
-	"/Dcroat	/dcroat		/Emacron	/emacron\n"
-	"/Ebreve	/ebreve		/Edotaccent	/edotaccent\n"
-	"/Eogonek	/eogonek	/Ecaron		/ecaron\n"
-	"/Gcircumflex	/gcircumflex	/Gbreve		/gbreve\n"
-	"/Gdotaccent	/gdotaccent	/Gcommaaccent	/gcommaaccent\n"
-	"/Hcircumflex	/hcircumflex	/Hbar		/hbar\n"
-	"/Itilde	/itilde		/Imacron	/imacron\n"
-	"/Ibreve	/ibreve		/Iogonek	/iogonek\n"
-	"/Idotaccent	/dotlessi	/IJ		/ij\n"
-	"/Jcircumflex	/jcircumflex	/Kcedilla	/kcedilla\n"
-	"/kgreenlandic	/Lacute		/lacute		/Lcedilla\n"
-	"/lcedilla	/Lcaron		/lcaron		/Ldot\n"
-	/* c580..c5bf */
-	"/ldot		/Lslash		/lslash		/Nacute\n"
-	"/nacute	/Ncedilla	/ncedilla	/tmacron\n"
-	"/ncaron	/napostrophe	/Eng		/eng\n"
-	"/Omacron	/omacron	/Obreve		/obreve\n"
-	"/Ohungarumlaut	/ohungarumlaut	/OE		/oe\n"
-	"/Racute	/racute		/Rcommaaccent	/rcommaaccent\n"
-	"/Rcaron	/rcaron		/Sacute		/sacute\n"
-	"/Scircumflex	/scircumflex	/Scedilla	/scedilla\n"
-	"/Scaron	/scaron		/Tcedilla	/tcedilla\n"
-	"/Tcaron	/tcaron		/Tbar		/tbar\n"
-	"/Utilde	/utilde		/Umacron	/umacron\n"
-	"/Ubreve	/ubreve		/Uring		/uring\n"
-	"/Uhungarumlaut	/uhungarumlaut	/Uogonek	/uogonek\n"
-	"/Wcircumflex	/wcircumflex	/Ycircumflex	/ycircumflex\n"
-	"/Ydieresis	/Zacute		/zacute		/Zdotaccent\n"
-	"/zdotaccent	/Zcaron		/zcaron		/longs\n"
-
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"/.notdef	/.notdef	/.notdef	/.notdef\n"
-	"]def\n"
-
-	/* font for c2a0..c5bf encoding */
-	"/latinfontdef{\n"
-	"  /latinfont curfont findfont dup length\n"
-	"	dict begin\n"
-	"		{1 index/FID ne{def}{pop pop}ifelse}forall\n"
-	"		/Encoding c2a0_c5bf def\n"
-	"		currentdict\n"
-	"	end\n"
-	"  definefont}def\n"
-
-	/* error font */
-	"/Error<<\n"
-	"	/FontType 3\n"
-	"	/FontMatrix[.001 0 0 .001 0 0]\n"
-	"	/Encoding[256{/.notdef}repeat]\n"
-	"	/FontBBox[0 0 500 500]\n"
-	"	/BuildChar{\n"
-	"		500 0 setcharwidth 50 setlinewidth\n"
-	"		100 500 moveto 300 0 rlineto stroke\n"
-//	"		(char: )print = pop\n"
-	"		pop pop\n"
-	"	}\n"
-	"  >>definefont pop\n"
-
-	/* stub for utf-8 with 3 bytes */
-	"/compdef{\n"
-	"	/FontType 0\n"
-	"	/FontMatrix[1 0 0 1 0 0]\n"
-	"	/FMapType 6\n"
-	"	/SubsVector<01 8080>\n"
-	"	/Encoding[0 0]\n"
-	"	/FDepVector[/Error findfont]\n"
-	"  }def\n"
-	"/compe000def{/compe000<<compdef>>definefont}def\n"
-	"/compe100def{/compe100<<compdef>>definefont}def\n"
-	"/compe200def{/compe200<<compdef>>definefont}def\n"
 #ifdef HAVE_PANGO
 	"/glypharray{{glyphshow}forall}!\n"
 #endif
 
 	/* x y showerror */
-	"/showerror{	gsave 1 0.7 0.7 setrgbcolor 2.5 SLW newpath\n"
+	"/showerror{gsave 1 0.7 0.7 setrgbcolor 2.5 SLW newpath\n"
 	"	30 0 360 arc stroke grestore}!\n"
 
 	"/pdfmark where{pop}{userdict/pdfmark/cleartomark load put}ifelse\n"
 
 	"0 setlinecap 0 setlinejoin\n";
-
-/* -- output the common CMAP -- */
-/* This output must occurs after user PostScript definitions because
- * these ones may change the default behaviour */
-void define_cmap(void)
-{
-	static char mkfont[] =
-
-	/* extra characters (accidentals) range c280 .. c29f */
-	"/ExtraFont 10 dict begin\n"
-	"	/FontType 3 def\n"
-	"	/FontMatrix[.001 0 0 .001 0 0]def\n"
-	"	/Encoding[256{/.notdef}repeat]def\n"
-	"	Encoding 0 c280_c29f putinterval\n"
-	"	/FontBBox[0 0 1000 1000]def\n"
-	"	/BuildChar{\n"
-	"		1 index/Encoding get exch get\n"
-	"		1 index/BuildGlyph get exec\n"
-	"	}bind def\n"
-	"	/CharProcs 3 dict def\n"
-	"		CharProcs begin\n"
-	"			/.notdef{}def\n"
-	"			extra-draw\n"
-	"		end\n"
-	"	/BuildGlyph{\n"
-	"		exch /CharProcs get exch\n"
-	"		2 copy known not{pop /.notdef}if\n"
-	"		get exec\n"
-	"	}bind def\n"
-	"	currentdict\n"
-	"    end\n"
-	" definefont pop\n"
-
-	/* newfont basefont mkfont-utf8 */
-	"/mkfont-utf8{\n"
-	"	/curfont exch def\n"
-	/* composite font first level */
-	"	<<\n"
-	"	/FontType 0\n"
-	"	/FontMatrix[1 0 0 1 0 0]\n"
-	"	/FMapType 4\n"			/* 1/7 mapping*/
-	"	/Encoding[0 1]\n"
-	"	/FDepVector[\n"
-	"		curfont findfont\n"
-	/* composite font second level */
-	"		/compfont2<<\n"
-	"			/FontType 0\n"
-	"			/FontMatrix[1 0 0 1 0 0]\n"
-	"			/FMapType 6\n"	/* SubsVector mapping */
-	/*	/SubsVector
-	 *		4280	% 8000
-	 *		0020	% c280 ->	c280..c29f -> 0..1f
-	 *		00c0	% c2a0 ->	c2a0..c2bf -> 0..1f
-	 *		00c0	% c360 ->	c380..c3bf -> 20..5f
-	 *		00c0	% c420 ->	c480..c4bf -> 60..9f
-	 *		00e0	% c4e0 ->	c580..c5bf -> a0..df
-	 *		1a40	% c5c0		c680..dfbf -> error
-	 *		0100	% e000		compe000
-	 *		0100	% e100		compe100
-	 *		0100	% e200		compe200
-	 *			% e300		e30000..   -> error */
-	"	/SubsVector<01 4280 0020 00c0 00c0 00c0 00e0 1a40 0100 0100 0100>\n"
-	"			/Encoding[0 1 2 2 2 2 0 3 4 5 0]\n"
-	"			/FDepVector[\n"
-	"				/Error findfont\n"
-	"				/ExtraFont findfont\n"
-	"				latinfontdef\n"
-	"				compe000def\n"
-	"				compe100def\n"
-	"				compe200def\n"
-	"			]\n"
-	"		>>definefont\n"
-	"	]\n"
-	"	>>definefont pop}bind def\n";
-
-	fputs(mkfont, fout);
-}
 
 /* -- define a font -- */
 void define_font(char name[],
@@ -1005,12 +807,11 @@ void define_font(char name[],
 		 int enc)
 {
 	if (enc == 0)		/* utf-8 */
-		fprintf(fout, "/%s-utf8/%s mkfont-utf8\n"
+		fprintf(fout, "/%s-utf8/%s mkfont\n"
 			"/F%d{/%s-utf8 exch selectfont}!\n",
 			name, name, num, name);
 	else			/* native encoding */
-		fprintf(fout, "/F%d{/%s exch selectfont}!\n",
-			num, name);
+		fprintf(fout, "/F%d{/%s exch selectfont}!\n", num, name);
 }
 
 /* -- output the symbol definitions -- */

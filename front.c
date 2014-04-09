@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2011 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 2011-2014 Jean-François Moine (http://moinejf.free.fr)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +23,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+
+#ifdef WIN32
+#define strncasecmp strnicmp
+#endif
+
 #include "front.h"
+#include "slre.h"
 
 static unsigned char *dst;
 static int offset, size, keep_comments;
-static int latin;
 static void (*include_f)(unsigned char *fn);
+static unsigned char *selection;
+static int latin, skip;
+static char prefix[4] = {'%'};
 
 /*
  * translation table from the ABC draft version 2
@@ -100,6 +108,8 @@ static unsigned char *latin_tb[5] = {
 /* add text to the output buffer */
 static void txt_add(unsigned char *s, int sz)
 {
+	if (skip)
+		return;
 	if (offset + sz > size) {
 		size = (offset + sz + 8191) / 8192 * 8192;
 		if (dst == 0)
@@ -370,6 +380,70 @@ static void add_lnum(int nline)
 	txt_add(tmp, strlen((char *) tmp));
 }
 
+/* check if the current tune is to be selected */
+static int tune_select(unsigned char *s)
+{
+	struct slre slre;
+	unsigned char *p, *sel;
+
+	/* if there is a list of tune indexes,
+	 * check the tune index */
+	sel = selection;
+	if (isdigit(*sel)) {
+		int tune_number, cur_sel, end_sel, n;
+
+		/* get the tune number ('s' points to X:) */
+		tune_number = strtod((char *) s + 2, 0);
+
+		/* search it in the number list */
+		for (;;) {
+			if (sscanf((char *) sel, "%d%n", &cur_sel, &n) != 1)
+				break;
+			sel += n;
+			if (*sel == '-') {
+				sel++;
+				if (sscanf((char *) sel, "%d%n", &end_sel, &n) != 1)
+					end_sel = ~0u >> 1;
+				else
+					sel += n;
+			} else {
+				end_sel = cur_sel;
+			}
+			if (tune_number >= cur_sel && tune_number <= end_sel)
+				return 1;
+			if (*sel != ',')
+				break;
+			sel++;
+		}
+		if (*sel == '\0')
+			return 0;
+	}
+
+	for (p = s + 2; ; p++) {
+		switch (*p) {
+		case '\0':
+			return 0;
+		default:
+			continue;
+		case '\n':
+		case '\r':
+			break;
+		}
+		if (p[1] != 'K' || p[2] != ':')
+			continue;
+		p += 3;
+		while (*p != '\n' && *p != '\r' && *p != '\0')
+			p++;
+		if (*p != '\0')
+			p++;		/* keep the EOL for RE with '\s' */
+		break;
+	}
+//fixme: should compile only one time
+	if (!slre_compile(&slre, (char *) sel))
+		return 0;
+	return slre_match(&slre, (char *) s, p - s, 0);
+}
+
 /* -- init the front-end -- */
 void front_init(int edit,	/* for edition - keep comments */
 		int eol,	/* 0: \n, 1: \r, 2: \r\n */
@@ -389,6 +463,8 @@ unsigned char *frontend(unsigned char *s,
 {
 	unsigned char *p, *q, c, *begin_end;
 	int i, l, state, str_cnv_p, histo, end_len, nline;
+	char prefix_sav[4];
+	int latin_sav;
 
 	begin_end = 0;
 	end_len = 0;
@@ -433,6 +509,7 @@ unsigned char *frontend(unsigned char *s,
 	}
 
 	/* scan the file */
+	skip = 0;
 	while (*s != '\0') {
 
 		/* get a line */
@@ -467,22 +544,38 @@ unsigned char *frontend(unsigned char *s,
 					goto next_eol;		/* comment */
 				goto next;
 			}
-			if (strncmp((char *) s, "%%end", 5) == 0
-			 && strncmp((char *) s + 5,
-					(char *) begin_end, end_len) == 0) {
-				begin_end = 0;
-				goto next;
+			if (*s == '%' && strchr(prefix, s[1])) {
+				q = s + 2;
+				while (*q == ' ' || *q == '\t')
+					q++;
+				if (strncmp((char *) q, "end", 3) == 0
+				 && strncmp((char *) q + 3,
+						(char *) begin_end, end_len) == 0) {
+					begin_end = 0;
+					txt_add((unsigned char *) "%%", 2);
+					l -= q - s;
+					s = q;
+					goto next;
+				}
 			}
 			if (strncmp("ps", (char *) begin_end, end_len) == 0) {
 				if (*s == '%')
 					goto next_eol;		/* comment */
 			} else {
-				if (*s == '%' && s[1] == '%') {
+				if (*s == '%' && strchr(prefix, s[1])) {
 					s += 2;
 					l -= 2;
 				}
 			}
 			goto next;
+		}
+
+		if (skip) {
+			if (l != 0)
+				goto next_eol;
+			skip = 0;
+			txt_add_eol();
+			add_lnum(nline);
 		}
 
 		if (l == 0) {			/* empty line */
@@ -498,6 +591,8 @@ unsigned char *frontend(unsigned char *s,
 				/* fall thru */
 			case 2:
 				state = 0;
+				strcpy(prefix, prefix_sav);
+				latin = latin_sav;
 				break;
 			}
 			goto next_eol;
@@ -505,7 +600,7 @@ unsigned char *frontend(unsigned char *s,
 		if (histo) {			/* H: continuation */
 			if ((s[1] == ':'
 			  && (isalpha(*s) || *s == '+'))
-			 || (*s == '%' && s[1] == '%')) {
+			 || (*s == '%' && strchr(prefix, s[1]))) {
 				histo = 0;
 			} else {
 				txt_add((unsigned char *) "H:", 2);
@@ -520,11 +615,10 @@ unsigned char *frontend(unsigned char *s,
 				q++;
 			} while (*q == ' ' || *q == '\t');
 			if (*q == '%') {
-				s = q;
 				if (keep_comments)
-					txt_add(s, l);
-				else if (state != 0)
-					txt_add(s, 1);
+					txt_add(q, l - (q - s));
+				else if (state != 0)	/* inside tune */
+					txt_add(q, 1);	/* keep a single '%' */
 				goto next_eol;
 			}
 		}
@@ -552,16 +646,35 @@ unsigned char *frontend(unsigned char *s,
 			goto info;
 		}
 		if (*s == '%') {
-			if (s[1] != '%') {		/* pure comment */
+			if (!strchr(prefix, s[1])) {		/* pure comment */
 				if (keep_comments
 				 || strncmp((char *) s, "%abc", 4) == 0)
 					txt_add(s, l);
-				else if (state != 0)	/* if not global */
+				else if (state != 0)		/* if not global */
 					txt_add(s, 1);
 				goto next_eol;
 			}
 			s += 2;
 			l -= 2;
+			if (strncmp((char *) s, "abcm2ps ", 8) == 0) {
+				s += 8;
+				l -= 8;
+				while (*s == ' ' || *s == '\t') {
+					s++;
+					l--;
+				}
+				for (i = 0; i < sizeof prefix - 1; i++) {
+					if (*s == ' ' || *s == '\t'
+					 || --l < 0)
+						break;
+					prefix[i] = *s++;
+				}
+				if (i == 0)
+					prefix[i++] = '%';
+				prefix[i] = '\0';
+				txt_add((unsigned char *) "%", 1);
+				goto next_eol;
+			}
 pscom:
 			while (*s == ' ' || *s == '\t') {
 				s++;
@@ -621,31 +734,66 @@ info:
 			if (include_f
 			 && (strncmp((char *) s, "format ", 7) == 0
 			  || strncmp((char *) s, "abc-include ", 12) == 0)) {
-				unsigned char *r, sep;
+				unsigned char sep;
 
 				if (*s == 'f')
-					q = s + 7;
+					s += 7;
 				else
-					q = s + 12;
-				while (*q == ' ' || *q == '\t')
+					s += 12;
+				while (*s == ' ' || *s == '\t')
+					s++;
+				q = s;
+				while (*q != '\0'
+				    && *q != '%'
+				    && *q != '\n'
+				    && *q != '\n'
+				    && *q != '\r')
 					q++;
-				r = q;
-				while (*r != '\0'
-				    && *r != '%'
-				    && *r != '\n'
-				    && *r != '\n'
-				    && *r != '\r')
-					r++;
-				while (r[-1] == ' ')
-					r--;
-				sep = *r;
-				*r = '\0';
+				while (q[-1] == ' ')
+					q--;
+				sep = *q;
+				*q = '\0';
 				offset--;		/* remove one % */
 				dst[offset - 1] = '\0';	/* replace the other % by EOS */
-				include_f(q);
+				include_f(s);
 				offset--;		/* remove the EOS */
-				*r = sep;
+				*q = sep;
 				add_lnum(nline);
+				goto next_eol;
+			}
+			if (strncmp((char *) s, "select", 6) == 0) {
+				s += 6;
+				if (*s == '\n') {	/* select clear */
+					q = s;
+				} else if (*s != ' ' && *s != '\t') {
+					goto next;
+				} else {
+					while (*s == ' ' || *s == '\t')
+						s++;
+					q = s;
+					while (*q != '\0'
+					    && *q != '%'
+					    && *q != '\n'
+					    && *q != '\r')
+						q++;
+					while (q[-1] == ' ' || q[-1] == '\t')
+						q--;
+					if (strncmp((char *) q - 5, " lock", 5) == 0)
+						q -= 5;
+				}
+				if (selection) {
+					free(selection);
+					selection = NULL;
+				}
+				if (q != s) {
+					unsigned char sep;
+
+					sep = *q;
+					*q = '\0';
+					selection = (unsigned char *) strdup((char *) s);
+					*q = sep;
+				}
+				offset--;		/* remove one % */
 				goto next_eol;
 			}
 			goto next;
@@ -677,18 +825,12 @@ info:
 					txt_add_eol();	/* no empty line - minor error */
 					break;
 				}
-				state = 1;
-				break;
-			case 'T':
-				if (state == 0) {
-					fprintf(stderr,
-						"Line %d: X:?? added\n",
-						nline);
-					txt_add((unsigned char *) "X:??", 4);
-					txt_add_eol();
-					add_lnum(nline);
-					txt_add_eol();
+				if (selection)
+					skip = !tune_select(s);
+				if (!skip) {
 					state = 1;
+					strcpy(prefix_sav, prefix);
+					latin_sav = latin;
 				}
 				break;
 			case 'U':

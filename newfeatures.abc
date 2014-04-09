@@ -32,6 +32,10 @@ K: clef=alto
 X:3
 T:Clef Changes Within Tune
 T:In-Line Info Fields by [..]
+% text moved out of tune header - change in abcm2ps-7.x.x
+M:C
+L: 1/8
+K:C
 %%begintext align
 Here is an example for a block of text which is associated with a specific
 tune. It will only be printed if this tune (number 3) is selected.
@@ -40,9 +44,6 @@ block is terminated by a blank line.
 Text which is outside a block is
 always printed; for example, the title at the top of the page.
 %%endtext
-M:C
-L: 1/8
-K:C
 cdef gabc' [K:bass] | C,D,E,F, G,A,B,C [K:D treble] | cdef gabc' |  
 %%sep
 %%text Note: this line and the separator above are also associated with this tune. 

@@ -3341,13 +3341,20 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 
 			/* special case: tie to a combined chord */
 			if (s1->ts_prev && s1->ts_prev->next) {
-				s3 = s1->ts_prev->next;
-				if (s3->type == BAR)
-					s3 = s3->next;
-				if (s3 && s3->as.type == ABC_T_NOTE
-				 && s3->time == s1->time + s1->dur) {
-					draw_ties(s1, s3, 1);
-					break;
+				int time;
+
+				s3 = s1->ts_prev->next;	/* previous voice */
+				time = s1->time + s1->dur;
+				if (s3->time == time) {
+					while (s3 && s3->time == time
+					    && s3->as.type != ABC_T_NOTE)
+						s3 = s3->next;
+					if (s3
+					 && s3->time == time
+					 && s3->as.type == ABC_T_NOTE) {
+						draw_ties(s1, s3, 1);
+						break;
+					}
 				}
 			}
 			draw_ties(s1, s1, 2);
@@ -3835,7 +3842,7 @@ static void draw_all_lyrics(void)
 	/* check if any lyric */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		if (p_voice->have_ly
-		 || p_voice->tblts[0] != 0)
+		 || p_voice->tblts[0])
 			break;
 	}
 	if (!p_voice)
@@ -3921,7 +3928,7 @@ static void draw_all_lyrics(void)
 		if (!p_voice->sym)
 			continue;
 		if (!p_voice->have_ly
-		 && p_voice->tblts[0] == 0)
+		 && !p_voice->tblts[0])
 			continue;
 		voice = p_voice - voice_tb;
 		if (above_tb[voice]) {
@@ -3935,7 +3942,7 @@ static void draw_all_lyrics(void)
 							 lyst_tb[staff].bot, 1);
 		for (nly = 0; nly < 2; nly++) {
 			if ((tblt = p_voice->tblts[nly]) == NULL)
-				continue;
+				break;
 			if (tblt->hu > 0) {
 				lyst_tb[staff].bot -= tblt->hu;
 				lyst_tb[staff].b = 1;
@@ -4307,7 +4314,8 @@ static float set_staff(void)
 		}
 	}
 
-	/* output the scale of the voices */
+	/* output the scale of the voices
+	 * and flag as non empty the staves with tablatures */
 	{
 		struct VOICE_S *p_voice;
 
@@ -4316,6 +4324,8 @@ static float set_staff(void)
 				a2b("/scvo%d{gsave %.2f dup scale}!\n",
 				     (int) (p_voice - voice_tb),
 				     p_voice->scale);
+			if (p_voice->tblts[0])
+				empty[p_voice->staff] = 0;
 		}
 	}
 
@@ -4326,7 +4336,9 @@ static float set_staff(void)
 		staff_tb[staff].empty = 1;
 	}
 	if (staff > nstaff)
-		staff--;			/* one staff, empty */
+//fixme: test: remove the whole staff system if all staves are empty
+//		staff--;			/* one staff, empty */
+		return 0;
 
 	y = 0;
 	for (i = 0; i < YSTEP; i++) {
@@ -4338,11 +4350,13 @@ static float set_staff(void)
 	/* draw the parts and tempo indications if any */
 	y += draw_partempo(staff, y);
 
+	staffsep = cfmt.staffsep * 0.5;
+	maxsep = cfmt.maxstaffsep * 0.5;
+	if (y < staffsep)
+		y = staffsep;
 	staff_tb[staff].y = -y;
 
 	/* set the offset of the other staves */
-	staffsep = cfmt.staffsep * 0.5;
-	maxsep = cfmt.maxstaffsep * 0.5;
 	prev_staff = staff;
 	for (staff++; staff <= nstaff; staff++) {
 		if (empty[staff]) {

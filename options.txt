@@ -16,6 +16,7 @@ It may be:
 	"-g" for SVG, one file per tune
 	"-v" for SVG, one file per page
 	"-X" for XHTML+SVG
+	"-z" for (X)HTML+SVG with (X)HTML+ABC input
 	(none) for PostScript
 (see below for more information)
 
@@ -138,15 +139,19 @@ List of the options
 
   -O [ <directory> ] [ <name> ], +O
 	Define the output file directory and/or name.
+	The directory must end with the directory separator
+	('/' for unix/windows, '\' for mac).
 	By default, the output file goes to the current directory
-	with a name:
+	with the name:
 		'Out.ps' for PS,
 		'Outnnn.eps' for EPS (see option '-E'),
 		'Outnnn.svg' for SVG (see options '-g' and '-v') or
-		'Out.xhtml' for XHTML+SVG (see option '-X').
-	When <name> is present, it replaces 'Out' in the file name.
+		'Out.xhtml' for XHTML+SVG (see options '-X' and '-z').
+	'nnn' being a sequence number.
+	When <name> is present, it is the name of the file, or it
+	replaces 'Out' in the file name.
 	If <name> is '=', it is replaced by the name of the ABC
-	source file.
+	source file (not for '-z').
 	If <name> is '-', the result is output to stdout (not for EPS).
 	'+O' resets the output file directory and name to their defaults.
 
@@ -189,6 +194,31 @@ List of the options
 
   -x, +x
 	See: format.txt - writefields X <bool>
+
+  -z
+	Produce SVG images from ABC embedded in markup language files
+	(HTML, XHTML..).
+
+	The source file is copied to the output file and the ABC sequences
+	are converted to SVG images.
+	The ABC sequences start by either
+		%abc2...
+	or
+		X:...
+	and stop on the first markup tag ("<..").
+
+	The generation creates one image per block, i.e. a music line
+	or a text block. For a same rendering as the other SVG generation
+	(-g, -v or -X), don't forget to set the line space to null, for
+	example enclosing the ABC sequences by
+		<div style="line-height:0"> .. </div>
+
+	There can be only one output file.
+	Note that the default output file is 'Out.xhtml', so, don't
+	forget to change the file type if you generate HTML (.html)
+	or XML (.xml) files.
+
+	See sample8.html for a source example.
 
   -0, +0
 	See: format.txt - splittune <bool>

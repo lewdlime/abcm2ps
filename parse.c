@@ -154,13 +154,9 @@ static void mrest_expand(struct SYMBOL *s)
 		s2 = sym_add(p_voice, BAR);
 		s2->as.type = ABC_T_BAR;
 		s2->as.u.bar.type = B_SINGLE;
-		s2->as.linenum = s->as.linenum;
-		s2->as.colnum = s->as.colnum;
 		s2 = sym_add(p_voice, NOTEREST);
 		s2->as.type = ABC_T_REST;
 		s2->as.flags = s->as.flags;
-		s2->as.linenum = s->as.linenum;
-		s2->as.colnum = s->as.colnum;
 		s2->dur = s2->as.u.note.lens[0] = dt;
 		s2->head = H_FULL;
 		s2->nflags = -2;
@@ -1029,8 +1025,7 @@ static void generate(void)
 		voice_tb[voice].staff = cursys->voice[voice].staff;
 		voice_tb[voice].second = cursys->voice[voice].second;
 	}
-	if (staves_found > 0)
-		staves_found = 0;
+	staves_found = 0;
 }
 
 /* -- output the music and lyrics after tune -- */
@@ -2972,7 +2967,10 @@ static void adjust_dur(struct SYMBOL *s)
 	s2 = curvoice->last_sym;
 	if (!s2)
 		return;
-	if (s2->type == MREST)
+
+	/* the bar time is correct if there is multi-rests */
+	if (s2->type == MREST
+	 || s2->type == BAR)		/* in second voice */
 		return;
 	while (s2->type != BAR && s2->prev)
 		s2 = s2->prev;
@@ -3000,11 +2998,11 @@ static void adjust_dur(struct SYMBOL *s)
 	for (; s2; s2 = s2->next) {
 		int i, head, dots, nflags;
 
+		s2->time = time;
 		if (s2->dur == 0
 		 || (s2->as.flags & ABC_F_GRACE))
 			continue;
 		s2->dur = s2->dur * curvoice->wmeasure / auto_time;
-		s2->time = time;
 		time += s2->dur;
 		if (s2->type != NOTEREST)
 			continue;
@@ -3170,6 +3168,7 @@ void do_tune(struct abctune *t)
 		voice_tb[i].scale = 1;
 		voice_tb[i].clone = -1;
 		voice_tb[i].over = -1;
+		voice_tb[i].posit = cfmt.posit;
 	}
 	curvoice = first_voice = voice_tb;
 	micro_tb = t->micro_tb;		/* microtone values */
@@ -3328,8 +3327,6 @@ void do_tune(struct abctune *t)
 			}
 			s2 = sym_add(curvoice, NOTEREST);
 			s2->as.type = ABC_T_REST;
-			s2->as.linenum = as->linenum;
-			s2->as.colnum = as->colnum;
 			s2->as.flags |= ABC_F_INVIS;
 			s2->dur = curvoice->wmeasure;
 			curvoice->time += s2->dur;
@@ -3339,15 +3336,11 @@ void do_tune(struct abctune *t)
 			}
 			while (--n > 0) {
 				s2 = sym_add(curvoice, BAR);
-				s2->as.linenum = as->linenum;
-				s2->as.colnum = as->colnum;
 				s2->as.u.bar.type = B_SINGLE;
 				if (n == as->u.bar.len - 1)
 					s2->as.u.bar.len = as->u.bar.len;
 				s2 = sym_add(curvoice, NOTEREST);
 				s2->as.type = ABC_T_REST;
-				s2->as.linenum = as->linenum;
-				s2->as.colnum = as->colnum;
 				s2->as.flags |= ABC_F_INVIS;
 				s2->dur = curvoice->wmeasure;
 				curvoice->time += s2->dur;
@@ -3510,8 +3503,6 @@ static void get_clef(struct SYMBOL *s)
 		if (s->as.u.clef.stafflines >= 0
 		 || s->as.u.clef.staffscale != 0) {
 			s2 = sym_add(curvoice, CLEF);
-			s2->as.linenum = s->as.linenum;
-			s2->as.colnum = s->as.colnum;
 			s2->as.u.clef.type = -1;
 			s2->as.u.clef.stafflines = s->as.u.clef.stafflines;
 			s2->as.u.clef.staffscale = s->as.u.clef.staffscale;
@@ -4157,14 +4148,14 @@ static void ps_def(struct SYMBOL *s,
 			char *p,
 			char use)	/* cf user_ps_add() */
 {
-	if (svg == 0 && epsf != 2) {	/* if PS output */
+	if (!svg && epsf <= 1) {	/* if PS output */
 		if (secure
 		 || use == 'g'
 		 || use == 's')
 			return;
 	} else {			/* if SVG output */
 		if (use == 'p'
-		 || (use == 'g' && file_initialized))
+		 || (use == 'g' && file_initialized > 0))
 			return;
 	}
 	if (s->as.prev)
@@ -4176,15 +4167,9 @@ static void ps_def(struct SYMBOL *s,
 		s->u = PSSEQ;
 		s->as.text = p;
 		s->as.flags |= ABC_F_INVIS;
-#if 0
-		if (s->prev && (s->prev->sflags & S_EOLN)) {
-			s->sflags |= S_EOLN;
-			s->prev->sflags &= ~S_EOLN;
-		}
-#endif
 		return;
 	}
-	if (file_initialized || mbf != outbuf)
+	if (file_initialized > 0 || mbf != outbuf)
 		a2b("%s\n", p);
 	else
 		user_ps_add(p, use);
@@ -4389,7 +4374,7 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 			 || cfmt.textoption == T_SKIP)
 				return as;
 			get_str(line, p, sizeof line);
-			if ((fp = open_file(line, "eps", fn)) == 0) {
+			if ((fp = open_file(line, "eps", fn)) == NULL) {
 				error(1, s, "No such file: %s", line);
 				return as;
 			}
@@ -5286,6 +5271,11 @@ struct SYMBOL *sym_add(struct VOICE_S *p_voice, int type)
 		s->sflags |= S_SECOND;
 	if (p_voice->floating)
 		s->sflags |= S_FLOATING;
+	if (s->prev) {
+		s->as.fn = s->prev->as.fn;
+		s->as.linenum = s->prev->as.linenum;
+		s->as.colnum = s->prev->as.colnum;
+	}
 	return s;
 }
 

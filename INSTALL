@@ -4,32 +4,51 @@
 Unix(-like) systems
 ===================
 
-This version uses the GNU 'autoconf' package, so, after untarring the
-sources, run:
+This version does not use the GNU 'autoconf' package anymore.
 
-	./configure
+The furnished 'Makefile' should work as it is for most systems.
+So, simply do
+
 	make
 
 and then, as root, do:
 
 	make install
 
-The 'abcm2ps' command should work if '/usr/local/bin' is in your path
-(try 'abcm2ps -h' for a list of the command line options).
+If you are not happy with the Makefile options (install programm,
+installation directories..), you may create a file 'custom' with
+your own values (Bourne shell syntax) and use the script 'configure'
+to create an other Makefile.
+The variables which may be customized are at the head of the script
+configure. For example, if you prefer to use 'clang' instead of 'gcc',
+the file 'custom' would contain the single line
 
-You may change some compile options at configure level. To know which,
-run:
+	CC=clang
 
-	configure --help
+then, you do
+
+	./configure
+	make
+
+Without a file 'custom', you may do the same with
+
+	./configure --CC=clang
+
+If you want to use the 'pango' library, this one is not enabled
+by default in the Makefile and you should use script 'configure'
+to include it in the Makefile.
 
 
 Windows or MAC systems
 ======================
 
 Change the file 'config.h' according to your preferences, compile all
-the '.c' files using an ANSI C compiler, and link them together. The
-resulting binary file should run immediately from where it has been
+the '.c' files using an ANSI C compiler, and link them together.
+The resulting binary file should run immediately from where it has been
 generated. You may then move it at any place you want.
+
+Note: I don't know how to do file mapping (mmap) in ms-windows, so,
+you must comment 'HAVE_MMAP' in config.h.
 
 
 Testing
@@ -41,15 +60,17 @@ line argument:
 	abcm2ps sample
 
 The resulting file, 'Out.ps', may be displayed using a PostScript
-previewer such as ghostscript, or may be sent directly to a PostScript
-printer, or indirectly to a simple printer using a postscript filter.
+previewer such as ghostscript or zathura, or it may be sent directly
+to a PostScript printer, or indirectly to a simple printer using
+a postscript filter.
 
 
 About the 'pango' library
 =========================
 
-abcm2ps now uses the 'pango' library to render texts with non latin
-characters. If you don't have such texts, you don't need this library.
+abcm2ps may use the 'pango' library to render texts with non latin
+characters on PostScript output. If you have no such texts or
+if you do only SVG/(X)HTML output, you don't need this library.
 
 In Unix(-like) systems, at configure time, the pango generation elements
 are searched by pkg-config in the gdk-2.0 library. If this library or
@@ -57,4 +78,4 @@ pkg_config are not found, the rendering of non latin characters with
 pango will be disabled, but this rendering may be done by other means,
 especially by CMap (see the file chinese.abc). Note also that, when
 pango is defined, it may be disabled at command line level by
-'--pango 0' (you may try it with chinese.abc).
+'--pango 0'.

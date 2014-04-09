@@ -317,8 +317,8 @@ Clefs.
 	  inserted when needed ('bass' or 'treble').
 
 	- The clef name may be enclosed by double quotes in which case
-	  it is the name of a PostScript function which will draw the
-	  clef. This function arguments are the x and y offsets.
+	  it is the name of the PostScript function which draws the
+	  clef. The arguments of this function are the x and y offsets.
 
 Multiple voices.
 
@@ -373,4 +373,4 @@ Deprecated ABC syntax.
 	- Most of the deprecated ABC syntax is supported.
 
 	- Some incompatible syntaxes are handled according to the ABC version
-	  of the file as the ABC 2.0 continuation mechanism.
+	  of the file as the ABC 2.0 line continuation mechanism.

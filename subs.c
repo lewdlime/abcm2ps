@@ -92,7 +92,7 @@ static struct u_ps {
 /* -- print message for internal error and maybe stop -- */
 void bug(char *msg, int fatal)
 {
-	error(1, 0, "Internal error: %s.", msg);
+	error(1, NULL, "Internal error: %s.", msg);
 	if (fatal) {
 		fprintf(stderr, "Emergency stop.\n\n");
 		exit(EXIT_FAILURE);
@@ -106,24 +106,14 @@ void error(int sev,	/* 0: warning, 1: error */
 	   char *fmt, ...)
 {
 	va_list args;
-static struct SYMBOL *t;
 
-	if (t != info['T' - 'A']) {
-		char *p;
-
-		t = info['T' - 'A'];
-		p = &t->as.text[2];
-		while (isspace((unsigned char) *p))
-			p++;
-		fprintf(stderr, "   - In tune '%s':\n", p);
-	}
-	fprintf(stderr, sev == 0 ? "Warning " : "Error ");
 	if (s) {
-		fprintf(stderr, "in line %d.%d",
-			s->as.linenum, s->as.colnum);
+		if (s->as.fn)
+			fprintf(stderr, "%s:%d:%d: ", s->as.fn,
+					s->as.linenum, s->as.colnum);
 		s->as.flags |= ABC_F_ERROR;
 	}
-	fprintf(stderr, ": ");
+	fprintf(stderr, sev == 0 ? "warning: " : "error: ");
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	va_end(args);
@@ -148,7 +138,7 @@ float scan_u(char *str)
 		if (!strncasecmp(str + nch, "pt", 2))
 			return a PT;
 	}
-	error(1, 0, "Unknown unit value \"%s\"", str);
+	error(1, NULL, "Unknown unit value \"%s\"", str);
 	return 20 PT;
 }
 
@@ -242,7 +232,7 @@ float tex_str(char *s)
 			}
 			break;
 		case '&':
-			if (*s == '#' && !svg && epsf != 2) {	/* XML char ref */
+			if (*s == '#' && !svg && epsf <= 1) {	/* XML char ref */
 				int j;
 				long v;
 
@@ -251,7 +241,7 @@ float tex_str(char *s)
 				else
 					i = sscanf(s, "#%ld;%n", &v, &j);
 				if (i != 1) {
-					error(0, 0, "Bad XML char reference");
+					error(0, NULL, "Bad XML char reference");
 					break;
 				}
 				if (v < 0x80) {	/* convert to UTF-8 */
@@ -326,7 +316,7 @@ float tex_str(char *s)
 	}
 	*d = '\0';
 	if (maxlen <= 0)
-		error(0, 0, "Text too large - ignored part: '%s'", s);
+		error(0, NULL, "Text too large - ignored part: '%s'", s);
 	return w;
 }
 
@@ -349,10 +339,10 @@ void pg_init(void)
 
 	context = pango_font_map_create_context(
 			pango_cairo_font_map_get_default());
-	if (context != NULL)
+	if (context)
 		layout = pango_layout_new(context);
-	if (layout == NULL) {
-		error(0, 0, "pango disabled\n");
+	if (!layout) {
+		error(0, NULL, "pango disabled\n");
 		cfmt.pango = 0;
 	} else {
 		pango_layout_set_wrap(layout, PANGO_WRAP_WORD);
@@ -416,7 +406,7 @@ static void pg_line_output(PangoLayoutLine *line)
 				continue;
 			if (c & PANGO_GLYPH_UNKNOWN_FLAG) {
 				c &= ~PANGO_GLYPH_UNKNOWN_FLAG;
-				error(0, 0, "char %04x not treated\n", c);
+				error(0, NULL, "char %04x not treated\n", c);
 				continue;
 			}
 
@@ -424,7 +414,7 @@ static void pg_line_output(PangoLayoutLine *line)
 					c,		// PangoGlyph = index
 					FT_LOAD_NO_SCALE);
 			if (ret != 0) {
-				error(0, 0, "freetype error %d\n", ret);
+				error(0, NULL, "freetype error %d\n", ret);
 			} else if (FT_HAS_GLYPH_NAMES(face)) {
 				if (FT_Get_Postscript_Name(face) != fontname) {
 					fontname = FT_Get_Postscript_Name(face);
@@ -460,7 +450,7 @@ static void str_font_change(int start,
 	f = &cfmt.font_tb[curft];
 	fnum = f->fnum;
 	if (f->size == 0) {
-		error(0, 0, "Font \"%s\" with a null size - set to 8",
+		error(0, NULL, "Font \"%s\" with a null size - set to 8",
 			fontnames[fnum]);
 		f->size = 8;
 	}
@@ -645,7 +635,7 @@ static void pg_para_output(int job)
 				x += glyph_info->geometry.width;
 				if (g & PANGO_GLYPH_UNKNOWN_FLAG) {
 					g &= ~PANGO_GLYPH_UNKNOWN_FLAG;
-					error(0, 0, "char %04x not treated\n", g);
+					error(0, NULL, "char %04x not treated\n", g);
 					continue;
 				}
 
@@ -823,7 +813,7 @@ static void str_ft_out(char *p, int end)
 	int use_glyph;
 	char *q;
 
-	use_glyph = !svg && epsf != 2 &&		/* not SVG */
+	use_glyph = !svg && epsf <= 1 &&		/* not SVG */
 		 get_font_encoding(curft) == 0;		/* utf-8 */
 	q = p;
 	while (*p != '\0') {
@@ -854,7 +844,7 @@ static void str_ft_out(char *p, int end)
 					curft = p[1] - '0';
 					if (curft == 0)
 						curft = defft;
-					use_glyph = !svg && epsf != 2 &&
+					use_glyph = !svg && epsf <= 1 &&
 						 get_font_encoding(curft) == 0;
 				}
 				p += 2;
@@ -934,7 +924,7 @@ void str_out(char *p, int action)
 	switch (action) {
 	case A_CENTER:
 	case A_RIGHT:
-		if (!svg && epsf != 2) {
+		if (!svg && epsf <= 1) {
 			a2b("/str{");
 			outft = -1;
 			strop = "strop";
@@ -949,7 +939,7 @@ void str_out(char *p, int action)
 	str_ft_out(p, 1);		/* output the string */
 
 	/* if not left aligned, call the PS function */
-	if (svg || epsf == 2)
+	if (svg || epsf > 1)		/* not for SVG */
 		return;
 	if (action == A_CENTER || action == A_RIGHT) {
 		a2b("}def\n"
@@ -1149,7 +1139,12 @@ void write_text(char *cmd, char *s, int job)
 		if (strw + lw > strlw) {
 			str_end(1);
 			if (job == T_JUSTIFY) {
-				if (svg || epsf == 2)
+				int n;
+
+				n = nw - 1;
+				if (n <= 0)
+					n = 1;
+				if (svg || epsf > 1)
 					a2b("}def\n"
 						"%.1f jshow"
 						"/strop/show load def str",
@@ -1159,7 +1154,7 @@ void write_text(char *cmd, char *s, int job)
 						"strw"
 						"/w %.1f w sub %d div def"
 						"/strop/jshow load def str",
-						strlw, nw);
+						strlw, n);
 			}
 			a2b("\n");
 			bskip(lineskip);
@@ -1396,13 +1391,13 @@ static char buf[STRL1];
 	if (title
 	 && *r != '\0') {
 		if (strlen(p) + strlen(r) + 3 >= sizeof buf) {
-			error(1, 0, "Title or X: too long");
+			error(1, NULL, "Title or X: too long");
 			return p;
 		}
 		b += sprintf(b, "%s.  ", r);
 	} else {
 		if (strlen(p) >= sizeof buf) {
-			error(1, 0, "Title too long");
+			error(1, NULL, "Title too long");
 			return p;
 		}
 	}
@@ -1657,9 +1652,9 @@ void write_heading(struct abctune *t)
 	float lwidth, down1, down2;
 
 	lwidth = ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
-		- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale;
+			- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale;
 
-	if (cfmt.titleformat != 0 && cfmt.titleformat[0] != '\0') {
+	if (cfmt.titleformat && cfmt.titleformat[0] != '\0') {
 		write_headform(lwidth);
 		bskip(cfmt.musicspace);
 		return;
@@ -1679,10 +1674,9 @@ void write_heading(struct abctune *t)
 					? info['R' - 'A'] : NULL;
 	if (rhythm) {
 		str_font(COMPOSERFONT);
-		a2b("0 %.1f M ",
-		     -(cfmt.composerspace + cfmt.font_tb[COMPOSERFONT].size));
+		a2b("0 %.1f M ", -cfmt.composerspace);
 		put_inf(rhythm);
-		down1 -= cfmt.font_tb[COMPOSERFONT].size;
+		down1 = cfmt.composerspace;
 	}
 	area = author = NULL;
 	if (t->abc_vers != (2 << 16))
@@ -1752,7 +1746,7 @@ void write_heading(struct abctune *t)
 		}
 		down2 = 0;
 	} else {
-		down2 = cfmt.composerspace + cfmt.font_tb[COMPOSERFONT].size;
+		down2 = cfmt.composerspace;
 	}
 
 	/* parts */
@@ -1817,7 +1811,7 @@ void user_ps_write(void)
 			char line[BSIZE];
 
 			if ((f = fopen(p + 1, "r")) == NULL) {
-				error(1, 0, "Cannot open PS file '%s'",
+				error(1, NULL, "Cannot open PS file '%s'",
 					&t->text[1]);
 			} else {
 				while (fgets(line, sizeof line, f))	/* copy the file */
@@ -1827,17 +1821,17 @@ void user_ps_write(void)
 			continue;
 		    }
 		case '%':		/* "%svg " = SVG code */
-//			if (svg || epsf == 2)
+//			if (svg || epsf > 1)
 //				svg_write(t->text, strlen(t->text));
 			fputs(p + 5, fout);
 			fputc('\n', fout);
 			continue;
 		case 'p':		/* PS code for PS output only */
-//			if (secure || svg || epsf == 2)
+//			if (secure || svg || epsf > 1)
 //				continue;
 			break;
 		case 'b':		/* PS code for both PS and SVG */
-			if (svg || epsf == 2) {
+			if (svg || epsf > 1) {
 				svg_write(p + 1, strlen(p + 1));
 				continue;
 			}
@@ -1845,7 +1839,7 @@ void user_ps_write(void)
 //				continue;
 			break;
 		case 's':		/* PS code for SVG output only */
-//			if (!svg && epsf != 2)
+//			if (!svg && epsf <= 1)
 //				continue;
 			svg_write(p + 1, strlen(&t->text[1]));
 			continue;

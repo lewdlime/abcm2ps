@@ -3196,7 +3196,7 @@ if (staff > nstaff) {
 /* -- create a starting symbol -- */
 static struct SYMBOL *sym_new(int type,
 				struct VOICE_S *p_voice,
-				struct SYMBOL *last_ts)
+				struct SYMBOL *last_s)	/* same time */
 {
 	struct SYMBOL *s;
 
@@ -3205,7 +3205,7 @@ static struct SYMBOL *sym_new(int type,
 	s->type = type;
 	s->voice = p_voice - voice_tb;
 	s->staff = p_voice->staff;
-	s->time = last_ts->time;
+	s->time = last_s->time;
 
 	s->next = p_voice->last_sym->next;
 	if (s->next)
@@ -3214,16 +3214,19 @@ static struct SYMBOL *sym_new(int type,
 	s->prev = p_voice->last_sym;
 	p_voice->last_sym = s;
 
-	s->ts_next = last_ts;
-	s->ts_prev = last_ts->ts_prev;
+	s->ts_next = last_s;
+	s->ts_prev = last_s->ts_prev;
 	s->ts_prev->ts_next = s;
 	if (s->ts_prev->type != type)
 		s->sflags |= S_SEQST;
-	last_ts->ts_prev = s;
-	if (last_ts->type == type && s->voice != last_ts->voice) {
-		last_ts->sflags &= ~S_SEQST;
-		last_ts->shrink = 0;
+	last_s->ts_prev = s;
+	if (last_s->type == type && s->voice != last_s->voice) {
+		last_s->sflags &= ~S_SEQST;
+		last_s->shrink = 0;
 	}
+	s->as.fn = last_s->as.fn;
+	s->as.linenum = last_s->as.linenum;
+	s->as.colnum = last_s->as.colnum;
 	return s;
 }
 
@@ -3292,8 +3295,12 @@ static void init_music_line(void)
 			s->staff = staff;
 			s->time = last_s->time;
 			s->next = p_voice->sym;
-			if (s->next)
+			if (s->next) {
 				s->next->prev = s;
+				s->as.fn = s->next->as.fn;
+				s->as.linenum = s->next->as.linenum;
+				s->as.colnum = s->next->as.colnum;
+			}
 			p_voice->sym = s;
 			p_voice->last_sym = s;
 			s->ts_next = last_s;
@@ -3633,11 +3640,11 @@ static float set_indent(int keep)
 		staff = cursys->voice[voice].staff;
 		if (cursys->staff[staff].empty)
 			continue;
-		if ((p = p_voice->new_name ? p_voice->nm : p_voice->snm) == 0)
+		if ((p = p_voice->new_name ? p_voice->nm : p_voice->snm) == NULL)
 			continue;
 		str_font(VOICEFONT);
 		for (;;) {
-			if ((q = strstr(p, "\\n")) != 0)
+			if ((q = strstr(p, "\\n")) != NULL)
 				*q = '\0';
 			w = tex_str(p);
 			if (w > maxw)
@@ -4505,6 +4512,8 @@ static void set_piece(void)
 	 * define the offsets of the measure bars */
 	for (staff = 0; staff <= nstaff; staff++) {
 		sy->staff[staff].empty = empty[staff];
+		if (empty[staff])
+			continue;
 
 		p_staff = &staff_tb[staff];
 		p_staff->botbar = p_staff->clef.stafflines <= 3 ? 6 : 0;
@@ -4535,13 +4544,14 @@ static void set_piece(void)
 		}
 	}
 
-	/* let the last empty staff have a ull height */
-	if (empty[nstaff])
-		staff_tb[nstaff].topbar = 0;
+//	/* let the last empty staff have a full height */
+//	if (empty[nstaff])
+//		staff_tb[nstaff].topbar = 0;
 
 	/* initialize the music line */
 	init_music_line();
-	insert_meter = 0;
+	if (!empty[nstaff])
+		insert_meter = 0;
 
 	/* if last music line, nothing more to do */
 	if (!tsnext)

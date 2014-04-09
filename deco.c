@@ -1823,7 +1823,7 @@ static void draw_gchord(struct SYMBOL *s,
 		str_font(gch->font);
 		w = tex_str(s->as.text + gch->idx);
 		if (gch->type == 'g') {			/* guitar chord */
-			if (strchr(tex_buf, '\t') == 0) {
+			if (!strchr(tex_buf, '\t')) {
 				action = A_GCHORD;
 			} else {
 				struct SYMBOL *next;

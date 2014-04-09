@@ -82,7 +82,6 @@ struct abcsym {
 #define ABC_S_GLOBAL 0			/* global */
 #define ABC_S_HEAD 1			/* in header (after X:) */
 #define ABC_S_TUNE 2			/* in tune (after K:) */
-	unsigned short colnum;	/* ABC source column number */
 	unsigned short flags;
 #define ABC_F_ERROR	0x0001		/* error around this symbol */
 #define ABC_F_INVIS	0x0002		/* invisible symbol */
@@ -92,7 +91,9 @@ struct abcsym {
 #define ABC_F_GRACE	0x0020		/* grace note */
 #define ABC_F_GR_END	0x0040		/* end of grace note sequence */
 #define ABC_F_SAPPO	0x0080		/* short appoggiatura */
+	unsigned short colnum;	/* ABC source column number */
 	int linenum;		/* ABC source line number */
+	char *fn;		/* ABC source file name */
 	char *text;		/* main text (INFO, PSCOM),
 				 * guitar chord (NOTE, REST, BAR) */
 	char *comment;		/* comment part (when keep_comment) */

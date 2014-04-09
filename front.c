@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2011-2013 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 2011-2014 Jean-François Moine (http://moinejf.free.fr)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -372,11 +372,11 @@ static void (*eol_tb[3])(void) = {eol0, eol1, eol2};
 static void (*txt_add_eol)(void);
 
 /* add the line number */
-static void add_lnum(int nline)
+static void add_lnum(char *fname, int linenum)
 {
-	unsigned char tmp[16];
+	unsigned char tmp[FILENAME_MAX];
 
-	sprintf((char *) tmp, "%%@%d", nline);
+	sprintf((char *) tmp, "%%@%p:%d", fname, linenum);
 	txt_add(tmp, strlen((char *) tmp));
 }
 
@@ -447,11 +447,11 @@ static int tune_select(unsigned char *s)
 /* -- init the front-end -- */
 void front_init(int edit,	/* for edition - keep comments */
 		int eol,	/* 0: \n, 1: \r, 2: \r\n */
-		void include_api(unsigned char *fn))
+		void include_cb(unsigned char *fn))
 {
 	keep_comments = edit;
 	txt_add_eol = eol_tb[eol];
-	include_f = include_api;
+	include_f = include_cb;
 	dst = 0;
 	offset = 0;
 	size = 0;
@@ -459,20 +459,23 @@ void front_init(int edit,	/* for edition - keep comments */
 
 /* -- front end parser -- */
 unsigned char *frontend(unsigned char *s,
-			int ftype)
+			int ftype,
+			char *fname,
+			int linenum)
 {
 	unsigned char *p, *q, c, *begin_end;
-	int i, l, state, str_cnv_p, histo, end_len, nline;
+	int i, l, state, str_cnv_p, histo, end_len;
+	char prefix_sav[4];
+	int latin_sav;
 
 	begin_end = 0;
 	end_len = 0;
 	histo = 0;
 	state = 0;
-	nline = 0;
 	if (dst != 0)			/* if continuation */
 		offset--;		/* restart before the EOL */
 
-	add_lnum(0);
+	add_lnum(fname, linenum);
 	txt_add_eol();
 
 	/* if unknown encoding, check if latin1 or utf-8 */
@@ -505,6 +508,7 @@ unsigned char *frontend(unsigned char *s,
 			break;
 		}
 	}
+	latin_sav = latin;		/* (have gcc happy) */
 
 	/* scan the file */
 	skip = 0;
@@ -527,7 +531,7 @@ unsigned char *frontend(unsigned char *s,
 			if (p[-1] == '\r' && *p == '\n')	/* (DOS) */
 				p++;
 		}
-		nline++;
+		linenum++;
 
 		if (begin_end) {
 			if (ftype == FE_FMT) {
@@ -567,25 +571,29 @@ unsigned char *frontend(unsigned char *s,
 			}
 			goto next;
 		}
+		if (skip) {
+			if (l != 0)
+				goto next_eol;
+			skip = 0;
+			txt_add_eol();
+			add_lnum(fname, linenum);
+		}
 
 		if (l == 0) {			/* empty line */
-			if (skip) {
-				skip = 0;
-				txt_add_eol();
-				add_lnum(nline);
-			}
 			switch (state) {
 			case 1:
 				fprintf(stderr,
 					"Line %d: Empty line in tune header - K:C added\n",
-					nline);
+					linenum);
 				txt_add((unsigned char *) "K:C", 3);
 				txt_add_eol();
 				txt_add_eol();
-				add_lnum(nline);
+				add_lnum(fname, linenum);
 				/* fall thru */
 			case 2:
 				state = 0;
+				strcpy(prefix, prefix_sav);
+				latin = latin_sav;
 				break;
 			}
 			goto next_eol;
@@ -649,16 +657,23 @@ unsigned char *frontend(unsigned char *s,
 			}
 			s += 2;
 			l -= 2;
-			if (strncmp((char *) s, "abcm2ps", 7) == 0) {
-				s += 7;
+			if (strncmp((char *) s, "abcm2ps ", 8) == 0) {
+				s += 8;
+				l -= 8;
 				while (*s == ' ' || *s == '\t') {
 					s++;
 					l--;
 				}
-				if (l > sizeof prefix - 1)
-					l = sizeof prefix - 1;
-				memcpy(prefix, s, l);
-				prefix[l] = '\0';
+				for (i = 0; i < sizeof prefix - 1; i++) {
+					if (*s == ' ' || *s == '\t'
+					 || --l < 0)
+						break;
+					prefix[i] = *s++;
+				}
+				if (i == 0)
+					prefix[i++] = '%';
+				prefix[i] = '\0';
+				txt_add((unsigned char *) "%", 1);
 				goto next_eol;
 			}
 pscom:
@@ -744,7 +759,7 @@ info:
 				include_f(s);
 				offset--;		/* remove the EOS */
 				*q = sep;
-				add_lnum(nline);
+				add_lnum(fname, linenum);
 				goto next_eol;
 			}
 			if (strncmp((char *) s, "select", 6) == 0) {
@@ -767,9 +782,9 @@ info:
 					if (strncmp((char *) q - 5, " lock", 5) == 0)
 						q -= 5;
 				}
-				if (selection != 0) {
+				if (selection) {
 					free(selection);
-					selection = 0;
+					selection = NULL;
 				}
 				if (q != s) {
 					unsigned char sep;
@@ -800,11 +815,11 @@ info:
 				case 1:
 					fprintf(stderr,
 						"Line %d: X: found in tune header - K:C added\n",
-						nline);
+						linenum);
 					txt_add((unsigned char *) "K:C", 3);
 					txt_add_eol();
 					txt_add_eol();	/* empty line */
-					add_lnum(nline);
+					add_lnum(fname, linenum);
 					txt_add_eol();
 					break;
 				case 2:
@@ -813,7 +828,11 @@ info:
 				}
 				if (selection)
 					skip = !tune_select(s);
-				state = 1;
+				if (!skip) {
+					state = 1;
+					strcpy(prefix_sav, prefix);
+					latin_sav = latin;
+				}
 				break;
 			case 'U':
 				break;

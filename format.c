@@ -187,12 +187,12 @@ static int get_font(char *fname, int encoding)
 
 	/* add the font */
 	if (nfontnames >= MAXFONTS) {
-		error(1, 0, "Too many fonts");
+		error(1, NULL, "Too many fonts");
 		return 0;
 	}
-	if (file_initialized
-	 && (epsf != 2 && !svg))
-		error(1, 0,
+	if (file_initialized> 0
+	 && (epsf <= 1 && !svg))
+		error(1, NULL,
 		      "Cannot have a new font when the output file is opened");
 	fnum = nfontnames++;
 	fontnames[fnum] = strdup(fname);
@@ -213,7 +213,7 @@ static int dfont_set(struct FONTSPEC *f)
 			return i;
 	}
 	if (i >= FONT_MAX - 1) {
-		error(1, 0, "Too many dynamic fonts");
+		error(1, NULL, "Too many dynamic fonts");
 		return FONT_MAX - 1;
 	}
 	memcpy(&cfmt.font_tb[i], f, sizeof cfmt.font_tb[0]);
@@ -379,7 +379,7 @@ void set_format(void)
 	f->keywarn = 1;
 	f->linewarn = 1;
 #ifdef HAVE_PANGO
-	if (!svg && epsf != 2)
+	if (!svg && epsf <= 1)
 		f->pango = 1;
 	else
 		lock_fmt(&cfmt.pango);	/* SVG output does not use panga */
@@ -663,7 +663,7 @@ static int g_logv(char *p)
 	case 'F':
 		break;
 	default:
-		error(0, 0, "Unknown logical '%s' - false assumed", p);
+		error(0, NULL, "Unknown logical '%s' - false assumed", p);
 		break;
 	}
 	return 0;
@@ -697,7 +697,7 @@ static void g_fspc(char *p,
 
 		v = strtod(p, &q);
 		if (v <= 0 || (*q != '\0' && *q != ' '))
-			error(1, 0, "Bad font size '%s'", p);
+			error(1, NULL, "Bad font size '%s'", p);
 		else
 			fsize = v;
 	}
@@ -705,7 +705,7 @@ static void g_fspc(char *p,
 		 strcmp(fname, "*") != 0 ? fname : 0,
 		 encoding,
 		 fsize);
-	if (!file_initialized)
+	if (file_initialized <= 0)
 		used_font[f->fnum] = 1;
 	if (f - cfmt.font_tb == outft)
 		outft = -1;
@@ -740,7 +740,7 @@ struct tblt_s *tblt_parse(char *p)
 		n = *p++ - '0' - 1;
 		if ((unsigned) n >= MAXTBLT
 		 || (*p != '\0' && *p != ' ')) {
-			error(1, 0, "Invalid number in %%%%tablature");
+			error(1, NULL, "Invalid number in %%%%tablature");
 			return 0;
 		}
 		if (*p == '\0')
@@ -766,8 +766,8 @@ struct tblt_s *tblt_parse(char *p)
 			}
 			p++;
 		}
-		if (*p == '\0' || (q = strchr(notes_tb, *p)) == 0) {
-			error(1, 0, "Invalid pitch in %%%%tablature");
+		if (*p == '\0' || (q = strchr(notes_tb, *p)) == NULL) {
+			error(1, NULL, "Invalid pitch in %%%%tablature");
 			return 0;
 		}
 		tblt->pitch += pitch_tb[q - notes_tb];
@@ -797,7 +797,7 @@ struct tblt_s *tblt_parse(char *p)
 
 	/* width and heights */
 	if (!isdigit(*p)) {
-		error(1, 0, "Invalid width/height in %%%%tablature");
+		error(1, NULL, "Invalid width/height in %%%%tablature");
 		return 0;
 	}
 	tblt->hu = scan_u(p);
@@ -854,7 +854,7 @@ struct tblt_s *tblt_parse(char *p)
 		tblts[n] = tblt;
 	return tblt;
 err:
-	error(1, 0, "Wrong values in %%%%tablature");
+	error(1, NULL, "Wrong values in %%%%tablature");
 	return 0;
 }
 
@@ -905,7 +905,6 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 			val = strtod(p, 0);
 		if ((unsigned) val > vpar->max)
 			goto err;
-		vpar->f(p_voice, val);
 		break;
 	}
 	if (!vpar->name) {	/* compatibility with previous versions */
@@ -914,7 +913,7 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 		case 'e':
 			if (strcmp(w, "exprabove") == 0) {
 				vpar = &vpar[0];	/* dyn */
-				vpar = &vpar[6];	/* vol */
+				vpar2 = &vpar[6];	/* vol */
 				if (g_logv(p))
 					val = SL_ABOVE;
 				else
@@ -923,7 +922,7 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 			}
 			if (strcmp(w, "exprbelow") == 0) {
 				vpar = &vpar[0];	/* dyn */
-				vpar = &vpar[6];	/* vol */
+				vpar2 = &vpar[6];	/* vol */
 				if (g_logv(p))
 					val = SL_BELOW;
 				else
@@ -958,9 +957,10 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 		if (vpar2)
 			vpar2->f(p_voice, val);
 	}
+	cfmt.posit = voice_tb[0].posit;
 	return;
 err:
-	error(1, 0, "Bad value %%%%%s %s", w, p);
+	error(1, NULL, "Bad value %%%%%s %s", w, p);
 }
 
 /* -- parse a format line -- */
@@ -987,8 +987,9 @@ void interpret_fmt_line(char *w,		/* keyword */
 			float swfac;
 			char fname[80];
 
-			if (file_initialized) {
-				error(1, 0,
+			if (file_initialized > 0
+			 && !svg && epsf <= 1) {	/* PS */
+				error(1, NULL,
 				      "Cannot define a font when the output file is opened");
 				return;
 			}
@@ -1260,7 +1261,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 		int b;
 
 		g_fspc(p, (struct FONTSPEC *) fd->v);
-		b = strstr(p, "box") != 0;
+		b = strstr(p, "box") != NULL;
 		switch (fd->subtype) {
 		case 1:
 			cfmt.partsbox = b;
@@ -1282,7 +1283,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 			rmargin = (cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 					- staffwidth - cfmt.leftmargin;
 			if (rmargin < 0)
-				error(1, 0, "'staffwidth' too big\n");
+				error(1, NULL, "'staffwidth' too big\n");
 			cfmt.rightmargin = rmargin;
 		}
 		break;
@@ -1300,7 +1301,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 	}
 	return;
 bad:
-	error(1, 0, "Bad value '%s' for '%s' - ignored", p, w);
+	error(1, NULL, "Bad value '%s' for '%s' - ignored", p, w);
 }
 
 /* -- lock a format -- */
@@ -1336,18 +1337,18 @@ void set_font(int ft)
 		fnum = f->fnum;
 	}
 	if (!used_font[fnum]
-	 && epsf != 2 && !svg) {	/* (not usefull for svg output) */
-		if (!file_initialized) {
+	 && epsf <= 1 && !svg) {	/* (not usefull for svg output) */
+		if (file_initialized <= 0) {
 			used_font[fnum] = 1;
 		} else {
-			error(1, 0,
+			error(1, NULL,
 			      "Font '%s' not predefined; using first in list",
 			      fontnames[fnum]);
 			fnum = 0;
 		}
 	}
 	if (f->size == 0) {
-		error(0, 0, "Font '%s' with a null size - set to 8",
+		error(0, NULL, "Font '%s' with a null size - set to 8",
 		      fontnames[fnum]);
 		f->size = 8;
 	}

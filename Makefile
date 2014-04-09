@@ -1,13 +1,13 @@
 # Makefile source for abcm2ps
 
-VERSION = 7.7.2
+VERSION = 8.0.2
 
 CC = gcc
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 
-CPPFLAGS = -DHAVE_CONFIG_H  -I.
+CPPFLAGS =  -I.
 CPPPANGO = 
 CFLAGS = -g -O2 -Wall -pipe
 LDFLAGS =  -lm
@@ -16,11 +16,11 @@ prefix = /usr/local
 exec_prefix = ${prefix}
 
 srcdir = .
-
+VPATH = .
 bindir = ${exec_prefix}/bin
 libdir = ${exec_prefix}/lib
 datadir = ${prefix}/share
-docdir = /usr/local/doc
+docdir = ${prefix}/doc
 
 # unix
 OBJECTS=abc2ps.o \
@@ -40,7 +40,7 @@ subs.o: subs.c
 abcmfe: front.c front.h slre.h
 	$(CC) $(CFLAGS) -DMAIN -o $@ $< slre.o
 
-DOCFILES=$(addprefix $(srcdir)/,Changes License README *.abc *.eps *.txt)
+DOCFILES=$(addprefix $(srcdir)/,Changes README *.abc *.eps *.txt)
 
 install: abcm2ps
 	mkdir -p $(bindir); \
@@ -63,7 +63,6 @@ uninstall:
 DIST_FILES = \
 	abcm2ps-$(VERSION)/Changes \
 	abcm2ps-$(VERSION)/INSTALL \
-	abcm2ps-$(VERSION)/License \
 	abcm2ps-$(VERSION)/Makefile \
 	abcm2ps-$(VERSION)/Makefile.in \
 	abcm2ps-$(VERSION)/README \
@@ -76,11 +75,8 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/buffer.c \
 	abcm2ps-$(VERSION)/chinese.abc \
 	abcm2ps-$(VERSION)/configure \
-	abcm2ps-$(VERSION)/configure.in \
 	abcm2ps-$(VERSION)/config.h \
 	abcm2ps-$(VERSION)/config.h.in \
-	abcm2ps-$(VERSION)/config.guess \
-	abcm2ps-$(VERSION)/config.sub \
 	abcm2ps-$(VERSION)/deco.c \
 	abcm2ps-$(VERSION)/deco.abc \
 	abcm2ps-$(VERSION)/draw.c \
@@ -91,7 +87,6 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/front.c \
 	abcm2ps-$(VERSION)/front.h \
 	abcm2ps-$(VERSION)/glyph.c \
-	abcm2ps-$(VERSION)/install.sh \
 	abcm2ps-$(VERSION)/landscape.fmt \
 	abcm2ps-$(VERSION)/music.c \
 	abcm2ps-$(VERSION)/musicfont.fmt \
@@ -104,12 +99,12 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/sample3.eps \
 	abcm2ps-$(VERSION)/sample4.abc \
 	abcm2ps-$(VERSION)/sample5.abc \
+	abcm2ps-$(VERSION)/sample8.html \
 	abcm2ps-$(VERSION)/slre.c \
 	abcm2ps-$(VERSION)/slre.h \
 	abcm2ps-$(VERSION)/subs.c \
 	abcm2ps-$(VERSION)/svg.c \
 	abcm2ps-$(VERSION)/syms.c \
-	abcm2ps-$(VERSION)/tight.fmt \
 	abcm2ps-$(VERSION)/voices.abc
 
 dist:

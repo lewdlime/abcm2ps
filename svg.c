@@ -1038,7 +1038,6 @@ void define_svg_symbols(char *title, int num, float w, float h)
 				"<title>%s</title>\n"
 				"</head>\n"
 				"<body>\n",
-				
 				s);
 		}
 		fputs("<p>\n", fout);
@@ -1792,7 +1791,7 @@ stack_dump();
 			h = pop_free_val();
 			fprintf(fout,
 				"<path fill=\"currentColor\"\n"
-				"	d=\"M%.2f %.2fl%.2f %.2fv%.2fl%.2f %.2f\"/>\n",
+				"	d=\"M%.2f %.2fl%.2f%.2fv%.2fl%.2f %.2f\"/>\n",
 				x, y, dx, -dy, h,-dx, dy);
 			return;
 		}
@@ -3219,7 +3218,7 @@ rmoveto:
 			a2 = pop_free_val();
 			a1 = pop_free_val();
 			l2 = pop_free_val();
-			l1 = pop_free_val();
+			l1 = pop_free_val();	// always '0'
 			c6 = pop_free_val();
 			c5 = pop_free_val();
 			c4 = pop_free_val();
@@ -3229,9 +3228,9 @@ rmoveto:
 			fprintf(fout,
 				"<path fill=\"currentColor\"\n"
 				"	d=\"M%.2f %.2fc%.2f %.2f %.2f %.2f %.2f %.2f\n"
-				"	l%.2f %.2fc%.2f %.2f %.2f %.2f %.2f %.2f\"/>\n",
+				"	v%.2fc%.2f %.2f %.2f %.2f %.2f %.2f\"/>\n",
 				m1, m2, a1, -a2, a3, -a4, a5, -a6,
-				l1, -l2, c1, -c2, c3, -c4, c5, -c6);
+				-l2, c1, -c2, c3, -c4, c5, -c6);
 			return;
 		}
 		if (strcmp(op, "SLW") == 0) {
@@ -3389,13 +3388,13 @@ rmoveto:
 				"<path fill=\"currentColor\"\n"
 				"	d=\"",
 				x, y, -h);
+			y -= h;
 			if (n == 1) {
 				fprintf(fout,
-					"	M%.2f %.2fc0.6 5.6 9.6 9 5.6 18.4\n"
+					"M%.2f %.2fc0.6 5.6 9.6 9 5.6 18.4\n"
 					"	c1.6 -6 -1.3 -11.6 -5.6 -12.8\n",
-					x, y - h);
+					x, y);
 			} else {
-				y -= h;
 				while (--n >= 0) {
 					fprintf(fout,
 						"M%.2f %.2fc0.9 3.7 9.1 6.4 6 12.4\n"
@@ -3420,18 +3419,18 @@ rmoveto:
 				"<path fill=\"currentColor\"\n"
 				"	d=\"",
 				x, y, -h);
+			y -= h;
 			if (n == 1) {
 				fprintf(fout,
 					"M%.2f %.2fc0.6 -5.6 9.6 -9 5.6 -18.4\n"
 					"	c1.6 6 -1.3 11.6 -5.6 12.8\n",
-					x, y - h);
+					x, y);
 			} else {
-				y -= h;
 				while (--n >= 0) {
 					fprintf(fout,
-					"M%.2f %.2fc0.9 -3.7 9.1 -6.4 6 -12.4\n"
-					"	c1 5.4 -4.2 8.4 -6 8.4\n",
-					x, y);
+						"M%.2f %.2fc0.9 -3.7 9.1 -6.4 6 -12.4\n"
+						"	c1 5.4 -4.2 8.4 -6 8.4\n",
+						x, y);
 					y -= 5.4;
 				}
 			}
@@ -3493,13 +3492,13 @@ rmoveto:
 				"<path fill=\"currentColor\"\n"
 				"	d=\"",
 				x, y, -h);
+			y -= h;
 			if (n == 1) {
 				fprintf(fout,
 					"M%.2f %.2fc0.6 3.4 5.6 3.8 3 10\n"
 					"	c1.2 -4.4 -1.4 -7 -3 -7\n",
-					x, y - h);
+					x, y);
 			} else {
-				y -= h;
 				while (--n >= 0) {
 					fprintf(fout,
 						"M%.2f %.2fc1 3.2 5.6 2.8 3.2 8\n"
@@ -3524,19 +3523,19 @@ rmoveto:
 				"<path fill=\"currentColor\"\n"
 				"	d=\"",
 				x, y, -h);
+			y -= h;
 			if (n == 1) {
 				fprintf(fout,
 					"M%.2f %.2fc0.6 -3.4 5.6 -3.8 3 -10\n"
 					"	c1.2 4.4 -1.4 7 -3 7\n",
-					x, y - h);
+					x, y);
 			} else {
-				y -= h;
 				while (--n >= 0) {
 					fprintf(fout,
 						"M%.2f %.2fc1 -3.2 5.6 -2.8 3.2 -8\n"
 						"	c1.4 4.8 -2.4 5.4 -3.2 5.2\n",
 						x, y);
-						y -= 3.5;
+					y -= 3.5;
 				}
 			}
 			fprintf(fout, "\"/>\n");
@@ -3649,7 +3648,7 @@ rmoveto:
 				fprintf(fout, "h%.2f", w);
 				if (--n <= 0)
 					break;
-				fprintf(fout, "m%.2f -6", -w);
+				fprintf(fout, "m-%.2f -6", w);
 			}
 			fprintf(fout, "\"/>\n");
 			return;
@@ -3686,7 +3685,7 @@ rmoveto:
 			}
 			fprintf(fout, "<g font-family=\"Times\" font-size=\"18\" font-weight=\"bold\" font-style=\"normal\"\n"
 				"	transform=\"translate(%.2f,%.2f) scale(1.2,1)\">\n"
-				"	<text x=\"0\" y=\"-7\" text-anchor=\"middle\">%s</text>\n"
+				"	<text y=\"-7\" text-anchor=\"middle\">%s</text>\n"
 				"</g>\n",
 				x, y, s + 1);
 			free(s);
@@ -4078,7 +4077,7 @@ void svg_write(char *buf, int len)
 //					if (!r)
 //						break;
 					fprintf(fout, "<!-- subtitle: %.*s -->\n",
-							r - q, q);
+							(int) (r - q), q);
 					break;
 				}
 				q = (unsigned char *) strchr((char *) q, '(');
@@ -4089,7 +4088,7 @@ void svg_write(char *buf, int len)
 //				if (!r)
 //					break;
 				fprintf(fout, "<!-- title: %.*s -->\n",
-						r - q, q);
+						(int) (r - q), q);
 				break;
 			}
 			break;

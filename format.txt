@@ -202,6 +202,9 @@ List of the format parameters
 		characters of these commands (up to 3 different characters).
 		This permits to avoid conflicts with pseudo-comments of other
 		programs and also to have a simple conditional generation.
+
+		Note: this parameter cannot be set in a format file.
+
 		Example 1:
 
 			%%abcm2ps *
@@ -654,7 +657,7 @@ List of the format parameters
 	Description:
 		Draw flat beams.
 
-  font <font> [[<encoding>] <scale>]
+  font <font> [<encoding>] [<scale>]
 	Default: none
 	Compilation: none
 	Command line: none

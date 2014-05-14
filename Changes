@@ -1,7 +1,28 @@
+---- Version 8.0.3 - 14/05/05 ----
+
+Fix non-function of %%voice inside %%tune since some 7.5.x
+	(reported by Gerhard Schacherl).
+Fix small internal problem with decorations.
+Fix position of accent marks (!>!)
+	(reported by Paul Rosen).
+Fix bad margins when tune inside %%multicol
+	(reported by A.B. Steen).
+Don't draw repeat brackets when bar between 2 staves.
+Fix compilation warning on MS-windows
+	(reported/fixed by Olivier Levon and Jean-Luc Zins).
+Don't display an accidental when {#,b,=} at start of a word in guitar chords.
+Fix lack of EOS in some internal strings
+	(fixed by Olivier Levon).
+Fix bad guitar chord / annotation when '\' inside.
+Fix double transposition of 2 octaves when both %%abc2pscompat
+	and octave= in K:/V:.
+Fix compilation warnings on MAC
+	(reported by Chuck Boody).
+
 ---- Version 8.0.2 - 14/04/02 ----
 
 Fix bad text justication with PostScript output
-	(reported by Gerhard Schacher).
+	(reported by Gerhard Schacherl).
 Fix loss of positions (decorations, lyrics..) when many tunes
 	(reported by John Taylor).
 Add HAVE_MMAP in config.h for ms-windows users

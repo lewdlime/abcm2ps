@@ -147,20 +147,16 @@ static char ps_head[] =
 	"/tubrl{3 add M 0 -3 RL RL 0 3 RL dlw stroke}!\n"
 
 	/* x y r00 - longa rest */
-	"/r00{	xymove\n"
-	"	-1.5 -6 RM currentpoint 3 12 rectfill}!\n"
+	"/r00{	xymove -1.5 -6 RM currentpoint 3 12 rectfill}!\n"
 
 	/* x y r0 - breve rest */
-	"/r0{	xymove\n"
-	"	-1.5 0 RM currentpoint 3 6 rectfill}!\n"
+	"/r0{	xymove -1.5 0 RM currentpoint 3 6 rectfill}!\n"
 
 	/* x y r1 - rest */
-	"/r1{	xymove\n"
-	"	-3.5 3 RM currentpoint 7 3 rectfill}!\n"
+	"/r1{	xymove -3.5 3 RM currentpoint 7 3 rectfill}!\n"
 
 	/* x y r2 - half rest */
-	"/r2{	xymove\n"
-	"	-3.5 0 RM currentpoint 7 3 rectfill}!\n"
+	"/r2{	xymove -3.5 0 RM currentpoint 7 3 rectfill}!\n"
 
 	/* x y r4 - quarter rest */
 	"/r4{	xymove\n"
@@ -344,7 +340,7 @@ static char ps_head[] =
 	"	-3 -3 RM 6 0 RL stroke}!\n"
 
 	/* x y accent - accent */
-	"/accent{1.2 SLW M -4 0 RM\n"
+	"/accent{1.2 SLW M -4 1 RM\n"
 	"	8 2 RL -8 2 RL stroke}!\n"
 
 	/* x y turn - turn */
@@ -678,20 +674,17 @@ static char ps_head[] =
 	"/mrep{	2 copy 2 copy\n"
 	"	M -5 15 RM currentpoint 1.4 0 360 arc\n"
 	"	M 5 9 RM currentpoint 1.4 0 360 arc\n"
-	"	M -7 6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL\n"
-	"	fill}!\n"
+	"	M -7 6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL fill}!\n"
 
 	/* x y mrep2 - measure repeat 2 times */
 	"/mrep2{	2 copy 2 copy\n"
 	"	M -5 18 RM currentpoint 1.4 0 360 arc\n"
 	"	M 5 6 RM currentpoint 1.4 0 360 arc fill\n"
 	"	M 1.8 SLW\n"
-	"	-7 4 RM 14 10 RL -14 -4 RM 14 10 RL\n"
-	"	stroke}!\n"
+	"	-7 4 RM 14 10 RL -14 -4 RM 14 10 RL stroke}!\n"
 
 	/* x y srep - sequence repeat */
-	"/srep{	M -1 6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL\n"
-	"	fill}!\n"
+	"/srep{	M -1 6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL fill}!\n"
 
 	/* str dy bracket_type dx x y repbra - repeat bracket */
 	"/repbra{gsave dlw T 0 -20 M\n"
@@ -728,8 +721,7 @@ static char ps_head[] =
 	"	1 -1.8 7 1.4 6 3.2 RC\n"
 	"	0.5 0.3 RM\n"
 	"	2 -3.8 -5 -7.6 -7 -3.8 RC\n"
-	"	-2 3.8 5 7.6 7 3.8 RC\n"
-	"	fill}!\n"
+	"	-2 3.8 5 7.6 7 3.8 RC fill}!\n"
 	/* x y HD - open head for whole */
 	"/HD{	xymove\n"
 	"	-2.7 1.4 RM\n"
@@ -739,8 +731,7 @@ static char ps_head[] =
 	"	0 1.5 -2.2 3 -5.6 3 RC\n"
 	"	-3.4 0 -5.6 -1.5 -5.6 -3 RC\n"
 	"	0 -1.5 2.2 -3 5.6 -3 RC\n"
-	"	3.4 0 5.6 1.5 5.6 3 RC\n"
-	"	fill}!\n"
+	"	3.4 0 5.6 1.5 5.6 3 RC fill}!\n"
 	/* x y HDD - round breve */
 	"/HDD{	dlw HD\n"
 	"	x y M -6 -4 RM 0 8 RL\n"
@@ -833,8 +824,7 @@ void define_symbols(void)
 		"	M dup 1 eq{\n"
 		"		pop\n"
 		"		0.6 -5.6 9.6 -9 5.6 -18.4 RC\n"
-		"		1.6 6 -1.3 11.6 -5.6 12.8 RC\n"
-		"		fill\n"
+		"		1.6 6 -1.3 11.6 -5.6 12.8 RC fill\n"
 		"	  }{\n"
 		"		1 sub{	currentpoint\n"
 		"			0.9 -3.7 9.1 -6.4 6 -12.4 RC\n"
@@ -842,8 +832,7 @@ void define_symbols(void)
 		"			fill 5.4 sub M\n"
 		"		}repeat\n"
 		"		1.2 -3.2 9.6 -5.7 5.6 -14.6 RC\n"
-		"		1.6 5.4 -1 10.2 -5.6 11.4 RC\n"
-		"		fill\n"
+		"		1.6 5.4 -1 10.2 -5.6 11.4 RC fill\n"
 		"	  }ifelse}!\n",
 		STEM_XOFF, STEM_YOFF, STEM_YOFF);
 
@@ -853,8 +842,7 @@ void define_symbols(void)
 		"	M dup 1 eq{\n"
 		"		pop\n"
 		"		0.6 5.6 9.6 9 5.6 18.4 RC\n"
-		"		1.6 -6 -1.3 -11.6 -5.6 -12.8 RC\n"
-		"		fill\n"
+		"		1.6 -6 -1.3 -11.6 -5.6 -12.8 RC fill\n"
 		"	  }{\n"
 		"		1 sub{	currentpoint\n"
 		"			0.9 3.7 9.1 6.4 6 12.4 RC\n"
@@ -862,8 +850,7 @@ void define_symbols(void)
 		"			fill 5.4 add M\n"
 		"		}repeat\n"
 		"		1.2 3.2 9.6 5.7 5.6 14.6 RC\n"
-		"		1.6 -5.4 -1 -10.2 -5.6 -11.4 RC\n"
-		"		fill\n"
+		"		1.6 -5.4 -1 -10.2 -5.6 -11.4 RC fill\n"
 		"	  }ifelse}!\n",
 		-STEM_XOFF, -STEM_YOFF, STEM_YOFF);
 
@@ -907,8 +894,7 @@ void define_symbols(void)
 		"	M dup 1 eq{\n"
 		"		pop\n"
 		"		0.6 -3.4 5.6 -3.8 3 -10 RC\n"
-		"		1.2 4.4 -1.4 7 -3 7 RC\n"
-		"		fill\n"
+		"		1.2 4.4 -1.4 7 -3 7 RC fill\n"
 		"	  }{\n"
 		"		{	currentpoint\n"
 		"			1 -3.2 5.6 -2.8 3.2 -8 RC\n"
@@ -924,8 +910,7 @@ void define_symbols(void)
 		"	M dup 1 eq{\n"
 		"		pop\n"
 		"		0.6 3.4 5.6 3.8 3 10 RC\n"
-		"		1.2 -4.4 -1.4 -7 -3 -7 RC\n"
-		"		fill\n"
+		"		1.2 -4.4 -1.4 -7 -3 -7 RC fill\n"
 		"	  }{\n"
 		"		{	currentpoint\n"
 		"			1 3.2 5.6 2.8 3.2 8 RC\n"

@@ -543,8 +543,8 @@ static void draw_beam(float x1,
 	float y1, dy2;
 
 	s = bm->s1;
-	if (n > s->nflags - s->u
-	 && (s->sflags & S_TREM2) && s->head != H_EMPTY) {
+	if ((s->sflags & S_TREM2) && n > s->nflags - s->u
+	 && s->head != H_EMPTY) {
 		if (s->head >= H_OVAL) {
 			x1 = s->x + 6;
 			x2 = bm->s2->x - 6;
@@ -700,7 +700,7 @@ static void draw_beams(struct BEAM *bm)
 							&& k1->dots < k->dots))
 							x1 += bstub;
 						else
-						x1 -= bstub;
+							x1 -= bstub;
 					}
 				}
 			}
@@ -855,27 +855,27 @@ static void draw_timesig(float x,
 				l = l2;
 		} else switch (s->as.u.meter.meter[i].top[0]) {
 			case 'C':
-				if (s->as.u.meter.meter[i].top[1] != '|')
+				if (s->as.u.meter.meter[i].top[1] != '|') {
 					f = "csig";
-				else {
+				} else {
 					f = "ctsig";
 					l--;
 				}
 				meter[0] = '\0';
 				break;
 			case 'c':
-				if (s->as.u.meter.meter[i].top[1] != '.')
+				if (s->as.u.meter.meter[i].top[1] != '.') {
 					f = "imsig";
-				else {
+				} else {
 					f = "iMsig";
 					l--;
 				}
 				meter[0] = '\0';
 				break;
 			case 'o':
-				if (s->as.u.meter.meter[i].top[1] != '.')
+				if (s->as.u.meter.meter[i].top[1] != '.') {
 					f = "pmsig";
-				else {
+				} else {
 					f = "pMsig";
 					l--;
 				}
@@ -1327,7 +1327,7 @@ static void draw_gracenotes(struct SYMBOL *s)
 	struct BEAM bm;
 
 	/* draw the notes */
-	bm.s2 = 0;				/* (draw flags) */
+	bm.s2 = NULL;				/* (draw flags) */
 	for (g = s->extra; g; g = g->next) {
 		if (g->type != NOTEREST)
 			continue;
@@ -1337,11 +1337,11 @@ static void draw_gracenotes(struct SYMBOL *s)
 			if (calculate_beam(&bm, g))
 				draw_beams(&bm);
 		}
-		draw_note(g->x, g, bm.s2 == 0);
+		draw_note(g->x, g, bm.s2 == NULL);
 		if (annotate)
 			anno_out(s, 'g');
 		if (g == bm.s2)
-			bm.s2 = 0;			/* (draw flags again) */
+			bm.s2 = NULL;			/* (draw flags again) */
 
 		if (g->as.flags & ABC_F_SAPPO) {	/* (on 1st note only) */
 			if (!g->next) {			/* if one note */
@@ -2966,7 +2966,6 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
     } /* lower voice */
 
 	if ((t->u & 0x0f) == 1) {	/* if 'value' == none */
-		a2b("%%tuplet\n");
 		s->sflags &= ~S_IN_TUPLET;
 		return next;
 	}
@@ -3264,7 +3263,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 	if (p_voice->tie) {			/* tie from previous line */
 		p_voice->tie->x = s1->x + s1->wr;
 		s1 = p_voice->tie;
-		p_voice->tie = 0;
+		p_voice->tie = NULL;
 		s1->staff = s2->staff;
 		s1->ts_next = tsfirst->next;	/* (for tie to other voice) */
 		s1->time = s2->time - s1->dur;	/* (if after repeat sequence) */
@@ -3277,14 +3276,14 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 		for (s1 = s2; s1; s1 = s1->next) {
 			if (s1->sflags & S_TI1)
 				break;
-			if (rtie == 0)
+			if (!rtie)
 				continue;
 			if (s1->type != BAR
 			 || !s1->as.u.bar.repeat_bar
 			 || !s1->as.text)
 				continue;
 			if (s1->as.text[0] == '1') {	/* 1st repeat bar */
-				rtie = 0;
+				rtie = NULL;
 				continue;
 			}
 			for (s2 = s1->next; s2; s2 = s2->next)
@@ -3337,10 +3336,10 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			}
 		}
 		if (!s2) {
-			struct SYMBOL *s3;
 
 			/* special case: tie to a combined chord */
 			if (s1->ts_prev && s1->ts_prev->next) {
+				struct SYMBOL *s3;
 				int time;
 
 				s3 = s1->ts_prev->next;	/* previous voice */
@@ -3538,7 +3537,7 @@ static void draw_tblt_w(struct VOICE_S *p_voice,
 			if (!ly
 			 || (lyl = ly->lyl[j]) == NULL) {
 				if (s->type == BAR) {
-					if (tblt->bar == 0)
+					if (!tblt->bar)
 						continue;
 					p = &tex_buf[16];
 					*p-- = '\0';
@@ -3672,7 +3671,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 
 	outft = -1;				/* force font output */
 	lskip = 0;				/* (compiler warning) */
-	f = 0;					/* (force new font) */
+	f = NULL;				/* (force new font) */
 	if (incr > 0) {				/* under the staff */
 		j = 0;
 /*fixme: may not be the current font*/
@@ -4456,8 +4455,8 @@ static void bar_set(float *bar_bot, float *bar_height)
 	int staff, nlines;
 	float dy, staffscale;
 			/* !! max number of staff lines !! */
-	char top[10] = {18, 18, 12, 18, 18, 24, 30, 36, 42, 48};
-	char bot[10] = { 6,  6,  6,  6,  0,  0,  0,  0,  0,  0};
+	static const char top[10] = {18, 18, 12, 18, 18, 24, 30, 36, 42, 48};
+	static const char bot[10] = { 6,  6,  6,  6,  0,  0,  0,  0,  0,  0};
 
 	dy = 0;
 	for (staff = 0; staff <= nstaff; staff++) {
@@ -4647,7 +4646,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 		break;
 	}
 
-	bm.s2 = 0;
+	bm.s2 = NULL;
 	first_note = 1;
 	for (s = p_voice->sym; s; s = s->next) {
 		if (s->extra)
@@ -4669,7 +4668,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 						draw_beams(&bm);
 					}
 				}
-				draw_note(x, s, bm.s2 == 0);
+				draw_note(x, s, bm.s2 == NULL);
 				if (annotate)
 					anno_out(s, 'N');
 				if (s == bm.s2)

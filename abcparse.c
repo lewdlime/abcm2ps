@@ -2346,7 +2346,7 @@ static int parse_line(struct abctune *t,
 				break;
 			}
 
-			/* embedded header */
+			/* embedded information field */
 #if 0
 /*fixme:OK for [I:staff n], ?? for other headers*/
 			if (flags & ABC_F_GRACE)

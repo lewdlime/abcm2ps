@@ -1,5 +1,5 @@
-	Features of abcm2ps 7.6.9 (J.F. Moine, January 2014)
-	====================================================
+	Features of abcm2ps 8.0.3 (J.F. Moine, April 2014)
+	==================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
 
@@ -356,8 +356,8 @@ Multiple voices.
 
 Text strings.
 
-	- The guitar chords and annotations may contain '\#', '\b' and '\='
-	  to display accidentals.
+	- The guitar chords may contain '\#', '\b' and '\=' to display
+	  accidentals.
 
 	- The strings may contain characters from '\001' to '\005' to display
 	  accidentals. For compatibility, the values '\201' to '\205' are

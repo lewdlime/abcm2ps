@@ -165,7 +165,8 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 	unsigned char staff;	/* staff (0..nstaff) */
 	unsigned char nhd;	/* number of notes in chord - 1 */
 	int dur;		/* main note duration */
-	signed char pits[MAXHD]; /* pitches for notes */
+	signed char pits[MAXHD]; /* pitches for notes
+				  * pits[0] = y base for KEYSIG */
 	int time;		/* starting time */
 	unsigned int sflags;	/* symbol flags */
 #define S_EOLN		0x0001		/* end of line */

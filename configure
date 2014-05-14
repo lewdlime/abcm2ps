@@ -24,8 +24,8 @@ if test -f ./custom; then
 	. ./custom
 fi
 
-VERSION=8.0.2
-VDATE='April 2, 2014'
+VERSION=8.0.3
+VDATE='May 5, 2014'
 
 case "$1" in
 	--*=*)
@@ -65,7 +65,7 @@ s+@bindir@+$bindir+
 s+@libdir@+$libdir+
 s+@datarootdir@+$datarootdir+
 s+@docdir@+$docdir+
-s/@VERSION@/$VERSION/" Makefile.in > Makefile
+s+@VERSION@+$VERSION+" Makefile.in > Makefile
 echo "Makefile created"
 
 sed "s/define VERSION xxx/\define VERSION \"$VERSION\"/

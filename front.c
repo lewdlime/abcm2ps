@@ -468,7 +468,7 @@ unsigned char *frontend(unsigned char *s,
 	char prefix_sav[4];
 	int latin_sav;
 
-	begin_end = 0;
+	begin_end = NULL;
 	end_len = 0;
 	histo = 0;
 	state = 0;
@@ -533,12 +533,19 @@ unsigned char *frontend(unsigned char *s,
 		}
 		linenum++;
 
+		if (skip) {
+			if (l != 0)
+				goto next_eol;
+			skip = 0;
+			txt_add_eol();
+			add_lnum(fname, linenum);
+		}
 		if (begin_end) {
 			if (ftype == FE_FMT) {
 				if (strncmp((char *) s, "end", 3) == 0
 				 && strncmp((char *) s + 3,
 						(char *) begin_end, end_len) == 0) {
-					begin_end = 0;
+					begin_end = NULL;
 					txt_add((unsigned char *) "%%", 2);
 					goto next;
 				}
@@ -553,7 +560,7 @@ unsigned char *frontend(unsigned char *s,
 				if (strncmp((char *) q, "end", 3) == 0
 				 && strncmp((char *) q + 3,
 						(char *) begin_end, end_len) == 0) {
-					begin_end = 0;
+					begin_end = NULL;
 					txt_add((unsigned char *) "%%", 2);
 					l -= q - s;
 					s = q;
@@ -570,13 +577,6 @@ unsigned char *frontend(unsigned char *s,
 				}
 			}
 			goto next;
-		}
-		if (skip) {
-			if (l != 0)
-				goto next_eol;
-			skip = 0;
-			txt_add_eol();
-			add_lnum(fname, linenum);
 		}
 
 		if (l == 0) {			/* empty line */
@@ -799,8 +799,8 @@ info:
 			}
 			goto next;
 		}
-		if (begin_end)
-			goto next;
+//		if (begin_end)
+//			goto next;
 
 		/* treat the information fields */
 		if (s[1] == ':' && (isalpha(*s) || *s == '+')) {

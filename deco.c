@@ -90,9 +90,9 @@ static char *str_tb[32];
 /* standard decorations */
 static char *std_deco_tb[] = {
 	"dot 0 stc 5 1 1",
-	"roll 3 cpu 10 6 6",
+	"roll 3 cpu 7 6 6",
 	"fermata 3 hld 12 7 7",
-	"emphasis 3 accent 6 4 4",
+	"emphasis 3 accent 7 4 4",
 	"lowermordent 3 lmrd 10 2 2",
 	"coda 3 coda 24 10 10",
 	"uppermordent 3 umrd 10 2 2",
@@ -118,8 +118,8 @@ static char *std_deco_tb[] = {
 	"5 3 fng 8 3 3 5",
 	"plus 3 dplus 7 3 3",
 	"+ 3 dplus 7 3 3",
-	"accent 3 accent 8 4 4",
-	"> 3 accent 8 4 4",
+	"accent 3 accent 7 4 4",
+	"> 3 accent 7 4 4",
 	"D.C. 3 dacs 16 10 10 D.C.",
 	"D.S. 3 dacs 16 10 10 D.S.",
 	"fine 3 dacs 16 10 10 FINE",
@@ -290,9 +290,9 @@ static void d_arp(struct deco_elt *de)
 	dd = &deco_def_tb[de->t];
 	xc = 0;
 	for (m = 0; m <= s->nhd; m++) {
-		if (s->as.u.note.accs[m])
+		if (s->as.u.note.accs[m]) {
 			dx = 5 + s->shac[m];
-		else {
+		} else {
 			dx = 6 - s->shhd[m];
 			switch (s->head) {
 			case H_SQUARE:
@@ -495,9 +495,9 @@ static void d_slide(struct deco_elt *de)
 	yc = s->pits[0];
 	xc = 5;
 	for (m = 0; m <= s->nhd; m++) {
-		if (s->as.u.note.accs[m])
+		if (s->as.u.note.accs[m]) {
 			dx = 4 + s->shac[m];
-		else {
+		} else {
 			dx = 5 - s->shhd[m];
 			switch (s->head) {
 			case H_SQUARE:
@@ -613,7 +613,10 @@ static void d_upstaff(struct deco_elt *de)
 		break;
 	}
 
-	if (strcmp(dd->name, "roll") == 0) {
+	if (strcmp(dd->name, ">") == 0
+	 || strcmp(dd->name, "accent") == 0
+	 || strcmp(dd->name, "emphasis") == 0
+	 || strcmp(dd->name, "roll") == 0) {
 		if (s->multi < 0
 		 || (s->multi == 0 && s->stem > 0)) {
 			yc = y_get(s->staff, 0, s->x - dd->wl, w);
@@ -624,12 +627,12 @@ static void d_upstaff(struct deco_elt *de)
 			inv = 1;
 			s->ymn = yc;
 		} else {
-			yc = y_get(s->staff, 1, s->x, 0) + 3;
+			yc = y_get(s->staff, 1, s->x, 0);
 			if (yc < stafft)
 				yc = stafft;
-			if (s->stem <= 0
-			 && (s->dots == 0 || ((int) s->y % 6)))
-				yc -= 2;
+//			if (s->stem <= 0
+//			 && (s->dots == 0 || ((int) s->y % 6)))
+//				yc -= 2;
 			y_set(s->staff, 1, s->x - dd->wl, w, yc + dd->h);
 			s->ymx = yc + dd->h;
 		}
@@ -689,7 +692,6 @@ void deco_add(char *s)
 	l = strlen(s);
 	d = malloc(sizeof *user_deco - sizeof user_deco->text + l + 1);
 	strcpy(d->text, s);
-	d->next = 0;
 	d->next = user_deco;
 	user_deco = d;
 }
@@ -832,7 +834,7 @@ static void set_feathered_beam(struct SYMBOL *s1,
 
 	/* search the end of the beam */
 	d = s1->dur;
-	s2 = 0;
+	s2 = NULL;
 	n = 1;
 	for (s = (struct SYMBOL *) s1->as.next;
 	     s;
@@ -843,7 +845,7 @@ static void set_feathered_beam(struct SYMBOL *s1,
 		s2 = s;
 		n++;
 	}
-	if (s2 == 0)
+	if (!s2)
 		return;
 	b = d / 2;			/* smallest note duration */
 	a = (float) d / (n - 1);		/* delta duration */
@@ -1004,7 +1006,7 @@ unsigned char deco_intern(unsigned char ideco)
 		return ideco;
 	name = deco_tb[ideco - 128];
 	for (ideco = 1; ideco < 128; ideco++) {
-		if (deco_def_tb[ideco].name) {
+		if (!deco_def_tb[ideco].name) {
 			ideco = user_deco_define(name);	/* try a user decoration */
 			if (ideco == 128)		/* try a standard decoration */
 				ideco = deco_define(name);
@@ -1198,15 +1200,8 @@ int draw_deco_head(int ideco, float x, float y, int stem)
 	dd = &deco_def_tb[ideco];
 	if (dd->ps_func < 0)
 		return 0;
-	if (cfmt.setdefl) {
-		int fl;
-
-		fl = stem >= 0 ? DEF_STEMUP : 0;
-		if (defl != fl) {
-			defl = fl;
-			a2b("/defl %d def ", fl);
-		}
-	}
+	if (cfmt.setdefl)
+		set_defl(stem >= 0 ? DEF_STEMUP : 0);
 	switch (dd->func) {
 	case 2:
 	case 5:
@@ -1387,7 +1382,7 @@ void draw_deco_near(void)
 	struct deco *dc;
 	struct SYMBOL *first;
 
-	deco_head = deco_tail = 0;
+	deco_head = deco_tail = NULL;
 	first = NULL;
 	for (s = tsfirst; s; s = s->ts_next) {
 		switch (s->type) {
@@ -1823,7 +1818,7 @@ static void draw_gchord(struct SYMBOL *s,
 		str_font(gch->font);
 		w = tex_str(s->as.text + gch->idx);
 		if (gch->type == 'g') {			/* guitar chord */
-			if (strchr(tex_buf, '\t') == 0) {
+			if (!strchr(tex_buf, '\t')) {
 				action = A_GCHORD;
 			} else {
 				struct SYMBOL *next;
@@ -2292,7 +2287,6 @@ float draw_partempo(int staff, float top)
 
 	/* then, put the parts */
 /*fixme: should reduce if parts don't overlap tempo...*/
-	some_part = 0;
 	ymin = staff_tb[staff].topbar + 14;
 	for (s = tsfirst; s; s = s->ts_next) {
 		g = s->extra;

@@ -730,7 +730,7 @@ struct tblt_s *tblt_parse(char *p)
 	struct tblt_s *tblt;
 	int n;
 	char *q;
-	static char notes_tb[14] = "CDEFGABcdefgab";
+	static char notes_tb[] = "CDEFGABcdefgab";
 	static char pitch_tb[14] = {60, 62, 64, 65, 67, 69, 71,
 				    72, 74, 76, 77, 79, 81, 83};
 

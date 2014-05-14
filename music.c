@@ -3465,6 +3465,9 @@ static void set_global(void)
 			int delta;
 			struct SYMBOL *g;
 
+			if (!p_voice->forced_clef
+			 || p_voice->octave != 0)
+				continue;
 #if 1
 			/* (the clefs in the voice table are not yet initialized) */
 			i = p_voice->staff;
@@ -3472,8 +3475,7 @@ static void set_global(void)
 #else
 			i = p_voice->clef.type;
 #endif
-			if (!p_voice->forced_clef
-			 || i == PERC)
+			if (i == PERC)
 				continue;
 			delta = delpit[i];
 			for (s = p_voice->sym; s; s = s->next) {

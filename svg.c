@@ -4079,7 +4079,7 @@ void svg_write(char *buf, int len)
 //					if (!r)
 //						break;
 					fprintf(fout, "<!-- subtitle: %.*s -->\n",
-							r - q, q);
+							(int) (r - q), q);
 					break;
 				}
 				q = (unsigned char *) strchr((char *) q, '(');
@@ -4090,7 +4090,7 @@ void svg_write(char *buf, int len)
 //				if (!r)
 //					break;
 				fprintf(fout, "<!-- title: %.*s -->\n",
-						r - q, q);
+						(int) (r - q), q);
 				break;
 			}
 			break;

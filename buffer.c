@@ -198,7 +198,7 @@ static void init_ps(char *str)
 			q = strchr(p, '\n');
 			if (!q)
 				break;
-			fprintf(fout, " %.*s\n%%", q - p, p);
+			fprintf(fout, " %.*s\n%%", (int) (q - p), p);
 			p = q + 1;
 		}
 		fprintf(fout, "%s", p);

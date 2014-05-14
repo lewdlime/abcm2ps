@@ -1,7 +1,25 @@
+---- Version 7.8.2 - 14/05/05 ----
+
+Fix non-function of %%voice inside %%tune since some 7.5.x
+	(reported by Gerhard Schacherl).
+Fix small internal problem with decorations.
+Fix position of accent marks (!>!)
+	(reported by Paul Rosen).
+Fix bad margins when tune inside %%multicol
+	(reported by A.B. Steen).
+Don't draw repeat brackets when bar between 2 staves.
+Fix lack of EOS in some internal strings
+	(fixed by Olivier Levon).
+Fix bad guitar chord / annotation when '\' inside.
+Fix double transposition of 2 octaves when both %%abc2pscompat
+	and octave= in K:/V:.
+Fix compilation warnings on MAC
+	(reported by Chuck Boody).
+
 ---- Version 7.8.1 - 14/04/02 ----
 
 Fix bad text justication with PostScript output
-	(reported by Gerhard Schacher).
+	(reported by Gerhard Schacherl).
 Fix loss of positions (decorations, lyrics..) when described in format file
 	(reported by John Taylor).
 Fix loss of tie at end of line

@@ -1306,7 +1306,7 @@ List of the format parameters
 	Description:
 		Print a separator (centered line) of length <len> with
 		space <h1> above and space <h2> below
-		(defaults: h1 = h2 = 0.5cm,len = 3.0cm).
+		(defaults: h1 = h2 = 0.5cm, len = 3.0cm).
 
   setbarnb <int>
 	Default: none

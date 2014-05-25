@@ -89,7 +89,7 @@
 
 #define YSTEP	128		/* number of steps for y offsets */
 
-extern unsigned char deco[256];
+extern char *deco[256];
 
 struct FONTSPEC {
 	int fnum;		/* index to font tables in format.c */
@@ -249,6 +249,8 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define B_DREP 0x44		/* ::	double repeat bar */
 #define B_DASH 0x04		/* :	dashed bar */
 
+
+extern char *(*deco_tb)[128];	/* ptr to the deco table of the tune */
 extern unsigned short *micro_tb; /* ptr to the microtone table of the tune */
 
 struct FORMAT { 		/* struct for page layout */
@@ -498,7 +500,6 @@ void write_eps(void);
 /* deco.c */
 void deco_add(char *text);
 void deco_cnv(struct deco *dc, struct SYMBOL *s, struct SYMBOL *prev);
-unsigned char deco_intern(unsigned char deco);
 unsigned char deco_define(char *name);
 void deco_update(struct SYMBOL *s, float dx);
 float deco_width(struct SYMBOL *s);
@@ -510,6 +511,7 @@ void draw_deco_note(void);
 void draw_deco_staff(void);
 float draw_partempo(int staff, float top);
 void draw_measnb(void);
+void init_deco(void);
 void reset_deco(void);
 void set_defl(int new_defl);
 float tempo_width(struct SYMBOL *s);

@@ -63,20 +63,23 @@ static struct {
 /* this routine is called only once per tune */
 static void set_head_directions(struct SYMBOL *s)
 {
-	int i, i1, i2, i3, n, sig, d, shift;
-	int p1, p2, p3, ps, m, nac;
-	float dx, dx1, dx2, dx3, shmin, shmax;
-	unsigned char ax_tb[MAXHD], ac_tb[MAXHD];
+	int i, i1, i2, n, sig, d, shift;
+//, i3
+	int p1, ps;
+//, p2, p3, m, nac
+	float dx, dx1, dx_max;
+//, dx2, dx3, shmin, shmax
+//	unsigned char ax_tb[MAXHD], ac_tb[MAXHD];
 	static float dx_tb[4] = {
 		9, 10, 12, 14
 	};
 	/* distance for no overlap - index: [prev acc][cur acc] */
-	static char dt_tb[4][4] = {
-		{5, 5, 5, 5},		/* dble sharp */
-		{5, 6, 6, 6},		/* sharp */
-		{5, 6, 5, 6},		/* natural */
-		{5, 5, 5, 5}		/* flat */
-	};
+//	static char dt_tb[4][4] = {
+//		{5, 5, 5, 5},		/* dble sharp */
+//		{5, 6, 6, 6},		/* sharp */
+//		{5, 6, 5, 6},		/* natural */
+//		{5, 5, 5, 5}		/* flat */
+//	};
 
 	/* special case when single note */
 	n = s->nhd;
@@ -94,21 +97,39 @@ static void set_head_directions(struct SYMBOL *s)
 	dx = dx_tb[s->head] * 0.78;
 	if (s->as.flags & ABC_F_GRACE)
 		dx *= 0.5;
-	i1 = 1;
-	i2 = n + 1;
 	sig = s->stem;
-	if (sig < 0) {
+	if (sig >= 0) {
+		i1 = 1;
+		i2 = n + 1;
+		ps = s->pits[0];
+	} else {
 		dx = -dx;
 		i1 = n - 1;
 		i2 = -1;
+		ps = s->pits[n];
 	}
 	shift = 0;
-	nac = 0;
+	dx_max = 0;
 	for (i = i1; i != i2; i += sig) {
-		d = s->pits[i] - s->pits[i - sig];
-		if (d == 0 && shift) {		/* unison on shifted note */
-			s->shhd[i] = s->shhd[i - sig] + dx;
-			continue;
+		d = s->pits[i] - ps;
+		ps = s->pits[i];
+		if (d == 0) {
+			if (shift) {		/* unison on shifted note */
+				float new_dx = s->shhd[i] = s->shhd[i - sig] + dx;
+				s->shac[i] = -new_dx;
+				if (dx_max < new_dx)
+					dx_max = new_dx;
+				continue;
+			}
+			if (i + sig != i2	/* second after unison */
+//fixme: should handle many unisons after second
+			 && ps + sig == s->pits[i + sig]) {
+				s->shhd[i] = -dx;
+				s->shac[i] = dx;
+				if (dx_max < -dx)
+					dx_max = -dx;
+				continue;
+			}
 		}
 		if (d < 0)
 			d = -d;
@@ -118,14 +139,38 @@ static void set_head_directions(struct SYMBOL *s)
 			shift = !shift;
 			if (shift) {
 				s->shhd[i] = dx;
-				nac++;
+				s->shac[i] = -dx;
+				if (dx_max < dx)
+					dx_max = dx;
 			}
 		}
 	}
-	if (nac != 0 && sig > 0)
-		s->xmx = dx;		/* shift the dots */
+	s->xmx = dx;				/* shift the dots */
 
 	/* set the accidental shifts */
+#if 1
+	for (i = n; i >= 0; i--) {			// from top to bottom
+		unsigned char acc = s->as.u.note.accs[i];
+		if (!acc)
+			continue;
+		dx = -s->shhd[i] + 9;
+		ps = s->pits[i];
+		for (i1 = 0; i1 <= n; i1++) {
+			p1 = s->pits[i1];
+			if (p1 < ps - 3 || p1 > ps + 3)	// pitch far enough
+				continue;
+			dx1 = -s->shhd[i1] + 9;
+			if (dx < dx1)
+				dx = dx1;
+			if (p1 >= ps + 2
+			 && dx < s->shac[i1] - 6)
+				continue;
+			if (dx < s->shac[i1] + 7)
+				dx = s->shac[i1] + 7;
+		}
+		s->shac[i] = dx;
+	}
+#else
 	nac = 0;
 	for (i = n; i >= 0; i--) {	/* from top to bottom */
 		if ((i1 = s->as.u.note.accs[i]) != 0) {
@@ -151,7 +196,8 @@ static void set_head_directions(struct SYMBOL *s)
 		p1 = s->pits[i1];
 		if (m >= 0) {		/* see if any head shift */
 			if (ps - s->pits[i1] >= 4) {
-				for (m--; m >= 0; m--) {
+//				for (m--; m >= 0; m--) {
+				while (--m >= 0) {
 					if (s->shhd[m] < 0) {
 						ps = s->pits[m];
 						break;
@@ -225,6 +271,7 @@ static void set_head_directions(struct SYMBOL *s)
 		p2 = p1;
 		dx2 = dx1;
 	}
+#endif
 }
 
 /* -- unlink a symbol -- */
@@ -911,10 +958,10 @@ static float set_graceoffs(struct SYMBOL *s)
 	next = s->next;
 	if (next
 	 && next->as.type == ABC_T_NOTE) {	/* if before a note */
-		if (g->y >= (float) (3 * (next->pits[next->nhd] - 18)))
+		if (g->y >= 3 * (next->pits[next->nhd] - 18))
 			xx -= 1;		/* above, a bit closer */
 		else if ((g->sflags & S_BEAM_ST)
-		      && g->y < (float) (3 * (next->pits[0] - 18) - 7))
+		      && g->y < 3 * (next->pits[0] - 18) - 7)
 			xx += 2;	/* below with flag, a bit further */
 	}
 
@@ -1313,7 +1360,7 @@ static void set_width(struct SYMBOL *s)
 		if (s->as.u.note.lens[1] < 0)
 			xx = 10;
 		else
-			xx = (float) s->as.u.note.lens[1] * 0.5;
+			xx = s->as.u.note.lens[1] * 0.5;
 		s->wr = xx;
 		if (s->gch)
 			xx = gchord_width(s, xx, xx);
@@ -1361,7 +1408,7 @@ static void set_width(struct SYMBOL *s)
 				s->wr = 8;
 			else
 				s->wr = 5;
-			s->shhd[0] = (w - 5) * -0.5;
+//			s->shhd[0] = (w - 5) * -0.5;
 		}
 		if (s->as.u.bar.dc.n > 0)
 			s->wl += deco_width(s);
@@ -1417,7 +1464,7 @@ static void set_width(struct SYMBOL *s)
 					n1--;		/* octave */
 			}
 		}
-		s->wr = (float) (5.5 * n1 + esp);
+		s->wr = 5.5 * n1 + esp;
 		break;
 	    }
 	case TIMESIG:
@@ -1484,6 +1531,7 @@ static float set_space(struct SYMBOL *s)
 	int i, len, l, stemdir, prev_time;
 	float space;
 
+//fixme: s->ts_prev never NULL ?
 	prev_time = !s->ts_prev ? s->time : s->ts_prev->time;
 	len = s->time - prev_time;		/* time skip */
 	if (len == 0) {
@@ -1613,7 +1661,7 @@ static void set_allsymwidth(struct SYMBOL *last_s)
 	tsfirst->shrink = new_val;
 
 	/* loop on all remaining symbols */
-	for (;;) {
+	while (s != last_s) {
 		s2 = s;
 		shrink = space = 0;
 		do {
@@ -1691,8 +1739,7 @@ static void set_allsymwidth(struct SYMBOL *last_s)
 			s->shrink = shrink;
 			s->space = space;
 		}
-		if ((s = s2) == last_s)
-			break;
+		s = s2;
 	}
 
 	/* have room for the tablature header */
@@ -2330,7 +2377,7 @@ static void cut_tune(float lwidth, float indent)
 	/* adjust the line width according to the starting clef
 	 * and key signature */
 /*fixme: may change in the tune*/
-	for (s = tsfirst; ; s = s->ts_next) {
+	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->shrink == 0)
 			continue;
 		if (s->type != CLEF && s->type != KEYSIG)
@@ -2745,14 +2792,14 @@ if (staff > nst) {
 			switch (s->type) {
 			case STAVES:
 				sy = sy->next;
-				for (staff = nst + 1; staff <= sy->nstaff; staff++) {
-					stb[staff].nvoice = -1;
-					for (i = 4; --i >= 0; ) {
-						stb[staff].st[i].voice = -1;
-						stb[staff].st[i].ymx = 0;
-						stb[staff].st[i].ymn = 24;
-					}
-				}
+//				for (staff = nst + 1; staff <= sy->nstaff; staff++) {
+//					stb[staff].nvoice = -1;
+//					for (i = 4; --i >= 0; ) {
+//						stb[staff].st[i].voice = -1;
+//						stb[staff].st[i].ymx = 0;
+//						stb[staff].st[i].ymn = 24;
+//					}
+//				}
 				nst = sy->nstaff;
 				/*fall thru*/
 			case BAR:
@@ -4001,9 +4048,9 @@ static void set_stems(void)
 		if (s->as.flags & ABC_F_STEMLESS) {
 			if (s->stem >= 0) {
 				s->y = ymn;
-				s->ys = (float) ymx;
+				s->ys = ymx;
 			} else {
-				s->ys = (float) ymn;
+				s->ys = ymn;
 				s->y = ymx;
 			}
 			if (nflags == -4)		/* if longa */
@@ -4641,15 +4688,8 @@ void output_music(void)
 	for (;;) {			/* loop per music line */
 		float line_height;
 
-//fixme:initmusic_line			<- pb repeat bars...
-//	init_music_line();
 		indent = set_indent();
 		set_piece();
-//fixme:initmusic_line			<- pb repeat bars...
-//		init_music_line();
-
-//fixme:initmusic_line
-//	insert_meter = 0;
 		set_sym_glue(lwidth - indent);
 		if (indent != 0)
 			a2b("%.2f 0 T\n", indent); /* do indentation */

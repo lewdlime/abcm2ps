@@ -1,6 +1,6 @@
 # rules for ninja (ninja-build)
 
-VERSION = 8.0.3
+VERSION = 8.0.4
 
 cflags = -g -O2 -Wall -pipe -I.
 ldflags = -lm
@@ -85,6 +85,6 @@ rule dist_tar
   abcm2ps-$VERSION/voices.abc;$
    rm abcm2ps-$VERSION
 
-build abcm2ps-$VERSION.tar.gz: dist_tar
+build abcm2ps-$VERSION.tar.gz: dist_tar Changes
 
 build dist: phony abcm2ps-$VERSION.tar.gz

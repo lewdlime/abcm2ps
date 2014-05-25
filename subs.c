@@ -817,7 +817,7 @@ static void str_ft_out(char *p, int end)
 		 get_font_encoding(curft) == 0;		/* utf-8 */
 	q = p;
 	while (*p != '\0') {
-		if ((unsigned char) *p >= 0x80
+		if ((unsigned char) *p >= 0xc2
 		 && use_glyph) {
 			if (p > q) {
 				str_ft_out1(q, p - q);
@@ -1051,23 +1051,23 @@ void write_text(char *cmd, char *s, int job)
 			if (*p != '\0')
 				*p++ = '\0';
 			if (*s == '\0') {
-				bskip(lineskip + parskip);
+				bskip(parskip);
 				buffer_eob();
 			} else {
 				bskip(lineskip);
+				switch (job) {
+				case A_LEFT:
+					a2b("0 0 M");
+					break;
+				case A_CENTER:
+						a2b("%.1f 0 M", strlw * 0.5);
+					break;
+				default:
+					a2b("%.1f 0 M", strlw);
+					break;
+				}
+				put_str(s, job);
 			}
-			switch (job) {
-			case A_LEFT:
-				a2b("0 0 M");
-				break;
-			case A_CENTER:
-				a2b("%.1f 0 M", strlw * 0.5);
-				break;
-			default:
-				a2b("%.1f 0 M", strlw);
-				break;
-			}
-			put_str(s, job);
 			s = p;
 		}
 		goto skip;
@@ -1381,7 +1381,7 @@ static char buf[STRL1];
 	}
 	if (title != info['T' - 'A']
 	 || !(cfmt.fields[0] & (1 << ('X' - 'A'))))
-		title = 0;
+		title = NULL;
 	if (!q
 	 && !title
 	 && !cfmt.titlecaps)

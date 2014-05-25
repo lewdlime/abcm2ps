@@ -62,6 +62,7 @@ static struct SYSTEM *parsys;		/* current system while parsing */
 
 struct FORMAT dfmt;			/* current global format */
 unsigned short *micro_tb;		/* ptr to the microtone table of the tune */
+char *(*deco_tb)[128];			/* ptr to the deco table of the tune */
 int nbar;				/* current measure number */
 
 static struct voice_opt_s *voice_opts, *tune_voice_opts;
@@ -71,7 +72,7 @@ static struct symsel_s clip_start, clip_end;
 
 
 static INFO info_glob;			/* global info definitions */
-static unsigned char deco_glob[256];	/* global decoration table */
+static char *deco_glob[256];		/* global decoration table */
 
 static int over_time;			/* voice overlay start time */
 static int over_mxtime;			/* voice overlay max time */
@@ -83,7 +84,6 @@ static int abc2win;
 float multicol_start;			/* (for multicol) */
 static float multicol_max;
 static float lmarg, rmarg;
-static int mc_in_tune;			/* multicol started in tune */
 
 static void get_clef(struct SYMBOL *s);
 static struct abcsym *get_info(struct abcsym *as,
@@ -2787,7 +2787,7 @@ static struct abcsym *get_info(struct abcsym *as,
 		as = get_global_def(as, t);
 		break;
 	case 'U':
-		deco[as->u.user.symbol] = deco_intern(as->u.user.value);
+		deco[as->u.user.symbol] = (*deco_tb)[as->u.user.value - 128];
 		break;
 	case 'u':
 		break;
@@ -2990,7 +2990,7 @@ static void adjust_dur(struct SYMBOL *s)
 static void get_bar(struct SYMBOL *s)
 {
 	int bar_type;
-	struct SYMBOL *s2, *s3;
+	struct SYMBOL *s2;
 
 	if (curvoice->norepbra && s->as.u.bar.repeat_bar)
 		s->sflags |= S_NOREPBRA;
@@ -2998,7 +2998,6 @@ static void get_bar(struct SYMBOL *s)
 		adjust_dur(s);
 
 	bar_type = s->as.u.bar.type;
-	s3 = NULL;
 	s2 = curvoice->last_sym;
 	if (s2) {
 
@@ -3027,16 +3026,7 @@ static void get_bar(struct SYMBOL *s)
 	}
 
 	/* link the bar in the voice */
-	if (s3) {
-		s2 = curvoice->last_sym;
-		curvoice->last_sym = s3->prev;
-		sym_link(s, BAR);
-		s->next = s3;
-		s3->prev = s;
-		curvoice->last_sym = s2;
-	} else {
-		sym_link(s, BAR);
-	}
+	sym_link(s, BAR);
 	s->staff = curvoice->staff;	/* original staff */
 
 	/* set some flags */
@@ -3135,6 +3125,8 @@ void do_tune(struct abctune *t)
 		voice_tb[i].posit = cfmt.posit;
 	}
 	curvoice = first_voice = voice_tb;
+	deco_tb = &t->deco_tb;		/* decoration names */
+	reset_deco();
 	micro_tb = t->micro_tb;		/* microtone values */
 	abc2win = 0;
 	clip_start.bar = -1;
@@ -4406,7 +4398,6 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 				multicol_max = multicol_start = bposy;
 				lmarg = cfmt.leftmargin;
 				rmarg = cfmt.rightmargin;
-				mc_in_tune = info['X' - 'A'] != 0;
 			} else if (strncmp(p, "new", 3) == 0) {
 				if (multicol_start == 0) {
 					error(1, s,
@@ -4905,7 +4896,7 @@ center:
 		break;
 	case 'u':
 		if (strcmp(w, "user") == 0) {
-			deco[as->u.user.symbol] = deco_intern(as->u.user.value);
+			deco[as->u.user.symbol] = (*deco_tb)[as->u.user.value - 128];
 			return as;
 		}
 		break;
@@ -5032,8 +5023,7 @@ center:
 				if (epsf || in_fname == 0)
 					return as;
 			}
-			h1 = scan_u(p);
-			bskip(h1);
+			bskip(scan_u(p));
 			buffer_eob();
 			return as;
 		}

@@ -486,23 +486,21 @@ unsigned char *frontend(unsigned char *s,
 		for (p = s; *p != '\0'; p++) {
 			c = *p;
 			if (c == '\\') {
-				if (p[1] == '2') {
-					if (p[2] == '0')	/* accidental */
-						continue;
-					c = 0x80;
-				} else if (p[1] == '3') {
-					c = 0xc0;
-				}
+				if (!isdigit(p[1]))
+					continue;
+				if ((p[1] == '0' || p[1] == '2')
+				 && p[2] == '0')	/* accidental */
+					continue;
+				latin = 1;
+				break;
 			}
 			if (c < 0x80)
 				continue;
-//fixme: problem when two octal values give a UTF-8 character
-			if (c >= 0xc0) {
-				if ((p[1] & 0xc0) == 0x80
-				 || (p[1] == '\\' && p[2] == '2')) {
+			if (c >= 0xc2) {
+				if ((p[1] & 0xc0) == 0x80) {
 					latin = 0;
 					break;
-				 }
+				}
 			}
 			latin = 1;
 			break;

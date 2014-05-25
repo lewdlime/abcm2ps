@@ -1,6 +1,6 @@
 # Makefile source for abcm2ps
 
-VERSION = 8.0.3
+VERSION = 8.0.4
 
 CC = gcc
 INSTALL = /usr/bin/install -c
@@ -107,7 +107,7 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/syms.c \
 	abcm2ps-$(VERSION)/voices.abc
 
-dist:
+dist: Changes
 	ln -s . abcm2ps-$(VERSION); \
 	tar -zcvf abcm2ps-$(VERSION).tar.gz $(DIST_FILES); \
 	rm abcm2ps-$(VERSION)

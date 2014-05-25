@@ -35,7 +35,6 @@ static int client_sz;
 static int keep_comment;
 
 /* global values */
-char *deco_tb[128];		/* decoration names */
 int severity;			/* error severity */
 
 static int abc_vers;		/* abc version */
@@ -46,6 +45,7 @@ static unsigned char microscale; /* current microtone scale */
 static signed char vover;	/* voice overlay (1: single bar, -1: multi-bar */
 static char lyric_started;	/* lyric started */
 static char *gchord;		/* guitar chord */
+static char *(*p_deco)[128];	/* current table of decoration names */
 static struct deco dc;		/* decorations */
 static struct abcsym *deco_start; /* 1st note of the line for d: / s: */
 static struct abcsym *deco_cont; /* current symbol when d: / s: continuation */
@@ -371,6 +371,7 @@ struct abctune *abc_parse(char *file_api)
 			else
 				last_tune->next = t;
 			last_tune = t;
+			p_deco = &t->deco_tb;
 			p_micro = t->micro_tb;
 			meter = 0;
 		}
@@ -558,12 +559,12 @@ static char *parse_extra(char *p,
 
 /* -- parse a decoration 'xxx<decosep>' -- */
 static char *get_deco(char *p,
-		      unsigned char *p_deco)
+		      unsigned char *p_dc)
 {
 	char *q, sep, **t;
 	unsigned i, l;
 
-	*p_deco = 0;
+	*p_dc = 0;
 	q = p;
 	sep = q[-1];
 	if (char_tb[(unsigned char) sep] == CHAR_DECOS) {
@@ -584,12 +585,12 @@ static char *get_deco(char *p,
 	l = p - q;
 	if (*p == sep)
 		p++;
-	for (i = 1, t = &deco_tb[1];
+	for (i = 1, t = &(*p_deco)[1];
 	     *t && i < 128;
 	     i++, t++) {
 		if (strlen(*t) == l
 		 && strncmp(*t, q, l) == 0) {
-			*p_deco = i + 128;
+			*p_dc = i + 128;
 			return p;
 		}
 	}
@@ -603,7 +604,7 @@ static char *get_deco(char *p,
 			level_f(1);
 		memcpy(*t, q, l);
 		(*t)[l] = '\0';
-		*p_deco = i + 128;
+		*p_dc = i + 128;
 	} else {
 		syntax("Too many decoration types", q);
 	}
@@ -1479,7 +1480,7 @@ static char *get_user(char *p,
 	get_deco(p, &s->u.user.value);
 
 	/* treat special pseudo decorations */
-	value = deco_tb[s->u.user.value - 128];
+	value = (*p_deco)[s->u.user.value - 128];
 	if (strcmp(value, "beambreak") == 0)
 		char_tb[c] = CHAR_SPAC;
 	else if (strcmp(value, "ignore") == 0)
@@ -2378,14 +2379,10 @@ static int parse_line(struct abctune *t,
 			p = parse_bar(t, p);
 			break;
 		case CHAR_OPAR:			/* '(' */
-			if (isdigit((unsigned char) *p)) {
+			if (*p > '0' && *p <= '9') {
 				int pplet, qplet, rplet;
 
 				pplet = strtol(p, &q, 10);
-				if (pplet <= 1) {
-					syntax("Invalid 'p' in tuplet", p);
-					pplet = 0;
-				}
 				p = q;
 				if ((unsigned) pplet < sizeof qtb / sizeof qtb[0])
 					qplet = qtb[pplet];
@@ -2406,8 +2403,6 @@ static int parse_line(struct abctune *t,
 						}
 					}
 				}
-				if (pplet == 0)
-					break;
 				if (rplet < 1) {
 					syntax("Invalid 'r' in tuplet", p);
 					break;
@@ -2767,15 +2762,9 @@ static char *parse_note(struct abctune *t,
 	if (nostem)
 		s->flags |= ABC_F_STEMLESS;
 
-	if (m == 0) {			/* if no note (or error) */
-		if ((t->last_sym = s->prev) == NULL) {
-			t->first_sym = NULL;
-		} else {
-			s->prev->next = NULL;
-			s->prev->flags |= (s->flags & ABC_F_ERROR);
-		}
-		return p;
-	}
+	if (m == 0)			/* if no note (or error) */
+		goto err;
+
 	s->u.note.microscale = microscale;
 	s->u.note.nhd = m - 1;
 do_brhythm:
@@ -2789,6 +2778,21 @@ add_deco:
 				: &s->u.bar.dc,
 			&dc, sizeof dc);
 		dc.n = dc.h = dc.s = 0;
+	}
+
+	/* forbid rests in grace note sequences */
+	if (s->type != ABC_T_NOTE && (flags & ABC_F_GRACE)) {
+		syntax("Not a note in grace note sequence", p);
+		goto err;
+	}
+	return p;
+
+err:
+	if ((t->last_sym = s->prev) == NULL) {
+		t->first_sym = NULL;
+	} else {
+		s->prev->next = NULL;
+		s->prev->flags |= (s->flags & ABC_F_ERROR);
 	}
 	return p;
 }

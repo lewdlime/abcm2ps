@@ -201,6 +201,7 @@ struct abctune {
 	struct abcsym *last_sym; /* last symbol */
 	int abc_vers;		/* ABC version = (H << 16) + (M << 8) + L */
 	void *client_data;	/* client data */
+	char *deco_tb[128];	/* decoration names */
 	unsigned short micro_tb[MAXMICRO]; /* microtone values [ (n-1) | (d-1) ] */
 };
 
@@ -212,7 +213,7 @@ struct abctune {
 #if defined(__cplusplus)
 extern "C" {
 #endif
-extern char *deco_tb[];
+//extern char *deco_tb[];
 extern int severity;
 
 void abc_delete(struct abcsym *as);

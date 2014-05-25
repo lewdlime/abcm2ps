@@ -39,7 +39,6 @@
 /* -- global variables -- */
 
 INFO info;
-unsigned char deco[256];
 struct SYMBOL *sym;		/* (points to the symbols of the current voice) */
 
 int tunenum;			/* number of current tune */
@@ -721,7 +720,7 @@ int main(int argc, char **argv)
 	info['T' - 'A'] = &notitle;
 	notitle.as.text = "T:";
 	set_format();
-	reset_deco();
+	init_deco();
 	front_init(0, 0, include_cb);
 
 #ifdef linux

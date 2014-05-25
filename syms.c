@@ -307,7 +307,7 @@ static char ps_head[] =
 	"	10 add 6 0 360 arc 1.7 SLW stroke}!\n"
 
 	/* x y sgno - segno */
-	"/sgno{	M 0 3 RM currentpoint currentpoint currentpoint\n"
+	"/sgno{	3 add M currentpoint currentpoint currentpoint\n"
 	"	1.5 -1.7 6.4 0.3 3 3.7 RC\n"
 	"	-10.4 7.8 -8 10.6 -6.5 11.9 RC\n"
 	"	4 1.9 5.9 -1.7 4.2 -2.6 RC\n"
@@ -358,8 +358,8 @@ static char ps_head[] =
 	"	fill}!\n"
 
 	/* x y trnx - turn with line through it */
-	"/turnx{	2 copy turn M\n"
-	"	.6 SLW 0 1.5 RM 0 9 RL stroke}!\n"
+	"/turnx{	2 copy turn\n"
+	"	.6 SLW 1.5 add M 0 9 RL stroke}!\n"
 
 	/* x y lphr - longphrase */
 	"/lphr{1.2 SLW M 0 -18 RL stroke}!\n"
@@ -552,8 +552,8 @@ static char ps_head[] =
 	"/ftx{	-1.4 2.7 RM\n"
 	"	5.7 3.1 5.7 -3.6 0 -6.7 RC\n"
 	"	3.9 4 4 7.6 0 5.8 RC\n"
-	"	currentpoint fill M\n"
-	"	dlw 0 7.1 RM 0 -12.4 RL stroke}!\n"
+	"	currentpoint fill 7.1 add M\n"
+	"	dlw 0 -12.4 RL stroke}!\n"
 	/* 3/4 ton flat */
 	"/ft513{2 copy gsave -1 1 scale exch neg 3 add exch M ftx grestore\n"
 	"	M 1.5 0 RM ftx}!\n"
@@ -629,13 +629,13 @@ static char ps_head[] =
 	"/iMsig{2 copy imsig 12 add M currentpoint 1.3 0 360 arc fill}!\n"
 
 	/* (top) (bot) x y tsig - time signature */
-	"/tsig{	M gsave/Times-Bold 16 selectfont 1.2 1 scale\n"
-	"	0 1 RM currentpoint 3 -1 roll showc\n"
+	"/tsig{	1 add M gsave/Times-Bold 16 selectfont 1.2 1 scale\n"
+	"	currentpoint 3 -1 roll showc\n"
 	"	12 add M showc grestore}!\n"
 
 	/* (meter) x y stsig - single time signature */
-	"/stsig{	M gsave/Times-Bold 18 selectfont 1.2 1 scale\n"
-	"	0 7 RM showc grestore}!\n"
+	"/stsig{	7 add M gsave/Times-Bold 18 selectfont 1.2 1 scale\n"
+	"	showc grestore}!\n"
 
 	/* width n x y staff - staff with n lines*/
 	"/staff{	dlw M{dup 0 RL dup neg 6 RM}repeat\n"
@@ -658,7 +658,7 @@ static char ps_head[] =
 	"/bracket{M -5 2 RM currentpoint\n"
 	"	-1.7 2 RM 10.5 -1 12 4.5 12 3.5 RC\n"
 	"	0 -1 -3.5 -5.5 -8.5 -5.5 RC fill\n"
-	"	3 SLW M 0 2 RM\n"
+	"	3 SLW 2 add M\n"
 	"	0 exch neg 8 sub RL currentpoint stroke\n"
 	"	M -1.7 0 RM\n"
 	"	10.5 1 12 -4.5 12 -3.5 RC\n"

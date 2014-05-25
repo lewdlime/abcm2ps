@@ -32,6 +32,7 @@
 #include "abc2ps.h"
 
 int defl;		/* decoration flags */
+char *deco[256];	/* decoration names */
 
 static struct deco_elt {
 	struct deco_elt *next, *prev;	/* next/previous decoration */
@@ -370,7 +371,7 @@ static void d_cresc(struct deco_elt *de)
 		dx = x2 - x - 4;
 		if (dx < 20) {
 			x -= (20 - dx) * 0.5;
-			if (de->start == 0)
+			if (!de->start)
 				x -= (20 - dx) * 0.5;
 			dx = 20;
 		}
@@ -550,7 +551,7 @@ static void d_trill(struct deco_elt *de)
 			w -= 6;
 		if (w < 20) {
 			x -= (20 - w) * 0.5;
-			if (de->start == 0)
+			if (!de->start)
 				x -= (20 - w) * 0.5;
 			w = 20;
 		}
@@ -868,6 +869,66 @@ static void set_feathered_beam(struct SYMBOL *s1,
 	s2->dur = tt - t;
 }
 
+/* -- define a user decoration -- */
+static unsigned char user_deco_define(char *name)
+{
+	struct u_deco *d;
+	int l;
+
+	l = strlen(name);
+	for (d = user_deco; d; d = d->next) {
+		if (strncmp(d->text, name, l) == 0
+		 && d->text[l] == ' ')
+			return deco_build(d->text);
+	}
+	return 128;
+}
+
+/* -- define a standard decoration -- */
+unsigned char deco_define(char *name)
+{
+	unsigned char ideco;
+	int l;
+
+	l = strlen(name);
+	for (ideco = 0; ; ideco++) {
+		if (!std_deco_tb[ideco])
+			return 128;
+		if (strncmp(std_deco_tb[ideco], name, l) == 0
+		 && std_deco_tb[ideco][l] == ' ')
+			break;
+	}
+	return deco_build(std_deco_tb[ideco]);
+}
+
+/* -- convert the external deco number to the internal one -- */
+static unsigned char deco_intern(unsigned char ideco)
+{
+	char *name;
+
+	if (ideco == 0)
+		return ideco;
+	if (ideco < 128)
+		name = deco[ideco];
+	else
+		name = (*deco_tb)[ideco - 128];
+	for (ideco = 1; ideco < 128; ideco++) {
+		if (!deco_def_tb[ideco].name) {
+			ideco = user_deco_define(name);	/* try a user decoration */
+			if (ideco == 128)		/* try a standard decoration */
+				ideco = deco_define(name);
+			break;
+		}
+		if (strcmp(deco_def_tb[ideco].name, name) == 0)
+			break;
+	}
+	if (ideco == 128) {
+		error(1, 0, "Decoration !%s! not treated", name);
+		ideco = 0;
+	}
+	return ideco;
+}
+
 /* -- convert the decorations -- */
 void deco_cnv(struct deco *dc,
 		struct SYMBOL *s,
@@ -881,14 +942,7 @@ void deco_cnv(struct deco *dc,
 	for (i = dc->n; --i >= 0; ) {
 		if ((ideco = dc->t[i]) == 0)
 			continue;
-		if (ideco < 128) {
-			ideco = deco[ideco];
-			if (ideco == 0)
-				error(1, s,
-					"Notation '%c' not treated", dc->t[i]);
-		} else {
-			ideco = deco_intern(ideco);
-		}
+		ideco = deco_intern(ideco);
 		dc->t[i] = ideco;
 		if (ideco == 0)
 			continue;
@@ -960,63 +1014,6 @@ void deco_cnv(struct deco *dc,
 		}
 		dc->t[i] = 0;			/* already treated */
 	}
-}
-
-/* -- define a user decoration -- */
-static unsigned char user_deco_define(char *name)
-{
-	struct u_deco *d;
-	int l;
-
-	l = strlen(name);
-	for (d = user_deco; d; d = d->next) {
-		if (strncmp(d->text, name, l) == 0
-		 && d->text[l] == ' ')
-			return deco_build(d->text);
-	}
-	return 128;
-}
-
-/* -- define a standard decoration -- */
-unsigned char deco_define(char *name)
-{
-	unsigned char ideco;
-	int l;
-
-	l = strlen(name);
-	for (ideco = 0; ; ideco++) {
-		if (!std_deco_tb[ideco])
-			return 128;
-		if (strncmp(std_deco_tb[ideco], name, l) == 0
-		 && std_deco_tb[ideco][l] == ' ')
-			break;
-	}
-	return deco_build(std_deco_tb[ideco]);
-}
-
-/* -- convert the external deco number to the internal one -- */
-unsigned char deco_intern(unsigned char ideco)
-{
-	char *name;
-
-	if (ideco == 0)
-		return ideco;
-	name = deco_tb[ideco - 128];
-	for (ideco = 1; ideco < 128; ideco++) {
-		if (!deco_def_tb[ideco].name) {
-			ideco = user_deco_define(name);	/* try a user decoration */
-			if (ideco == 128)		/* try a standard decoration */
-				ideco = deco_define(name);
-			break;
-		}
-		if (strcmp(deco_def_tb[ideco].name, name) == 0)
-			break;
-	}
-	if (ideco == 128) {
-		error(1, 0, "Decoration !%s! not treated", name);
-		ideco = 0;
-	}
-	return ideco;
 }
 
 /* -- update the x position of a decoration -- */
@@ -1341,8 +1338,7 @@ static void deco_create(struct SYMBOL *s,
 		de->s = s;
 		de->t = dd - deco_def_tb;
 		de->staff = s->staff;
-		if (s->as.type == ABC_T_NOTE
-		 && (s->as.flags & ABC_F_GRACE))
+		if (s->as.flags & ABC_F_GRACE)
 			de->flags = DE_GRACE;
 		if (dd->ld_end != 0) {
 			de->flags |= DE_LDST;
@@ -2133,9 +2129,9 @@ static void draw_notempo(struct SYMBOL *s, int len, float sc)
 		}
 	}
 	if (len < SEMIBREVE) {
-		if (flags <= 0)
+		if (flags <= 0) {
 			a2b(" %d su", STEM);
-		else {
+		} else {
 			a2b(" %d %d sfu", flags, STEM);
 			if (dx < 6)
 				dx = 6;
@@ -2333,31 +2329,37 @@ out:
 }
 
 /* -- initialize the default decorations -- */
-void reset_deco(void)
+void init_deco(void)
 {
 	memset(&deco, 0, sizeof deco);
 
 	/* standard */
-	deco['.'] = deco_define("dot");
+	deco['.'] = "dot";
 #ifdef DECO_IS_ROLL
-	deco['~'] = deco_define("roll");
+	deco['~'] = "roll";
 #endif
-	deco['H'] = deco_define("fermata");
-	deco['L'] = deco_define("emphasis");
-	deco['M'] = deco_define("lowermordent");
-	deco['O'] = deco_define("coda");
-	deco['P'] = deco_define("uppermordent");
-	deco['S'] = deco_define("segno");
-	deco['T'] = deco_define("trill");
-	deco['u'] = deco_define("upbow");
-	deco['v'] = deco_define("downbow");
+	deco['H'] = "fermata";
+	deco['L'] = "emphasis";
+	deco['M'] = "lowermordent";
+	deco['O'] = "coda";
+	deco['P'] = "uppermordent";
+	deco['S'] = "segno";
+	deco['T'] = "trill";
+	deco['u'] = "upbow";
+	deco['v'] = "downbow";
 
 	/* non-standard */
 #ifndef DECO_IS_ROLL
-	deco['~'] = deco_define("gmark");
+	deco['~'] = "gmark";
 #endif
-	deco['J'] = deco_define("slide");
-	deco['R'] = deco_define("roll");
+	deco['J'] = "slide";
+	deco['R'] = "roll";
+}
+
+/* reset the decoration table at start of a new tune */
+void reset_deco(void)
+{
+	memset(deco_def_tb, 0, sizeof deco_def_tb);
 }
 
 /* -- set the decoration flags -- */

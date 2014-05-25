@@ -406,7 +406,7 @@ static int calculate_beam(struct BEAM *bm,
 			if (s->as.type != ABC_T_REST)
 				break;
 			g = s->ts_next;
-			if (g->staff != staff
+			if (!g || g->staff != staff
 			 || g->type != NOTEREST)
 				break;
 //fixme:too much vertical shift if some space above the note
@@ -662,10 +662,10 @@ static void draw_beams(struct BEAM *bm)
 				if (s == s2)
 					break;
 				if ((s->next->type == NOTEREST
-				 && s->next->nflags < i)
-				  || (s->next->sflags & S_BEAM_BR1)
-				  || ((s->next->sflags & S_BEAM_BR2)
-					 && i > 2))
+				  && s->next->nflags < i)
+				 || (s->next->sflags & S_BEAM_BR1)
+				 || ((s->next->sflags & S_BEAM_BR2)
+				  && i > 2))
 					break;
 				s = s->next;
 			}
@@ -674,13 +674,14 @@ static void draw_beams(struct BEAM *bm)
 				k2 = k2->prev;
 			x1 = k1->xs;
 			if (k1 == k2) {
-				if (k1 == s1
-				 || (k1->sflags & S_BEAM_BR1)
-				 || ((k1->sflags & S_BEAM_BR2)
-					&& i > 2)) {
+				if (k1 == s1) {
 					x1 += bstub;
 				} else if (k1 == s2) {
 					x1 -= bstub;
+				} else if ((k1->sflags & S_BEAM_BR1)
+					|| ((k1->sflags & S_BEAM_BR2)
+					 && i > 2)) {
+					x1 += bstub;
 				} else {
 					struct SYMBOL *k;
 
@@ -689,7 +690,7 @@ static void draw_beams(struct BEAM *bm)
 						k = k->next;
 					if ((k->sflags & S_BEAM_BR1)
 					 || ((k->sflags & S_BEAM_BR2)
-						&& i > 2)) {
+					  && i > 2)) {
 						x1 -= bstub;
 					} else {
 						k1 = k1->prev;
@@ -697,7 +698,7 @@ static void draw_beams(struct BEAM *bm)
 							k1 = k1->prev;
 						if (k1->nflags < k->nflags
 						 || (k1->nflags == k->nflags
-							&& k1->dots < k->dots))
+						  && k1->dots < k->dots))
 							x1 += bstub;
 						else
 							x1 -= bstub;
@@ -1687,8 +1688,8 @@ static void draw_note(float x,
 				break;
 			}
 		}
-		shhd = s->stem > 0 ? s->shhd[0] : s->shhd[s->nhd]
-			* cur_scale;
+		shhd = (s->stem > 0 ? s->shhd[0] : s->shhd[s->nhd])
+				* cur_scale;
 		y = 3 * (s->pits[0] - 18);	/* lower ledger lines */
 		switch (staff_tb[s->staff].clef.stafflines) {
 		case 0:
@@ -2997,19 +2998,16 @@ static void draw_note_ties(struct SYMBOL *k1,
 		p1 = k1->pits[m1];
 		m2 = mhead2[i];
 		p2 = k2->pits[m2];
-		if ((k1->as.u.note.ti1[m1] & 0x03) == SL_ABOVE)
-			s = 1;
-		else
-			s = -1;
+		s = (k1->as.u.note.ti1[m1] & 0x03) == SL_ABOVE ? 1 : -1;
 
 		x1 = k1->x;
 		sh = k1->shhd[m1];		/* head shift */
 		if (s > 0) {
-			if (m1 < k1->nhd && k1->pits[m1] + 1 == k1->pits[m1 + 1])
+			if (m1 < k1->nhd && p1 + 1 == k1->pits[m1 + 1])
 				if (k1->shhd[m1 + 1] > sh)
 					sh = k1->shhd[m1 + 1];
 		} else {
-			if (m1 > 0 && k1->pits[m1] == k1->pits[m1 - 1] + 1)
+			if (m1 > 0 && p1 == k1->pits[m1 - 1] + 1)
 				if (k1->shhd[m1 - 1] > sh)
 					sh = k1->shhd[m1 - 1];
 		}
@@ -3018,11 +3016,11 @@ static void draw_note_ties(struct SYMBOL *k1,
 		x2 = k2->x;
 		sh = k2->shhd[m2];
 		if (s > 0) {
-			if (m2 < k2->nhd && k2->pits[m2] + 1 == k2->pits[m2 + 1])
+			if (m2 < k2->nhd && p2 + 1 == k2->pits[m2 + 1])
 				if (k2->shhd[m2 + 1] < sh)
 					sh = k2->shhd[m2 + 1];
 		} else {
-			if (m2 > 0 && k2->pits[m2] == k2->pits[m2 - 1] + 1)
+			if (m2 > 0 && p2 == k2->pits[m2 - 1] + 1)
 				if (k2->shhd[m2 - 1] < sh)
 					sh = k2->shhd[m2 - 1];
 		}
@@ -3175,21 +3173,20 @@ static void draw_ties(struct SYMBOL *k1,
 			case -1:		/* _d - ^c */
 				if (k1->as.u.note.accs[i] != k2->as.u.note.accs[m1])
 					tie2 = m1;
-				break;
+			default:
+				continue;
 			case 0:
-				mhead1[ntie] = i;
-				mhead2[ntie++] = m1;
-				goto found;
+				tie2 = m1;
+				break;
 			}
+			break;
 		}
-		if (tie2 >= 0) {		/* second choice */
+		if (tie2 >= 0) {		/* 1st or 2nd choice */
 			mhead1[ntie] = i;
 			mhead2[ntie++] = tie2;
 		} else {
 			mhead3[ntie3++] = i;	/* no match */
 		}
-found:
-		;
 	}
 
 	/* draw the ties */
@@ -4061,11 +4058,12 @@ void draw_sym_near(void)
 		if (s->as.flags & ABC_F_INVIS)
 			continue;
 		if (s->type == GRACE) {
+			float w = ((cfmt.gracespace >> 8) & 0xff) * 0.1;
 			g = s->extra;
 			for ( ; g; g = g->next) {
-				y_set(s->staff, 1, g->x - g->wl, g->wl + g->wr,
+				y_set(s->staff, 1, g->x - w / 2, w,
 						g->ymx + 1);
-				y_set(s->staff, 0, g->x - g->wl, g->wl + g->wr,
+				y_set(s->staff, 0, g->x - w / 2, w,
 						g->ymn - 1);
 			}
 			continue;
@@ -4935,20 +4933,20 @@ static void set_tie_dir(struct SYMBOL *sym)
 /* in chords with an odd number of notes, the outer noteheads are paired off
  * center notes are tied according to their position in relation to the
  * center line */
-				ntie = ntie / 2 + 1;
+				ntie = ntie / 2;
 				dir = SL_BELOW;
 				for (i = 0; i <= s->nhd; i++) {
 					ti = s->as.u.note.ti1[i];
 					if (ti == 0)
 						continue;
-					if (--ntie == 0) {	/* central tie */
-						if (s->as.u.note.pits[i] >= 22)
+					if (ntie == 0) {	/* central tie */
+						if (s->pits[i] >= 22)
 							dir = SL_ABOVE;
 					}
 					if ((ti & 0x03) == SL_AUTO)
 						s->as.u.note.ti1[i] =
 							(ti & SL_DOTTED) | dir;
-					if (ntie == 0)
+					if (ntie-- == 0)
 						dir = SL_ABOVE;
 				}
 				continue;

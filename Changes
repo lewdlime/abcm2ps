@@ -1,3 +1,24 @@
+---- Version 8.0.4 - 14/05/23 ----
+
+Fix too wide space between text paragraphs when not fill or justify.
+Fix crash when utf-8 and latin characters in a same file
+	(reported by Henry Bley-Vroman).
+Fix note/accidental clash when chords with unisons and seconds
+	(reported by David Lacroix).
+Change internal fonts to 'serif' for SVG output.
+Forbid rests in grace note sequences.
+Fix crash when rest in grace note sequence.
+Fix direction of ties in chords with odd number of notes.
+Fix bad beams in SVG output
+	(reported by David Lacroix).
+Fix bad direction of beam stub on last note when !beambr1! / !beambr2!
+	(reported by David Lacroix).
+
+May have up to 128 decorations per tune
+	(asked by  Henry Bley-Vroman).
+Fix crash when only P: or Q: in a generation sequence
+	(reported by Henry Bley-Vroman).
+
 ---- Version 8.0.3 - 14/05/05 ----
 
 Fix non-function of %%voice inside %%tune since some 7.5.x

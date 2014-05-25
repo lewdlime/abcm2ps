@@ -1126,9 +1126,9 @@ void interpret_fmt_line(char *w,		/* keyword */
 			*((int *) fd->v) = g_logv(p);
 			if (fd->subtype == 3) {
 				if (cfmt.abc2pscompat)
-					deco['M'] = deco_define("tenuto");
+					deco['M'] = "tenuto";
 				else
-					deco['M'] = deco_define("lowermordent");
+					deco['M'] = "lowermordent";
 			}
 			break;
 		case 1:	{			/* %%writefields */
@@ -1281,14 +1281,15 @@ void interpret_fmt_line(char *w,		/* keyword */
 	    }
 	case FORMAT_U:
 		*((float *) fd->v) = scan_u(p);
-		if (fd->subtype == 1) {
+		if (fd->subtype == 1) {		/* staffwidth */
 			float rmargin;
 
 			rmargin = (cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 					- staffwidth - cfmt.leftmargin;
 			if (rmargin < 0)
 				error(1, NULL, "'staffwidth' too big\n");
-			cfmt.rightmargin = rmargin;
+			else
+				cfmt.rightmargin = rmargin;
 		}
 		break;
 	case FORMAT_S: {

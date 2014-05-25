@@ -406,7 +406,7 @@ static int calculate_beam(struct BEAM *bm,
 			if (s->as.type != ABC_T_REST)
 				break;
 			g = s->ts_next;
-			if (g->staff != staff
+			if (!g || g->staff != staff
 			 || g->type != NOTEREST)
 				break;
 //fixme:too much vertical shift if some space above the note
@@ -674,13 +674,14 @@ static void draw_beams(struct BEAM *bm)
 				k2 = k2->prev;
 			x1 = k1->xs;
 			if (k1 == k2) {
-				if (k1 == s1
-				 || (k1->sflags & S_BEAM_BR1)
-				 || ((k1->sflags & S_BEAM_BR2)
-					&& i > 2)) {
+				if (k1 == s1) {
 					x1 += bstub;
 				} else if (k1 == s2) {
 					x1 -= bstub;
+				} else if ((k1->sflags & S_BEAM_BR1)
+				       || ((k1->sflags & S_BEAM_BR2)
+					&& i > 2)) {
+					x1 += bstub;
 				} else {
 					struct SYMBOL *k;
 
@@ -855,27 +856,27 @@ static void draw_timesig(float x,
 				l = l2;
 		} else switch (s->as.u.meter.meter[i].top[0]) {
 			case 'C':
-				if (s->as.u.meter.meter[i].top[1] != '|')
+				if (s->as.u.meter.meter[i].top[1] != '|') {
 					f = "csig";
-				else {
+				} else {
 					f = "ctsig";
 					l--;
 				}
 				meter[0] = '\0';
 				break;
 			case 'c':
-				if (s->as.u.meter.meter[i].top[1] != '.')
+				if (s->as.u.meter.meter[i].top[1] != '.') {
 					f = "imsig";
-				else {
+				} else {
 					f = "iMsig";
 					l--;
 				}
 				meter[0] = '\0';
 				break;
 			case 'o':
-				if (s->as.u.meter.meter[i].top[1] != '.')
+				if (s->as.u.meter.meter[i].top[1] != '.') {
 					f = "pmsig";
-				else {
+				} else {
 					f = "pMsig";
 					l--;
 				}
@@ -1327,7 +1328,7 @@ static void draw_gracenotes(struct SYMBOL *s)
 	struct BEAM bm;
 
 	/* draw the notes */
-	bm.s2 = 0;				/* (draw flags) */
+	bm.s2 = NULL;				/* (draw flags) */
 	for (g = s->extra; g; g = g->next) {
 		if (g->type != NOTEREST)
 			continue;
@@ -1337,11 +1338,11 @@ static void draw_gracenotes(struct SYMBOL *s)
 			if (calculate_beam(&bm, g))
 				draw_beams(&bm);
 		}
-		draw_note(g->x, g, bm.s2 == 0);
+		draw_note(g->x, g, bm.s2 == NULL);
 		if (annotate)
 			anno_out(s, 'g');
 		if (g == bm.s2)
-			bm.s2 = 0;			/* (draw flags again) */
+			bm.s2 = NULL;			/* (draw flags again) */
 
 		if (g->as.flags & ABC_F_SAPPO) {	/* (on 1st note only) */
 			if (!g->next) {			/* if one note */
@@ -1687,7 +1688,7 @@ static void draw_note(float x,
 				break;
 			}
 		}
-		shhd = s->stem > 0 ? s->shhd[0] : s->shhd[s->nhd]
+		shhd = (s->stem > 0 ? s->shhd[0] : s->shhd[s->nhd])
 			* cur_scale;
 		y = 3 * (s->pits[0] - 18);	/* lower ledger lines */
 		switch (staff_tb[s->staff].clef.stafflines) {
@@ -2966,7 +2967,6 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
     } /* lower voice */
 
 	if ((t->u & 0x0f) == 1) {	/* if 'value' == none */
-		a2b("%%tuplet\n");
 		s->sflags &= ~S_IN_TUPLET;
 		return next;
 	}
@@ -3264,7 +3264,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 	if (p_voice->tie) {			/* tie from previous line */
 		p_voice->tie->x = s1->x + s1->wr;
 		s1 = p_voice->tie;
-		p_voice->tie = 0;
+		p_voice->tie = NULL;
 		s1->staff = s2->staff;
 		s1->ts_next = tsfirst->next;	/* (for tie to other voice) */
 		s1->time = s2->time - s1->dur;	/* (if after repeat sequence) */
@@ -3277,14 +3277,14 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 		for (s1 = s2; s1; s1 = s1->next) {
 			if (s1->sflags & S_TI1)
 				break;
-			if (rtie == 0)
+			if (!rtie)
 				continue;
 			if (s1->type != BAR
 			 || !s1->as.u.bar.repeat_bar
 			 || !s1->as.text)
 				continue;
 			if (s1->as.text[0] == '1') {	/* 1st repeat bar */
-				rtie = 0;
+				rtie = NULL;
 				continue;
 			}
 			for (s2 = s1->next; s2; s2 = s2->next)
@@ -3538,7 +3538,7 @@ static void draw_tblt_w(struct VOICE_S *p_voice,
 			if (!ly
 			 || (lyl = ly->lyl[j]) == NULL) {
 				if (s->type == BAR) {
-					if (tblt->bar == 0)
+					if (!tblt->bar)
 						continue;
 					p = &tex_buf[16];
 					*p-- = '\0';
@@ -3672,7 +3672,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 
 	outft = -1;				/* force font output */
 	lskip = 0;				/* (compiler warning) */
-	f = 0;					/* (force new font) */
+	f = NULL;				/* (force new font) */
 	if (incr > 0) {				/* under the staff */
 		j = 0;
 /*fixme: may not be the current font*/
@@ -4451,8 +4451,8 @@ static void bar_set(float *bar_bot, float *bar_height)
 	int staff, nlines;
 	float dy, staffscale;
 			/* !! max number of staff lines !! */
-	char top[10] = {18, 18, 12, 18, 18, 24, 30, 36, 42, 48};
-	char bot[10] = { 6,  6,  6,  6,  0,  0,  0,  0,  0,  0};
+	static const char top[10] = {18, 18, 12, 18, 18, 24, 30, 36, 42, 48};
+	static const char bot[10] = { 6,  6,  6,  6,  0,  0,  0,  0,  0,  0};
 
 	dy = 0;
 	for (staff = 0; staff <= nstaff; staff++) {
@@ -4642,7 +4642,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 		break;
 	}
 
-	bm.s2 = 0;
+	bm.s2 = NULL;
 	first_note = 1;
 	for (s = p_voice->sym; s; s = s->next) {
 		if (s->extra)
@@ -4664,7 +4664,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 						draw_beams(&bm);
 					}
 				}
-				draw_note(x, s, bm.s2 == 0);
+				draw_note(x, s, bm.s2 == NULL);
 				if (annotate)
 					anno_out(s, 'N');
 				if (s == bm.s2)
@@ -4931,20 +4931,20 @@ static void set_tie_dir(struct SYMBOL *sym)
 /* in chords with an odd number of notes, the outer noteheads are paired off
  * center notes are tied according to their position in relation to the
  * center line */
-				ntie = ntie / 2 + 1;
+				ntie = ntie / 2;
 				dir = SL_BELOW;
 				for (i = 0; i <= s->nhd; i++) {
 					ti = s->as.u.note.ti1[i];
 					if (ti == 0)
 						continue;
-					if (--ntie == 0) {	/* central tie */
-						if (s->as.u.note.pits[i] >= 22)
+					if (ntie == 0) {	/* central tie */
+						if (s->pits[i] >= 22)
 							dir = SL_ABOVE;
 					}
 					if ((ti & 0x03) == SL_AUTO)
 						s->as.u.note.ti1[i] =
 							(ti & SL_DOTTED) | dir;
-					if (ntie == 0)
+					if (ntie-- == 0)
 						dir = SL_ABOVE;
 				}
 				continue;

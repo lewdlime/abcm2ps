@@ -1613,7 +1613,8 @@ static void set_allsymwidth(struct SYMBOL *last_s)
 	tsfirst->shrink = new_val;
 
 	/* loop on all remaining symbols */
-	for (;;) {
+//	for (;;) {
+	while (s != last_s) {
 		s2 = s;
 		shrink = space = 0;
 		do {
@@ -1691,8 +1692,9 @@ static void set_allsymwidth(struct SYMBOL *last_s)
 			s->shrink = shrink;
 			s->space = space;
 		}
-		if ((s = s2) == last_s)
-			break;
+//		if ((s = s2) == last_s)
+//			break;
+		s = s2;
 	}
 
 	/* have room for the tablature header */
@@ -1863,7 +1865,7 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 
 	/* replace */
 	dur /= n;
-	if (n == 2) {			/* repeat 2 measures (one time) */
+	if (n == 2) {			/* repeat 2 measures (once) */
 		s3 = s;
 		for (s2 = s->ts_next; ;s2 = s2->ts_next) {
 			if (s2->staff != staff)
@@ -1965,7 +1967,7 @@ static void custos_add(struct SYMBOL *s)
 	p_voice = &voice_tb[s->voice];
 	p_voice->last_sym = s->prev;
 	if (!p_voice->last_sym)
-		p_voice->sym = 0;
+		p_voice->sym = NULL;
 	p_voice->time = s->time;
 	new_s = sym_add(p_voice, CUSTOS);
 	new_s->next = s;
@@ -1981,8 +1983,8 @@ static void custos_add(struct SYMBOL *s)
 	new_s->shrink = 8 + 4;
 
 	new_s->nhd = s2->nhd;
-	memcpy(new_s->as.u.note.lens, s2->as.u.note.lens,
-			sizeof new_s->as.u.note.lens);
+//	memcpy(new_s->as.u.note.lens, s2->as.u.note.lens,
+//			sizeof new_s->as.u.note.lens);
 	memcpy(new_s->pits, s2->pits, sizeof new_s->pits);
 	for (i = 0; i <= new_s->nhd; i++)
 		new_s->as.u.note.lens[i] = CROTCHET;
@@ -2077,7 +2079,7 @@ normal:
 			if (done
 			 || (s->u == 0		/* incomplete measure */
 			  && s->next		/* not at end of tune */
-			  && (s->as.u.bar.type & 0x07) == B_COL
+			  && (s->as.u.bar.type & 0x0f) == B_COL
 			  && !(s->sflags & S_RRBAR)))
 						/* 'xx:' (not ':xx:') */
 				goto cut_here;
@@ -2331,7 +2333,7 @@ static void cut_tune(float lwidth, float indent)
 	/* adjust the line width according to the starting clef
 	 * and key signature */
 /*fixme: may change in the tune*/
-	for (s = tsfirst; ; s = s->ts_next) {
+	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->shrink == 0)
 			continue;
 		if (s->type != CLEF && s->type != KEYSIG)
@@ -3379,7 +3381,7 @@ static void init_music_line(void)
 		 || p_voice->bar_start == 0)
 			continue;
 		i = 2;
-		if (p_voice->bar_text == 0	/* if repeat continuation */
+		if (!p_voice->bar_text		/* if repeat continuation */
 		 && p_voice->bar_start == B_OBRA) {
 			for (s = p_voice->last_sym;
 			     s;
@@ -4395,7 +4397,7 @@ static void check_bar(struct SYMBOL *s)
 	bar_type = s->as.u.bar.type;
 	if (bar_type == B_COL)			/* ':' */
 		return;
-	if ((bar_type & 0x07) != B_COL)		/* if not left repeat bar */
+	if ((bar_type & 0x0f) != B_COL)		/* if not left repeat bar */
 		return;
 	if (!(s->sflags & S_RRBAR)) {		/* 'xx:' (not ':xx:') */
 		p_voice->bar_start = bar_type & 0x3fff;
@@ -4800,9 +4802,9 @@ static void new_music_line(void)
 	int voice;
 
 	/* set the first symbol of each voice */
-	tsfirst->ts_prev = 0;
+	tsfirst->ts_prev = NULL;
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
-		p_voice->sym = 0;		/* may have no symbol */
+		p_voice->sym = NULL;		/* may have no symbol */
 		voice = p_voice - voice_tb;
 		for (s = tsfirst; s; s = s->ts_next) {
 			if (s->voice == voice) {

@@ -1,3 +1,17 @@
+---- Version 7.8.3 - 14/05/23 ----
+
+Fix too wide space between text paragraphs when not fill or justify.
+Fix crash when utf-8 and latin characters in a same file
+	(reported by Henry Bley-Vroman).
+Change internal fonts to 'serif' on SVG output.
+Forbid rest in grace note sequence.
+Fix crash when rest in grace note sequence.
+Fix direction of ties in chords with odd number of notes.
+Fix bad direction of beam stub when last note with !beambr1! / !beambr2!
+	(reported by David Lacroix).
+Fix crash when only P: or Q: in a generation sequence
+	(reported by Henry Bley-Vroman).
+
 ---- Version 7.8.2 - 14/05/05 ----
 
 Fix non-function of %%voice inside %%tune since some 7.5.x

@@ -2762,15 +2762,9 @@ static char *parse_note(struct abctune *t,
 	if (nostem)
 		s->flags |= ABC_F_STEMLESS;
 
-	if (m == 0) {			/* if no note (or error) */
-		if ((t->last_sym = s->prev) == NULL) {
-			t->first_sym = NULL;
-		} else {
-			s->prev->next = NULL;
-			s->prev->flags |= (s->flags & ABC_F_ERROR);
-		}
-		return p;
-	}
+	if (m == 0)			/* if no note (or error) */
+		goto err;
+
 	s->u.note.microscale = microscale;
 	s->u.note.nhd = m - 1;
 do_brhythm:
@@ -2784,6 +2778,20 @@ add_deco:
 				: &s->u.bar.dc,
 			&dc, sizeof dc);
 		dc.n = dc.h = dc.s = 0;
+	}
+	/* forbid rests in grace note sequences */
+	if (s->type != ABC_T_NOTE && (flags & ABC_F_GRACE)) {
+		syntax("Not a note in grace note sequence", p);
+		goto err;
+	}
+	return p;
+
+err:
+	if ((t->last_sym = s->prev) == NULL) {
+		t->first_sym = NULL;
+	} else {
+		s->prev->next = NULL;
+		s->prev->flags |= (s->flags & ABC_F_ERROR);
 	}
 	return p;
 }

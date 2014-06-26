@@ -1187,31 +1187,31 @@ static char *rest_tb[NFLAGS_SZ] = {
 	/* if rest alone in the measure, center */
 	x = s->x + s->shhd[0] * cur_scale;
 	if (s->dur == voice_tb[s->voice].meter.wmeasure) {
-		struct SYMBOL *prev;
+		struct SYMBOL *s2;
 
-		if (s->next)
-			x = s->next->x;
+		/* don't use next/prev: there is no bar in voice averlay */
+		s2 = s->ts_next;
+		while (s2 && s2->time != s->time + s->dur)
+			s2 = s2->ts_next;
+		if (s2)
+			x = s2->x;
 		else
 			x = realwidth;
-		prev = s->prev;
-		if (!prev) {
-			prev = s;
-		} else if (prev->type != BAR && !(s->sflags & S_SECOND)) {
-			for (prev = prev->ts_next; ; prev = prev->ts_next) {
-				switch (prev->type) {
-				case CLEF:
-				case KEYSIG:
-				case TIMESIG:
-				case FMTCHG:
-					continue;
-				default:
-					break;
-				}
-				prev = prev->ts_prev;
+
+		for (s2 = s->ts_prev; ; s2 = s2->ts_prev) {
+			switch (s2->type) {
+			default:
+				continue;
+			case CLEF:
+			case KEYSIG:
+			case TIMESIG:
+//			case FMTCHG:
+			case BAR:
 				break;
 			}
+			break;
 		}
-		x = (x + prev->x) * .5;
+		x = (x + s2->x) * .5;
 
 		/* center the associated decorations */
 		if (s->as.u.note.dc.n > 0)
@@ -2998,36 +2998,35 @@ static void draw_note_ties(struct SYMBOL *k1,
 		p1 = k1->pits[m1];
 		m2 = mhead2[i];
 		p2 = k2->pits[m2];
-		if ((k1->as.u.note.ti1[m1] & 0x03) == SL_ABOVE)
-			s = 1;
-		else
-			s = -1;
+		s = (k1->as.u.note.ti1[m1] & 0x03) == SL_ABOVE ? 1 : -1;
 
 		x1 = k1->x;
 		sh = k1->shhd[m1];		/* head shift */
 		if (s > 0) {
-			if (m1 < k1->nhd && k1->pits[m1] + 1 == k1->pits[m1 + 1])
+			if (m1 < k1->nhd && p1 + 1 == k1->pits[m1 + 1])
 				if (k1->shhd[m1 + 1] > sh)
 					sh = k1->shhd[m1 + 1];
 		} else {
-			if (m1 > 0 && k1->pits[m1] == k1->pits[m1 - 1] + 1)
+			if (m1 > 0 && p1 == k1->pits[m1 - 1] + 1)
 				if (k1->shhd[m1 - 1] > sh)
 					sh = k1->shhd[m1 - 1];
 		}
-		x1 += sh;
+//		x1 += sh;
+		x1 += sh * 0.6;
 
 		x2 = k2->x;
 		sh = k2->shhd[m2];
 		if (s > 0) {
-			if (m2 < k2->nhd && k2->pits[m2] + 1 == k2->pits[m2 + 1])
+			if (m2 < k2->nhd && p2 + 1 == k2->pits[m2 + 1])
 				if (k2->shhd[m2 + 1] < sh)
 					sh = k2->shhd[m2 + 1];
 		} else {
-			if (m2 > 0 && k2->pits[m2] == k2->pits[m2 - 1] + 1)
+			if (m2 > 0 && p2 == k2->pits[m2 - 1] + 1)
 				if (k2->shhd[m2 - 1] < sh)
 					sh = k2->shhd[m2 - 1];
 		}
-		x2 += sh;
+//		x2 += sh;
+		x2 += sh * 0.6;
 
 		staff = k1->staff;
 		switch (job) {
@@ -3078,7 +3077,8 @@ static void draw_note_ties(struct SYMBOL *k1,
 				x1 += 4.5;
 				y += ((p & 1) ? 2 : 0) * s;
 			} else {
-				y += ((p & 1) ? 6 : 4) * s;
+//				y += ((p & 1) ? 6 : 4) * s;
+				y += ((p & 1) ? 2 : 0) * s;
 			}
 			if (s > 0) {
 				if (k1->nflags > -2 && k1->stem > 0
@@ -3094,7 +3094,8 @@ static void draw_note_ties(struct SYMBOL *k1,
 				x2 -= 4.5;
 				y += ((p & 1) ? 2 : 0) * s;
 			} else {
-				y += ((p2 & 1) ? 7 : 4) * s;
+//				y += ((p2 & 1) ? 7 : 4) * s;
+				y += ((p2 & 1) ? 2 : 0) * s;
 			}
 			if (s < 0) {
 				if (k2->nflags > -2 && k2->stem < 0

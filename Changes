@@ -1,10 +1,26 @@
+---- Version 7.8.4 - 14/06/18 ----
+
+Fix clash of voice name with staff when new voice after %%staves.
+Fix bad indentation when more staves further in the tune.
+Set the ties closer to the notes.
+Fix bad handling of '|' when first character in w:
+	(reported by Alex Scheutzow).
+Check the floating voices in %%score/%%staves.
+Fix bad stem direction when %%combinevoices.
+Fix crash when measure bar numbering and less notes in the upper staff
+	(reported by : J.Joao Almeida).
+Fix too big syntax error messages
+	(reported by David Lacroix).
+Fix bad horizontal offset of full rests in voice overlay
+	(reported by J.C.L.).
+
 ---- Version 7.8.3 - 14/05/23 ----
 
 Fix too wide space between text paragraphs when not fill or justify.
 Fix crash when utf-8 and latin characters in a same file
 	(reported by Henry Bley-Vroman).
 Change internal fonts to 'serif' on SVG output.
-Forbid rest in grace note sequence.
+Forbid rests in grace note sequences.
 Fix crash when rest in grace note sequence.
 Fix direction of ties in chords with odd number of notes.
 Fix bad direction of beam stub when last note with !beambr1! / !beambr2!

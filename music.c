@@ -369,10 +369,10 @@ again:
 #undef COMBINEV
 	nhd += nhd2 + 1;
 	s->nhd = nhd;
-/*fixme:should recalculate yav*/
-	s->ymx = 3 * (s->pits[nhd] - 18) + 4;
-
 	sort_pitch(s, 1);		/* sort the notes by pitch */
+	s->ymx = 3 * (s->pits[nhd] - 18) + 4;
+	s->ymn = 3 * (s->pits[0] - 18) - 4;
+	s->yav = (s->ymx + s->ymn) / 2;
 
 	/* force the tie directions */
 	type = s->as.u.note.ti1[0];
@@ -2482,7 +2482,7 @@ static void set_pitch(struct SYMBOL *last_s)
 	dur = BASE_LEN;
 	for (s = tsfirst; s != last_s; s = s->ts_next) {
 		struct SYMBOL *g;
-		int np, m, pav;
+		int np, m;
 
 		for (g = s->extra ; g; g = g->next) {
 			if (g->type == FMTCHG && g->u == REPEAT) {
@@ -2560,12 +2560,13 @@ static void set_pitch(struct SYMBOL *last_s)
 				for (m = np; m >= 0; m--)
 					s->pits[m] += delta;
 			}
-			pav = 0;
-			for (m = np; m >= 0; m--)
-				pav += s->pits[m];
-			s->yav = 3 * pav / (np + 1) - 3 * 18;
+//			pav = 0;
+//			for (m = np; m >= 0; m--)
+//				pav += s->pits[m];
+//			s->yav = 3 * pav / (np + 1) - 3 * 18;
 			s->ymx = 3 * (s->pits[np] - 18) + 4;
 			s->ymn = 3 * (s->pits[0] - 18) - 4;
+			s->yav = (s->ymx + s->ymn) / 2;
 // test rest offset
 			if (s->as.type != ABC_T_NOTE)
 				s->y = s->yav / 6 * 6;
@@ -4554,7 +4555,8 @@ static void set_piece(void)
 
 	/* initialize the music line */
 	init_music_line();
-	if (!empty[nstaff])
+//	if (!empty[nstaff])
+	if (!empty[cursys->nstaff])
 		insert_meter = 0;
 
 	/* if last music line, nothing more to do */
@@ -4950,8 +4952,9 @@ void output_music(void)
 
 //fixme:initmusic_line			<- pb repeat bars...
 //	init_music_line();
-		indent = set_indent(0);
 		set_piece();
+		indent = set_indent(0);
+//		set_piece();		<- pb new voice after %%staves
 //fixme:initmusic_line			<- pb repeat bars...
 //		init_music_line();
 

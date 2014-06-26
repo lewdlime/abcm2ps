@@ -1727,6 +1727,11 @@ static char *parse_bar(struct abctune *t,
 		memcpy(&s->u.bar.dc, &dc, sizeof s->u.bar.dc);
 		dc.n = dc.h = dc.s = 0;
 	}
+	if (!lyric_started) {
+		lyric_started = 1;
+		s->flags |= ABC_F_LYRIC_START;
+	}
+
 	if (!isdigit((unsigned char) *p)	/* if not a repeat bar */
 	 && (*p != '"' || p[-1] != '['))	/* ('["' only) */
 		return p;
@@ -2077,7 +2082,7 @@ static char *parse_len(char *p,
 	return p;
 }
 
-/* -- parse a music line -- */
+/* -- parse a ABC line -- */
 /* return 1 on end of tune, and 2 on start of new tune */
 static int parse_line(struct abctune *t,
 		      char *p)
@@ -2590,12 +2595,12 @@ static char *parse_note(struct abctune *t,
 	s->type = ABC_T_NOTE;
 	s->flags |= flags;
 
+	if (!lyric_started) {
+		lyric_started = 1;
+		s->flags |= ABC_F_LYRIC_START;
+	}
 	if (*p != 'X' && *p != 'Z'
 	 && !(flags & ABC_F_GRACE)) {
-		if (!lyric_started) {
-			lyric_started = 1;
-			s->flags |= ABC_F_LYRIC_START;
-		}
 		if (!deco_start)
 			deco_start = s;
 	}
@@ -2907,7 +2912,7 @@ static void syntax(char *msg,
 		fprintf(stderr, "...");
 		pp += 3;
 	}
-	fprintf(stderr, "%*s", m2 - m1, &abc_line[m1]);
+	fprintf(stderr, "%.*s", m2 - m1, &abc_line[m1]);
 	if (m2 < len)
 		fprintf(stderr, "...");
 	fprintf(stderr, "\n");

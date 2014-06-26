@@ -1612,18 +1612,6 @@ static struct abcsym *get_lyric(struct abcsym *as)
 	}
 
 	/* treat all w: lines */
-	s = curvoice->lyric_start;
-	if (!s) {
-		s = curvoice->sym;
-		if (!s) {
-			error(1, s, "w: without music");
-			return as;
-		}
-	} else if (s->ly) {		/* prev music line ended with a note */
-		s = s->next;
-	}
-	curvoice->lyric_start = s;
-	s2 = s;				/* for #line in error messages */
 	cont = 0;
 	ln = -1;
 	for (;;) {
@@ -1635,6 +1623,14 @@ static struct abcsym *get_lyric(struct abcsym *as)
 			ln++;
 			s2 = s;
 			s = curvoice->lyric_start;
+			if (!s)
+				s = curvoice->sym;
+			else
+				s = s->next;
+			if (!s) {
+				error(1, s, "w: without music");
+				return as;
+			}
 		} else {
 			cont = 0;
 		}
@@ -1824,9 +1820,10 @@ ly_next:
 
 	/* the next lyrics will go into the next notes */
 ly_upd:
-	s = next_lyric_note(s);
-	if (s)
-		error(1, s, "Not enough words for lyric line");
+//fixme: no error with abc-2.1
+	if (next_lyric_note(s))
+		error(0, s, "Not enough words for lyric line");
+	// fill the w: with 'blank syllabes'
 	curvoice->lyric_start = curvoice->last_sym;
 	return as;
 }
@@ -2036,7 +2033,8 @@ static void parse_staves(struct SYMBOL *s,
 			flags_st |= OPEN_PARENTH;
 			break;
 		case '*':
-			flags |= FL_VOICE;
+			if (brace && !parenth && !(flags & (OPEN_BRACE | OPEN_BRACE2)))
+				flags |= FL_VOICE;
 			break;
 		default:
 			if (!isalnum((unsigned char) *p) && *p != '_') {
@@ -2113,6 +2111,7 @@ static void parse_staves(struct SYMBOL *s,
 						flags |= CLOSE_BRACE;
 					else
 						flags |= CLOSE_BRACE2;
+					flags &= ~FL_VOICE;
 					flags_st >>= 8;
 					p++;
 					continue;
@@ -3221,6 +3220,8 @@ void do_tune(struct abctune *t)
 	/* scan the tune */
 	for (as = t->first_sym; as; as = as->next) {
 		s = (struct SYMBOL *) as;
+		if (as->flags & ABC_F_LYRIC_START)
+			curvoice->lyric_start = curvoice->last_sym;
 		switch (as->type) {
 		case ABC_T_INFO:
 			as = get_info(as, t);
@@ -3235,8 +3236,6 @@ void do_tune(struct abctune *t)
 				s->as.flags |= ABC_F_SPACE;
 			}
 			get_note(s);
-			if (as->flags & ABC_F_LYRIC_START)
-				curvoice->lyric_start = s;
 			break;
 		case ABC_T_BAR:
 			if (over_bar)

@@ -1984,8 +1984,8 @@ void draw_measnb(void)
 				}
 				break;
 			}
-			while (s->staff != staff)
-				s = s->ts_next;
+//			while (s->staff != staff)
+//				s = s->ts_next;
 			if (s->prev->type != CLEF)
 				s = s->prev;
 			x = s->x - s->wl;
@@ -2034,8 +2034,8 @@ void draw_measnb(void)
 		 || (bar_num % cfmt.measurenb) != 0
 		 || !s->next)
 			continue;
-		while (s->staff != staff)
-			s = s->ts_next;
+//		while (s->staff != staff)
+//			s = s->ts_next;
 		if (!any_nb) {
 			any_nb = 1;
 			set_font(MEASUREFONT);
@@ -2138,9 +2138,9 @@ static void draw_notempo(struct SYMBOL *s, int len, float sc)
 		}
 	}
 	if (len < SEMIBREVE) {
-		if (flags <= 0)
+		if (flags <= 0) {
 			a2b(" %d su", STEM);
-		else {
+		} else {
 			a2b(" %d %d sfu", flags, STEM);
 			if (dx < 6)
 				dx = 6;

@@ -1,6 +1,6 @@
 # rules for ninja (ninja-build)
 
-VERSION = 8.0.4
+VERSION = 8.1.2
 
 cflags = -g -O2 -Wall -pipe -I.
 ldflags = -lm

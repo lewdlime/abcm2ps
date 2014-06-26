@@ -500,7 +500,7 @@ static struct {
 	"	c5 -8.5 5.5 4.5 10 -2\n"
 	"	c-5 8.5 -5.5 -4.5 -10 2\"/>\n"},
 #define D_stc 64
-{	"<circle id=\"stc\" fill=\"currentColor\" cx=\"0\" cy=\"-3\" r=\"1.2\"/>\n"},
+{	"<circle id=\"stc\" fill=\"currentColor\" cx=\"0\" cy=\"-4\" r=\"1.2\"/>\n"},
 #define D_sld 65
 {	"<path id=\"sld\" fill=\"currentColor\" d=\"\n"
 	"	m-7.2 4.8\n"
@@ -617,7 +617,7 @@ static struct {
 	"	x=\"-5\" y=\"-7\">s<tspan\n"
 	"	font-size=\"16\" font-weight=\"bold\">f</tspan>z</text>\n"},
 #define D_trl 87
-{	"<text id=\"trl\" font-family=\"serif\" font-size=\"16\" font-weight=\"bold\" font-style=\"italic\"\n"
+{	"<text id=\"trl\" font-family=\"serif\" font-size=\"16\" font-style=\"italic\"\n"
 	"	x=\"-2\" y=\"-4\">tr</text>\n"},
 };
 

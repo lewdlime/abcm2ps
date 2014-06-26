@@ -110,9 +110,12 @@ struct abcsym {
 #define BAGPIPE 9				/* bagpipe when >= 8 */
 			signed char nacc;	/* number  of explicit accidentals */
 						/* (-1) if no accidental */
+			signed char cue;	/* cue voice (scale 0.7) */
 			signed char octave;	/* 'octave=' */
 #define NO_OCTAVE 10				/* no 'octave=' */
 			unsigned char microscale; /* microtone denominator - 1 */
+			signed char stafflines;
+			float staffscale;
 			signed char pits[8];
 			unsigned char accs[8];
 		} key;
@@ -148,6 +151,9 @@ struct abcsym {
 			signed char dyn;	/* have dynamic marks above or below the staff */
 			signed char lyrics;	/* have lyrics above or below the staff */
 			signed char gchord;	/* have gchord above or below the staff */
+			signed char cue;	/* cue voice (scale 0.7) */
+			signed char stafflines;
+			float staffscale;
 		} voice;
 		struct {		/* bar, mrest or mrep */
 			int type;
@@ -156,19 +162,18 @@ struct abcsym {
 			char dotted;
 			struct deco dc;		/* decorations */
 		} bar;
-		struct clef_s {		/* clef (and staff!) */
+		struct clef_s {		/* clef */
 			char *name;		/* PS drawing function */
-			float staffscale;	/* != 0 when change */
-			signed char stafflines;	/* >= 0 when change */
-			signed char type;	/* no clef if < 0 */
+			signed char type;
 #define TREBLE 0
 #define ALTO 1
 #define BASS 2
 #define PERC 3
+#define AUTOCLEF 4
 			char line;
-			signed char octave;
-			signed char transpose;
-			char invis;
+			signed char octave;	/* '+8' / '-8' */
+			signed char transpose;	/* if '^8' / '_8' */
+			char invis;		/* clef 'none' */
 			char check_pitch;	/* check if old abc2ps transposition */
 		} clef;
 		struct note note;	/* note, rest */

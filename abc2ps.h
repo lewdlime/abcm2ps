@@ -371,8 +371,9 @@ extern char **s_argv;
 
 struct STAFF_S {
 	struct clef_s clef;	/* base clef */
-	char forced_clef;	/* explicit clef */
 	char empty;		/* no symbol on this staff */
+	signed char stafflines;
+	float staffscale;
 	short botbar, topbar;	/* bottom and top of bar */
 	float y;		/* y position */
 	float top[YSTEP], bot[YSTEP];	/* top/bottom y offsets */
@@ -395,14 +396,14 @@ struct VOICE_S {
 	struct tblt_s *tblts[2]; /* tablatures */
 	float scale;		/* scale */
 	int time;		/* current time (parsing) */
-	struct clef_s clef;	/* current clef */
+//	struct clef_s clef;	/* current clef */
+	struct SYMBOL *s_clef;	/* current clef */
 	struct key_s key;	/* current key signature */
 	struct meter_s meter;	/* current time signature */
 	struct key_s ckey;	/* key signature while parsing */
 	struct key_s okey;	/* original key signature (parsing) */
 	unsigned hy_st;		/* lyrics hyphens at start of line (bit array) */
 	unsigned ignore:1;	/* ignore this voice (%%staves) */
-	unsigned forced_clef:1;	/* explicit clef */
 	unsigned second:1;	/* secondary voice in a brace/parenthesis */
 	unsigned floating:1;	/* floating voice in a brace system */
 	unsigned bar_repeat:1;	/* bar at start of staff is a repeat bar */
@@ -412,6 +413,7 @@ struct VOICE_S {
 	unsigned space:1;	/* have a space before the next note (parsing) */
 	unsigned perc:1;	/* percussion */
 	unsigned auto_len:1;	/* auto L: (parsing) */
+	unsigned autoclef:1;	/* auto clef (parsing restart) */
 	short wmeasure;		/* measure duration (parsing) */
 	short transpose;	/* transposition (parsing) */
 	short bar_start;	/* bar type at start of staff / 0 */
@@ -422,6 +424,8 @@ struct VOICE_S {
 	unsigned char staff;	/* staff (0..n-1) */
 	unsigned char cstaff;	/* staff (parsing) */
 	unsigned char slur_st;	/* slurs at start of staff */
+	signed char stafflines;
+	float staffscale;
 };
 extern struct VOICE_S voice_tb[MAXVOICE]; /* voice table */
 extern struct VOICE_S *first_voice; /* first_voice */
@@ -453,8 +457,9 @@ struct SYSTEM {			/* staff system */
 #define OPEN_BRACKET2 0x0400
 #define CLOSE_BRACKET2 0x0800
 		char empty;
-		char dum;
-		struct clef_s clef;
+		signed char stafflines;
+		float staffscale;
+//		struct clef_s clef;
 		float sep, maxsep;
 	} staff[MAXSTAFF];
 	struct {
@@ -463,7 +468,7 @@ struct SYSTEM {			/* staff system */
 		char second;
 		char dum;
 		float sep, maxsep;
-		struct clef_s clef;
+//		struct clef_s clef;
 	} voice[MAXVOICE];
 };
 struct SYSTEM *cursys;		/* current staff system */

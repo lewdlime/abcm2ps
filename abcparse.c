@@ -504,7 +504,8 @@ static char *parse_extra(char *p,
 			char **p_middle,
 			char **p_lines,
 			char **p_scale,
-			char **p_octave)
+			char **p_octave,
+			char **p_cue)
 {
 	for (;;) {
 		if (strncmp(p, "clef=", 5) == 0
@@ -541,6 +542,10 @@ static char *parse_extra(char *p,
 			if (*p_scale)
 				syntax("Double staffscale", p);
 			*p_scale = p + 11;
+		} else if (strncmp(p, "cue=", 4) == 0) {
+			if (*p_cue)
+				syntax("Double cue", p);
+			*p_cue = p + 4;
 		} else if (strncmp(p, "transpose=", 10) == 0
 			|| strncmp(p, "t=", 2) == 0) {
 			;		/* ignored */
@@ -645,9 +650,7 @@ static char *parse_acc(char *p,
 /* -- parse a clef (K: or V:) -- */
 static void parse_clef(struct abcsym *s,
 			char *name,
-			char *middle,
-			char *lines,
-			char *scale)
+			char *middle)
 {
 	int clef = -1;
 	int transpose = 0;
@@ -729,6 +732,9 @@ static void parse_clef(struct abcsym *s,
 		} else if (!strncmp(name, "perc", 4)) {
 			clef = PERC;
 			name += 4;
+		} else if (!strncmp(name, "auto", 4)) {
+			clef = AUTOCLEF;
+			name += 4;
 		} else if (strncmp(name, "none", 4) == 0) {
 			clef = TREBLE;
 			s->u.clef.invis = 1;
@@ -802,26 +808,6 @@ static void parse_clef(struct abcsym *s,
 	s->u.clef.type = clef;
 	s->u.clef.line = clef_line;
 	s->u.clef.transpose = transpose;
-	s->u.clef.stafflines = -1;
-	s->u.clef.staffscale = 0;
-	if (lines) {
-		int l;
-
-		l = atoi(lines);
-		if ((unsigned) l < 10)
-			s->u.clef.stafflines = l;
-		else
-			syntax("Bad value of stafflines", lines);
-	}
-	if (scale) {
-		float sc;
-
-		sc = atof(scale);
-		if (sc >= 0.5 && sc <= 3)
-			s->u.clef.staffscale = sc;
-		else
-			syntax("Bad value of staffscale", scale);
-	}
 	if (warn) {
 		int sev_sav;
 
@@ -855,10 +841,14 @@ static void parse_key(char *p,
 {
 	int sf, mode;
 	char *clef_name, *clef_middle, *clef_lines, *clef_scale;
-	char *p_octave;
+	char *p_octave, *p_cue;
+
+	// set important default values
+	s->u.key.stafflines = -1;
+	s->u.key.octave = NO_OCTAVE;
 
 	if (*p == '\0') {
-		s->u.key.empty = 2;
+		s->u.key.empty = 1;
 		return;
 	}
 	if (strncasecmp(p, "none", 4) == 0) {
@@ -870,9 +860,9 @@ static void parse_key(char *p,
 			return;
 	}
 	clef_name = clef_middle = clef_lines = clef_scale = NULL;
-	p_octave = NULL;
+	p_octave = p_cue = NULL;
 	p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
-			&clef_scale, &p_octave);
+			&clef_scale, &p_octave, &p_cue);
 	sf = 0;
 	mode = MAJOR;
 	switch (*p++) {
@@ -925,7 +915,7 @@ static void parse_key(char *p,
 		if (*p == '\0')
 			break;
 		p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
-				&clef_scale, &p_octave);
+				&clef_scale, &p_octave, &p_cue);
 		if (*p == '\0')
 			break;
 		switch (*p) {
@@ -1022,12 +1012,34 @@ static void parse_key(char *p,
 	s->u.key.sf = sf;
 	s->u.key.mode = mode;
 	s->u.key.octave = parse_octave(p_octave);
+	if (p_cue) {
+		if (strncmp(p_cue, "on", 2) == 0)
+			s->u.key.cue = 1;
+		else
+			s->u.key.cue = -1;
+	}
+	if (clef_lines) {
+		int l;
 
-	if (clef_name || clef_middle || clef_lines || clef_scale) {
+		l = atoi(clef_lines);
+		if ((unsigned) l <= 12)
+			s->u.key.stafflines = l;
+		else
+			syntax("Bad value of stafflines", clef_lines);
+	}
+	if (clef_scale) {
+		float sc;
+
+		sc = atof(clef_scale);
+		if (sc >= 0.5 && sc <= 3)
+			s->u.key.staffscale = sc;
+		else
+			syntax("Bad value of staffscale", clef_scale);
+	}
+	if (clef_name || clef_middle) {
 		s = abc_new(s->tune, NULL, NULL);
 		s->type = ABC_T_CLEF;
-		parse_clef(s, clef_name, clef_middle, clef_lines,
-				clef_scale);
+		parse_clef(s, clef_name, clef_middle);
 	}
 }
 
@@ -1502,7 +1514,7 @@ static char *parse_voice(char *p,
 	char *error_txt = NULL;
 	char name[VOICE_NAME_SZ];
 	char *clef_name, *clef_middle, *clef_lines, *clef_scale;
-	char *p_octave;
+	char *p_octave, *p_cue;
 	signed char *p_stem;
 static struct kw_s {
 	char *name;
@@ -1581,7 +1593,7 @@ static struct kw_s {
 
 	/* parse the other parameters */
 	clef_name = clef_middle = clef_lines = clef_scale = NULL;
-	p_octave = NULL;
+	p_octave = p_cue = NULL;
 	p_stem = &s->u.voice.stem;
 	for (;;) {
 		while (isspace((unsigned char) *p))
@@ -1589,7 +1601,7 @@ static struct kw_s {
 		if (*p == '\0')
 			break;
 		p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
-				&clef_scale, &p_octave);
+				&clef_scale, &p_octave, &p_cue);
 		if (*p == '\0')
 			break;
 		for (kw = kw_tb; kw->name; kw++) {
@@ -1656,12 +1668,37 @@ static struct kw_s {
 	}
 
 	s->u.voice.octave = parse_octave(p_octave);
+	if (p_cue) {
+		if (strncmp(p_cue, "on", 2) == 0)
+			s->u.voice.cue = 1;
+		else
+			s->u.voice.cue = -1;
+	}
+	if (clef_lines) {
+		int l;
 
-	if (clef_name || clef_middle || clef_lines || clef_scale) {
+		l = atoi(clef_lines);
+		if ((unsigned) l < 10)
+			s->u.voice.stafflines = l;
+		else
+			syntax("Bad value of stafflines", clef_lines);
+	} else {
+		s->u.voice.stafflines = -1;
+	}
+	if (clef_scale) {
+		float sc;
+
+		sc = atof(clef_scale);
+		if (sc >= 0.5 && sc <= 3)
+			s->u.voice.staffscale = sc;
+		else
+			syntax("Bad value of staffscale", clef_scale);
+	}
+
+	if (clef_name || clef_middle) {
 		s = abc_new(s->tune, NULL, NULL);
 		s->type = ABC_T_CLEF;
-		parse_clef(s, clef_name, clef_middle, clef_lines,
-				clef_scale);
+		parse_clef(s, clef_name, clef_middle);
 	}
 	return error_txt;
 }
@@ -1730,6 +1767,12 @@ static char *parse_bar(struct abctune *t,
 		memcpy(&s->u.bar.dc, &dc, sizeof s->u.bar.dc);
 		dc.n = dc.h = dc.s = 0;
 	}
+
+	if (!lyric_started) {
+		lyric_started = 1;
+		s->flags |= ABC_F_LYRIC_START;
+	}
+
 	if (!isdigit((unsigned char) *p)	/* if not a repeat bar */
 	 && (*p != '"' || p[-1] != '['))	/* ('["' only) */
 		return p;
@@ -2285,7 +2328,7 @@ static int parse_line(struct abctune *t,
 			/* fall thru */
 		case CHAR_DECO:
 			if (p[-1] == '.') {
-				if (*p == '(' || *p == '-' || *p == ')')
+				if (*p == '(' || *p == '-')
 					break;
 				if (*p == '|') {
 					p = parse_bar(t, p + 1);
@@ -2464,7 +2507,7 @@ static int parse_line(struct abctune *t,
 				goto bad_char;
 			if (*p != ')'
 			 || vover == 0) {		/*??*/
-				if (curvoice->last_note == 0) {
+				if (!curvoice->last_note) {
 					syntax("Bad start of voice overlay", p);
 					break;
 				}
@@ -2591,12 +2634,12 @@ static char *parse_note(struct abctune *t,
 	s->type = ABC_T_NOTE;
 	s->flags |= flags;
 
+	if (!lyric_started) {
+		lyric_started = 1;
+		s->flags |= ABC_F_LYRIC_START;
+	}
 	if (*p != 'X' && *p != 'Z'
 	 && !(flags & ABC_F_GRACE)) {
-		if (!lyric_started) {
-			lyric_started = 1;
-			s->flags |= ABC_F_LYRIC_START;
-		}
 		if (!deco_start)
 			deco_start = s;
 	}
@@ -2908,7 +2951,7 @@ static void syntax(char *msg,
 		fprintf(stderr, "...");
 		pp += 3;
 	}
-	fprintf(stderr, "%*s", m2 - m1, &abc_line[m1]);
+	fprintf(stderr, "%.*s", m2 - m1, &abc_line[m1]);
 	if (m2 < len)
 		fprintf(stderr, "...");
 	fprintf(stderr, "\n");

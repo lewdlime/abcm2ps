@@ -456,6 +456,7 @@ List of the format parameters
 			C
 			F
 			P
+			auto (automatically add trable or bass clefs)
 			none (to avoid clefs on the next music lines)
 			"<user_clef_name>" (<user_clef_name> is the name of
 				a PostScript function which  draws the clef
@@ -1351,14 +1352,14 @@ List of the format parameters
 	Command line: none
 	Scope: generation
 	Description:
-		Set the way voice unison is displayed.
+		Set the way the note heads are displayed in case of voice unison.
 		<int> may be:
-		'0': for one note head if possible
-		'1': for two shifted notes when one note is dotted
+		'0': try one note head,
+		'1': display two shifted heads when one note is dotted
 		     and the other one is not,
-		'2': also for two shifted notes when one note is a
+		'2': display two shifted heads when one note is a
 		     minim (half note) and the other one has some flags,
-		'3': for two shifted notes on all unison cases.
+		'3': always display two shifted heads.
 
   slurheight <float>
 	Default: 1.0

@@ -906,12 +906,15 @@ static unsigned char deco_intern(unsigned char ideco)
 {
 	char *name;
 
-	if (ideco == 0)
-		return ideco;
-	if (ideco < 128)
+	if (ideco < 128) {
 		name = deco[ideco];
-	else
+		if (!name) {
+			error(1, 0, "Notation '%c' not treated", ideco);
+			return 0;
+		}
+	} else {
 		name = (*deco_tb)[ideco - 128];
+	}
 	for (ideco = 1; ideco < 128; ideco++) {
 		if (!deco_def_tb[ideco].name) {
 			ideco = user_deco_define(name);	/* try a user decoration */
@@ -1103,16 +1106,16 @@ void draw_all_deco(void)
 			ym -= dd->h * 0.5;
 			if (((de->flags & DE_UP) && y < ym)
 			 || (!(de->flags & DE_UP) && y > ym)) {
-				struct SYMBOL *s;
-
-				s = de->s;
-				if (s->staff > staff) {
-					while (s->staff != staff)
-						s = s->ts_prev;
-				} else if (s->staff < staff) {
-					while (s->staff != staff)
-						s = s->ts_next;
-				}
+//				struct SYMBOL *s;
+//
+//				s = de->s;
+//				if (s->staff > staff) {
+//					while (s->staff != staff)
+//						s = s->ts_prev;
+//				} else if (s->staff < staff) {
+//					while (s->staff != staff)
+//						s = s->ts_next;
+//				}
 				y2 = y_get(staff, !(de->flags & DE_UP),
 							de->x, de->v)
 					+ staff_tb[staff].y;
@@ -1944,7 +1947,7 @@ void draw_measnb(void)
 
 	/* leave the measure numbers as unscaled */
 	font_size = cfmt.font_tb[MEASUREFONT].size;
-	cfmt.font_tb[MEASUREFONT].size /= staff_tb[staff].clef.staffscale;
+	cfmt.font_tb[MEASUREFONT].size /= staff_tb[staff].staffscale;
 
 	s = tsfirst;				/* clef */
 	bar_num = nbar;
@@ -1954,8 +1957,6 @@ void draw_measnb(void)
 			any_nb = 1;
 			x = 0;
 			w = 20;
-//			while (s->staff != staff)
-//				s = s->ts_next;
 			y = y_get(staff, 1, x, w);
 			if (y < staff_tb[staff].topbar + 14)
 				y = staff_tb[staff].topbar + 14;
@@ -1975,8 +1976,6 @@ void draw_measnb(void)
 				}
 				break;
 			}
-			while (s->staff != staff)
-				s = s->ts_next;
 			if (s->prev->type != CLEF)
 				s = s->prev;
 			x = s->x - s->wl;
@@ -2025,8 +2024,6 @@ void draw_measnb(void)
 		 || (bar_num % cfmt.measurenb) != 0
 		 || !s->next)
 			continue;
-		while (s->staff != staff)
-			s = s->ts_next;
 		if (!any_nb) {
 			any_nb = 1;
 			set_font(MEASUREFONT);
@@ -2325,7 +2322,7 @@ float draw_partempo(int staff, float top)
 		a2b("\n");
 	}
 out:
-	return dy * staff_tb[staff].clef.staffscale;
+	return dy * staff_tb[staff].staffscale;
 }
 
 /* -- initialize the default decorations -- */

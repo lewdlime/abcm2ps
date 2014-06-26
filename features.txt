@@ -1,5 +1,5 @@
-	Features of abcm2ps 8.0.3 (J.F. Moine, April 2014)
-	==================================================
+	Features of abcm2ps 8.1.0 (J.F. Moine, June 2014)
+	=================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
 
@@ -123,15 +123,14 @@ Multiple voices.
 
 ABC Stylesheet specification.
 
-	- The star ('*' = floating voice) is not treated in '%%score'.
-
 	- '%%staves' coexists with '%%score'.
 	  The differences of '%%staves' are:
 		- measure bars are drawn between staves when there is
 		  no '|' between the voice names (this feature is inverted
-		  in %%score).
-		- A floating voice may be only the second one in a
-		  3 voices brace.
+		  in %%score),
+		- a 3 voices brace is a 2 staves system with a floating voice,
+		- a 4 voices brace is a 2 staves system with 2 voices
+		  on each staff.
 
 	- Some formatting directives are not implemented, and some other
 	  ones are defined. See the file 'format.txt' for details.
@@ -185,6 +184,10 @@ Information fields.
 	- In 'U:' fields, !beambreak! defines the character as stopping
 	  note beaming. This is the default value for the characters
 	  '\ ' (space) and '\t' (tabulation).
+
+	- 'cue=on' or 'cue=off' in 'K:' and 'V:' fields sets the voice
+	  scale (0.7 when 'cue=on', 1.0 when 'cue=off'). This setting
+	  has the same behaviour as '%%voicescale' (see 'format.txt').
 
 Tune body.
 
@@ -301,7 +304,7 @@ Tune body.
 
 Clefs.
 
-	- the clef definition should not be in K: or V: information fields.
+	- The clef definition should not be in K: or V: information fields.
 	  Better use the %%clef pseudo-comment (see format.txt)
 
 	- 'clef=P' is the same as 'perc'.
@@ -347,9 +350,11 @@ Multiple voices.
 
 	- 'merge' in a V: field makes the voice to go on the same staff
 	  as the previous voice (BarFly compatibility).
+	  (use %%score or voice overlay instead)
 
 	- The BarFly voice switch in tune ('V:x <notes>', i.e.
 	  voice + notes on the same line) may work.
+	  (use '[V:x] <notes>' instead)
 
 	- The operator '(&...&...&)' permits voice overlay on many
 	  measures. See sample3.abc for an example.

@@ -1,3 +1,51 @@
+---- Version 8.1.2 - 14/06/20 ----
+
+Fix bad vertical offset of dots sometimes when many voices per staff.
+Don't get 'auto' alone as 'clef=auto'
+	(reported by David Lacroix).
+Fix double clef at start of staff when many voices in the staff
+	since 8.1.0.
+	(reported by David Lacroix).
+
+---- Version 8.1.1 - 14/06/19 ----
+
+Fix crash when a voice with no note appears as second voice of a staff
+	since 8.1.0
+	(reported by Francis Stevens).
+
+---- Version 8.1.0 - 14/06/19 ----
+
+Split the tune into music lines at better places.
+Fix clash of voice name with staff when new voice after %%staves.
+Fix bad music line indentation when more staves further in the tune.
+Set the ties closer to the notes.
+Fix bad automatic clef changes.
+Add '%%clef auto'.
+Change internal treatment of clefs.
+Fix clash of notes in chords when unison or second with long notes.
+Fix bad horizontal offset of accidents on long notes.
+Fix bad key signature after change to 'K:none'.
+Fix bad handling of '|' when the first character in w:
+	(reported by Alex Scheutzow).
+Change internal treatment of #lines and scale of the staves.
+Fix bad clef/note offset when a voice with explicit clef moves
+	to an other staff
+	(reported by  reinier maliepaard).
+Fix bad font for !trill!
+	(reported by David Lacroix).
+Check the floating voices in %%score/%%staves.
+Fix bad stem direction when %%combinevoices.
+Fix crash when unknown decoration on one character since 8.0.4.
+Fix crash when measure bar numbering and less notes in the upper staff
+	(reported by : J.Joao Almeida).
+Add 'cue=' in K: and V:
+	(asked by Alex Scheutzow).
+Fix too big length of syntax error messages
+	(reported by David Lacroix).
+Fix bad horizontal offset of dots in chords since 8.0.4.
+Fix bad horizontal offset of full rests in voice overlay
+	(reported by J.C.L.).
+
 ---- Version 8.0.4 - 14/05/23 ----
 
 Fix too wide space between text paragraphs when not fill or justify.
@@ -13,7 +61,6 @@ Fix bad beams in SVG output
 	(reported by David Lacroix).
 Fix bad direction of beam stub on last note when !beambr1! / !beambr2!
 	(reported by David Lacroix).
-
 May have up to 128 decorations per tune
 	(asked by  Henry Bley-Vroman).
 Fix crash when only P: or Q: in a generation sequence

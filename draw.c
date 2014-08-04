@@ -937,6 +937,40 @@ static void draw_acc(int acc, int microscale)
 	}
 }
 
+// draw helper lines
+static void draw_hl(float x, int staffb, int up,
+		int y, int stafflines, char *hltype)
+{
+	int i;
+
+	if (!up) {
+		switch (stafflines) {		// lower ledger lines
+		case 0:
+		case 1: i = 6; break;
+		case 2:
+		case 3: i = 0; break;
+		default: i = -6; break;
+		}
+		for ( ; i >= y; i -= 6) {
+			putxy(x, staffb + i);
+			a2b("%s ", hltype);
+		}
+		return;
+	}
+
+	switch (stafflines) {			// upper ledger lines
+	case 0:
+	case 1:
+	case 2: i = 18; break;
+	case 3: i = 24; break;
+	default: i = stafflines * 6; break;
+	}
+	for ( ; i <= y; i += 6) {
+		putxy(x, staffb + i);
+		a2b("%s ", hltype);
+	}
+}
+
 /* -- draw a key signature -- */
 static void draw_keysig(struct VOICE_S *p_voice,
 			float x,
@@ -1054,19 +1088,23 @@ static void draw_keysig(struct VOICE_S *p_voice,
 		last_shift = 100;
 		for (i = 0; i < s->as.u.key.nacc; i++) {
 			acc = s->as.u.key.accs[i];
-			if (acc != last_acc) {
-				last_acc = acc;
-				x += 3;
-			}
-			shift = s->pits[0] * 3
+			shift = s->pits[0] * 3		// clef shift
 				+ 3 * (s->as.u.key.pits[i] - 18);
-			while (shift < -3)
-				shift += 21;
-			while (shift > 24 + 3)
-				shift -= 21;
-			if (shift == last_shift + 21
-			 || shift == last_shift - 21)
-				x -= 5.5;		/* octave */
+			if (i != 0
+			 && (shift > last_shift + 18
+			  || shift < last_shift - 18))
+				x -= 5.5;		// no clash
+			else if (acc != last_acc)
+				x += 3;
+			last_acc = acc;
+			if (shift < 0)
+				draw_hl(x, staffb, 0,
+					shift,		/* lower ledger line */
+					staff_tb[s->staff].stafflines, "hl");
+			else if (shift > 24)
+				draw_hl(x, staffb, 1,
+					shift,		/* upper ledger line */
+					staff_tb[s->staff].stafflines, "hl");
 			last_shift = shift;
 			putxy(x, staffb + shift);
 			draw_acc(acc, s->as.u.key.microscale);
@@ -1674,7 +1712,7 @@ static void draw_note(float x,
 		      struct SYMBOL *s,
 		      int fl)
 {
-	int i, m, ma, y;
+	int m, ma;
 	float staffb, slen, shhd;
 	char c, *hltype;
 	signed char y_tb[MAXHD];
@@ -1704,30 +1742,14 @@ static void draw_note(float x,
 		}
 		shhd = (s->stem > 0 ? s->shhd[0] : s->shhd[s->nhd])
 				* cur_scale;
-		y = 3 * (s->pits[0] - 18);	/* lower ledger lines */
-		switch (staff_tb[s->staff].stafflines) {
-		case 0:
-		case 1: i = 6; break;
-		case 2:
-		case 3: i = 0; break;
-		default: i = -6; break;
-		}
-		for ( ; i >= y; i -= 6) {
-			putxy(x + shhd, i + staffb);
-			a2b("%s ", hltype);
-		}
-		y = 3 * (s->pits[s->nhd] - 18);	/* upper ledger lines */
-		switch (staff_tb[s->staff].stafflines) {
-		case 0:
-		case 1:
-		case 2: i = 18; break;
-		case 3: i = 24; break;
-		default: i = staff_tb[s->staff].stafflines * 6; break;
-		}
-		for ( ; i <= y; i += 6) {
-			putxy(x + shhd, i + staffb);
-			a2b("%s ", hltype);
-		}
+		if (s->pits[0] < 22)
+			draw_hl(x + shhd, staffb, 0,
+				3 * (s->pits[0] - 18),	/* lower ledger lines */
+				staff_tb[s->staff].stafflines, hltype);
+		else if (s->pits[s->nhd] > 22)
+			draw_hl(x + shhd, staffb, 1,
+				3 * (s->pits[s->nhd] - 18), /* upper ledger lines */
+				staff_tb[s->staff].stafflines, hltype);
 	}
 
 	/* draw the master note, first or last one */
@@ -4378,8 +4400,8 @@ static float set_staff(void)
 	/* draw the parts and tempo indications if any */
 	y += draw_partempo(staff, y);
 
-	staffsep = cfmt.staffsep * 0.5;
-	maxsep = cfmt.maxstaffsep * 0.5;
+	staffsep = cfmt.staffsep * 0.5 +
+			staff_tb[staff].topbar * staff_tb[staff].staffscale;
 	if (y < staffsep)
 		y = staffsep;
 	staff_tb[staff].y = -y;
@@ -4391,11 +4413,10 @@ static float set_staff(void)
 			staff_tb[staff].empty = 1;
 			continue;
 		}
-		if (sy->staff[prev_staff].sep != 0) {
+		if (sy->staff[prev_staff].sep != 0)
 			staffsep = sy->staff[prev_staff].sep;
-		} else {
+		else
 			staffsep = cfmt.sysstaffsep;
-		}
 		if (sy->staff[prev_staff].maxsep != 0)
 			maxsep = sy->staff[prev_staff].maxsep;
 		else

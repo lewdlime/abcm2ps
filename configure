@@ -24,8 +24,8 @@ if test -f ./custom; then
 	. ./custom
 fi
 
-VERSION=8.1.2
-VDATE='June 20, 2014'
+VERSION=8.1.4
+VDATE='July 17, 2014'
 
 case "$1" in
 	--*=*)

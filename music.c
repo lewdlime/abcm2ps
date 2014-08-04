@@ -1161,13 +1161,12 @@ static void set_width(struct SYMBOL *s)
 			n1 = n2 = s->as.u.key.nacc;
 			last_acc = s->as.u.key.accs[0];
 			for (i = 1; i < n2; i++) {
-				if (s->as.u.key.accs[i] != last_acc) {
-					last_acc = s->as.u.key.accs[i];
-					esp += 3;
-				}
-				if (s->as.u.key.pits[i] == s->as.u.key.pits[i - 1] + 7
-				 || s->as.u.key.pits[i] == s->as.u.key.pits[i - 1] - 7)
+				if (s->as.u.key.pits[i] > s->as.u.key.pits[i - 1] + 6
+				 || s->as.u.key.pits[i] < s->as.u.key.pits[i - 1] - 6)
 					n1--;		/* octave */
+				else if (s->as.u.key.accs[i] != last_acc)
+					esp += 3;
+				last_acc = s->as.u.key.accs[i];
 			}
 		}
 		s->wr = 5.5 * n1 + esp;
@@ -1536,10 +1535,9 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 			while (i > 0) {
 				if (s2->staff != staff)
 					continue;
-				if (s2->voice == voice) {
-					if (s2->dur != 0)
-						i--;
-				}
+				if (s2->voice == voice
+				 && s2->dur != 0)
+					i--;
 				s2->extra = NULL;
 				unlksym(s2);
 				s2 = s2->ts_next;
@@ -2002,7 +2000,6 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 
 		/* try to avoid to cut a beam */
 		s = s2;				/* restart from the last bar */
-		s2 = NULL;
 		for ( ; s != last; s = s->ts_next) {
 			if ((s->sflags & (S_BEAM_ST | S_BEAM_END))
 						== S_BEAM_ST) {
@@ -2110,6 +2107,7 @@ cut_here:
 /* -- cut the tune into music lines -- */
 static void cut_tune(float lwidth, float indent)
 {
+	struct VOICE_S *p_voice;
 	struct SYMBOL *s, *s2;
 	int i;
 	float xmin;
@@ -2117,6 +2115,18 @@ static void cut_tune(float lwidth, float indent)
 	/* adjust the line width according to the starting clef
 	 * and key signature */
 /*fixme: may change in the tune*/
+#if 1
+	s = tsfirst;
+	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
+		i = p_voice - voice_tb;
+		if (cursys->voice[i].range >= 0)
+			break;
+	}
+	lwidth -= 12 + 10			// clef.wl
+		+ 12 - 10			// clef.wr
+		+ 3				// key.wl
+		+ p_voice->key.sf * 5.5;	// key.wr
+#else
 	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->shrink == 0)
 			continue;
@@ -2124,6 +2134,7 @@ static void cut_tune(float lwidth, float indent)
 			break;
 		lwidth -= s->shrink;
 	}
+#endif
 	if (cfmt.custos && !first_voice->next)
 		lwidth -= 12;
 	if (cfmt.continueall) {
@@ -2184,7 +2195,6 @@ static void set_yval(struct SYMBOL *s)
 {
 //fixme: staff_tb is not yet loaded
 //	int top, bot;
-
 //	top = staff_tb[s->staff].topbar;
 //	bot = staff_tb[s->staff].botbar;
 	switch (s->type) {
@@ -2288,7 +2298,7 @@ static int set_auto_clef(int staff,
 	}
 	clef_type = clef_type_start;
 	s_last = s;
-	s_last_chg = s_start;
+	s_last_chg = NULL;
 	for (s = s_start; s != s_last; s = s->ts_next) {
 		struct SYMBOL *s2, *s3;	//, *s4;
 
@@ -2345,7 +2355,7 @@ static int set_auto_clef(int staff,
 		}
 
 		/* if first change, change the starting clef */
-		if (s_last_chg == s_start) {
+		if (!s_last_chg) {
 			clef_type = clef_type_start =
 					clef_type == TREBLE ? BASS : TREBLE;
 			s_last_chg = s;
@@ -2626,7 +2636,7 @@ static void set_pitch(struct SYMBOL *last_s)
 		case NOTEREST:
 			if (s->as.type != ABC_T_NOTE
 			 && !first_voice->next) {
-				s->y = 12;		/* rest */
+				s->y = 12;		/* rest single voice */
 				s->ymx = 12 + 8;
 				s->ymn = 12 - 8;
 				break;

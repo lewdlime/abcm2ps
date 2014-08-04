@@ -321,8 +321,8 @@ void close_page(void)
 		svg_close();
 		if (svg == 1 && fout != stdout)
 			close_fout();
-		else
-			fputs("</p>\n", fout);
+//		else
+//			fputs("</p>\n", fout);
 	} else {
 #if 1
 		fprintf(fout, "grestore\n"
@@ -434,13 +434,13 @@ static float headfooter(int header,
 		p = cfmt.header;
 		f = &cfmt.font_tb[HEADERFONT];
 		size = f->size;
-		y = 2;
+		y = -size;
 	} else {
 		p = cfmt.footer;
 		f = &cfmt.font_tb[FOOTERFONT];
 		size = f->size;
 		y = - (pheight - cfmt.topmargin - cfmt.botmargin)
-			- size + 2;
+			+ size;
 	}
 	if (*p == '-') {
 		if (pagenum == 1)
@@ -449,12 +449,12 @@ static float headfooter(int header,
 	}
 	get_str_font(&cft_sav, &dft_sav);
 	memcpy(&f_sav, &cfmt.font_tb[0], sizeof f_sav);
-	wsize = 0;
 	str_font(f - cfmt.font_tb);
 	output(fout, "%.1f F%d ", size, f->fnum);
 	outft = f - cfmt.font_tb;
 
 	/* may have 2 lines */
+	wsize = size;
 	if ((r = strstr(p, "\\n")) != NULL) {
 		if (!header)
 			y += size;
@@ -935,10 +935,8 @@ void block_put(void)
 	ln_font[ln_num] = outft;
 	ln_num++;
 
-	if (!use_buffer) {
+	if (!use_buffer)
 		write_buffer();
-		return;
-	}
 }
 
 /* -- handle completed block in buffer -- */

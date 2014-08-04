@@ -1350,7 +1350,9 @@ static void gch_build(struct SYMBOL *s)
 			case '#':
 			case 'b':
 			case '=':
-				if (p == q)	/* 1st char or after a slash */
+				if (p == q	/* 1st char or after a slash */
+				 || (p != q + 1	/* or invert '\' behaviour */
+				  && p[-1] == '\\'))
 					break;
 
 				/* set the accidentals as unused utf-8 values
@@ -2421,7 +2423,7 @@ static void voice_filter(void)
 		if (!slre_compile(&slre, p))
 			goto next_voice;
 		if (!slre_match(&slre, curvoice->id, strlen(curvoice->id), 0)
-		 && (curvoice->nm == 0
+		 && (!curvoice->nm
 		  || !slre_match(&slre, curvoice->nm, strlen(curvoice->nm), 0)))
 			goto next_voice;
 
@@ -2558,20 +2560,21 @@ static struct abcsym *get_info(struct abcsym *as,
 		s2 = info['T' - 'A'];
 		p = &s2->as.text[2];
 		if (*p != '\0') {
-			a2b("%% --- %s (%s) ---\n"
-				"%% --- font ",
-				&info['X' - 'A']->as.text[2], p);
+			a2b("%% --- font ");
 			outft = -1;
 			set_font(TITLEFONT);		/* font in comment */
 			a2b("\n");
 			outft = -1;
-			if (cfmt.pdfmark)
+		}
+		if (cfmt.pdfmark) {
+			if (*p != '\0')
 				put_pdfmark(p);
-			for (s2 = s2->next; s2; s2 = s2->next) {
-				p = &s2->as.text[2];
-				a2b("%% --- + (%s) ---\n", p);
-				if (cfmt.pdfmark > 1)
-					put_pdfmark(p);
+			if (cfmt.pdfmark > 1) {
+				for (s2 = s2->next; s2; s2 = s2->next) {
+					p = &s2->as.text[2];
+					if (*p != '\0')
+						put_pdfmark(p);
+				}
 			}
 		}
 
@@ -3498,7 +3501,8 @@ static void set_acc(struct SYMBOL *s)
 	}
 	for (i = 0; i < s->as.u.key.nacc; i++) {
 		for (j = 0; j < nacc; j++) {
-			if ((pits[j] - s->as.u.key.pits[i]) % 7 == 0) {
+//			if ((pits[j] - s->as.u.key.pits[i]) % 7 == 0) {
+			if (pits[j] == s->as.u.key.pits[i]) {
 				accs[j] = s->as.u.key.accs[i];
 				break;
 			}

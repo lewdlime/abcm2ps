@@ -1,4 +1,4 @@
-	Features of abcm2ps 8.1.0 (J.F. Moine, June 2014)
+	Features of abcm2ps 8.1.1 (J.F. Moine, June 2014)
 	=================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
@@ -361,8 +361,10 @@ Multiple voices.
 
 Text strings.
 
-	- The guitar chords may contain '\#', '\b' and '\=' to display
-	  accidentals.
+	- The characters '#', 'b' and '=' have a special meaning in
+	  guitar chords. They are displayed as accidental at start
+	  of text or after a slash. This behaviour is inverted when
+	  they are preceeded by a backslash.
 
 	- The strings may contain characters from '\001' to '\005' to display
 	  accidentals. For compatibility, the values '\201' to '\205' are

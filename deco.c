@@ -64,11 +64,10 @@ static struct deco_def_s {
 	unsigned char func;	/* function index */
 	signed char ps_func;	/* postscript function index */
 	unsigned char h;	/* height */
-	unsigned char wl;	/* width */
-	unsigned char wr;
+	unsigned char wl, wr;	/* left and right widths */
 	unsigned char strx;	/* string index - 255=deco name */
 	unsigned char ld_end;	/* index of end of long decoration */
-	unsigned char dum;
+	unsigned char flags;	/* only DE_LDST and DE_LDEN */
 } deco_def_tb[128];
 
 /* c function table */
@@ -141,18 +140,18 @@ static char *std_deco_tb[] = {
 	"turn 3 turn 10 0 5",
 	"wedge 3 wedge 8 1 1",
 	"turnx 3 turnx 10 0 5",
-	"trill( 5 - 8 0 0",
+	"trill( 5 ltr 8 0 0",
 	"trill) 5 ltr 8 0 0",
 	"snap 3 snap 14 3 3",
 	"thumb 3 thumb 14 2 2",
 	"arpeggio 2 arp 12 10 0",
-	"crescendo( 7 - 18 0 0",
+	"crescendo( 7 cresc 18 0 0",
 	"crescendo) 7 cresc 18 0 0",
-	"<( 7 - 18 0 0",
+	"<( 7 cresc 18 0 0",
 	"<) 7 cresc 18 0 0",
-	"diminuendo( 7 - 18 0 0",
+	"diminuendo( 7 dim 18 0 0",
 	"diminuendo) 7 dim 18 0 0",
-	">( 7 - 18 0 0",
+	">( 7 dim 18 0 0",
 	">) 7 dim 18 0 0",
 	"invisible 32 0 0 0 0",
 	"beamon 33 0 0 0 0",
@@ -694,6 +693,20 @@ void deco_add(char *s)
 	user_deco = d;
 }
 
+static int get_deco(char *name)
+{
+	struct deco_def_s *dd;
+	int ideco;
+
+	for (ideco = 1, dd = &deco_def_tb[1]; ideco < 128; ideco++, dd++) {
+		if (!dd->name
+		 || strcmp(dd->name, name) == 0)
+			return ideco;
+	}
+	error(1, 0, "Too many decorations");
+	return ideco;
+}
+
 static unsigned char deco_build(char *text)
 {
 	struct deco_def_s *dd;
@@ -726,15 +739,10 @@ static unsigned char deco_build(char *text)
 		text++;
 
 	/* search the decoration */
-	for (ideco = 1, dd = &deco_def_tb[1]; ideco < 128; ideco++, dd++) {
-		if (!dd->name
-		 || strcmp(dd->name, name) == 0)
-			break;
-	}
-	if (ideco == 128) {
-		error(1, 0, "Too many decorations");
-		return 128;
-	}
+	ideco = get_deco(name);
+	if (ideco == 128)
+		return ideco;
+	dd = &deco_def_tb[ideco];
 
 	/* search the postscript function */
 	for (ps_x = 0; ps_x < sizeof ps_func_tb / sizeof ps_func_tb[0]; ps_x++) {
@@ -801,6 +809,10 @@ static unsigned char deco_build(char *text)
 	if (name[l] == '(' || name[l] == ')') {
 		struct deco_def_s *ddo;
 
+		if (name[l] == '(')
+			dd->flags = DE_LDST;
+		else
+			dd->flags = DE_LDEN;
 		for (o = 1, ddo = &deco_def_tb[1]; o < 128; o++, ddo++) {
 			if (!ddo->name)
 				break;
@@ -1089,8 +1101,10 @@ void draw_all_deco(void)
 
 	for (de = deco_head; de; de = de->next) {
 		dd = &deco_def_tb[de->t];
+		if ((dd->flags & DE_LDST) && dd->ld_end != 0)
+			continue;		// start of full long decoration
 		if ((f = dd->ps_func) < 0)
-			continue;
+			continue;		// old behaviour
 		staff = de->staff;
 		y = de->y + staff_tb[staff].y;
 
@@ -1248,7 +1262,7 @@ void draw_all_deco_head(struct SYMBOL *s, float x, float y)
 static void deco_create(struct SYMBOL *s,
 			struct deco *dc)
 {
-	int k, l, posit;
+	int k, posit;
 	unsigned char ideco;
 	struct deco_def_s *dd;
 	struct deco_elt *de;
@@ -1343,16 +1357,11 @@ static void deco_create(struct SYMBOL *s,
 		de->staff = s->staff;
 		if (s->as.flags & ABC_F_GRACE)
 			de->flags = DE_GRACE;
-		if (dd->ld_end != 0) {
+		if (dd->flags & DE_LDST) {
 			de->flags |= DE_LDST;
-		} else {
-			l = strlen(dd->name) - 1;
-			if (l > 0 && dd->name[l] == ')') {
-				if (strchr(dd->name, '(') == 0) {
-					de->flags |= DE_LDEN;
-					de->defl = DEF_NOST;
-				}
-			}
+		} else if (dd->flags & DE_LDEN) {
+			de->flags |= DE_LDEN;
+			de->defl = DEF_NOST;
 		}
 		if (cfmt.setdefl && s->stem >= 0)
 			de->defl |= DEF_STEMUP;
@@ -1424,8 +1433,32 @@ void draw_deco_note(void)
 	for (de = deco_head; de; de = de->next) {
 		t = de->t;
 		dd = &deco_def_tb[t];
+
+		// link the long decorations
 		if (de->flags & DE_LDST) {	/* start of long decoration */
 			t = dd->ld_end;
+			if (t == 0) {		// if long deco has no end
+				int l;		// create one
+				char *name;
+
+				l = strlen(dd->name);
+				name = malloc(l + 1);
+				strcpy(name, dd->name);
+				name[l - 1] = ')';
+				t = get_deco(name);
+				if (t != 128) {
+					struct deco_def_s *dd2;
+
+					dd2 = &deco_def_tb[t];
+					dd2->name = name;
+					dd2->func = dd->func;
+					dd2->ps_func = dd->ps_func;
+					dd2->h = dd->h;
+					dd->ld_end = t;
+				} else {
+					t = 0;
+				}
+			}
 			voice = de->s->voice;	/* search in the voice */
 			for (de2 = de->next; de2; de2 = de2->next)
 				if (de2->t == t && de2->s->voice == voice)
@@ -1521,7 +1554,7 @@ void draw_deco_staff(void)
 			bot = staff_tb[i].botbar;
 			minmax[i].ymin -= 3;
 			if (minmax[i].ymin > bot - 10)
-				minmax[i].ymin = bot -10;
+				minmax[i].ymin = bot - 10;
 			top = staff_tb[i].topbar;
 			minmax[i].ymax += 3;
 			if (minmax[i].ymax < top + 10)

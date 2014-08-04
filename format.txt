@@ -582,8 +582,7 @@ List of the format parameters
 					the staff.
 				6: general
 				7: long dynamic (with start and stop)
-		<ps_func>: postscript function name or '-' for the start
-			of a long decoration.
+		<ps_func>: postscript function name
 		<h>: decoration height.
 			It is the minimum height for +arpeggio+.
 		<wl> and <wr>: left and right widths.
@@ -591,8 +590,8 @@ List of the format parameters
 			marks only.
 		<str>: text to display (for some postscript functions
 			- see code).
-		The decorations, which names begin with 'head-', prevent the
-		note head(s) to be drawn.
+		The decorations, the name of which begins with 'head-',
+		suppress the drawing of the note heads.
 		See deco.abc for examples.
 
   decoration <character>

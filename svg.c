@@ -1046,8 +1046,10 @@ void define_svg_symbols(char *title, int num, float w, float h)
 				"</head>\n"
 				"<body>\n",
 				s);
+		} else {
+			fputs("<br/>\n", fout);
 		}
-		fputs("<p>\n", fout);
+//		fputs("<p>\n", fout);
 		fprintf(fout, svg_head, w / 72, h / 72, w, h, title, "page", num);
 //		if (cfmt.bgcolor && cfmt.bgcolor[0] != '\0')
 //			fprintf(fout,
@@ -1448,18 +1450,16 @@ static void show(char type)
 		else
 			defg1();
 	}
+	x = cx;
+	y = cy;
 	switch (type) {
 	case 'j':
-		x = cx;
-		y = cy;
 		w = pop_free_val();
 		p = tmp;
 		tmp[0] = '\0';
 		s = NULL;
 		break;
 	default:
-		x = cx;
-		y = cy;
 		if (stack->type == STR) {
 			s = pop_free_str();
 			if (!s || s[0] != '(') {
@@ -4063,27 +4063,17 @@ void svg_write(char *buf, int len)
 					type, row, col, xoffs + x, yoffs - y - h, w, h);
 				break;
 			}
-			if (strncmp((char *) q, " --- ", 5) == 0	/* title info */
-			 && strncmp((char *) p - 6, ") ---", 5) == 0) {
+			if (strncmp((char *) q, " --- title", 10) == 0) { /* title info */
 				setg(1);
-				if (q[5] == '+') {		/* subtitle */
-					q += 8;		/* % --- + (%s) ... */
-					r = (unsigned char *) strchr((char *) q, ')');
-//					if (!r)
-//						break;
+				if (q[10] == 's') {		/* subtitle */
+					q += 14;
 					fprintf(fout, "<!-- subtitle: %.*s -->\n",
-							(int) (r - q), q);
+							(int) (p - q - 1), q);
 					break;
 				}
-				q = (unsigned char *) strchr((char *) q, '(');
-//				if (!q)
-//					break;
-				q++;
-				r = (unsigned char *) strchr((char *) q, ')');
-//				if (!r)
-//					break;
+				q += 11;
 				fprintf(fout, "<!-- title: %.*s -->\n",
-						(int) (r - q), q);
+						(int) (p - q -1), q);
 				break;
 			}
 			break;

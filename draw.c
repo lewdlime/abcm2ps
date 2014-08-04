@@ -4346,8 +4346,8 @@ static float set_staff(void)
 	/* draw the parts and tempo indications if any */
 	y += draw_partempo(staff, y);
 
-	staffsep = cfmt.staffsep * 0.5;
-	maxsep = cfmt.maxstaffsep * 0.5;
+	staffsep = cfmt.staffsep * 0.5 +
+			staff_tb[staff].topbar * staff_tb[staff].clef.staffscale;
 	if (y < staffsep)
 		y = staffsep;
 	staff_tb[staff].y = -y;
@@ -4359,11 +4359,10 @@ static float set_staff(void)
 			staff_tb[staff].empty = 1;
 			continue;
 		}
-		if (sy->staff[prev_staff].sep != 0) {
+		if (sy->staff[prev_staff].sep != 0)
 			staffsep = sy->staff[prev_staff].sep;
-		} else {
+		else
 			staffsep = cfmt.sysstaffsep;
-		}
 		if (sy->staff[prev_staff].maxsep != 0)
 			maxsep = sy->staff[prev_staff].maxsep;
 		else

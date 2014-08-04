@@ -2683,20 +2683,21 @@ static struct abcsym *get_info(struct abcsym *as,
 		s2 = info['T' - 'A'];
 		p = &s2->as.text[2];
 		if (*p != '\0') {
-			a2b("%% --- %s (%s) ---\n"
-				"%% --- font ",
-				&info['X' - 'A']->as.text[2], p);
+			a2b("%% --- font ");
 			outft = -1;
 			set_font(TITLEFONT);		/* font in comment */
 			a2b("\n");
 			outft = -1;
-			if (cfmt.pdfmark)
+		}
+		if (cfmt.pdfmark) {
+			if (*p != '\0')
 				put_pdfmark(p);
-			for (s2 = s2->next; s2; s2 = s2->next) {
-				p = &s2->as.text[2];
-				a2b("%% --- + (%s) ---\n", p);
-				if (cfmt.pdfmark > 1)
-					put_pdfmark(p);
+			if (cfmt.pdfmark > 1) {
+				for (s2 = s2->next; s2; s2 = s2->next) {
+					p = &s2->as.text[2];
+					if (*p != '\0')
+						put_pdfmark(p);
+				}
 			}
 		}
 

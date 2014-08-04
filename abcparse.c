@@ -2437,7 +2437,7 @@ static int parse_line(struct abctune *t,
 				break;
 			}
 			slur <<= 3;
-			if (p[-2] == '.')
+			if (p[-2] == '.' && dc.n == 0)
 				slur |= SL_DOTTED;
 			switch (*p) {
 			case '\'':
@@ -2468,7 +2468,7 @@ static int parse_line(struct abctune *t,
 				goto bad_char;
 			if (*p != ')'
 			 || vover == 0) {		/*??*/
-				if (curvoice->last_note == 0) {
+				if (!curvoice->last_note) {
 					syntax("Bad start of voice overlay", p);
 					break;
 				}
@@ -2499,7 +2499,7 @@ static int parse_line(struct abctune *t,
 			if (!curvoice->last_note
 			 || curvoice->last_note->type != ABC_T_NOTE)
 				goto bad_char;
-			if (p[-2] == '.')
+			if (p[-2] == '.' && dc.n == 0)
 				tie_pos = SL_DOTTED;
 			else
 				tie_pos = 0;
@@ -2894,7 +2894,7 @@ static void syntax(char *msg,
 		return;
 	}
 	m1 = 0;
-	m2 = --len;
+	m2 = len;
 	if (m2 > maxcol) {
 		if (n < maxcol) {
 			m2 = maxcol;

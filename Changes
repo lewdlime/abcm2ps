@@ -1,3 +1,27 @@
+---- Version 7.8.6 - 14/07/17 ----
+
+Fix lack of source last character in syntax errors.
+Fix double information about the titles/subtitles in the PostScript
+	output for (external) index generation since 7.8.5
+	(reported by Tim Macdonald).
+Fix double interpretation of '.' in "!p!.(c"
+	(reported by David Lacroix).
+Fix the size of font of the page header/footer, broken in 7.8.5
+	(reported by Francis Stevens).
+
+---- Version 7.8.5 - 14/07/01 ----
+
+Add more information about the titles/subtitles in the PostScript
+	output for (external) index generation
+	(asked by Tim Macdonald).
+Add Δ (delta) in the known glyphs
+	(asked by Chuck Boody).
+Fix some bad 'Line overfull' messages when automatic line break.
+Fix bad interval between staff systems according to %%staffsep
+	(reported by Eric Reinbold and David Lacroix).
+Fix bad %%header/%%footer vertical offsets.
+Don't put the last music line on a new page when page overflow on W:.
+
 ---- Version 7.8.4 - 14/06/18 ----
 
 Fix clash of voice name with staff when new voice after %%staves.

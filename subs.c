@@ -455,7 +455,7 @@ static void str_font_change(int start,
 {
 	struct FONTSPEC *f;
 	int fnum;
-	PangoAttribute *attr1, *attr2;;
+	PangoAttribute *attr1, *attr2;
 
 	f = &cfmt.font_tb[curft];
 	fnum = f->fnum;
@@ -792,6 +792,16 @@ static void str_end(int end)
 	a2b("]arrayshow");
 }
 
+/* check if some non ASCII characters */
+static int non_ascii_p(char *p)
+{
+	while (*p != '\0') {
+		if ((signed char) *p++ < 0)
+			return 1;
+	}
+	return 0;
+}
+
 /* -- output one string -- */
 static void str_ft_out1(char *p, int l)
 {
@@ -825,16 +835,28 @@ static void str_ft_out(char *p, int end)
 
 	use_glyph = !svg && epsf != 2 &&		/* not SVG */
 		 get_font_encoding(curft) == 0;		/* utf-8 */
+	if (use_glyph && non_ascii_p(p)) {
+		if (curft != outft) {
+			str_end(1);
+			a2b(" ");
+			set_font(curft);
+		}
+		str_end(0);
+		if (!(strtx & TX_ARR)) {
+			a2b("[");
+			strtx |= TX_ARR;
+		}
+	}
 	q = p;
 	while (*p != '\0') {
 		if ((unsigned char) *p >= 0x80
 		 && use_glyph) {
 			if (p > q) {
 				str_ft_out1(q, p - q);
-			} else if (curft != outft) {
-				str_end(1);
-				a2b(" ");
-				set_font(curft);
+//			} else if (curft != outft) {
+//				str_end(1);
+//				a2b(" ");
+//				set_font(curft);
 			}
 			str_end(0);
 			if (!(strtx & TX_ARR)) {
@@ -881,16 +903,6 @@ static void str_ft_out(char *p, int end)
 		str_ft_out1(q, p - q);
 	if (end && strtx)
 		str_end(1);
-}
-
-/* check if some non ASCII characters */
-static int non_ascii_p(char *p)
-{
-	while (*p != '\0') {
-		if ((signed char) *p++ < 0)
-			return 1;
-	}
-	return 0;
 }
 
 /* -- output a string, handling the font changes -- */
@@ -1255,6 +1267,7 @@ void put_words(struct SYMBOL *words)
 	int i, n, have_text, max2col;
 	float middle;
 
+	buffer_eob();
 	str_font(WORDSFONT);
 
 	/* see if we may have 2 columns */
@@ -1333,7 +1346,7 @@ void put_words(struct SYMBOL *words)
 			s2 = s2->next;
 		}
 	}
-	buffer_eob();
+//	buffer_eob();
 }
 
 /* -- output history -- */
@@ -1429,16 +1442,18 @@ void write_title(struct SYMBOL *s)
 	p = &s->as.text[2];
 	if (*p == '\0')
 		return;
-	p = trim_title(p, s);
 	if (s == info['T' - 'A']) {
 		sz = cfmt.font_tb[TITLEFONT].size;
 		bskip(cfmt.titlespace + sz);
 		str_font(TITLEFONT);
+		a2b("%% --- title");
 	} else {
 		sz = cfmt.font_tb[SUBTITLEFONT].size;
 		bskip(cfmt.subtitlespace + sz);
 		str_font(SUBTITLEFONT);
+		a2b("%% --- titlesub");
 	}
+	a2b(" %s\n", p);
 	if (cfmt.titleleft)
 		a2b("0");
 	else
@@ -1446,6 +1461,7 @@ void write_title(struct SYMBOL *s)
 		     0.5 * ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 			- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale);
 	a2b(" %.1f M ", sz * 0.2);
+	p = trim_title(p, s);
 	put_str(p, cfmt.titleleft ? A_LEFT : A_CENTER);
 }
 
@@ -1523,7 +1539,7 @@ static void write_headform(float lwidth)
 	fmt[j++] = 126;			/* newline */
 	fmt[j] = 127;			/* end of format */
 
-	ya[0] = ya[1] = ya[2] = cfmt.titlespace;;
+	ya[0] = ya[1] = ya[2] = cfmt.titlespace;
 	xa[0] = 0;
 	xa[1] = lwidth * 0.5;
 	xa[2] = lwidth;
@@ -1561,7 +1577,7 @@ static void write_headform(float lwidth)
 			if (i == 125)
 				continue;
 			s = inf_s[i];
-			if (s == 0 || inf_nb[i] == 0)
+			if (!s || inf_nb[i] == 0)
 				continue;
 			j = inf_ft[i];
 			str_font(j);
@@ -1569,12 +1585,21 @@ static void write_headform(float lwidth)
 			f = &cfmt.font_tb[j];
 			sz = f->size * 1.1 + inf_sz[i];
 			y = ya[align] + sz;
-			a2b("%.1f %.1f M ", x, -y);
+			if (s->as.text[2] != '\0') {
+				if (i == 'T' - 'A') {
+					if (s == info['T' - 'A'])
+						a2b("%% --- title");
+					else
+						a2b("%% --- titlesub");
+					a2b(" %s\n", &s->as.text[2]);
+				}
+				a2b("%.1f %.1f M ", x, -y);
+			}
 			if (*p == 125) {	/* concatenate */
 			    p += 2;
 /*fixme: do it work with different fields*/
 			    if (*p == i && p[1] == align
-			     && s->next != 0) {
+			     && s->next) {
 				char buf[256], *r;
 
 				q = s->as.text;
@@ -1607,7 +1632,7 @@ static void write_headform(float lwidth)
 				inf_nb[i]--;
 				p += 2;
 			    } else {
-				put_inf2r(s, 0, align);
+				put_inf2r(s, NULL, align);
 			    }
 			} else if (i == 'Q' - 'A') {	/* special case for tempo */
 				if (align != A_LEFT) {
@@ -1619,9 +1644,9 @@ static void write_headform(float lwidth)
 					a2b("%.1f 0 RM ", w);
 				}
 				write_tempo(s, 0, 0.75);
-				info['Q' - 'A'] = 0;	/* don't display in tune */
+				info['Q' - 'A'] = NULL;	/* don't display in tune */
 			} else {
-				put_inf2r(s, 0, align);
+				put_inf2r(s, NULL, align);
 			}
 			if (inf_s[i] == info['T' - 'A']) {
 				inf_ft[i] = SUBTITLEFONT;

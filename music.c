@@ -2333,6 +2333,20 @@ static void cut_tune(float lwidth, float indent)
 	/* adjust the line width according to the starting clef
 	 * and key signature */
 /*fixme: may change in the tune*/
+#if 1
+	struct VOICE_S *p_voice;
+
+	s = tsfirst;
+	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
+		i = p_voice - voice_tb;
+		if (cursys->voice[i].range >= 0)
+			break;
+	}
+	lwidth -= 12 + 10			// clef.wl
+		+ 12 - 10			// clef.wr
+		+ 3				// key.wl
+		+ p_voice->key.sf * 5.5;	// key.wr
+#else
 	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->shrink == 0)
 			continue;
@@ -2340,6 +2354,7 @@ static void cut_tune(float lwidth, float indent)
 			break;
 		lwidth -= s->shrink;
 	}
+#endif
 	if (cfmt.custos && !first_voice->next)
 		lwidth -= 12;
 	if (cfmt.continueall) {

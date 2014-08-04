@@ -475,7 +475,7 @@ static struct {
 	"	M-7 -6l11 -12h3l-11 12h-3\"/>\n"},
 #define D_mrep2 59
 {	"<g id=\"mrep2\" fill=\"currentColor\">\n"
-	"    <path d=\"M-5.5 -19.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\n"
+	"    <path d=\"M-5.5 -19.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\n"
 	"	M5 -7.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\"/>\n"
 	"    <path d=\"M-7 -4l14 -10m-14 4l14 -10\" stroke=\"currentColor\" stroke-width=\"1.8\" fill=\"none\"/>\n"
 	"</g>\n"},
@@ -1048,7 +1048,6 @@ void define_svg_symbols(char *title, int num, float w, float h)
 //				"<rect width=\"100%%\" height=\"100%%\" fill=\"%s\"/>\n",
 //				cfmt.bgcolor);
 	} else {				/* -g, -v or -z */
-//		if (svg != 3) {
 		if (epsf != 3) {
 			if (fout != stdout)
 				fputs("<?xml version=\"1.0\" standalone=\"no\"?>\n"

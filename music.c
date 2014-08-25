@@ -238,6 +238,9 @@ void unlksym(struct SYMBOL *s)
 		}
 	} else {
 		s->next->prev = s->prev;
+		if (s->type == NOTEREST
+		 && !(s->sflags & S_BEAM_END))
+			s->next->sflags |= S_BEAM_ST;
 		if (s->extra) {
 			struct SYMBOL *g;
 
@@ -2226,20 +2229,74 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 		xmin = s->x + wwidth / nlines * cfmt.breaklimit;
 		xmax = s->x + lwidth;
 		for ( ; s != last; s = s->ts_next) {
-			if (s->type != BAR)
-				continue;
 			x = s->x;
 			if (x == 0)
 				continue;
-			if (x < xmin) {
-				s2 = s;
+			if (x > xmax)
+				break;
+			if (s->type != BAR)
 				continue;
-			}
-			if (x <= xmax)
+			if (x > xmin)
 				goto cut_here;
-			break;
+			s2 = s;			// keep the last bar
 		}
 
+#if 1
+		bar_time = s2->time;
+
+		/* try to cut on a crotchet */
+		if (s) {
+		    for (;;) {			/* go back */
+			s = s->ts_prev;
+			x = s->x;
+			if (x == 0)
+				continue;
+			if ((s->time - bar_time) % CROTCHET == 0) {
+				for (s = s->ts_prev ; ; s = s->ts_prev) {
+					if (s->x != 0)
+						break;
+				}
+				goto cut_here;
+			}
+			if (s->x < xmin)
+				break;
+		    }
+		}
+
+		/* try to avoid to cut a beam */
+		s = s2;				/* restart from the last bar */
+		beam = 0;
+		for ( ; s != last; s = s->ts_next) {
+			if ((s->sflags & (S_BEAM_ST | S_BEAM_END))
+						== S_BEAM_ST) {
+				beam++;
+				continue;
+			}
+			if ((s->sflags & (S_BEAM_ST | S_BEAM_END))
+						== S_BEAM_END)
+				beam--;
+			if (beam != 0)
+				continue;
+			x = s->x;
+			if (x != 0 && x >= xmin) {
+				if (x > xmax)
+					break;
+				for (s = s->ts_prev ; ; s = s->ts_prev) {
+					if (s->x != 0)
+						break;
+				}
+				goto cut_here;
+			}
+		}
+
+		/* no good place, cut here */
+		for (s = s->ts_prev ; ; s = s->ts_prev) {
+//			if (!s)
+//				return s;
+			if (s->x != 0)
+				break;
+		}
+#else
 		/* try to avoid to cut a beam */
 		beam = 0;
 		bar_time = s2->time;
@@ -2250,15 +2307,6 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 			if (x != 0 && x >= xmin) {
 				if (x > xmax)
 					break;
-#if 0
-				if (beam <= 0) {
-					for (s = s->ts_prev ; ; s = s->ts_prev) {
-						if (s->x != 0)
-							break;
-					}
-					goto cut_here;
-				}
-#endif
 				if (!s2)
 					s2 = s;
 			}
@@ -2302,6 +2350,7 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 		s = s->next;
 		if (!s)
 			return s;
+#endif
 cut_here:
 		if (s->sflags & S_NL) {		/* already set here - advance */
 			error(0, s, "Line split problem - "

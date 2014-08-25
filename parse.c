@@ -1614,6 +1614,7 @@ static struct abcsym *get_lyric(struct abcsym *as)
 	/* treat all w: lines */
 	cont = 0;
 	ln = -1;
+	s2 = s = NULL;				// have gcc happy
 	for (;;) {
 		if (!cont) {
 			if (ln >= MAXLY) {
@@ -2970,8 +2971,6 @@ static void adjust_dur(struct SYMBOL *s)
 		s2 = s2->prev;
 	time = s2->time;
 	auto_time = curvoice->time - time;
-	if (curvoice->wmeasure == auto_time)
-		return;				/* already good duration */
 
 	/* remove the invisible rest at start of tune */
 	if (time == 0) {
@@ -2989,6 +2988,9 @@ static void adjust_dur(struct SYMBOL *s)
 			s2 = s2->next;
 		}
 	}
+	if (curvoice->wmeasure == auto_time)
+		return;				/* already good duration */
+
 	for (; s2; s2 = s2->next) {
 		int i, head, dots, nflags;
 
@@ -4654,7 +4656,7 @@ irepeat:
 				return as;
 			if (isdigit(*p)) {
 				s->xmx = scan_u(p);
-				if (s->xmx <= 0) {
+				if (s->xmx < 0) {
 					error(1, s, "Bad value in %%%s", w);
 					return as;
 				}

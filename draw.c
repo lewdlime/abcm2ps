@@ -1197,20 +1197,10 @@ static char *rest_tb[NFLAGS_SZ] = {
 			x = s2->x;
 		else
 			x = realwidth;
-
-		for (s2 = s->ts_prev; ; s2 = s2->ts_prev) {
-			switch (s2->type) {
-			default:
-				continue;
-			case CLEF:
-			case KEYSIG:
-			case TIMESIG:
-//			case FMTCHG:
-			case BAR:
-				break;
-			}
-			break;
-		}
+		s2 = s;
+		while (!(s2->sflags & S_SEQST))
+			s2 = s2->ts_prev;
+		s2 = s2->ts_prev;
 		x = (x + s2->x) * .5;
 
 		/* center the associated decorations */

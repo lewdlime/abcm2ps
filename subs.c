@@ -334,9 +334,6 @@ void pg_init(void)
 {
 	static PangoContext *context;
 
-	/* initialize glib */
-	g_type_init();
-
 	context = pango_font_map_create_context(
 			pango_cairo_font_map_get_default());
 	if (context)

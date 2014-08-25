@@ -1,3 +1,21 @@
+---- Version 8.1.5 - 14/08/09 ----
+
+Fix crash when %%combinevoices and different beaming.
+Fix lack of ledger lines when large chord.
+Always remove the invisible rests at start of tune when L:auto.
+Add !stemless!.
+Fix abnormal error 'Bad tie' when tie at end of voice
+	(reported by Daniel Branning).
+Fix some compilation warnings
+	(reported by Daniel Branning).
+Fix bad handling of !()! since 8.1.4
+	(reported by David Lacroix).
+Fix horizontal offset of the custodes
+	(asked by Stephen West).
+Fix crash when %%continueall and no measure bar in the tune.
+Fix bad horizontal offset of rests alone in a measure
+	(reported by Stephen West).
+
 ---- Version 8.1.4 - 14/07/17 ----
 
 Fix lack of source last character in syntax errors.

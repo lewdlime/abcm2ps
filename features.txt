@@ -242,8 +242,9 @@ Tune body.
 		Note that the <fraction of tone> is two times the pitch
 		denominator when "microscale=" is not set.
 
-	- A note length starting with '0' (zero') indicates a stemless
-	  note.
+	- A note length starting with '0' (zero) indicates a stemless
+	  note. For compatibility with other software, this indication
+	  should be avoided and replaced by a !stemless! decoration.
 
 	- A space ('y') may be followed by a width in points.
 	  The default width is 20 pts.
@@ -283,6 +284,7 @@ Tune body.
 		!/! .. !///!	tremolo on one note
 		!beam-accel! and !beam-rall!
 				feathered beam
+		!stemless!	no stem
 
 	- There may be decorations on grace notes.
 

@@ -3211,7 +3211,7 @@ rmoveto:
 		break;
 	case 'S':
 		if (strcmp(op, "SL") == 0) {
-			float c1, c2, c3, c4, c5, c6, l1, l2;
+			float c1, c2, c3, c4, c5, c6, l2;
 			float a1, a2, a3, a4, a5, a6, m1, m2;
 
 			setg(1);
@@ -3224,7 +3224,7 @@ rmoveto:
 			a2 = pop_free_val();
 			a1 = pop_free_val();
 			l2 = pop_free_val();
-			l1 = pop_free_val();	// always '0'
+			pop_free_val();		// always '0'
 			c6 = pop_free_val();
 			c5 = pop_free_val();
 			c4 = pop_free_val();

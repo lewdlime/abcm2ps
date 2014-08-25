@@ -168,6 +168,7 @@ static char *std_deco_tb[] = {
 	"/// 38 0 0 6 6",
 	"beam-accel 39 0 0 0 0",
 	"beam-rall 39 0 0 0 0",
+	"stemless 40 0 0 0 0",
 	0
 };
 
@@ -722,7 +723,7 @@ static unsigned char deco_build(char *text)
 		return 128;
 	}
 	if ((unsigned) c_func >= sizeof func_tb / sizeof func_tb[0]
-	 && (c_func < 32 || c_func > 39)) {
+	 && (c_func < 32 || c_func > 40)) {
 		error(1, 0, "%%%%deco: bad C function index (%s)", text);
 		return 128;
 	}
@@ -806,7 +807,8 @@ static unsigned char deco_build(char *text)
 	if (l == 0)
 		return ideco;
 	l--;
-	if (name[l] == '(' || name[l] == ')') {
+	if (name[l] == '('
+	 || (name[l] == ')' && !strchr(name, '('))) {
 		struct deco_def_s *ddo;
 
 		if (name[l] == '(')
@@ -897,7 +899,7 @@ static unsigned char user_deco_define(char *name)
 }
 
 /* -- define a standard decoration -- */
-unsigned char deco_define(char *name)
+static unsigned char deco_define(char *name)
 {
 	unsigned char ideco;
 	int l;
@@ -1025,6 +1027,9 @@ void deco_cnv(struct deco *dc,
 			}
 			s->sflags |= S_FEATHERED_BEAM;
 			set_feathered_beam(s, dd->name[5] == 'a');
+			break;
+		case 40:		/* 40 = stemless */
+			s->as.flags |= ABC_F_STEMLESS;
 			break;
 		}
 		dc->t[i] = 0;			/* already treated */

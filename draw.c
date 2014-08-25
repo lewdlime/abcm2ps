@@ -1247,20 +1247,10 @@ static char *rest_tb[NFLAGS_SZ] = {
 			x = s2->x;
 		else
 			x = realwidth;
-
-		for (s2 = s->ts_prev; ; s2 = s2->ts_prev) {
-			switch (s2->type) {
-			default:
-				continue;
-			case CLEF:
-			case KEYSIG:
-			case TIMESIG:
-//			case FMTCHG:
-			case BAR:
-				break;
-			}
-			break;
-		}
+		s2 = s;
+		while (!(s2->sflags & S_SEQST))
+			s2 = s2->ts_prev;
+		s2 = s2->ts_prev;
 		x = (x + s2->x) * .5;
 
 		/* center the associated decorations */
@@ -1746,7 +1736,7 @@ static void draw_note(float x,
 			draw_hl(x + shhd, staffb, 0,
 				3 * (s->pits[0] - 18),	/* lower ledger lines */
 				staff_tb[s->staff].stafflines, hltype);
-		else if (s->pits[s->nhd] > 22)
+		if (s->pits[s->nhd] > 22)
 			draw_hl(x + shhd, staffb, 1,
 				3 * (s->pits[s->nhd] - 18), /* upper ledger lines */
 				staff_tb[s->staff].stafflines, hltype);
@@ -2285,6 +2275,8 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 
 			for (g = k->extra; g; g = g->next) {
 #if 1
+				if (g->type != NOTEREST)
+					continue;
 				if (s > 0) {
 					y = 3 * (g->pits[g->nhd] - 18) + 6;
 					if (y < g->ymx)
@@ -3389,14 +3381,15 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 
 				s3 = s1->ts_prev->next;	/* previous voice */
 				time = s1->time + s1->dur;
-				if (s3->time == time) {
+				if (s3->time == time
+				 && s3->staff == s1->staff) {
 					while (s3 && s3->time == time
 					    && s3->as.type != ABC_T_NOTE)
 						s3 = s3->next;
 					if (s3
 					 && s3->time == time
 					 && s3->as.type == ABC_T_NOTE) {
-						draw_ties(s1, s3, 1);
+						draw_ties(s1, s3, 0);
 						break;
 					}
 				}

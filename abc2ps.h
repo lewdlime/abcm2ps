@@ -505,7 +505,6 @@ void write_eps(void);
 /* deco.c */
 void deco_add(char *text);
 void deco_cnv(struct deco *dc, struct SYMBOL *s, struct SYMBOL *prev);
-unsigned char deco_define(char *name);
 void deco_update(struct SYMBOL *s, float dx);
 float deco_width(struct SYMBOL *s);
 void draw_all_deco(void);

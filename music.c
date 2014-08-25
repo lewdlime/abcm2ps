@@ -288,6 +288,9 @@ void unlksym(struct SYMBOL *s)
 		}
 	} else {
 		s->next->prev = s->prev;
+		if (s->type == NOTEREST
+		 && !(s->sflags & S_BEAM_END))
+			s->next->sflags |= S_BEAM_ST;
 		if (s->extra) {
 			struct SYMBOL *g;
 
@@ -1728,7 +1731,10 @@ static void custos_add(struct SYMBOL *s)
 	new_s->sflags |= S_SEQST;
 	new_s->wl = 8;
 	new_s->wr = 4;
-	new_s->shrink = 8 + 4;
+	new_s->shrink = s->shrink;
+	if (new_s->shrink < 8 + 4)
+		new_s->shrink = 8 + 4;
+	new_s->space = s2->space;
 
 	new_s->nhd = s2->nhd;
 //	memcpy(new_s->as.u.note.lens, s2->as.u.note.lens,
@@ -1964,28 +1970,26 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 		xmin = s->x + wwidth / nlines * cfmt.breaklimit;
 		xmax = s->x + lwidth;
 		for ( ; s != last; s = s->ts_next) {
-			if (s->type != BAR)
-				continue;
 			x = s->x;
 			if (x == 0)
 				continue;
-			if (x < xmin) {
-				s2 = s;
+			if (x > xmax)
+				break;
+			if (s->type != BAR)
 				continue;
-			}
-			if (x <= xmax)
+			if (x > xmin)
 				goto cut_here;
-			break;
+			s2 = s;			// keep the last bar
 		}
 
 		bar_time = s2->time;
-		beam = 0;
-#if 1
+
 		/* try to cut on a crotchet */
-		for (;;) {			/* go back */
+		if (s) {
+		    for (;;) {			/* go back */
 			s = s->ts_prev;
 			x = s->x;
-			if (x == 0 || x > xmax)
+			if (x == 0)
 				continue;
 			if ((s->time - bar_time) % CROTCHET == 0) {
 				for (s = s->ts_prev ; ; s = s->ts_prev) {
@@ -1996,10 +2000,12 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 			}
 			if (s->x < xmin)
 				break;
+		    }
 		}
 
 		/* try to avoid to cut a beam */
 		s = s2;				/* restart from the last bar */
+		beam = 0;
 		for ( ; s != last; s = s->ts_next) {
 			if ((s->sflags & (S_BEAM_ST | S_BEAM_END))
 						== S_BEAM_ST) {
@@ -2030,59 +2036,6 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 			if (s->x != 0)
 				break;
 		}
-#else
-		/* try to avoid to cut a beam */
-		s = s2;				/* restart on the last bar */
-		s2 = NULL;
-		for ( ; s != last; s = s->ts_next) {
-			x = s->x;
-			if (x != 0 && x >= xmin) {
-				if (x > xmax)
-					break;
-				if (!s2)
-					s2 = s;
-			}
-			if ((s->sflags & (S_BEAM_ST | S_BEAM_END))
-						== S_BEAM_ST)
-				beam++;
-			else if ((s->sflags & (S_BEAM_ST | S_BEAM_END))
-						== S_BEAM_END)
-				beam--;
-		}
-		if (s2 && beam <= 0) {
-			s = s2;
-			goto cut_here;
-		}
-
-		/* cut on a crotchet */
-		s = s2;
-		if (!s) {
-//fixme:test - this should not occur very often
-			fprintf(stderr, "*** cut_tune limit 1!\n");
-			s = s2 = first->ts_next;
-		}
-		for ( ; s != last; s = s->ts_next) {
-			x = s->x;
-			if (x == 0)
-				continue;
-			if ((s->time - bar_time) % CROTCHET == 0) {
-				for (s = s->ts_prev ; ; s = s->ts_prev) {
-					if (!s)
-						return s;
-					if (s->x != 0)
-						break;
-				}
-				goto cut_here;
-			}
-			if (x > xmax)
-				break;
-		}
-//fixme:test - may occur when symbol width > line width
-		fprintf(stderr, "*** cut_tune limit 2!\n");
-		s = s->next;
-		if (!s)
-			return s;
-#endif
 cut_here:
 		if (s->sflags & S_NL) {		/* already set here - advance */
 			error(0, s, "Line split problem - "
@@ -2766,20 +2719,25 @@ if (staff > nst) {
 		}
 
 		for ( ; s != u; s = s->ts_next) {
+//--fixme: multi change
+			if (s->multi)
+				continue;
 			if (s->type != NOTEREST		/* if not note nor rest */
 			 && s->type != GRACE)
 				continue;
 			staff = s->staff;
 			voice = s->voice;
-			if (!s->multi && vtb[voice].st2 >= 0) {
+//			if (!s->multi && vtb[voice].st2 >= 0) {
+			if (vtb[voice].st2 >= 0) {
 				if (staff == vtb[voice].st1)
 					s->multi = -1;
 				else if (staff == vtb[voice].st2)
 					s->multi = 1;
+				continue;
 			}
 			if (stb[staff].nvoice <= 0) { /* voice alone on the staff */
-				if (s->multi)
-					continue;
+//				if (s->multi)
+//					continue;
 /*fixme:could be done in set_float()*/
 				if (s->sflags & S_FLOATING) {
 					if (staff == voice_tb[voice].staff)
@@ -2796,7 +2754,7 @@ if (staff > nst) {
 			}
 			if (i < 0)
 				continue;		/* voice ignored */
-			if (!s->multi) {
+//			if (!s->multi) {
 				if (i == stb[staff].nvoice) {
 					s->multi = -1;	/* last voice */
 				} else {
@@ -2822,7 +2780,7 @@ if (staff > nst) {
 							s->multi = -1;
 					}
 				}
-			}
+//			}
 		}
 
 		while (s) {
@@ -4449,6 +4407,11 @@ static void set_sym_glue(float width)
 	switch (s->type) {
 	case BAR:
 	case FMTCHG:
+		break;
+	case CUSTOS:
+		x += s->wr;
+		xmin += s->wr;
+		xmax += s->wr;
 		break;
 	default: {
 		float min;

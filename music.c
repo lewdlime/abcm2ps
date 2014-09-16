@@ -300,8 +300,12 @@ static int may_combine(struct SYMBOL *s)
 	}
 	if (s->gch && s2->gch)
 		return 0;
-	if (s->as.type == ABC_T_REST)
+	if (s->as.type == ABC_T_REST) {
+		if (s2->as.type  == ABC_T_REST
+		 && (s->as.flags & ABC_F_INVIS) && !(s2->as.flags & ABC_F_INVIS))
+			return 0;
 		return 1;
+	}
 	if (s2->ly
 	 || (s2->sflags & (S_SL1 | S_SL2))
 	 || s2->as.u.note.slur_st != 0
@@ -3604,7 +3608,7 @@ static void set_global(void)
 			case BAR:
 				if (!(s->sflags & S_BEAM_ON))
 					start_flag = 1;
-				if (!s->next
+				if (!s->next && s->prev
 				 && s->prev->as.type == ABC_T_NOTE
 				 && s->prev->dur >= BREVE)
 					s->prev->head = H_SQUARE;
@@ -4621,7 +4625,7 @@ static void set_piece(void)
 	init_music_line();
 //	if (!empty[nstaff])
 	if (!empty[cursys->nstaff])
-		insert_meter = 0;
+		insert_meter &= ~1;	// no more meter
 
 	/* if last music line, nothing more to do */
 	if (!tsnext)
@@ -5033,8 +5037,10 @@ void output_music(void)
 		if (showerror)
 			error_show();
 		bskip(line_height);
-		if (indent != 0)
+		if (indent != 0) {
 			a2b("%.2f 0 T\n", -indent);
+			insert_meter &= ~2;	// no more indentation
+		}
 		update_clefs();
 		tsfirst = tsnext;
 		gen_init();

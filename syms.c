@@ -126,13 +126,11 @@ static char ps_head[] =
 	"/scclef{gsave T -12 2 T .037 dup scale ucclef ufill grestore}!\n"
 
 	/* x y pclef */
-	"/pclef{	exch 2.7 sub exch 2 add 5.4 20\n"
-	"	1.4 SLW rectstroke}!\n"
+	"/pclef{	exch 2.7 sub exch 2 add 5.4 20 1.4 SLW rectstroke}!\n"
 	"/spclef{pclef}!\n"
 
 	/* t dx dy x y bm - beam, depth t */
-	"/bm{	M 3 copy RL neg 0 exch RL\n"
-	"	neg exch neg exch RL 0 exch RL fill}!\n"
+	"/bm{	M 3 copy RL neg 0 exch RL neg exch neg exch RL 0 exch RL fill}!\n"
 
 	/* str x y bnum - tuplet number / ratio */
 	"/bnum{M/Times-Italic 12 selectfont showc}!\n"
@@ -252,11 +250,10 @@ static char ps_head[] =
 	"	-5 -8.5 -5.5 4.5 -10 -2 RC fill}!\n"
 
 	/* x y stc - staccato mark */
-	"/stc{3 add M currentpoint 1.2 0 360 arc fill}!\n"
+	"/stc{	3 add M currentpoint 1.2 0 360 arc fill}!\n"
 
 	/* x y emb - emphasis bar */
-	"/emb{	1.2 SLW 1 setlinecap M\n"
-	"	-2.5 3 RM 5 0 RL stroke 0 setlinecap}!\n"
+	"/emb{	1.2 SLW 1 setlinecap M -2.5 3 RM 5 0 RL stroke 0 setlinecap}!\n"
 
 	/* x y cpu - roll sign above head */
 	"/cpu{	M -6 0 RM\n"
@@ -269,8 +266,7 @@ static char ps_head[] =
 	"	-2.1 -5 -5.4 -6.8 -7.6 -6 RC fill}!\n"
 
 	/* x y trl - trill sign */
-	"/trl{	/Times-BoldItalic 16 selectfont\n"
-	"	M -4 2 RM(tr)show}!\n"
+	"/trl{	/Times-BoldItalic 16 selectfont M -4 2 RM(tr)show}!\n"
 
 	/* x y umrd - upper mordent */
 	"/umrd{	4 add M\n"
@@ -280,8 +276,7 @@ static char ps_head[] =
 	"	2.2 2.2 RL 2.1 -2.9 RL 0.7 0.7 RL fill}!\n"
 
 	/* x y lmrd - lower mordent */
-	"/lmrd{	2 copy umrd M\n"
-	"	.6 SLW 0 8 RL stroke}!\n"
+	"/lmrd{	2 copy umrd M .6 SLW 0 8 RL stroke}!\n"
 
 	/* str x y fng - finger (0-5) */
 	"/fng{/Bookman-Demi 8 selectfont M -3 1 RM show}!\n"
@@ -336,12 +331,13 @@ static char ps_head[] =
 	"	ifelse stroke}!\n"
 
 	/* x y dplus - plus */
-	"/dplus{	1.2 SLW 0.5 add M 0 6 RL\n"
-	"	-3 -3 RM 6 0 RL stroke}!\n"
+	"/dplus{	1.2 SLW 0.5 add M 0 6 RL -3 -3 RM 6 0 RL stroke}!\n"
 
 	/* x y accent - accent */
-	"/accent{1.2 SLW M -4 1 RM\n"
-	"	8 2 RL -8 2 RL stroke}!\n"
+	"/accent{1.2 SLW M -4 1 RM 8 2 RL -8 2 RL stroke}!\n"
+
+	/* x y marcato - accent */
+	"/marcato{M -3 0 RM 3 7 RL 3 -7 RL -1.5 0 RL -1.8 4.2 RL -1.7 -4.2 RL fill}!\n"
 
 	/* x y turn - turn */
 	"/turn{	M 5.2 8 RM\n"
@@ -358,8 +354,7 @@ static char ps_head[] =
 	"	fill}!\n"
 
 	/* x y trnx - turn with line through it */
-	"/turnx{	2 copy turn\n"
-	"	.6 SLW 1.5 add M 0 9 RL stroke}!\n"
+	"/turnx{	2 copy turn .6 SLW 1.5 add M 0 9 RL stroke}!\n"
 
 	/* x y lphr - longphrase */
 	"/lphr{1.2 SLW M 0 -18 RL stroke}!\n"
@@ -642,7 +637,7 @@ static char ps_head[] =
 	"	pop stroke}!\n"
 
 	/* l x sep0 - hline separator */
-	"/sep0{dlw 0 M 0 RL stroke}!\n"
+	"/sep0{	dlw 0 M 0 RL stroke}!\n"
 
 	"/hbrce{	-2.5 1 RM\n"
 	"	-4.5 -4.6 -7.5 -12.2 -4.4 -26.8 RC\n"
@@ -695,8 +690,7 @@ static char ps_head[] =
 	"/SL{M RC RL RC closepath fill}!\n"
 
 	/* pp2x pp1x p1 pp1 pp2 p2 p1 dSL - dotted slur / tie */
-	"/dSL{	M [4] 0 setdash .8 SLW\n"
-	"	RC stroke [] 0 setdash}!\n"
+	"/dSL{	M [4] 0 setdash .8 SLW RC stroke [] 0 setdash}!\n"
 
 	/* -- text -- */
 	"/strw{	gsave 0 1000 M/strop/show load def 1 setgray str\n"

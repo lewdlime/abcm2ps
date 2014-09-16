@@ -619,6 +619,8 @@ static struct {
 #define D_trl 87
 {	"<text id=\"trl\" font-family=\"serif\" font-size=\"16\" font-style=\"italic\"\n"
 	"	x=\"-2\" y=\"-4\">tr</text>\n"},
+#define D_marcato 88
+{	"<path id=\"marcato\" d=\"m-3 0l3 -7l3 7l-1.5 0l-1.8 -4.2l-1.7 4.2\"/>\n"},
 };
 
 /* PS functions */
@@ -2794,6 +2796,10 @@ moveto:
 		}
 		break;
 	case 'm':
+		if (strcmp(op, "marcato") == 0) {
+			xysym(op, D_marcato);
+			return;
+		}
 		if (strcmp(op, "moveto") == 0)
 			goto moveto;
 		if (strcmp(op, "mphr") == 0) {

@@ -120,6 +120,8 @@ static char *std_deco_tb[] = {
 	"+ 3 dplus 7 3 3",
 	"accent 3 accent 7 4 4",
 	"> 3 accent 7 4 4",
+	"marcato 3 marcato 9 3 3",
+	"^ 3 marcato 9 3 3",
 	"D.C. 3 dacs 16 10 10 D.C.",
 	"D.S. 3 dacs 16 10 10 D.S.",
 	"fine 3 dacs 16 10 10 FINE",
@@ -2041,21 +2043,15 @@ void draw_measnb(void)
 	}
 
 	for ( ; s; s = s->ts_next) {
-		switch (s->type) {
-		case STAVES:
+		if (s->sflags & S_NEW_SY) {
 			sy = sy->next;
 			for (staff = 0; staff < nstaff; staff++) {
 				if (!sy->staff[staff].empty)
 					break;
 			}
 			set_sscale(staff);
-			continue;
-		default:
-			continue;
-		case BAR:
-			break;
 		}
-		if (s->u <= 0)
+		if (s->type != BAR || s->u <= 0)
 			continue;
 		bar_num = s->u;
 		if (cfmt.measurenb == 0

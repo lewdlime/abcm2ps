@@ -1,5 +1,5 @@
-	Features of abcm2ps 8.1.1 (J.F. Moine, June 2014)
-	=================================================
+	Features of abcm2ps 8.1.6 (J.F. Moine, August 2014)
+	===================================================
 
 abcm2ps tries to follow the ABC standard version 2.1 (december 2011):
 
@@ -270,21 +270,23 @@ Tune body.
 	  the tie direction (above or below).
 
 	- The following decorations are added:
+		!/! .. !///!	tremolo on one note
+		!beam-accel! and !beam-rall!
+				feathered beam
 		!beamon!	do not break beaming (on a measure bar)
 		!beambr1! and !beambr2!
 				let only 1 or 2 beams from the previous note
 		!gmark!		grace mark ('~' like sign)
 		!invisible!	prevent a symbol to be displayed
+		!marcato! and !^!
+				marcato
 		!rbstop!	stop here the current repeat bracket
+		!stemless!	no stem
 		!trem1! .. !trem4!
 				tremolo (on the second of a couple of notes
 				- see sample4.abc for example)
 		!xstem!		draw a stem up to the note on the previous
 				staff
-		!/! .. !///!	tremolo on one note
-		!beam-accel! and !beam-rall!
-				feathered beam
-		!stemless!	no stem
 
 	- There may be decorations on grace notes.
 

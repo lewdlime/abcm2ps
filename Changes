@@ -1,3 +1,38 @@
+---- Version 8.2.2 - 14/09/12 ----
+
+Fix crash when slur of second voice continued on next line.
+Fix bad auto clef after generation restart when clefs inserted.
+Split the music lines at better places.
+Fix many errors due to the lack of clefs in secondary voices.
+Fix abnormal 'Bad tie' errors when tie on 2 music lines
+	(reported by Olivier Levon).
+Fix compilation problems with VS Studio 2013 Express
+	(reported by Olivier Levon).
+Fix generation abort when lack of V: after %%staves/%%score
+	(reported by Olivier Levon).
+
+---- Version 8.2.1 - 14/09/03 ----
+
+Fix crash when forced clef after %%staves/%%score since 8.2.0
+	(reported by Francis Stevens and Olivier Levon).
+
+---- Version 8.2.0 - 14/08/29 ----
+
+Fix bad clefs when voice/staff changes in %%staves/%%score.
+Remove %%autoclef which was not used.
+Fix loss of indentation since 8.1.0
+	(reported by David Lacroix).
+Change the internal treatment of %%score/%%staves for no extra space.
+Add !marcato! and !^!
+	(asked in the ABC mailing list).
+Fix bad stem direction in lowest voice when invisible and visible rests
+		at a same time in a measure since 8.1.0
+	(reported by Eric Reinbold).
+Set lowest value of %%staffscale to 0.3
+	(asked by Mike Scott).
+Accept '^' and '$' as beginning and end of line in tune select.
+Fix crash when multi-rest at start of a second voice of a staff.
+
 ---- Version 8.1.5 - 14/08/09 ----
 
 Fix crash when %%combinevoices and different beaming.
@@ -36,7 +71,7 @@ Fix the size of font of the page header/footer, broken in 8.1.3
 ---- Version 8.1.3 - 14/07/01 ----
 
 Add more information about the titles/subtitles in the PostScript
-	output for (external) index generation
+		output for (external) index generation
 	(asked by Tim Macdonald).
 Add Δ (delta) in the known glyphs
 	(asked by Chuck Boody).
@@ -56,13 +91,13 @@ Fix bad vertical offset of dots sometimes when many voices per staff.
 Don't get 'auto' alone as 'clef=auto'
 	(reported by David Lacroix).
 Fix double clef at start of staff when many voices in the staff
-	since 8.1.0.
+		since 8.1.0.
 	(reported by David Lacroix).
 
 ---- Version 8.1.1 - 14/06/19 ----
 
 Fix crash when a voice with no note appears as second voice of a staff
-	since 8.1.0
+		since 8.1.0
 	(reported by Francis Stevens).
 
 ---- Version 8.1.0 - 14/06/19 ----
@@ -81,7 +116,7 @@ Fix bad handling of '|' when the first character in w:
 	(reported by Alex Scheutzow).
 Change internal treatment of #lines and scale of the staves.
 Fix bad clef/note offset when a voice with explicit clef moves
-	to an other staff
+		to an other staff
 	(reported by  reinier maliepaard).
 Fix bad font for !trill!
 	(reported by David Lacroix).

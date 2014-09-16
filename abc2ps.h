@@ -196,6 +196,8 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define S_TEMP		0x01000000	/* temporary symbol */
 #define S_SHIFTUNISON_1	0x02000000	/* %%shiftunison 1 */
 #define S_SHIFTUNISON_2	0x04000000	/* %%shiftunison 2 */
+#define S_NEW_SY	0x08000000	/* staff system change (%%staves) */
+#define S_CLEF_AUTO	0x10000000	/* auto clef (when clef) */
 	struct posit_s posit;	/* positions / directions */
 	signed char stem;	/* 1 / -1 for stem up / down */
 	signed char nflags;	/* number of note flags when > 0 */
@@ -261,7 +263,7 @@ struct FORMAT { 		/* struct for page layout */
 	float breaklimit, maxshrink, lineskipfac, parskipfac, stemheight;
 	float indent, infospace, slurheight, notespacingfactor, scale;
 	float staffsep, sysstaffsep, maxstaffsep, maxsysstaffsep, stretchlast;
-	int abc2pscompat, alignbars, aligncomposer, autoclef;
+	int abc2pscompat, alignbars, aligncomposer;
 	int barsperstaff, breakoneoln, bstemdown, cancelkey;
 	int combinevoices, contbarnb, continueall, custos;
 	int dblrepbar, dynalign, flatbeams;
@@ -370,7 +372,7 @@ extern int s_argc;		/* command line arguments */
 extern char **s_argv;
 
 struct STAFF_S {
-	struct clef_s clef;	/* base clef */
+	struct SYMBOL *s_clef;	/* clef at start of music line */
 	char empty;		/* no symbol on this staff */
 	signed char stafflines;
 	float staffscale;
@@ -396,8 +398,7 @@ struct VOICE_S {
 	struct tblt_s *tblts[2]; /* tablatures */
 	float scale;		/* scale */
 	int time;		/* current time (parsing) */
-//	struct clef_s clef;	/* current clef */
-	struct SYMBOL *s_clef;	/* current clef */
+	struct SYMBOL *s_clef;	/* clef at end of music line */
 	struct key_s key;	/* current key signature */
 	struct meter_s meter;	/* current time signature */
 	struct key_s ckey;	/* key signature while parsing */
@@ -413,7 +414,6 @@ struct VOICE_S {
 	unsigned space:1;	/* have a space before the next note (parsing) */
 	unsigned perc:1;	/* percussion */
 	unsigned auto_len:1;	/* auto L: (parsing) */
-	unsigned autoclef:1;	/* auto clef (parsing restart) */
 	short wmeasure;		/* measure duration (parsing) */
 	short transpose;	/* transposition (parsing) */
 	short bar_start;	/* bar type at start of staff / 0 */

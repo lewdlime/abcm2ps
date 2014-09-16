@@ -212,7 +212,10 @@ struct abctune {
 
 #ifdef WIN32
 #define strcasecmp stricmp
-#define strncasecmp strnicmp
+//#define strncasecmp strnicmp
+#define strncasecmp _strnicmp
+#define strdup _strdup
+#define fileno _fileno
 #endif
 
 #if defined(__cplusplus)

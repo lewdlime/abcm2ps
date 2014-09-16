@@ -176,7 +176,7 @@ static void sort_all(void)
 	struct SYMBOL *s, *prev, *s2;
 	struct VOICE_S *p_voice;
 	int fl, voice, time, w, wmin, multi, mrest_time;
-	int nv, nb, r, sysadv;
+	int nb, r, set_sy, new_sy;	// nv
 	struct SYMBOL *vtb[MAXVOICE];
 	signed char vn[MAXVOICE];	/* voice indexed by range */
 
@@ -187,15 +187,17 @@ static void sort_all(void)
 
 	/* initialize the voice order */
 	sy = cursys;
-	sysadv = 1;
+	set_sy = 1;
+	new_sy = 0;
 	prev = NULL;
-	fl = 1;				/* set start of sequence */
+//	fl = 1;				/* set start of sequence */
 	multi = -1;			/* (have gcc happy) */
 	for (;;) {
-		if (sysadv) {
-			sysadv = 0;
-			memset(vn, -1, sizeof vn);
+		if (set_sy) {
+			set_sy = 0;
+			fl = 1;			// start a new sequence
 			multi = -1;
+			memset(vn, -1, sizeof vn);
 			for (p_voice = first_voice;
 			     p_voice;
 			     p_voice = p_voice->next) {
@@ -210,7 +212,7 @@ static void sort_all(void)
 
 		/* search the min time and symbol weight */
 		wmin = time = (unsigned) ~0 >> 1;	/* max int */
-		nv = nb = 0;
+//		nv = nb = 0;
 		for (r = 0; r < MAXVOICE; r++) {
 			voice = vn[r];
 			if (voice < 0)
@@ -222,16 +224,18 @@ static void sort_all(void)
 			if (s->time < time) {
 				time = s->time;
 				wmin = w;
-				nb = 0;
+//				nb = 0;
 			} else if (w < wmin) {
 				wmin = w;
-				nb = 0;
+//				nb = 0;
 			}
+#if 0
 			if (!(s->sflags & S_SECOND)) {
 				nv++;
 				if (s->type == BAR)
 					nb++;
 			}
+#endif
 			if (s->type == MREST) {
 				if (s->as.u.bar.len == 1)
 					mrest_expand(s);
@@ -240,7 +244,7 @@ static void sort_all(void)
 			}
 		}
 		if (wmin > 127)
-			break;			/* done */
+			break;					/* done */
 
 #if 0
 		/* align the measure bars */
@@ -277,13 +281,13 @@ static void sort_all(void)
 				if (w != wmin)
 					continue;
 				if (s->type != MREST) {
-					mrest_time = -1;	/* some note or rest */
+					mrest_time = -1; /* some note or rest */
 					break;
 				}
 				if (nb == 0) {
 					nb = s->as.u.bar.len;
 				} else if (nb != s->as.u.bar.len) {
-					mrest_time = -1;	/* different duration */
+					mrest_time = -1; /* different duration */
 					break;
 				}
 			}
@@ -305,34 +309,43 @@ static void sort_all(void)
 			if (voice < 0)
 				break;
 			s = vtb[voice];
-			if (!s || s->time != time)
+			if (!s || s->time != time
+			 || w_tb[s->type] != wmin)
 				continue;
-			w = w_tb[s->type];
-			if (w != wmin)
-				continue;
-			if (fl) {
-				fl = 0;
-				s->sflags |= S_SEQST;
-			}
-			s->ts_prev = prev;
-			if (prev) {
-				prev->ts_next = s;
-				if (s->type == BAR
-				 && (s->sflags & S_SECOND)
-				 && prev->type != BAR
-				 && !(s->as.flags & ABC_F_INVIS))
-					error(1, s, "Bad measure bar");
-			} else {
-				tsfirst = s;
-			}
-			prev = s;
-			vtb[voice] = s->next;
-			if (s->type == STAVES) {
+			if (s->type == STAVES) {	// change STAVES to a flag
 				sy = sy->next;
-				sysadv = 1;
+				set_sy = new_sy = 1;
+				if (s->prev)
+					s->prev->next = s->next;
+				else
+					voice_tb[voice].sym = s->next;
+				if (s->next)
+					s->next->prev = s->prev;
+			} else {
+				if (fl) {
+					fl = 0;
+					s->sflags |= S_SEQST;
+				}
+				if (new_sy) {
+					new_sy = 0;
+					s->sflags |= S_NEW_SY;
+				}
+				s->ts_prev = prev;
+				if (prev) {
+					prev->ts_next = s;
+					if (s->type == BAR
+					 && (s->sflags & S_SECOND)
+					 && prev->type != BAR
+					 && !(s->as.flags & ABC_F_INVIS))
+						error(1, s, "Bad measure bar");
+				} else {
+					tsfirst = s;
+				}
+				prev = s;
 			}
+			vtb[voice] = s->next;
 		}
-		fl = wmin;	/* start a new sequence if some space */
+		fl = wmin;		/* start a new sequence if some space */
 	}
 
 	if (!prev)
@@ -696,10 +709,9 @@ static void do_clip(void)
 		/* update the start of voices */
 		sy = cursys;
 		for (s2 = tsfirst; s2 != s; s2 = s2->ts_next) {
-			switch (s2->type) {
-			case STAVES:
+			if (s->sflags & S_NEW_SY)
 				sy = sy->next;
-				break;
+			switch (s2->type) {
 			case CLEF:
 				voice_tb[s2->voice].s_clef = s2;
 				break;
@@ -916,10 +928,8 @@ static void generate(void)
 		p_voice->staff = cursys->voice[voice].staff;
 		p_voice->second = cursys->voice[voice].second;
 		p_voice->s_clef->time = 0;
-		if (p_voice->autoclef)		// set in set_auto_clef
-			p_voice->s_clef->as.u.clef.type = AUTOCLEF;
 	}
-	staves_found = 0;
+	staves_found = 0;		// (for voice compress/dup)
 }
 
 /* -- output the music and lyrics after tune -- */
@@ -1042,6 +1052,7 @@ static void note_transpose(struct SYMBOL *s)
 		i4 = s->as.u.note.accs[i] >> 3;
 		if (i4 != 0				/* microtone */
 		 && i1 != a) {				/* different accidental type */
+//fixme: strange code !!!
 			n = micro_tb[i4];
 			d = (n & 0xff) + 1;
 			n = (n >> 8) + 1;
@@ -2224,6 +2235,7 @@ static void get_staves(struct SYMBOL *s)
 		if (p_voice->floating && staff == nstaff)
 			p_voice->floating = 0;
 	}
+	curvoice = &voice_tb[parsys->top_voice];
 }
 
 /* -- re-initialize all potential voices -- */
@@ -3025,6 +3037,7 @@ void do_tune(struct abctune *t)
 		s->voice = i;
 		s->as.u.clef.type = AUTOCLEF;
 		s->as.u.clef.line = 2;		/* treble clef on 2nd line */
+		s->sflags = S_CLEF_AUTO;
 		voice_tb[i].s_clef = s;
 		voice_tb[i].meter.nmeter = 1;
 		voice_tb[i].meter.wmeasure = BASE_LEN;
@@ -3338,6 +3351,8 @@ static void get_clef(struct SYMBOL *s)
 		s->u = 1;			/* small clef */
 	}
 	p_voice->perc = s->as.u.clef.type == PERC;
+	if (s->as.u.clef.type == AUTOCLEF)
+		s->sflags |= S_CLEF_AUTO;
 }
 
 /* -- treat %%clef -- */
@@ -3397,6 +3412,7 @@ static void clef_def(struct SYMBOL *s)
 			p += 4;
 		} else if (strncmp(p, "auto", 4) == 0) {
 			clef = AUTOCLEF;
+			s->sflags |= S_CLEF_AUTO;
 			p += 4;
 		}
 		break;
@@ -4542,7 +4558,7 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 			float scale;
 
 			scale = strtod(p, &q);
-			if (scale <= 0.5 || scale > 2
+			if (scale < 0.3 || scale > 2
 			 || (*q != '\0' && *q != ' ')) {
 				error(1, s, "Bad value in %%%s", w);
 				return as;
@@ -4677,17 +4693,21 @@ center:
 					curvoice->key.sf = 0;
 				return as;
 			}
-			for ( ; s2; s2 = s2->prev)
+			for (;;) {
 				if (s2->type == KEYSIG)
 					break;
-			if (!s2 || s2->time != curvoice->time) {
-				s = sym_add(curvoice, KEYSIG);
-				s->as.type = ABC_T_INFO;
-				s->as.text = (char *) getarena(2);
-				s->as.text[0] = 'K';
-				s->as.text[1] = '\0';
-				s->u = curvoice->ckey.sf;
-				s2 = s;
+				if (s2->time == curvoice->time) {
+					s2 = s2->prev;
+					if (s2)
+						continue;
+				}
+				s2 = sym_add(curvoice, KEYSIG);
+				s2->as.type = ABC_T_INFO;
+				s2->as.text = (char *) getarena(2);
+				s2->as.text[0] = 'K';
+				s2->as.text[1] = '\0';
+				s2->u = curvoice->ckey.sf;
+				break;
 			}
 			memcpy(&s2->as.u.key, &curvoice->okey,
 						sizeof s2->as.u.key);
@@ -4695,7 +4715,7 @@ center:
 			memcpy(&curvoice->ckey, &s->as.u.key,
 						sizeof curvoice->ckey);
 			if (curvoice->key.empty)
-				curvoice->key.sf = 0;
+				s2->as.u.key.sf = 0;
 			return as;
 		}
 		if (strcmp(w, "tune") == 0) {

@@ -25,7 +25,8 @@
 #include <ctype.h>
 
 #ifdef WIN32
-#define strncasecmp strnicmp
+#define strncasecmp _strnicmp
+#define strdup _strdup
 #endif
 
 #include "front.h"

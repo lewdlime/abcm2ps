@@ -54,7 +54,6 @@ static struct format {
 	{"abc2pscompat", &cfmt.abc2pscompat, FORMAT_B, 3},
 	{"alignbars", &cfmt.alignbars, FORMAT_I, 0},
 	{"aligncomposer", &cfmt.aligncomposer, FORMAT_I, 0},
-	{"autoclef", &cfmt.autoclef, FORMAT_B, 0},
 	{"annotationfont", &cfmt.font_tb[ANNOTATIONFONT], FORMAT_F, 0},
 	{"barsperstaff", &cfmt.barsperstaff, FORMAT_I, 0},
 	{"bgcolor", &cfmt.bgcolor, FORMAT_S, 0},
@@ -372,7 +371,6 @@ void set_format(void)
 	f->parskipfac = 0.4;
 	f->measurenb = -1;
 	f->measurefirst = 1;
-	f->autoclef = 1;
 	f->breakoneoln = 1;
 	f->dblrepbar = (B_COL << 12) + (B_CBRA << 8) + (B_OBRA << 4) + B_COL;
 	f->dynalign = 1;

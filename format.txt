@@ -263,19 +263,6 @@ List of the format parameters
 	Description:
 		Set the annotation font.
 
-  autoclef <bool>
-	Default: 1
-	Compilation: none
-	Command line: none
-	Scope: generation
-	Description:
-		When this parameter is false, the voices which don't contain
-		a 'clef=' in K: or V: use the treble clef, according to the
-		ABC standard.
-		When true, the clefs and possibly the clef changes for these
-		voices are determined from the note pitches and inserted
-		automatically.
-
   barsperstaff <int>
 	Default: 0
 	Compilation: none
@@ -1429,11 +1416,10 @@ List of the format parameters
 		This parameter is used to decide if a staff must be displayed
 		when it contains no visible note.
 		The possible values are:
-		- 0: don't display the staff when it contains only
-		     invisible rests and notes,
-		- 1: don't display the staff when it contains only
-		     rests and invisible notes,
-		- 2: always display the staff.
+		- 0: display a staff when it contains visible notes,
+		- 1: display a staff when it contains visible rests
+		     or visible notes,
+		- 2: always display the staves.
 
   staffscale <float>
 	Default: 1

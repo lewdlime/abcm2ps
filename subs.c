@@ -1369,7 +1369,9 @@ void put_history(void)
 		w = tex_str(tmp);
 		h = cfmt.font_tb[HISTORYFONT].size * cfmt.lineskipfac;
 		set_font(HISTORYFONT);
-		a2b("0 0 M(%s)show ", tex_buf);
+//		a2b("0 0 M(%s)show ", tex_buf);
+		a2b("0 0 M");
+		str_out(tex_buf, A_LEFT);
 		for (;;) {
 			put_inf(s2);
 			if ((s2 = s2->next) == NULL)
@@ -1677,7 +1679,7 @@ static void write_headform(float lwidth)
 }
 
 /* -- output the tune heading -- */
-void write_heading(struct abctune *t)
+void write_heading(void)
 {
 	struct SYMBOL *s, *rhythm, *area, *author, *composer, *origin;
 	float lwidth, down1, down2;
@@ -1710,7 +1712,7 @@ void write_heading(struct abctune *t)
 		down1 = cfmt.composerspace;
 	}
 	area = author = NULL;
-	if (t->abc_vers != (2 << 16))
+	if (parse.abc_vers != (2 << 16))
 		area = info['A' - 'A'];
 	else
 		author = info['A' - 'A'];

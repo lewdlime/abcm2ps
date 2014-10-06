@@ -1,3 +1,29 @@
+---- Version 8.3.0 - 14/10/05 ----
+
+Fix program loop when no measure bar at end of line since 8.2.2.
+Fix some clashes of rests when more than 2 voices per staff.
+Don't reset the staff to the main voice when finding a previous
+	overlaid voice.
+Fix the documentation about %%stretchlast and change its default
+	value from 0.2 to 0.25.
+Handle utf-8 in the names of the notes/history/.. after tune
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix crash when line break before a note alone in a staff
+	and a new voice since 8.2.0.
+Fix crash when %%alignbars since 8.2.0.
+Fix some clashes of dots and stems when voice overlap
+	(reported by Hudson Flávio Meneses Lacerda a long time ago!).
+Fix bad PS output when exact minimum spacing since 8.2.1.
+Fix crash when tune starting with grace note in the middle voice
+	of a 3-voices staff.
+Fix crash when many %%staves/%%score and new pages
+	(reported by David Lacroix).
+Don't print the lyrics after tune when "%%writefields W n".
+Fix loss of explicit clefs since 8.2.0.
+Fix M$ compiler errors
+	(reported by Olivier Levon).
+Simplify the ABC parser.
+
 ---- Version 8.2.2 - 14/09/12 ----
 
 Fix crash when slur of second voice continued on next line.

@@ -500,7 +500,7 @@ static struct {
 	"	c5 -8.5 5.5 4.5 10 -2\n"
 	"	c-5 8.5 -5.5 -4.5 -10 2\"/>\n"},
 #define D_stc 64
-{	"<circle id=\"stc\" fill=\"currentColor\" cx=\"0\" cy=\"-4\" r=\"1.2\"/>\n"},
+{	"<circle id=\"stc\" fill=\"currentColor\" cx=\"0\" cy=\"-3\" r=\"1.2\"/>\n"},
 #define D_sld 65
 {	"<path id=\"sld\" fill=\"currentColor\" d=\"\n"
 	"	m-7.2 4.8\n"
@@ -1636,6 +1636,8 @@ stack_dump();
 			s = pop_free_str();	/* symbol */
 			if (!s || *s != '/') {
 				fprintf(stderr, "svg def: No / bad symbol\n");
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}
@@ -2052,6 +2054,8 @@ curveto:
 			s = pop_free_str();
 			if (!s || ((*s != '/') && (*s != '('))) {
 				fprintf(stderr, "svg cvx: No / bad string\n");
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}
@@ -2261,6 +2265,8 @@ curveto:
 			 || *s != '/'
 			 || strlen(s) >= sizeof gcur.font_n) {
 				fprintf(stderr, "svg selectfont: No / bad font\n");
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}
@@ -2420,8 +2426,10 @@ curveto:
 				return;
 			case STR:
 				s = stack->u.s;
-				if (*s != '(') {
+				if (!s || *s != '(') {
 					fprintf(stderr, "svg get: Not a string\n");
+					if (s)
+						free(s);
 					ps_error = 1;
 					return;
 				}
@@ -2465,6 +2473,8 @@ curveto:
 			s = pop_free_str();
 			if (!s || *s != '(') {
 				fprintf(stderr, "svg getinterval: No string\n");
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}
@@ -2722,6 +2732,8 @@ lineto:
 			s = pop_free_str();
 			if (!s || *s != '(') {
 				fprintf(stderr, "svg length: No string\n");
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}
@@ -2744,6 +2756,8 @@ lineto:
 			s = pop_free_str();
 			if (!s || *s != '/') {
 				fprintf(stderr, "svg load: No / bad symbol\n");
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}
@@ -2980,11 +2994,15 @@ moveto:
 			s = pop_free_str();
 			if (!s || *s != '(') {
 				fprintf(stderr, "svg put: No string\n");
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}
 			if ((unsigned) n >= strlen(s) - 1) {
 				fprintf(stderr, "svg put: Out of bounds\n");
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}
@@ -3321,6 +3339,8 @@ rmoveto:
 			 || *s != '/'
 			 || strlen(s) >= sizeof gcur.font_n) {
 				fprintf(stderr, "svg selectfont: No / bad font\n");
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}
@@ -3850,6 +3870,10 @@ translate:
 			s = pop_free_str();
 			if (!d || !s) {
 				fprintf(stderr, "svg: No string\n");
+				if (d)
+					free(d);
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}
@@ -3924,6 +3948,8 @@ translate:
 			s = pop_free_str();		/* symbol */
 			if (!s || *s != '/') {
 				fprintf(stderr, "svg where: No / bad symbol\n");
+				if (s)
+					free(s);
 				ps_error = 1;
 				return;
 			}

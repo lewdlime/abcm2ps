@@ -30,6 +30,8 @@ Tune body.
 	- Multiple measure overlay (as '&&') is not implemented.
 	  Use the '(& .. & .. & .. &) extension instead.
 
+	- Setting lyrics to overlaid voices does not work.
+
 Text strings.
 
 	- The HTML sequences are not implemented.

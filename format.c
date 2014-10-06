@@ -363,7 +363,7 @@ void set_format(void)
 	f->slurheight = 1.0;
 	f->maxshrink = 0.65;
 	f->breaklimit = 0.7;
-	f->stretchlast = 0.2;
+	f->stretchlast = 0.25;
 	f->stretchstaff = 1;
 	f->graceslurs = 1;
 	f->hyphencont = 1;
@@ -594,6 +594,7 @@ static int get_posit(char *p)
 int get_textopt(char *p)
 {
 	if (*p == '\0'
+	 || *p == '%'
 	 || strncmp(p, "obeylines", 9) == 0)
 		return T_LEFT;
 	if (strncmp(p, "align", 5) == 0

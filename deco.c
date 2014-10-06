@@ -929,7 +929,7 @@ static unsigned char deco_intern(unsigned char ideco)
 			return 0;
 		}
 	} else {
-		name = (*deco_tb)[ideco - 128];
+		name = parse.deco_tb[ideco - 128];
 	}
 	for (ideco = 1; ideco < 128; ideco++) {
 		if (!deco_def_tb[ideco].name) {

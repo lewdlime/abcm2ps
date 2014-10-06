@@ -200,7 +200,7 @@ static int calculate_beam(struct BEAM *bm,
 			s = sym_dup(s2);
 			s->next = s2->next;
 			if (s->next)
-				s->next->prev = s;;
+				s->next->prev = s;
 			s2->next = s;
 			s->prev = s2;
 			s->ts_next = s2->ts_next;
@@ -227,6 +227,8 @@ static int calculate_beam(struct BEAM *bm,
 	} else {			/* staves defined */
 		if (!two_staves && !(s1->as.flags & ABC_F_GRACE)) {
 			bm->s1 = s1;	/* beam already calculated */
+if (s1->xs == s2->xs)
+ bug("beam with null length", 1);
 			bm->a = (s1->ys- s2->ys) / (s1->xs - s2->xs);
 			bm->b = s1->ys - s1->xs * bm->a
 				+ staff_tb[staff].y;
@@ -491,6 +493,7 @@ static int calculate_beam(struct BEAM *bm,
 			s->ys = a * s->xs + b - staff_tb[s->staff].y;
 			if (s->stem > 0) {
 				s->ymx = s->ys + 2.5;
+#if 0
 //fixme: hack
 				if (s->ts_prev
 				 && s->ts_prev->stem > 0
@@ -501,6 +504,7 @@ static int calculate_beam(struct BEAM *bm,
 					s->ts_prev->x -= 5;	/* fix stem clash */
 					s->ts_prev->xs -= 5;
 				}
+#endif
 			} else {
 				s->ymn = s->ys - 2.5;
 			}
@@ -577,8 +581,6 @@ static void draw_beam(float x1,
 	putx(x2);
 	putf(dy2);
 	putxy(x1, y1);
-if (strcmp(mbf - 4, "nan ") == 0)
-fprintf(stderr, "ici\n");
 	a2b("bm\n");
 }
 
@@ -925,7 +927,7 @@ static void draw_acc(int acc, int microscale)
 {
 	int n, d;
 
-	n = micro_tb[acc >> 3];
+	n = parse.micro_tb[acc >> 3];
 	if (acc >> 3 != 0
 	 && (cfmt.micronewps || microscale)) {
 		if (microscale) {
@@ -1676,10 +1678,10 @@ static void draw_basic_note(float x,
 		float dotx;
 		int doty;
 
-		dotx = (int) (8. + s->xmx);
+		dotx = 7.7 + s->xmx - shhd;
 		doty = y_tb[m] - y;
 		while (--dots >= 0) {
-			a2b(" %.1f %d dt", dotx - shhd, doty);
+			a2b(" %.1f %d dt", dotx, doty);
 			dotx += 3.5;
 		}
 	}
@@ -2042,9 +2044,11 @@ static int draw_slur(struct SYMBOL *k1,
 if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 
 	/* fix endpoints */
-	x1 = k1->x + k1->xmx;		/* take the max right side */
+//	x1 = k1->x + k1->xmx;		/* take the max right side */
+	x1 = k1->x + k1->shhd[0];
 	if (k1 != k2) {
-		x2 = k2->x;
+//		x2 = k2->x;
+		x2 = k2->x + k2->shhd[0];
 	} else {		/* (the slur starts on last note of the line) */
 		for (k = k2->ts_next; k; k = k->ts_next)
 			if (k->sflags & S_NEW_SY)
@@ -3653,7 +3657,7 @@ static void draw_tblt_p(struct VOICE_S *p_voice,
 			int n, d;
 			float micro_p;
 
-			n = micro_tb[acc >> 3];
+			n = parse.micro_tb[acc >> 3];
 			d = (n & 0xff) + 1;
 			n = (n >> 8) + 1;
 			switch (acc & 0x07) {
@@ -4328,9 +4332,7 @@ static float set_staff(void)
 		staff_tb[staff].empty = 1;
 	}
 	if (staff > nstaff)
-//fixme: test: remove the whole staff system if all staves are empty
-//		staff--;			/* one staff, empty */
-		return 0;
+		staff--;			/* one staff, empty */
 
 	y = 0;
 	for (i = 0; i < YSTEP; i++) {

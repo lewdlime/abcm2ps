@@ -48,7 +48,7 @@ struct note {		/* note or rest */
 	short lens[MAXHD];	/* note lengths (# pts in [1] if space) */
 	unsigned char accs[MAXHD]; /* code for accidentals & index in micro_tb */
 	unsigned char sl1[MAXHD]; /* slur start per head */
-	char sl2[MAXHD];	/* number of slur end per head */
+	char sl2[MAXHD];	/* number of slur ends per head */
 	char ti1[MAXHD];	/* flag to start tie here */
 	unsigned char decs[MAXHD]; /* head decorations (index: 5 bits, len: 3 bits) */
 	short chlen;		/* chord length */
@@ -199,49 +199,32 @@ struct abcsym {
 	} u;
 };
 
-/* tune definition */
-struct abctune {
-	struct abctune *next;	/* next tune */
+/* parse definition */
+struct {
 	struct abcsym *first_sym; /* first symbol */
 	struct abcsym *last_sym; /* last symbol */
 	int abc_vers;		/* ABC version = (H << 16) + (M << 8) + L */
-	void *client_data;	/* client data */
 	char *deco_tb[128];	/* decoration names */
 	unsigned short micro_tb[MAXMICRO]; /* microtone values [ (n-1) | (d-1) ] */
-};
+	int abc_state;		/* parser state */
+} parse;
 
 #ifdef WIN32
 #define strcasecmp stricmp
-//#define strncasecmp strnicmp
 #define strncasecmp _strnicmp
 #define strdup _strdup
+#ifdef _MSC_VER
 #define fileno _fileno
 #endif
-
-#if defined(__cplusplus)
-extern "C" {
 #endif
+
 //extern char *deco_tb[];
 extern int severity;
 
-void abc_delete(struct abcsym *as);
-void abc_free(struct abctune *first_tune);
-void abc_init(void *alloc_f_api(int size),
-	      void free_f_api(void *ptr),
-	      void level_f_api(int level),
-	      int client_sz_api,
-	      int keep_comment_api);
-void abc_insert(char *file_api,
-		struct abcsym *s);
-struct abcsym *abc_new(struct abctune *t,
-		       char *p,
-		       char *comment);
-struct abctune *abc_parse(char *file_api);
+void abc_parse(char *p, char *fname, int linenum);
+void abc_eof(void);
 char *get_str(char *d,
 	      char *s,
 	      int maxlen);
 char *parse_deco(char *p,
 		 struct deco *deco);
-#if defined(__cplusplus)
-}
-#endif

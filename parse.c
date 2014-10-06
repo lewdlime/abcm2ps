@@ -60,8 +60,6 @@ struct SYSTEM *cursys;			/* current system */
 static struct SYSTEM *parsys;		/* current system while parsing */
 
 struct FORMAT dfmt;			/* current global format */
-unsigned short *micro_tb;		/* ptr to the microtone table of the tune */
-char *(*deco_tb)[128];			/* ptr to the deco table of the tune */
 int nbar;				/* current measure number */
 
 static struct voice_opt_s *voice_opts, *tune_voice_opts;
@@ -85,8 +83,7 @@ static float multicol_max;
 static float lmarg, rmarg;
 
 static void get_clef(struct SYMBOL *s);
-static struct abcsym *get_info(struct abcsym *as,
-		     struct abctune *t);
+static struct abcsym *get_info(struct abcsym *as);
 static void get_key(struct SYMBOL *s);
 static void get_meter(struct SYMBOL *s);
 static void get_voice(struct SYMBOL *s);
@@ -628,7 +625,7 @@ static void system_init(void)
 	sort_all();			/* define the time / vertical sequences */
 	if (!tsfirst)
 		return;
-	parsys->nstaff = nstaff;	/* save the number of staves */
+//	parsys->nstaff = nstaff;	/* save the number of staves */
 }
 
 /* go to a global (measure + time) */
@@ -1053,7 +1050,7 @@ static void note_transpose(struct SYMBOL *s)
 		if (i4 != 0				/* microtone */
 		 && i1 != a) {				/* different accidental type */
 //fixme: strange code !!!
-			n = micro_tb[i4];
+			n = parse.micro_tb[i4];
 			d = (n & 0xff) + 1;
 			n = (n >> 8) + 1;
 			if (a == A_NT) {
@@ -1072,10 +1069,10 @@ static void note_transpose(struct SYMBOL *s)
 			d--;
 			d += (n - 1) << 8;
 			for (i4 = 1; i4 < MAXMICRO; i4++) {
-				if (micro_tb[i4] == d)
+				if (parse.micro_tb[i4] == d)
 					break;
-				if (micro_tb[i4] == 0) {
-					micro_tb[i4] = d;
+				if (parse.micro_tb[i4] == 0) {
+					parse.micro_tb[i4] = d;
 					break;
 				}
 			}
@@ -1794,6 +1791,8 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 		memcpy(&p_voice2->okey, &p_voice->okey,
 					sizeof p_voice2->okey);
 		p_voice2->posit = p_voice->posit;
+		p_voice2->staff = p_voice->staff;
+		p_voice2->cstaff = p_voice->cstaff;
 		range = parsys->voice[p_voice - voice_tb].range;
 		for (voice = 0; voice < MAXVOICE; voice++) {
 			if (parsys->voice[voice].range > range)
@@ -1822,14 +1821,14 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 		}
 	}
 	voice = p_voice - voice_tb;
-	p_voice2->cstaff = p_voice2->staff = parsys->voice[voice2].staff
-			= parsys->voice[voice].staff;
-	if ((voice3 = p_voice2->clone) >= 0) {
-		p_voice3 = &voice_tb[voice3];
-		p_voice3->cstaff = p_voice3->staff
-				= parsys->voice[voice3].staff
-				= parsys->voice[p_voice->clone].staff;
-	}
+//	p_voice2->cstaff = p_voice2->staff = parsys->voice[voice2].staff
+//			= parsys->voice[voice].staff;
+//	if ((voice3 = p_voice2->clone) >= 0) {
+//		p_voice3 = &voice_tb[voice3];
+//		p_voice3->cstaff = p_voice3->staff
+//				= parsys->voice[voice3].staff
+//				= parsys->voice[p_voice->clone].staff;
+//	}
 
 	if (over_time < 0) {			/* first '&' in a measure */
 		int time;
@@ -2217,7 +2216,7 @@ static void get_staves(struct SYMBOL *s)
 	}
 	if (staff < 0)
 		staff = 0;
-	nstaff = staff;
+	parsys->nstaff = nstaff = staff;
 
 	/* change the behaviour of '|' in %%score */
 	if (s->as.text[3] == 'c') {		/* if %%score */
@@ -2491,8 +2490,7 @@ static void set_global_def(void)
 }
 
 /* -- get the global definitions after the first K: or middle-tune T:'s -- */
-static struct abcsym *get_global_def(struct abcsym *as,
-				     struct abctune *t)
+static struct abcsym *get_global_def(struct abcsym *as)
 {
 	struct abcsym *as2;
 
@@ -2513,7 +2511,7 @@ static struct abcsym *get_global_def(struct abcsym *as,
 			case 'Q':
 				as = as2;
 				as->state = ABC_S_HEAD;
-				as = get_info(as, t);
+				as = get_info(as);
 				continue;
 			}
 			break;
@@ -2532,8 +2530,7 @@ static struct abcsym *get_global_def(struct abcsym *as,
 }
 
 /* -- identify info line, store in proper place	-- */
-static struct abcsym *get_info(struct abcsym *as,
-		     struct abctune *t)
+static struct abcsym *get_info(struct abcsym *as)
 {
 	struct SYMBOL *s, *s2;
 	struct VOICE_S *p_voice;
@@ -2565,7 +2562,7 @@ static struct abcsym *get_info(struct abcsym *as,
 				use_buffer = !cfmt.splittune;
 			bskip(cfmt.topspace);
 		}
-		write_heading(t);
+		write_heading();
 		block_put();
 
 		/* information for index
@@ -2597,7 +2594,7 @@ static struct abcsym *get_info(struct abcsym *as,
 		over_bar = 0;
 		reset_gen();
 
-		as = get_global_def(as, t);
+		as = get_global_def(as);
 
 		if (!(cfmt.fields[0] & (1 << ('Q' - 'A'))))
 			info['Q' - 'A'] = NULL;
@@ -2704,10 +2701,10 @@ static struct abcsym *get_info(struct abcsym *as,
 		}
 		voice_init();
 		reset_gen();		/* (display the time signature) */
-		as = get_global_def(as, t);
+		as = get_global_def(as);
 		break;
 	case 'U':
-		deco[as->u.user.symbol] = (*deco_tb)[as->u.user.value - 128];
+		deco[as->u.user.symbol] = parse.deco_tb[as->u.user.value - 128];
 		break;
 	case 'u':
 		break;
@@ -2740,7 +2737,8 @@ static struct abcsym *get_info(struct abcsym *as,
 		as = get_lyric(as);
 		break;
 	case 'W':
-		if (as->state == ABC_S_GLOBAL)
+		if (as->state == ABC_S_GLOBAL
+		 || !(cfmt.fields[0] & (1 << ('W' - 'A'))))
 			break;
 		goto addinfo;
 	case 'X':
@@ -3019,8 +3017,9 @@ static void set_tblt(struct VOICE_S *p_voice)
 }
 
 /* -- do a tune -- */
-void do_tune(struct abctune *t)
+void do_tune(void)
 {
+	struct VOICE_S *p_voice;
 	struct abcsym *as;
 	struct SYMBOL *s, *s2;
 	int i;
@@ -3029,8 +3028,8 @@ void do_tune(struct abctune *t)
 	lvlarena(0);
 	nstaff = 0;
 	staves_found = -1;
-	memset(voice_tb, 0, sizeof voice_tb);
 	for (i = 0; i < MAXVOICE; i++) {
+		p_voice = &voice_tb[i];
 		s = (struct SYMBOL *) getarena(sizeof *s);
 		memset(s, 0, sizeof *s);
 		s->type = CLEF;
@@ -3038,23 +3037,21 @@ void do_tune(struct abctune *t)
 		s->as.u.clef.type = AUTOCLEF;
 		s->as.u.clef.line = 2;		/* treble clef on 2nd line */
 		s->sflags = S_CLEF_AUTO;
-		voice_tb[i].s_clef = s;
-		voice_tb[i].meter.nmeter = 1;
-		voice_tb[i].meter.wmeasure = BASE_LEN;
-		voice_tb[i].meter.meter[0].top[0] = '4';
-		voice_tb[i].meter.meter[0].bot[0] = '4';
-		voice_tb[i].wmeasure = BASE_LEN;
-		voice_tb[i].scale = 1;
-		voice_tb[i].clone = -1;
-		voice_tb[i].over = -1;
-		voice_tb[i].posit = cfmt.posit;
-		voice_tb[i].stafflines = -1;
-		voice_tb[i].staffscale = 0;
+		p_voice->s_clef = s;
+		p_voice->meter.nmeter = 1;
+		p_voice->meter.wmeasure = BASE_LEN;
+		p_voice->meter.meter[0].top[0] = '4';
+		p_voice->meter.meter[0].bot[0] = '4';
+		p_voice->wmeasure = BASE_LEN;
+		p_voice->scale = 1;
+		p_voice->clone = -1;
+		p_voice->over = -1;
+		p_voice->posit = cfmt.posit;
+		p_voice->stafflines = -1;
+//		p_voice->staffscale = 0;
 	}
 	curvoice = first_voice = voice_tb;
-	deco_tb = &t->deco_tb;		/* decoration names */
 	reset_deco();
-	micro_tb = t->micro_tb;		/* microtone values */
 	abc2win = 0;
 	clip_start.bar = -1;
 	clip_end.bar = (short unsigned) ~0 >> 1;
@@ -3077,9 +3074,8 @@ void do_tune(struct abctune *t)
 	}
 
 	/* set the duration of all notes/rests
-	 *	(this is needed for tuplets and the feathered beams)
-	 * and get the voice IDs */
-	for (as = t->first_sym; as; as = as->next) {
+	 *	(this is needed for tuplets and the feathered beams) */
+	for (as = parse.first_sym; as; as = as->next) {
 		switch (as->type) {
 		case ABC_T_EOLN:
 			if (as->u.eoln.type == 2)
@@ -3090,15 +3086,6 @@ void do_tune(struct abctune *t)
 			s = (struct SYMBOL *) as;
 			s->dur = s->as.u.note.lens[0];
 			break;
-		case ABC_T_INFO:
-			if (as->text[0] == 'V') {
-				int v;
-
-				v = as->u.voice.voice;
-				if (voice_tb[v].id[0] == '\0')
-					strcpy(voice_tb[v].id, as->u.voice.id);
-			}
-			break;
 		}
 	}
 
@@ -3108,13 +3095,13 @@ void do_tune(struct abctune *t)
 	}
 
 	/* scan the tune */
-	for (as = t->first_sym; as; as = as->next) {
+	for (as = parse.first_sym; as; as = as->next) {
 		s = (struct SYMBOL *) as;
 		if (as->flags & ABC_F_LYRIC_START)
 			curvoice->lyric_start = curvoice->last_sym;
 		switch (as->type) {
 		case ABC_T_INFO:
-			as = get_info(as, t);
+			as = get_info(as);
 			break;
 		case ABC_T_PSCOM:
 			as = process_pscomment(as);
@@ -3144,7 +3131,7 @@ void do_tune(struct abctune *t)
 				continue;
 			if (as->u.eoln.type == 0	/* if normal eoln */
 			 && abc2win
-			 && t->abc_vers != (2 << 16))
+			 && parse.abc_vers != (2 << 16))
 				continue;
 			if (parsys->voice[curvoice - voice_tb].range == 0
 			 && curvoice->last_sym)
@@ -3156,7 +3143,7 @@ void do_tune(struct abctune *t)
 					break;
 				switch (as->next->text[0]) {
 				case 'w':
-					as = get_info(as->next, t);
+					as = get_info(as->next);
 					s = (struct SYMBOL *) as;
 					continue;
 				case 'd':
@@ -3737,6 +3724,7 @@ static void get_voice(struct SYMBOL *s)
 			}
 			p_voice->staff = p_voice->cstaff = nstaff;
 			parsys->voice[voice].staff = nstaff;
+			parsys->nstaff = nstaff;
 			{
 				int range, i;
 
@@ -4808,7 +4796,7 @@ center:
 		break;
 	case 'u':
 		if (strcmp(w, "user") == 0) {
-			deco[as->u.user.symbol] = (*deco_tb)[as->u.user.value - 128];
+			deco[as->u.user.symbol] = parse.deco_tb[as->u.user.value - 128];
 			return as;
 		}
 		break;
@@ -4968,8 +4956,9 @@ center:
 			parsys->voice[i].staff = i;
 			parsys->voice[i].range = i;
 		}
-		voice_tb[i - 1].next = NULL;
-		nstaff = i;
+		i--;
+		voice_tb[i].next = NULL;
+		parsys->nstaff = nstaff = i;
 	}
 	return as;
 }

@@ -32,7 +32,7 @@
 
 #define STEM_YOFF	1.0	/* offset stem from note center */
 #define STEM_XOFF	3.5
-#define STEM		20	/* default stem height */
+#define STEM		21	/* default stem height = one octave */
 #define STEM_MIN	16	/* min stem height under beams */
 #define STEM_MIN2	14	/* ... for notes with two beams */
 #define STEM_MIN3	12	/* ... for notes with three beams */
@@ -50,7 +50,6 @@
 #define BEAM_SLOPE	0.5	/* max slope of a beam */
 #define BEAM_STUB	6.0	/* length of stub for flag under beam */ 
 #define SLUR_SLOPE	1.0	/* max slope of a slur */
-#define DOTSHIFT	5	/* dot shift when up flag on note */
 #define GSTEM		14	/* grace note stem length */
 #define GSTEM_XOFF	1.6	/* x offset for grace note stem */
 
@@ -251,10 +250,6 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define B_DREP 0x44		/* ::	double repeat bar */
 #define B_DASH 0x04		/* :	dashed bar */
 
-
-extern char *(*deco_tb)[128];	/* ptr to the deco table of the tune */
-extern unsigned short *micro_tb; /* ptr to the microtone table of the tune */
-
 struct FORMAT { 		/* struct for page layout */
 	float pageheight, pagewidth;
 	float topmargin, botmargin, leftmargin, rightmargin;
@@ -384,11 +379,12 @@ extern struct STAFF_S staff_tb[MAXSTAFF];
 extern int nstaff;		/* (0..MAXSTAFF-1) */
 
 struct VOICE_S {
+	char id[VOICE_ID_SZ];	/* voice id */
+							/* generation */
 	struct VOICE_S *next;	/* link */
 	struct SYMBOL *sym;	/* associated symbols */
 	struct SYMBOL *last_sym; /* last symbol while scanning */
 	struct SYMBOL *lyric_start;	/* start of lyrics while scanning */
-	char id[VOICE_ID_SZ];	/* voice id */
 	char *nm;		/* voice name */
 	char *snm;		/* voice subname */
 	char *bar_text;		/* bar text at start of staff when bar_start */
@@ -426,6 +422,11 @@ struct VOICE_S {
 	unsigned char slur_st;	/* slurs at start of staff */
 	signed char stafflines;
 	float staffscale;
+							/* parsing */
+	struct abcsym *last_note;	/* last note or rest */
+	short ulen;			/* unit note length */
+	unsigned char microscale;	/* microtone scale */
+	unsigned char mvoice;		/* main voice when voice overlay */
 };
 extern struct VOICE_S voice_tb[MAXVOICE]; /* voice table */
 extern struct VOICE_S *first_voice; /* first_voice */
@@ -475,6 +476,7 @@ struct SYSTEM *cursys;		/* current staff system */
 
 /* -- external routines -- */
 /* abc2ps.c */
+void include_file(unsigned char *fn);
 void clrarena(int level);
 int lvlarena(int level);
 void *getarena(int len);
@@ -557,6 +559,14 @@ void set_font(int ft);
 void set_format(void);
 void set_voice_param(struct VOICE_S *p_voice, int state, char *w, char *p);
 struct tblt_s *tblt_parse(char *p);
+/* front.c */
+#define FE_ABC 0
+#define FE_FMT 1
+#define FE_PS 2
+void frontend(unsigned char *s,
+		int ftype,
+		char *fname,
+		int linenum);
 /* glyph.c */
 char *glyph_out(char *p);
 void glyph_add(char *p);
@@ -566,7 +576,7 @@ void reset_gen(void);
 void unlksym(struct SYMBOL *s);
 /* parse.c */
 extern float multicol_start;
-void do_tune(struct abctune *t);
+void do_tune(void);
 void identify_note(struct SYMBOL *s,
 		int len,
 		int *p_head,
@@ -605,7 +615,7 @@ char *trim_title(char *p, struct SYMBOL *title);
 void user_ps_add(char *s, char use);
 void user_ps_write(void);
 void write_title(struct SYMBOL *s);
-void write_heading(struct abctune *t);
+void write_heading(void);
 void write_user_ps(void);
 void write_text(char *cmd, char *s, int job);
 /* svg.c */

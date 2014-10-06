@@ -1486,14 +1486,14 @@ List of the format parameters
 		Have straight flags on the stems for bagpipe tunes.
 
   stretchlast <float>
-	Default: 0.8
+	Default: 0.25
 	Compilation: none
 	Command line: none
 	Scope: generation
 	Description:
-		Stretch the last music line of a tune when it exceeds
-		the <float> fraction of the page width.
-		<float> range is 0.0 to 1.0.
+		Stretch the last music line of a tune when it lacks
+		only the <float> fraction of the page width.
+		<float> range is 0.0 (no stretch) to 1.0.
 
   stretchstaff <bool>
 	Default: 1

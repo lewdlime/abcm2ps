@@ -27,7 +27,6 @@
 #include <sys/stat.h>
 
 #include "abc2ps.h"
-#include "front.h"
 
 #ifdef HAVE_MMAP
 #include <unistd.h>
@@ -203,7 +202,7 @@ static char *read_file(char *fn, char *ext)
 }
 
 /* call back to handle %%format/%%abc-include - see front.c */
-static void include_cb(unsigned char *fn)
+void include_file(unsigned char *fn)
 {
 	static int nbfiles;
 
@@ -220,8 +219,7 @@ static void include_cb(unsigned char *fn)
 /* -- treat an input file and generate the ABC file -- */
 static void treat_file(char *fn, char *ext)
 {
-	struct abctune *t;
-	char *file, *file2;
+	char *file;
 	char *abc_fn;
 	int file_type, l;
 
@@ -258,48 +256,32 @@ static void treat_file(char *fn, char *ext)
 		mtime = fmtime;
 	}
 
-	file2 = (char *) frontend((unsigned char *) file, file_type,
+	frontend((unsigned char *) file, file_type,
 				abc_fn, 0);
 	free(file);
 
 	if (file_type == FE_PS)			/* PostScript file */
-		file2 = (char *) frontend((unsigned char *) "%%endps", FE_ABC,
+		frontend((unsigned char *) "%%endps", FE_ABC,
 				abc_fn, 0);
-	if (ext[0] == 'f')		/* if %%format */
-		return;			/* don't free the preprocessed buffer */
-
-	if (file_type == FE_ABC)		/* if ABC file */
-		clrarena(1);			/* clear previous tunes */
-	t = abc_parse(file2);
-	free(file2);
-	front_init(0, 0, include_cb);		/* reinit the front-end */
-	if (!t) {
-		if (file_type == FE_ABC)
-			error(1, NULL, "File '%s' is empty!", abc_fn);
-		return;
-	}
-
-	while (t) {
-		if (t->first_sym)
-			do_tune(t);		/* generate */
-		t = t->next;
-	}
-/*	abc_free(t);	(useless) */
+	if (file_type == FE_ABC)	/* if ABC file */
+		clrarena(1);		/* clear previous tunes */
 }
 
 /* -- treat an ABC input file and generate the music -- */
 /* this function also treats ABC in XHTML */
 static void treat_abc_file(char *fn)
 {
-	struct abctune *t;
 	FILE *fin;
-	char *file, *file_tmp, *file_abc;
+	char *file, *file_tmp;
 	char *abc_fn, *p, *q;
 	size_t fsize, l, l2;
 	int linenum;
 #ifdef HAVE_MMAP
 	int fd;
 #endif
+
+	lvlarena(0);
+	parse.abc_state = ABC_S_GLOBAL;
 
 	if (epsf != 3) {
 		treat_file(fn, "abc");		/* not '-z' */
@@ -389,24 +371,13 @@ static void treat_abc_file(char *fn)
 		memcpy(file_tmp, p, l2);
 		file_tmp[l2] = '\0';
 
-		file_abc = (char *) frontend((unsigned char *) file_tmp, FE_ABC,
+		frontend((unsigned char *) file_tmp, FE_ABC,
 						abc_fn, linenum);
 		free(file_tmp);
 
 		clrarena(1);			/* clear previous tunes */
-		t = abc_parse(file_abc);
-		free(file_abc);
-		front_init(0, 0, include_cb);	/* reinit the front-end */
-		if (!t) {
-			error(1, NULL, "no tune");
-		} else {
-			file_initialized = -1;	/* don't put <br/> before first image */
-			while (t) {
-				if (t->first_sym)
-					do_tune(t);
-				t = t->next;
-			}
-		}
+		file_initialized = -1;	/* don't put <br/> before first image */
+
 		l -= q - p;
 		while (p != q) {
 			if (*p++ == '\n')
@@ -711,17 +682,11 @@ int main(int argc, char **argv)
 	clrarena(0);				/* global */
 	clrarena(1);				/* tunes */
 	clrarena(2);				/* generation */
-	abc_init(getarena,			/* alloc */
-		0,				/* free */
-		(void (*)(int level)) lvlarena, /* new level */
-		sizeof(struct SYMBOL) - sizeof(struct abcsym),
-		0);				/* don't keep comments */
 //	memset(&info, 0, sizeof info);
 	info['T' - 'A'] = &notitle;
 	notitle.as.text = "T:";
 	set_format();
 	init_deco();
-	front_init(0, 0, include_cb);
 
 #ifdef linux
 	/* if not set, try to find where is the default format directory */
@@ -1077,7 +1042,7 @@ int main(int argc, char **argv)
 			write_buffer();
 	}
 	if (!epsf && !fout) {
-		error(1, NULL, "No input file specified");
+		error(1, NULL, "Nothing to generate!");
 		return EXIT_FAILURE;
 	}
 	close_output_file();

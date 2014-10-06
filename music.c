@@ -31,7 +31,7 @@ struct SYMBOL *tsnext;		/* next line when cut */
 float realwidth;		/* real staff width while generating */
 
 static int insert_meter;	/* insert time signature (1) and indent 1st line (2) */
-static float alfa_last, beta_last;	/* for last short short line.. */
+static float beta_last;		/* for last short short line.. */
 
 #define AT_LEAST(a,b)  do { float tmp = b; if(a<tmp) a=tmp; } while (0)
 
@@ -992,21 +992,13 @@ static void set_width(struct SYMBOL *s)
 		if (s->as.u.note.dc.n > 0)
 			wlnote += deco_width(s);
 
-		/* space for flag if stem goes up on standalone note */
-		if ((s->sflags & (S_BEAM_ST | S_BEAM_END)) == (S_BEAM_ST | S_BEAM_END)
-		 && s->stem > 0 && s->nflags > 0)
-			AT_LEAST(s->wr, s->xmx + 12);
+//		/* space for flag if stem goes up on standalone note */
+//		if ((s->sflags & (S_BEAM_ST | S_BEAM_END)) == (S_BEAM_ST | S_BEAM_END)
+//		 && s->stem > 0 && s->nflags > 0)
+//			AT_LEAST(s->wr, s->xmx + 12);
 
 		/* leave room for dots and set their offset */
 		if (s->dots > 0) {
-
-			/* standalone with up-stem and flags */
-			if (s->nflags > 0 && s->stem > 0
-			 && s->xmx == 0 && s->doty == 0
-			 && (s->sflags & (S_BEAM_ST | S_BEAM_END))
-					== (S_BEAM_ST | S_BEAM_END)
-			 && !(s->y % 6))
-				s->xmx = DOTSHIFT;
 			switch (s->head) {
 			case H_SQUARE:
 			case H_OVAL:
@@ -1896,18 +1888,24 @@ setnl:
 		case TIMESIG:
 			break;
 		default:			/* add an extra symbol at eol */
-			p_voice = &voice_tb[s->voice];
-			p_voice->last_sym = s->prev;
-//			if (!p_voice->last_sym)
-//				p_voice->sym = NULL;
+			s2 = s->ts_prev;
+			p_voice = &voice_tb[s2->voice];
+			p_voice->last_sym = s2;
 			p_voice->time = s->time;
+			s2 = s2->next;
 			extra = sym_add(p_voice, FMTCHG);
-			extra->next = s;
-			s->prev = extra;
-			extra->ts_prev = s->ts_prev;
+			extra->next = s2;
+			s2->prev = extra;
+			extra->ts_prev = extra->prev;
 			extra->ts_prev->ts_next = extra;
 			extra->ts_next = s;
 			s->ts_prev = extra;
+			extra->u = -1;
+			extra->sflags |= S_SEQST;
+			extra->wl = 6;
+			extra->wr = 6;
+			extra->shrink = extra->prev->wr + 6;
+			extra->space = extra->prev->space;
 			if (s->x != 0) {	/* auto break */
 				for (s2 = s->ts_next; ; s2 = s2->ts_next) {
 					if (s2->x != 0) {
@@ -1916,12 +1914,6 @@ setnl:
 					}
 				}
 			}
-			extra->u = -1;
-			extra->sflags |= S_SEQST;
-			extra->wl = 6;
-			extra->wr = 6;
-			extra->shrink = extra->prev->wr + 6;
-			extra->space = extra->prev->space;
 			break;
 		}
 	}
@@ -2543,7 +2535,7 @@ static void set_clefs(void)
 			if (s->as.u.clef.type == staff_clef[staff].clef->as.u.clef.type
 			 && s->as.u.clef.line == staff_clef[staff].clef->as.u.clef.line
 			 && !(s->sflags & S_NEW_SY)) {
-				unlksym(s);
+//				unlksym(s);
 				continue;
 			}
 		} else {
@@ -2830,33 +2822,32 @@ if (staff > nst) {
 			}
 			if (i < 0)
 				continue;		/* voice ignored */
-//			if (!s->multi) {
-				if (i == stb[staff].nvoice) {
-					s->multi = -1;	/* last voice */
-				} else {
-					s->multi = 1;	/* first voice(s) */
+			if (i == stb[staff].nvoice) {
+				s->multi = -1;	/* last voice */
+			} else {
+				s->multi = 1;	/* first voice(s) */
 
-					/* if 3 voices, and vertical space enough,
-					 * have stems down for the middle voice */
-					if (i != 0
-					 && i + 1 == stb[staff].nvoice) {
-						if (stb[staff].st[i].ymn - cfmt.stemheight
-						    > stb[staff].st[i + 1].ymx)
-							s->multi = -1;
+				/* if 3 voices, and vertical space enough,
+				 * have stems down for the middle voice */
+				if (i != 0
+				 && i + 1 == stb[staff].nvoice) {
+					if (stb[staff].st[i].ymn - cfmt.stemheight
+					    > stb[staff].st[i + 1].ymx)
+						s->multi = -1;
 
-						/* special case for unison */
-						if (s->ts_prev->time == s->time
-						 && s->ts_prev->staff == s->staff
-						 && s->pits[s->nhd] == s->ts_prev->pits[0]
-						 && (s->sflags & (S_BEAM_ST | S_BEAM_END))
-								== (S_BEAM_ST | S_BEAM_END)
-						 && ((t = s->ts_next) == 0
-						  || t->staff != s->staff
-						  || t->time != s->time))
-							s->multi = -1;
-					}
+					/* special case for unison */
+					if (s->ts_prev
+					 && s->ts_prev->time == s->time
+					 && s->ts_prev->staff == s->staff
+					 && s->pits[s->nhd] == s->ts_prev->pits[0]
+					 && (s->sflags & (S_BEAM_ST | S_BEAM_END))
+							== (S_BEAM_ST | S_BEAM_END)
+					 && ((t = s->ts_next) == NULL
+					  || t->staff != s->staff
+					  || t->time != s->time))
+						s->multi = -1;
 				}
-//			}
+			}
 		}
 
 		while (s && s->type == BAR) {
@@ -2958,6 +2949,7 @@ static void set_rest_offset(void)
 			shift_rest(s, v->s, sy);
 			if (voice < s->voice && v->s->time == s->time)
 				prev = v->s;
+			break;
 		}
 
 		/* check if clash with next symbols */
@@ -3533,13 +3525,248 @@ static void set_beams(struct SYMBOL *sym)
 	}
 }
 
+/* handle unison in voice overlap */
+static int same_head(struct SYMBOL *s1, struct SYMBOL *s2)
+{
+	int i1, i2, l1, l2;
+	float dx;
+
+	if ((s1->sflags & (S_SHIFTUNISON_1 | S_SHIFTUNISON_2))
+			== (S_SHIFTUNISON_1 | S_SHIFTUNISON_2))
+		return 0;
+	if ((l1 = s1->dur) >= SEMIBREVE)
+		return 0;
+	if ((l2 = s2->dur) >= SEMIBREVE)
+		return 0;
+	if (s1->as.flags & s2->as.flags & ABC_F_STEMLESS)
+		return 0;
+	if (s1->dots != s2->dots) {
+		if ((s1->sflags & (S_SHIFTUNISON_1 | S_SHIFTUNISON_2))
+		 || s1->dots * s2->dots != 0)
+			return 0;
+	}
+	if (s1->stem * s2->stem > 0)
+		return 0;
+	i2 = 0;
+	while (i2 <= s2->nhd && s2->pits[i2] != s1->pits[0])
+		i2++;
+	if (i2 > s2->nhd)
+		return 0;
+	i1 = 0;
+	while (i1 < s1->nhd && i1 + i2 < s2->nhd
+	    && s2->pits[i1 + i2 + 1] == s1->pits[i1 + 1])
+		i1++;
+	if (i1 + i2 != s2->nhd)
+		return 0;
+	if (l1 == l2)
+		goto same_head;
+	if (l1 < l2) {
+		l1 = l2;
+		l2 = s1->dur;
+	}
+	if (l1 < MINIM) {
+		if (s2->dots > 0)
+			goto head_2;
+		if (s1->dots > 0)
+			goto head_1;
+		goto same_head;
+	}
+	if (l2 < CROTCHET) {	/* (l1 >= MINIM) */
+		if ((s1->sflags & S_SHIFTUNISON_2)
+		 || s1->dots != s2->dots)
+			return 0;
+		if (s2->dur >= MINIM)
+			goto head_2;
+		goto head_1;
+	}
+	return 0;
+
+same_head:
+	if (voice_tb[s1->voice].scale < voice_tb[s2->voice].scale)
+		goto head_2;
+head_1:
+	s2->nohdix = i2;	/* keep heads of 1st voice */
+	for (; i2 <= s2->nhd; i2++)
+		s2->as.u.note.accs[i2] = 0;
+	i1 = s1->stem >= 0 ? 0 : s1->nhd;
+	dx = s1->shhd[i1];
+	for (i2 = 0; i2 <= s2->nhd; i2++)
+		s2->shhd[i2] += dx;
+	return 1;
+head_2:
+	s1->nohdix = i1;	/* keep heads of 2nd voice */
+	for (; i1 >= 0; i1--)
+		s1->as.u.note.accs[i1] = 0;
+	return 1;
+}
+
+/* width of notes for voice overlap - index = head */
+static float w_note[] = {
+	3.5, 3.5, 5, 7
+};
+
+/* handle unison with different accidentals */
+static void unison_acc(struct SYMBOL *s1,
+			struct SYMBOL *s2,
+			int i1, int i2)
+{
+	int m;
+	float d;
+
+	if (s2->as.u.note.accs[i2] == 0) {
+		d = w_note[s2->head] * 2 + s2->xmx + s1->shac[i1] + 2;
+		if (s1->as.u.note.accs[i1] & 0xf8)
+			d += 2;
+		if (s2->dots)
+			d += 6;
+		for (m = 0; m <= s1->nhd; m++) {
+			s1->shhd[m] += d;
+			s1->shac[m] -= d;
+		}
+		s1->xmx += d;
+	} else {
+		d = w_note[s1->head] * 2 + s1->xmx + s2->shac[i2] + 2;
+		if (s2->as.u.note.accs[i2] & 0xf8)
+			d += 2;
+		if (s1->dots)
+			d += 6;
+		for (m = 0; m <= s2->nhd; m++) {
+			s2->shhd[m] += d;
+			s2->shac[m] -= d;
+		}
+		s2->xmx += d;
+	}
+}
+
+#define MAXPIT (48 * 2)
+/* set the left space of a note/chord */
+static void set_left(struct SYMBOL *s, float *left)
+{
+	int m, i, j;
+	float w_base, w, shift;
+
+	w_base = w_note[s->head];
+	for (i = 0; i < MAXPIT; i++)
+		left[i] = -100;
+
+	/* stem */
+	w = w_base;
+	if (s->stem > 0) {
+		w = -w;
+		i = s->pits[0] * 2;
+		j = ((s->ymx - 2) / 3 + 18) * 2;
+	} else {
+		i = ((s->ymn + 2) / 3 + 18) * 2;
+		j = s->pits[s->nhd] * 2;
+	}
+	if (i < 0)
+		i = 0;
+	for (; i < MAXPIT && i <= j; i++)
+		left[i] = w;
+
+	/* notes */
+	if (s->stem > 0)
+		shift = s->shhd[0];		/* previous shift */
+	else
+		shift = s->shhd[s->nhd];
+	for (m = 0; m <= s->nhd; m++) {
+		w = -s->shhd[m] + w_base + shift;
+		i = s->pits[m] * 2;
+		if (i < 0)
+			i = 0;
+		else if (i >= MAXPIT - 1)
+			i = MAXPIT - 2;
+		if (w > left[i])
+			left[i] = w;
+		if (s->head != H_SQUARE)
+			w -= 1;
+		if (w > left[i - 1])
+			left[i - 1] = w;
+		if (w > left[i + 1])
+			left[i + 1] = w;
+	}
+}
+
+/* set the right space of a note/chord */
+static void set_right(struct SYMBOL *s, float *right)
+{
+	int m, i, j, k, flags;
+	float w_base, w, shift;
+
+	w_base = w_note[s->head];
+	for (i = 0; i < MAXPIT; i++)
+		right[i] = -100;
+
+	/* stem and flags */
+	flags = (s->nflags > 0
+	     && (s->sflags & (S_BEAM_ST | S_BEAM_END))
+			== (S_BEAM_ST | S_BEAM_END));
+	w = w_base;
+	if (s->stem < 0) {
+		w = -w;
+		i = ((s->ymn + 2) / 3 + 18) * 2;
+		j = s->pits[s->nhd] * 2;
+		k = i + 4;
+	} else {
+		i = s->pits[0] * 2;
+		j = ((s->ymx - 2) / 3 + 18) * 2;
+	}
+	if (i < 0)
+		i = 0;
+	for ( ; i < MAXPIT && i < j; i++)
+		right[i] = w;
+	if (flags) {
+		if (s->stem > 0) {
+			if (s->xmx == 0)
+				i = s->pits[s->nhd] * 2;
+			else
+				i = s->pits[0] * 2;
+			i += 4;
+			if (i < 0)
+				i = 0;
+			for (; i < MAXPIT && i <= j - 4; i++)
+				right[i] = 11;
+		} else {
+			i = k;
+			if (i < 0)
+				i = 0;
+			for (; i < MAXPIT && i <= s->pits[0] * 2 - 4; i++)
+				right[i] = 3.5;
+		}
+	}
+
+	/* notes */
+	if (s->stem > 0)
+		shift = s->shhd[0];		/* previous shift */
+	else
+		shift = s->shhd[s->nhd];
+	for (m = 0; m <= s->nhd; m++) {
+		w = s->shhd[m] + w_base - shift;
+		i = s->pits[m] * 2;
+		if (i < 0)
+			i = 0;
+		else if (i >= MAXPIT - 1)
+			i = MAXPIT - 2;
+		if (w > right[i])
+			right[i] = w;
+		if (s->head != H_SQUARE)
+			w -= 1;
+		if (w > right[i - 1])
+			right[i - 1] = w;
+		if (w > right[i + 1])
+			right[i + 1] = w;
+	}
+}
+
 /* -- shift the notes horizontally when voices overlap -- */
 /* this routine is called only once per tune */
 static void set_overlap(void)
 {
 	struct SYMBOL *s, *s1, *s2;
-	int d, i1, i2, m, sd1, sd2, t;
-	float d1, d2, /*dy1, dy2,*/ noteshift;
+	int i, i1, i2, m, sd, t, dp;
+	float d, d2, dr, dr2, dx;
+	float left1[MAXPIT], right1[MAXPIT], left2[MAXPIT], right2[MAXPIT];
+	float *pl, *pr;
 
 	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->as.type != ABC_T_NOTE
@@ -3574,9 +3801,6 @@ static void set_overlap(void)
 		}
 		if (!s2)
 			continue;
-
-		sd1 = sd2 = 0;
-		d1 = d2 = /*dy1 = dy2 =*/ 0;
 		s1 = s;
 
 		/* set the dot vertical offset */
@@ -3585,313 +3809,226 @@ static void set_overlap(void)
 		else
 			s1->doty = -3;
 
-		/* set the smallest interval type */
-		t = 0;		/* t: interval types
-				 *	0: >= 4
-				 *	1: third or fourth
-				 *	2: second
-				 *	4: unison
-				 *	-1: unison and different accidentals */
-		{
-			int dp;
+		/* no shift if no overlap */
+		d = 0;
+		sd = 0;
+		if (s1->ymn > s2->ymx
+		 || s1->ymx < s2->ymn)
+			goto acc_shift;
 
-			i1 = s1->nhd;
-			i2 = s2->nhd;
-			for (;;) {
-				dp = s1->pits[i1] - s2->pits[i2];
-				switch (dp) {
-				case 0:
-					if (s1->as.u.note.accs[i1] != s2->as.u.note.accs[i2])
-						t = -1;
-					else
-						t |= 4;
-					break;
-				case 1:
-				case -1:
-					t |= 2;
-					break;
-				case 2:
-				case -2:
-				case 3:
-				case -3:
-					t |= 1;
-					break;
-				}
-				if (t < 0)
-					break;
-				if (dp >= 0) {
-					if (--i1 < 0)
-						break;
-				}
-				if (dp <= 0) {
-					if (--i2 < 0)
-						break;
-				}
-			}
-		}
-		if (s1->dur >= BREVE || s2->dur >= BREVE) {
-			noteshift = 13;
-		} else {
-
-			/* if the 2nd voice is far enough, don't shift it */
-			if (t == 0 && s1->pits[0] > s2->pits[s2->nhd]
-			 && s1->stem > 0 && s2->stem < 0)
-				continue;
-			if (s1->dur >= SEMIBREVE || s2->dur >= SEMIBREVE) {
-				noteshift = 10;
-			} else {
-				if (t == 1 && s1->pits[0] > s2->pits[s2->nhd]
-				 && s1->stem > 0 &&  s2->stem < 0) {
-					if (s1->shac[0] < 8)
-						s1->shac[0] += 5;
-					if (s1->as.u.note.accs[0] != 0
-					 && s2->as.u.note.accs[s2->nhd] != 0)
-						s2->shac[s2->nhd] += 10;
+		/* check simple unison */
+		if (s1->pits[0] == s2->pits[s2->nhd]
+		 || s2->pits[0] == s1->pits[s1->nhd]) {
+			if (s1->pits[0] == s2->pits[s2->nhd]) {
+				if (s1->as.u.note.accs[0] !=
+						s2->as.u.note.accs[s2->nhd]) {
+					unison_acc(s1, s2, 0, s2->nhd);
 					continue;
 				}
-				noteshift = 7.8;
+			} else {
+				if (s2->as.u.note.accs[0] !=
+						s1->as.u.note.accs[s1->nhd]) {
+					unison_acc(s2, s1, 0, s1->nhd);
+					continue;
+				}
 			}
+			if (same_head(s1, s2))
+				goto acc_shift;
 		}
 
-		/* if unison and different accidentals */
-		if (t < 0) {
-			if (s2->as.u.note.accs[i2] == 0) {
-				d1 = noteshift + s2->xmx + s1->shac[i1];
-				if (s1->as.u.note.accs[i1] & 0xf8)
-					d1 += 2;
-				if (s2->dots)
-					d1 += 6;
-				for (m = 0; m <= s1->nhd; m++) {
-					s1->shhd[m] += d1;
-					s1->shac[m] -= d1;
+		/* compute the minimum space for 's1 s2' and 's2 s1' */
+		set_right(s1, right1);
+		set_left(s2, left2);
+		d = -100;
+		for (i = 0; i < MAXPIT; i++) {
+			if (left2[i] + right1[i] > d)
+				d = left2[i] + right1[i];
+		}
+		if (d < 0) {			// no clash if no dots clash
+			if (!s1->dots || !s2->dots
+			 || s2->doty >= 0
+			 || s1->stem > 0 || s2->stem < 0
+			 || s1->pits[s1->nhd] + 2 != s2->pits[0]
+			 || (s2->pits[0] & 1))
+				goto acc_shift;
+		}
+
+		set_right(s2, right2);
+		set_left(s1, left1);
+		d2 = dr = dr2 = -100;
+		for (i = 0; i < MAXPIT; i++) {
+			if (left1[i] + right2[i] > d2)
+				d2 = left1[i] + right2[i];
+			if (right1[i] > dr)
+				dr = right1[i];
+			if (right2[i] > dr2)
+				dr2 = right2[i];
+		}
+
+		/* check for unison with different accidentals
+		 * and clash of dots */
+		t = 0;
+		i1 = s1->nhd;
+		i2 = s2->nhd;
+		for (;;) {
+			dp = s1->pits[i1] - s2->pits[i2];
+			switch (dp) {
+			case 0:
+				if (s1->as.u.note.accs[i1]
+						!= s2->as.u.note.accs[i2]) {
+					t = -1;
+					break;
 				}
-				s1->xmx += d1;
-			} else {
-				d2 = noteshift + s1->xmx + s2->shac[i2];
-				if (s2->as.u.note.accs[i2] & 0xf8)
-					d2 += 2;
-				if (s1->dots)
-					d2 += 6;
-				for (m = 0; m <= s2->nhd; m++) {
-					s2->shhd[m] += d2;
-					s2->shac[m] -= d2;
+				t = 1;
+				break;
+			case -1:
+				if (s1->dots && s2->dots)
+					t = 1;
+				break;
+			case -2:
+				if (s1->dots && s2->dots
+				 && !(s1->pits[i1] & 1)) {
+					t = 1;
+					break;
 				}
-				s2->xmx += d2;
+				break;
 			}
-			s2->doty = -3;
+			if (t < 0)
+				break;
+			if (dp >= 0) {
+				if (--i1 < 0)
+					break;
+			}
+			if (dp <= 0) {
+				if (--i2 < 0)
+					break;
+			}
+		}
+		
+		if (t < 0) {	/* unison and different accidentals */
+			unison_acc(s1, s2, i1, i2);
 			continue;
 		}
 
-		if (s1->stem * s2->stem > 0) {	/* if same stem direction */
-			d2 = noteshift + 2;	/* shift the 2nd voice */
-			if (s1->dur < CROTCHET
-			 && (s1->sflags & (S_BEAM_ST | S_BEAM_END))
-					== (S_BEAM_ST | S_BEAM_END)) { /* if a flag */
-				if (s1->stem > 0) {
-					if (3 * (s1->pits[s1->nhd] - 18) > s2->ymx) {
-						d2 *= 0.5;
-						sd1 = -1;
-					} else if (s1->pits[s1->nhd] <= s2->pits[s2->nhd]) {
-						d2 += noteshift;
+		pl = left2;
+		pr = right2;
+		if (s1->dots) {
+			if (s2->dots) {
+				if (!t)			/* if no dot clash */
+					sd = 1;		/* align the dots */
+				if (d2 + dr < d + dr2) {
+					s1 = s2;
+					s2 = s;
+					d = d2;
+					pl = left1;
+					pr = right1;
+					dr2 = dr;
+				}
+			} else if (d2 + dr < d + dr2) {
+				s1 = s2;	/* invert the voices */
+				s2 = s;
+				d = d2;
+				pl = left1;
+				pr = right1;
+				dr2 = dr;
+			}
+		} else if (s2->dots) {
+			;
+		} else {
+			if (d2 + dr < d + dr2) {
+				s1 = s2;	/* invert the voices */
+				s2 = s;
+				d = d2;
+				pl = left1;
+				pr = right1;
+				dr2 = dr;
+			}
+		}
+		d += 3;
+
+		/* handle the previous shift */
+		m = s1->stem >= 0 ? 0 : s1->nhd;
+		d += s1->shhd[m];
+		m = s2->stem >= 0 ? 0 : s2->nhd;
+		d -= s2->shhd[m];
+
+		/*
+		 * room for the dots
+		 * - if the dots of v1 don't shift, adjust the shift of v2
+		 * - otherwise, align the dots and shift them if clash
+		 */
+//	do_shift:
+		if (s1->dots) {
+			dx = 7.7 + s1->xmx +		// x 1st dot
+				3.5 * s1->dots - 3.5 +	// x last dot
+				3;			// some space
+			if (!sd) {
+				d2 = -100;
+				for (i1 = 0; i1 <= s1->nhd; i1++) {
+					i = s1->pits[i1];
+					if (!(i & 1)) {
+						if (s1->doty >= 0)
+							i++;
+						else
+							i--;
 					}
+					i *= 2;
+					if (i < 1)
+						i = 1;
+					else if (i >= MAXPIT - 1)
+						i = MAXPIT - 2;
+					if (pl[i] > d2)
+						d2 = pl[i];
+					if (pl[i - 1] + 1 > d2)
+						d2 = pl[i - 1] + 1;
+					if (pl[i + 1] + 1 > d2)
+						d2 = pl[i + 1] + 1;
 				}
-			} else {			/* no flag */
-				if (s1->pits[0] > s2->pits[s2->nhd] + 1) {
-					d2 *= 0.5;
-					sd1 = -1;
-				}
-			}
-		} else if (s->stem < 0) {	/* if stem inverted, */
-			s1 = s2;		/* invert the voices */
-			s2 = s;
-		}
-
-		d = s1->pits[0] - s2->pits[s2->nhd];
-//		if (d >= 0)
-//			dy2 = -3;	/* the dot of the 2nd voice shall be lower */
-
-		if (s1->head == H_SQUARE || s2->head == H_SQUARE) {
-			if (s1->ymn >= s2->ymx + 4
-			 || s1->ymx <= s2->ymn - 4) {
-				d2 = 0;
-				goto do_shift;
-			}
-			if (s1->stem * s2->stem > 0)	/* if same stem direction */
-				goto do_shift;
-		} else {
-			if (s1->ymn >= s2->ymx - 2
-			 || s1->ymx <= s2->ymn + 2) {
-				d2 = 0;
-				goto do_shift;
-			}
-			if (s1->stem * s2->stem > 0)	/* if same stem direction */
-				goto do_shift;
-			if (d >= 2)
-				goto do_shift;
-		}
-		/* (here, voice 1 stem up and voice 2 stem down) */
-
-		/* if unison */
-		if (t >= 4) {
-			int l1, l2;
-
-			if ((s1->sflags & (S_SHIFTUNISON_1 | S_SHIFTUNISON_2))
-					== (S_SHIFTUNISON_1 | S_SHIFTUNISON_2))
-				goto uni_shift;
-			if ((l1 = s1->dur) >= SEMIBREVE)
-				goto uni_shift;
-			if ((l2 = s2->dur) >= SEMIBREVE)
-				goto uni_shift;
-			if (s1->as.flags & s2->as.flags & ABC_F_STEMLESS)
-				goto uni_shift;
-			if (s1->dots != s2->dots) {
-				if ((s1->sflags & (S_SHIFTUNISON_1 | S_SHIFTUNISON_2))
-				 || s1->dots * s2->dots != 0)
-					goto uni_shift;
-			}
-			i2 = 0;
-			while (i2 <= s2->nhd && s2->pits[i2] != s1->pits[0])
-				i2++;
-			if (i2 > s2->nhd)
-				goto uni_shift;
-			i1 = 0;
-			while (i1 < s1->nhd && i1 + i2 < s2->nhd
-			    && s2->pits[i1 + i2 + 1] == s1->pits[i1 + 1])
-				i1++;
-			if (i1 + i2 != s2->nhd)
-				goto uni_shift;
-			if (l1 == l2)
-				goto same_head;
-			if (l1 < l2) {
-				l1 = l2;
-				l2 = s1->dur;
-			}
-			if (l1 < MINIM) {
-				if (s2->dots > 0) {
-//					dy2 = -3;
-					goto head_2;
-				}
-				if (s1->dots > 0)
-					goto head_1;
-				goto same_head;
-			}
-			if (l2 < CROTCHET) {	/* (l1 >= MINIM) */
-				if ((s1->sflags & S_SHIFTUNISON_2)
-				 || s1->dots != s2->dots)
-					goto uni_shift;
-				if (s2->dur >= MINIM) {
-//					dy2 = -3;
-					goto head_2;
-				}
-				goto head_1;
-			}
-			goto uni_shift;
-		same_head:
-			if (voice_tb[s1->voice].scale < voice_tb[s2->voice].scale)
-				goto head_2;
-		head_1:
-			s2->nohdix = i2;	/* keep heads of 1st voice */
-			for (; i2 <= s2->nhd; i2++)
-				s2->as.u.note.accs[i2] = 0;
-			goto do_shift;
-		head_2:
-			s1->nohdix = i1;	/* keep heads of 2nd voice */
-			for (; i1 >= 0; i1--)
-				s1->as.u.note.accs[i1] = 0;
-			goto do_shift;
-		}
-
-		if (d == -1
-		 && (s1->nhd == 0 || s1->pits[1] > s2->pits[s2->nhd])
-		 && (s2->nhd == 0 || s1->pits[0] > s2->pits[s2->nhd - 1])) {
-			if (!(s->as.flags & ABC_F_STEMLESS)) {
-				d1 = noteshift;
-				if (s2->dots && s1->dots == s2->dots) {
-					sd2 = 1;
-//					dy1 = -3;
-				}
+				if (dx + d2 + 2 > d)
+					d = dx + d2 + 2;
 			} else {
-				d2 = noteshift;
+				if (dx < d + dr2 + s2->xmx) {
+					d2 = 0;
+					for (i1 = 0; i1 <= s1->nhd; i1++) {
+						i = s1->pits[i1];
+						if (!(i & 1)) {
+							if (s1->doty >= 0)
+								i++;
+							else
+								i--;
+						}
+						i *= 2;
+						if (i < 1)
+							i = 1;
+						else if (i >= MAXPIT - 1)
+							i = MAXPIT - 2;
+						if (pr[i] > d2)
+							d2 = pr[i];
+						if (pr[i - 1] + 1> d2)
+							d2 = pr[i - 1] = 1;
+						if (pr[i + 1] + 1 > d2)
+							d2 = pr[i + 1] + 1;
+					}
+					if (d2 > 4.5
+					 && 7.7 + s1->xmx + 2 < d + d2 + s2->xmx)
+						s2->xmx = d2 + 3 - 7.7;
+				}
 			}
-			goto do_shift;
 		}
 
-		if (t == 1) {			/* if third or fourth only */
-			if (s1->head != H_SQUARE
-			 && s2->head != H_SQUARE)
-				t = 0;
+		for (m = s2->nhd; m >= 0; m--) {
+			s2->shhd[m] += d;
+			if (s2->as.u.note.accs[m] != 0
+			 && s2->pits[m] < s1->pits[0] - 4)
+				s2->shac[m] -= d;
 		}
-		if (t == 0) {			/* if small overlap */
-			if (s1->dur < SEMIBREVE
-			 && s2->dur < SEMIBREVE) {
-				if (s2->dur < CROTCHET
-				 && (s2->sflags & (S_BEAM_ST | S_BEAM_END))
-						== (S_BEAM_ST | S_BEAM_END) /* if flag */
-				 && s1->pits[0] < s2->pits[0]
-				 && 3 * (s1->pits[s1->nhd] - 18) > s2->ymn)
-					d1 = noteshift;
-				else
-					d1 = noteshift * 0.3;	// (was 0.6)
-				if (s2->dots)
-					sd2 = 1;
-			} else {
-				d2 = noteshift + 1.5;
-				if (s1->dots)
-					sd1 = 1;
-			}
-			goto do_shift;
-		}
-
-	uni_shift:
-		if (t >= 2) {				/* if close or unison */
-			if (s1->dots != s2->dots) {
-				if (s1->dots > s2->dots) /* shift the voice with more dots */
-					d1 = noteshift;
-				else
-					d2 = noteshift;
-/*fixme:if second, see if dots may be distinguished?*/
-			} else if (d == 1) {
-				d2 = noteshift;
-				if (s1->dots)
-					sd1 = 1;
-			} else {
-				if (t >= 4		/* if unison */
-				 && s1->stem >= 0)
-					d2 = noteshift;
-				else
-					d1 = noteshift;
-			}
-			if (t >= 4) {			/* if unison */
-				if (d1 != 0)
-					d1 += 1.5;
-				else
-					d2 += 1.5;
-			}
-			goto do_shift;
-		}
-
-		/* if the upper note is SEMIBREVE or higher, shift it */
-		if (s1->dur >= SEMIBREVE
-		 && s1->dur > s2->dur) {
-			d1 = noteshift;
-
-		/* else shift the 2nd voice */
-		} else {
-			d2 = noteshift;
-			if (s1->dots > 0
-			 && (d != 1 || (s1->pits[0] & 1)))
-/*fixme: d always != 1 ?*/
-				sd1 = 1;	/* and the dot of the 1st voice */
-		}
-
-		/* do the shift, and update the width */
-	do_shift:
+		s2->xmx += d;
+		if (sd)
+			s1->xmx = s2->xmx;	// align the dots
 
 		/* shift the accidentals */
+	acc_shift:
 		for (i1 = 0; i1 <= s1->nhd; i1++) {
-			int dp;
-			float shft;
-
 			if (s1->as.u.note.accs[i1] == 0)
 				continue;
 			for (i2 = 0; i2 <= s2->nhd; i2++) {
@@ -3909,55 +4046,22 @@ static void set_overlap(void)
 					s2->as.u.note.accs[i2] = 0;
 					continue;
 				}
-				shft = (dp <= -4 || dp >= 4) ? 4.5 : 7;
+				dx = (dp <= -4 || dp >= 4) ? 4.5 : 7;
 				if (dp > 0) {
 					if (s1->as.u.note.accs[i1] & 0xf8)
-						shft += 2;
-					if (s2->shac[i2] < s1->shac[i1] + shft
-					 && s2->shac[i2] > s1->shac[i1] - shft)
-						s2->shac[i2] = s1->shac[i1] + shft;
+						dx += 2;
+					if (s2->shac[i2] < s1->shac[i1] + dx
+					 && s2->shac[i2] > s1->shac[i1] - dx)
+						s2->shac[i2] = s1->shac[i1] + dx;
 				} else {
 					if (s2->as.u.note.accs[i2] & 0xf8)
-						shft += 2;
-					if (s1->shac[i1] < s2->shac[i2] + shft
-					 && s1->shac[i1] > s2->shac[i2] - shft)
-						s1->shac[i1] = s2->shac[i2] + shft;
+						dx += 2;
+					if (s1->shac[i1] < s2->shac[i2] + dx
+					 && s1->shac[i1] > s2->shac[i2] - dx)
+						s1->shac[i1] = s2->shac[i2] + dx;
 				}
 			}
 		}
-
-		/* handle the previous shift */
-		m = s1->stem >= 0 ? 0 : s1->nhd;
-		d1 -= s1->shhd[m];
-		d2 += s1->shhd[m];
-		m = s2->stem >= 0 ? 0 : s2->nhd;
-		d1 += s2->shhd[m];
-		d2 -= s2->shhd[m];
-
-		if (d1 > 0) {			/* shift the 1st voice */
-			if (s2->dots && sd2 == 0)	/* room for the dots */
-				d1 += 8 + 3.5 * (s2->dots - 1);
-			for (m = s1->nhd; m >= 0; m--)
-				s1->shhd[m] += d1;
-			s1->xmx += d1;
-			if (sd2 != 0)
-				s2->xmx = s1->xmx;
-		}
-		if (d2 > 0) {			/* shift the 2nd voice */
-			if (s1->dots && sd1 == 0)	/* room for the dots */
-				d2 += 8 + 3.5 * (s1->dots - 1);
-			for (m = s2->nhd; m >= 0; m--) {
-				s2->shhd[m] += d2;
-				if (s2->as.u.note.accs[m] != 0
-				 && s2->pits[m] < s1->pits[0] - 4)
-					s2->shac[m] -= d2;
-			}
-			s2->xmx += d2;
-			if (sd1 > 0)
-				s1->xmx = s2->xmx;
-		}
-//		s1->doty = dy1;
-//		s2->doty = dy2;
 	}
 }
 
@@ -4009,6 +4113,18 @@ static void set_stems(void)
 
 		/* shift notes in chords (need stem direction to do this) */
 		set_head_directions(s);
+
+#if 0
+		/* standalone with up-stem and flags */
+		if (s->xmx == 0) {
+			if (s->nflags > 0 && s->stem > 0
+//			 && s->xmx == 0 && s->doty == 0
+			 && (s->sflags & (S_BEAM_ST | S_BEAM_END))
+					== (S_BEAM_ST | S_BEAM_END)
+			 && !(s->y % 6))
+				s->xmx = 5;
+		}
+#endif
 
 		/* if start or end of beam, adjust the number of flags
 		 * with the other end */
@@ -4409,10 +4525,8 @@ static void set_sym_glue(float width)
 	/* memorize the glue for the last music line */
 	if (tsnext) {
 		if (x - width >= 0) {
-			alfa_last = (x - width) / (x - xmin);	/* shrink */
 			beta_last = 0;
 		} else {
-			alfa_last = 0;
 			beta_last = (width - x) / (xmax - x);	/* stretch */
 			if (beta_last > beta0) {
 				if (cfmt.stretchstaff) {
@@ -4686,7 +4800,7 @@ void output_music(void)
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next)
 		set_beams(p_voice->sym);	/* decide on beams */
 	set_stems();			/* set the stem lengths */
-	if (first_voice->next) {		/* when multi-voices */
+	if (first_voice->next) {	/* when multi-voices */
 		set_rest_offset();	/* set the vertical offset of rests */
 		set_overlap();		/* shift the notes on voice overlap */
 	}
@@ -4701,7 +4815,6 @@ void output_music(void)
 	}
 	indent = set_indent();
 	cut_tune(lwidth, indent);
-	alfa_last = 0.1;
 	beta_last = 0;
 	for (;;) {			/* loop per music line */
 		float line_height;

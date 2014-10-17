@@ -1,6 +1,10 @@
 			Format parameters
 			=================
 
+Note: This file will be soon removed from the abcm2ps distribution.
+====  The format parameters documentation is now online:
+	http://moinejf.free.fr/abcm2ps-doc/index.html
+
 The general layout of the printed scores may be changed in many ways.
 
 For example, when running the program, one or more format files may
@@ -168,7 +172,7 @@ List of the format parameters
   abc2pscompat <bool>
 	Default: 0
 	Compilation: none
-	Command line: -u
+	Command line: none
 	Scope: generation
 	Description:
 		Handle old abc2ps tunes.
@@ -198,6 +202,9 @@ List of the format parameters
 		characters of these commands (up to 3 different characters).
 		This permits to avoid conflicts with pseudo-comments of other
 		programs and also to have a simple conditional generation.
+
+		Note: this parameter cannot be set in a format file.
+
 		Example 1:
 
 			%%abcm2ps *
@@ -255,19 +262,6 @@ List of the format parameters
 	Scope: immediate
 	Description:
 		Set the annotation font.
-
-  autoclef <bool>
-	Default: 1
-	Compilation: none
-	Command line: none
-	Scope: generation
-	Description:
-		When this parameter is false, the voices which don't contain
-		a 'clef=' in K: or V: use the treble clef, according to the
-		ABC standard.
-		When true, the clefs and possibly the clef changes for these
-		voices are determined from the note pitches and inserted
-		automatically.
 
   barsperstaff <int>
 	Default: 0
@@ -449,6 +443,7 @@ List of the format parameters
 			C
 			F
 			P
+			auto (automatically add trable or bass clefs)
 			none (to avoid clefs on the next music lines)
 			"<user_clef_name>" (<user_clef_name> is the name of
 				a PostScript function which  draws the clef
@@ -574,8 +569,7 @@ List of the format parameters
 					the staff.
 				6: general
 				7: long dynamic (with start and stop)
-		<ps_func>: postscript function name or '-' for the start
-			of a long decoration.
+		<ps_func>: postscript function name
 		<h>: decoration height.
 			It is the minimum height for +arpeggio+.
 		<wl> and <wr>: left and right widths.
@@ -583,8 +577,8 @@ List of the format parameters
 			marks only.
 		<str>: text to display (for some postscript functions
 			- see code).
-		The decorations, which names begin with 'head-', prevent the
-		note head(s) to be drawn.
+		The decorations, the name of which begins with 'head-',
+		suppress the drawing of the note heads.
 		See deco.abc for examples.
 
   decoration <character>
@@ -650,7 +644,7 @@ List of the format parameters
 	Description:
 		Draw flat beams.
 
-  font <font> [[<encoding>] <scale>]
+  font <font> [<encoding>] [<scale>]
 	Default: none
 	Compilation: none
 	Command line: none
@@ -801,6 +795,7 @@ List of the format parameters
 			0 or 'auto' for automatic position
 			1 or 'up' stem up
 			2 or 'down' stem down
+			3 or 'opposite' opposite direction of the next note
 		When this parameter appears outside a tune or inside a tune
 		header, it applies to all voices. When inside a tune body,
 		it applies to the current voice only.
@@ -1298,7 +1293,7 @@ List of the format parameters
 	Description:
 		Print a separator (centered line) of length <len> with
 		space <h1> above and space <h2> below
-		(defaults: h1 = h2 = 0.5cm,len = 3.0cm).
+		(defaults: h1 = h2 = 0.5cm, len = 3.0cm).
 
   setbarnb <int>
 	Default: none
@@ -1343,14 +1338,14 @@ List of the format parameters
 	Command line: none
 	Scope: generation
 	Description:
-		Set the way voice unison is displayed.
+		Set the way the note heads are displayed in case of voice unison.
 		<int> may be:
-		'0': for one note head if possible
-		'1': for two shifted notes when one note is dotted
+		'0': try one note head,
+		'1': display two shifted heads when one note is dotted
 		     and the other one is not,
-		'2': also for two shifted notes when one note is a
+		'2': display two shifted heads when one note is a
 		     minim (half note) and the other one has some flags,
-		'3': for two shifted notes on all unison cases.
+		'3': always display two shifted heads.
 
   slurheight <float>
 	Default: 1.0
@@ -1412,14 +1407,19 @@ List of the format parameters
 	Description:
 		Set the number of lines of the staff of the current voice.
 
-  staffnonote <bool>
+  staffnonote <int>
 	Default: 1
 	Compilation: none
 	Command line: none
 	Scope: generation
 	Description:
-		If not set, do not display the staves which have no notes
-		in the music lines.
+		This parameter is used to decide if a staff must be displayed
+		when it contains no visible note.
+		The possible values are:
+		- 0: display a staff when it contains visible notes,
+		- 1: display a staff when it contains visible rests
+		     or visible notes,
+		- 2: always display the staves.
 
   staffscale <float>
 	Default: 1
@@ -1486,14 +1486,14 @@ List of the format parameters
 		Have straight flags on the stems for bagpipe tunes.
 
   stretchlast <float>
-	Default: 0.8
+	Default: 0.25
 	Compilation: none
 	Command line: none
 	Scope: generation
 	Description:
-		Stretch the last music line of a tune when it exceeds
-		the <float> fraction of the page width.
-		<float> range is 0.0 to 1.0.
+		Stretch the last music line of a tune when it lacks
+		only the <float> fraction of the page width.
+		<float> range is 0.0 (no stretch) to 1.0.
 
   stretchstaff <bool>
 	Default: 1

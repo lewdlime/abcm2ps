@@ -32,7 +32,7 @@
 
 #define STEM_YOFF	1.0	/* offset stem from note center */
 #define STEM_XOFF	3.5
-#define STEM		20	/* default stem height */
+#define STEM		21	/* default stem height = one octave */
 #define STEM_MIN	16	/* min stem height under beams */
 #define STEM_MIN2	14	/* ... for notes with two beams */
 #define STEM_MIN3	12	/* ... for notes with three beams */
@@ -50,7 +50,6 @@
 #define BEAM_SLOPE	0.5	/* max slope of a beam */
 #define BEAM_STUB	6.0	/* length of stub for flag under beam */ 
 #define SLUR_SLOPE	1.0	/* max slope of a slur */
-#define DOTSHIFT	5	/* dot shift when up flag on note */
 #define GSTEM		14	/* grace note stem length */
 #define GSTEM_XOFF	1.6	/* x offset for grace note stem */
 
@@ -89,7 +88,7 @@
 
 #define YSTEP	128		/* number of steps for y offsets */
 
-extern unsigned char deco_glob[256], deco_tune[256];
+extern char *deco[256];
 
 struct FONTSPEC {
 	int fnum;		/* index to font tables in format.c */
@@ -125,7 +124,7 @@ struct gch {
 
 /* positions / directions */
 /* 0: auto, 1: above/up (SL_ABOVE), 2: below/down (SL_BELOW)
- * 3: hidden (SL_AUTO) */
+ * 3: hidden (SL_AUTO) or opposite for gstemdir */
 #define SL_HIDDEN SL_AUTO
 struct posit_s {
 	unsigned short dyn:2;	/* %%dynamic */
@@ -165,7 +164,8 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 	unsigned char staff;	/* staff (0..nstaff) */
 	unsigned char nhd;	/* number of notes in chord - 1 */
 	int dur;		/* main note duration */
-	signed char pits[MAXHD]; /* pitches for notes */
+	signed char pits[MAXHD]; /* pitches for notes
+				  * pits[0] = y base for KEYSIG */
 	int time;		/* starting time */
 	unsigned int sflags;	/* symbol flags */
 #define S_EOLN		0x0001		/* end of line */
@@ -195,6 +195,8 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define S_TEMP		0x01000000	/* temporary symbol */
 #define S_SHIFTUNISON_1	0x02000000	/* %%shiftunison 1 */
 #define S_SHIFTUNISON_2	0x04000000	/* %%shiftunison 2 */
+#define S_NEW_SY	0x08000000	/* staff system change (%%staves) */
+#define S_CLEF_AUTO	0x10000000	/* auto clef (when clef) */
 	struct posit_s posit;	/* positions / directions */
 	signed char stem;	/* 1 / -1 for stem up / down */
 	signed char nflags;	/* number of note flags when > 0 */
@@ -248,8 +250,6 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define B_DREP 0x44		/* ::	double repeat bar */
 #define B_DASH 0x04		/* :	dashed bar */
 
-extern unsigned short *micro_tb; /* ptr to the microtone table of the tune */
-
 struct FORMAT { 		/* struct for page layout */
 	float pageheight, pagewidth;
 	float topmargin, botmargin, leftmargin, rightmargin;
@@ -258,7 +258,7 @@ struct FORMAT { 		/* struct for page layout */
 	float breaklimit, maxshrink, lineskipfac, parskipfac, stemheight;
 	float indent, infospace, slurheight, notespacingfactor, scale;
 	float staffsep, sysstaffsep, maxstaffsep, maxsysstaffsep, stretchlast;
-	int abc2pscompat, alignbars, aligncomposer, autoclef;
+	int abc2pscompat, alignbars, aligncomposer;
 	int barsperstaff, breakoneoln, bstemdown, cancelkey;
 	int combinevoices, contbarnb, continueall, custos;
 	int dblrepbar, dynalign, flatbeams;
@@ -302,6 +302,7 @@ struct FORMAT { 		/* struct for page layout */
 					 * annotations and lyrics */
 	unsigned int fields[2];	/* info fields to print
 				 *[0] is 'A'..'Z', [1] is 'a'..'z' */
+	struct posit_s posit;
 };
 
 extern struct FORMAT cfmt;	/* current format */
@@ -329,8 +330,8 @@ extern int quiet;		/* quiet mode */
 extern int secure;		/* secure mode */
 extern int annotate;		/* output source references */
 extern int pagenumbers; 	/* write page numbers */
-extern int epsf;		/* EPSF (1) / SVG (2) output */
-extern int svg;			/* SVG (1) or XML (2 - HTML + SVG) output */
+extern int epsf;		/* 1: EPSF, 2: SVG, 3: embedded ABC */
+extern int svg;			/* 1: SVG, 2: XHTML */
 extern int showerror;		/* show the errors */
 extern int bagpipe;		/* force formatting as a bagpipe tune even if the key is not HP */
 
@@ -367,9 +368,10 @@ extern int s_argc;		/* command line arguments */
 extern char **s_argv;
 
 struct STAFF_S {
-	struct clef_s clef;	/* base clef */
-	char forced_clef;	/* explicit clef */
+	struct SYMBOL *s_clef;	/* clef at start of music line */
 	char empty;		/* no symbol on this staff */
+	signed char stafflines;
+	float staffscale;
 	short botbar, topbar;	/* bottom and top of bar */
 	float y;		/* y position */
 	float top[YSTEP], bot[YSTEP];	/* top/bottom y offsets */
@@ -378,11 +380,12 @@ extern struct STAFF_S staff_tb[MAXSTAFF];
 extern int nstaff;		/* (0..MAXSTAFF-1) */
 
 struct VOICE_S {
+	char id[VOICE_ID_SZ];	/* voice id */
+							/* generation */
 	struct VOICE_S *next;	/* link */
 	struct SYMBOL *sym;	/* associated symbols */
 	struct SYMBOL *last_sym; /* last symbol while scanning */
 	struct SYMBOL *lyric_start;	/* start of lyrics while scanning */
-	char id[VOICE_ID_SZ];	/* voice id */
 	char *nm;		/* voice name */
 	char *snm;		/* voice subname */
 	char *bar_text;		/* bar text at start of staff when bar_start */
@@ -392,14 +395,13 @@ struct VOICE_S {
 	struct tblt_s *tblts[2]; /* tablatures */
 	float scale;		/* scale */
 	int time;		/* current time (parsing) */
-	struct clef_s clef;	/* current clef */
+	struct SYMBOL *s_clef;	/* clef at end of music line */
 	struct key_s key;	/* current key signature */
 	struct meter_s meter;	/* current time signature */
 	struct key_s ckey;	/* key signature while parsing */
 	struct key_s okey;	/* original key signature (parsing) */
 	unsigned hy_st;		/* lyrics hyphens at start of line (bit array) */
 	unsigned ignore:1;	/* ignore this voice (%%staves) */
-	unsigned forced_clef:1;	/* explicit clef */
 	unsigned second:1;	/* secondary voice in a brace/parenthesis */
 	unsigned floating:1;	/* floating voice in a brace system */
 	unsigned bar_repeat:1;	/* bar at start of staff is a repeat bar */
@@ -419,6 +421,13 @@ struct VOICE_S {
 	unsigned char staff;	/* staff (0..n-1) */
 	unsigned char cstaff;	/* staff (parsing) */
 	unsigned char slur_st;	/* slurs at start of staff */
+	signed char stafflines;
+	float staffscale;
+							/* parsing */
+	struct abcsym *last_note;	/* last note or rest */
+	short ulen;			/* unit note length */
+	unsigned char microscale;	/* microtone scale */
+	unsigned char mvoice;		/* main voice when voice overlay */
 };
 extern struct VOICE_S voice_tb[MAXVOICE]; /* voice table */
 extern struct VOICE_S *first_voice; /* first_voice */
@@ -450,8 +459,9 @@ struct SYSTEM {			/* staff system */
 #define OPEN_BRACKET2 0x0400
 #define CLOSE_BRACKET2 0x0800
 		char empty;
-		char dum;
-		struct clef_s clef;
+		signed char stafflines;
+		float staffscale;
+//		struct clef_s clef;
 		float sep, maxsep;
 	} staff[MAXSTAFF];
 	struct {
@@ -460,13 +470,14 @@ struct SYSTEM {			/* staff system */
 		char second;
 		char dum;
 		float sep, maxsep;
-		struct clef_s clef;
+//		struct clef_s clef;
 	} voice[MAXVOICE];
 };
 struct SYSTEM *cursys;		/* current staff system */
 
 /* -- external routines -- */
 /* abc2ps.c */
+void include_file(unsigned char *fn);
 void clrarena(int level);
 int lvlarena(int level);
 void *getarena(int len);
@@ -486,6 +497,7 @@ void init_outbuf(int kbsz);
 void close_output_file(void);
 void close_page(void);
 float get_bposy(void);
+void open_fout(void);
 void write_buffer(void);
 int (*output)(FILE *out, const char *fmt, ...)
 #ifdef __GNUC__
@@ -496,7 +508,6 @@ void write_eps(void);
 /* deco.c */
 void deco_add(char *text);
 void deco_cnv(struct deco *dc, struct SYMBOL *s, struct SYMBOL *prev);
-unsigned char deco_intern(unsigned char deco);
 void deco_update(struct SYMBOL *s, float dx);
 float deco_width(struct SYMBOL *s);
 void draw_all_deco(void);
@@ -507,6 +518,7 @@ void draw_deco_note(void);
 void draw_deco_staff(void);
 float draw_partempo(int staff, float top);
 void draw_measnb(void);
+void init_deco(void);
 void reset_deco(void);
 void set_defl(int new_defl);
 float tempo_width(struct SYMBOL *s);
@@ -548,6 +560,14 @@ void set_font(int ft);
 void set_format(void);
 void set_voice_param(struct VOICE_S *p_voice, int state, char *w, char *p);
 struct tblt_s *tblt_parse(char *p);
+/* front.c */
+#define FE_ABC 0
+#define FE_FMT 1
+#define FE_PS 2
+void frontend(unsigned char *s,
+		int ftype,
+		char *fname,
+		int linenum);
 /* glyph.c */
 char *glyph_out(char *p);
 void glyph_add(char *p);
@@ -557,7 +577,7 @@ void reset_gen(void);
 void unlksym(struct SYMBOL *s);
 /* parse.c */
 extern float multicol_start;
-void do_tune(struct abctune *t);
+void do_tune(void);
 void identify_note(struct SYMBOL *s,
 		int len,
 		int *p_head,
@@ -596,7 +616,7 @@ char *trim_title(char *p, struct SYMBOL *title);
 void user_ps_add(char *s, char use);
 void user_ps_write(void);
 void write_title(struct SYMBOL *s);
-void write_heading(struct abctune *t);
+void write_heading(void);
 void write_user_ps(void);
 void write_text(char *cmd, char *s, int job);
 /* svg.c */

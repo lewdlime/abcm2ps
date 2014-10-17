@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2011-2013 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 2011-2014 Jean-François Moine (http://moinejf.free.fr)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,15 +25,15 @@
 #include <ctype.h>
 
 #ifdef WIN32
-#define strncasecmp strnicmp
+#define strncasecmp _strnicmp
+#define strdup _strdup
 #endif
 
-#include "front.h"
+#include "abc2ps.h"
 #include "slre.h"
 
 static unsigned char *dst;
-static int offset, size, keep_comments;
-static void (*include_f)(unsigned char *fn);
+static int offset, size;
 static unsigned char *selection;
 static int latin, skip;
 static char prefix[4] = {'%'};
@@ -112,11 +112,11 @@ static void txt_add(unsigned char *s, int sz)
 		return;
 	if (offset + sz > size) {
 		size = (offset + sz + 8191) / 8192 * 8192;
-		if (dst == 0)
+		if (!dst)
 			dst = malloc(size);
 		else
 			dst = realloc(dst, size);
-		if (dst == 0) {
+		if (!dst) {
 			fprintf(stderr, "Out of memory - abort\n");
 			exit(EXIT_FAILURE);
 		}
@@ -130,10 +130,24 @@ static void txt_add(unsigned char *s, int sz)
 static void txt_add_cnv(unsigned char *s, int sz)
 {
 	unsigned char *p, c, tmp[4];
+	int in_string = 0;
 
 	p = s;
 	while (sz > 0) {
-		if (*p == '\\') {
+		switch (*p) {
+		case '"':
+			in_string = !in_string;
+			break;
+		case '%':
+			if (in_string)
+				break;
+			while (--p >= s) {	// start of comment
+				if (*p != ' ' && *p != '\t')
+					break;
+			}
+			p++;
+			goto done;
+		case '\\':
 			if (sz >= 4			/* \ooo */
 			 && p[1] >= '0' && p[1] <= '3'
 			 && p[2] >= '0' && p[2] <= '7'
@@ -323,7 +337,7 @@ static void txt_add_cnv(unsigned char *s, int sz)
 			}
 			p++;
 			sz--;
-			if (*p == '\\') {
+			if (sz > 0) {
 				p++;
 				sz--;
 			}
@@ -351,33 +365,37 @@ latin:
 		p++;
 		sz--;
 	}
+done:
 	if (p != s)
 		txt_add(s, (int) (p - s));
 }
 
-static const unsigned char eol_chars[2] = {'\r', '\n'};
-static void eol0(void)
+static void txt_add_eos(char *fname, int linenum)
 {
-	txt_add((unsigned char *) &eol_chars[1], 1);
-}
-static void eol1(void)
-{
-	txt_add((unsigned char *) &eol_chars[0], 1);
-}
-static void eol2(void)
-{
-	txt_add((unsigned char *) &eol_chars[0], 2);
-}
-static void (*eol_tb[3])(void) = {eol0, eol1, eol2};
-static void (*txt_add_eol)(void);
+	static unsigned char eos = '\0';
 
-/* add the line number */
-static void add_lnum(int nline)
-{
-	unsigned char tmp[16];
+	/* special case for continuation lines in ABC version 2.0 */
+	if (parse.abc_vers == (2 << 16)
+	 && offset > 0
+	 && dst[offset - 1] == '\\') {
+		offset--;
+		return;
+	}
+	txt_add(&eos, 1);
+	abc_parse((char *) dst, fname, linenum);
+	offset = 0;
+}
 
-	sprintf((char *) tmp, "%%@%d", nline);
-	txt_add(tmp, strlen((char *) tmp));
+/* get the ABC version */
+static void get_vers(char *p)
+{
+	int i, j, k;
+
+	i = j = k = 0;
+	if (sscanf(p, "%d.%d.%d", &i, &j, &k) != 3)
+		if (sscanf(p, "%d.%d", &i, &j) != 2)
+			sscanf(p, "%d", &i);
+	parse.abc_vers = (i << 16) + (j << 8) + k;
 }
 
 /* check if the current tune is to be selected */
@@ -444,67 +462,66 @@ static int tune_select(unsigned char *s)
 	return slre_match(&slre, (char *) s, p - s, 0);
 }
 
-/* -- init the front-end -- */
-void front_init(int edit,	/* for edition - keep comments */
-		int eol,	/* 0: \n, 1: \r, 2: \r\n */
-		void include_api(unsigned char *fn))
-{
-	keep_comments = edit;
-	txt_add_eol = eol_tb[eol];
-	include_f = include_api;
-	dst = 0;
-	offset = 0;
-	size = 0;
-}
-
 /* -- front end parser -- */
-unsigned char *frontend(unsigned char *s,
-			int ftype)
+void frontend(unsigned char *s,
+		int ftype,
+		char *fname,
+		int linenum)
 {
 	unsigned char *p, *q, c, *begin_end;
-	int i, l, state, str_cnv_p, histo, end_len, nline;
+	int i, l, state, str_cnv_p, histo, end_len;
+	char prefix_sav[4];
+	int latin_sav;
 
-	begin_end = 0;
+	begin_end = NULL;
 	end_len = 0;
 	histo = 0;
 	state = 0;
-	nline = 0;
-	if (dst != 0)			/* if continuation */
-		offset--;		/* restart before the EOL */
 
-	add_lnum(0);
-	txt_add_eol();
+	if (ftype == FE_ABC
+	 && strncmp((char *) s, "%abc-", 5) == 0) {
+		get_vers((char *) s + 5);
+		while (*s != '\0'
+		    && *s != '\r'
+		    && *s != '\n')
+			s++;
+		if (*s != '\0') {
+			s++;
+			if (s[-1] == '\r' && *s == '\n')
+				s++;
+		}
+		linenum++;
+	}
 
 	/* if unknown encoding, check if latin1 or utf-8 */
 	if (ftype == FE_ABC
-	 && strncmp((char *) s, "%abc-2.1", 8) == 0) {
-		latin = 0;
+	 && parse.abc_vers >= ((2 << 16) | (1 << 8))) {	// if ABC version >= 2.1
+		latin = 0;				// always UTF-8
 	} else {
 		for (p = s; *p != '\0'; p++) {
 			c = *p;
 			if (c == '\\') {
-				if (p[1] == '2') {
-					if (p[2] == '0')	/* accidental */
-						continue;
-					c = 0x80;
-				} else if (p[1] == '3') {
-					c = 0xc0;
-				}
+				if (!isdigit(p[1]))
+					continue;
+				if ((p[1] == '0' || p[1] == '2')
+				 && p[2] == '0')	/* accidental */
+					continue;
+				latin = 1;
+				break;
 			}
 			if (c < 0x80)
 				continue;
-//fixme: problem when two octal values give a UTF-8 character
-			if (c >= 0xc0) {
-				if ((p[1] & 0xc0) == 0x80
-				 || (p[1] == '\\' && p[2] == '2')) {
+			if (c >= 0xc2) {
+				if ((p[1] & 0xc0) == 0x80) {
 					latin = 0;
 					break;
-				 }
+				}
 			}
 			latin = 1;
 			break;
 		}
 	}
+	latin_sav = latin;		/* (have gcc happy) */
 
 	/* scan the file */
 	skip = 0;
@@ -517,6 +534,7 @@ unsigned char *frontend(unsigned char *s,
 		    && *p != '\r'
 		    && *p != '\n') {
 			if (*p == '\\'
+			 || *p == '%'
 			 || (latin > 0 && *p >= 0x80))
 				str_cnv_p = 1;
 			p++;
@@ -527,19 +545,23 @@ unsigned char *frontend(unsigned char *s,
 			if (p[-1] == '\r' && *p == '\n')	/* (DOS) */
 				p++;
 		}
-		nline++;
+		linenum++;
 
+		if (skip) {
+			if (l != 0)
+				goto ignore;
+			skip = 0;
+		}
 		if (begin_end) {
 			if (ftype == FE_FMT) {
 				if (strncmp((char *) s, "end", 3) == 0
 				 && strncmp((char *) s + 3,
 						(char *) begin_end, end_len) == 0) {
-					begin_end = 0;
-					txt_add((unsigned char *) "%%", 2);
-					goto next;
+					begin_end = NULL;
+					goto next_eol;
 				}
 				if (*s == '%')
-					goto next_eol;		/* comment */
+					goto ignore;		/* comment */
 				goto next;
 			}
 			if (*s == '%' && strchr(prefix, s[1])) {
@@ -549,16 +571,13 @@ unsigned char *frontend(unsigned char *s,
 				if (strncmp((char *) q, "end", 3) == 0
 				 && strncmp((char *) q + 3,
 						(char *) begin_end, end_len) == 0) {
-					begin_end = 0;
-					txt_add((unsigned char *) "%%", 2);
-					l -= q - s;
-					s = q;
-					goto next;
+					begin_end = NULL;
+					goto next_eol;
 				}
 			}
 			if (strncmp("ps", (char *) begin_end, end_len) == 0) {
 				if (*s == '%')
-					goto next_eol;		/* comment */
+					goto ignore;		/* comment */
 			} else {
 				if (*s == '%' && strchr(prefix, s[1])) {
 					s += 2;
@@ -569,23 +588,20 @@ unsigned char *frontend(unsigned char *s,
 		}
 
 		if (l == 0) {			/* empty line */
-			if (skip) {
-				skip = 0;
-				txt_add_eol();
-				add_lnum(nline);
-			}
 			switch (state) {
+			default:
+				goto ignore;
 			case 1:
 				fprintf(stderr,
 					"Line %d: Empty line in tune header - K:C added\n",
-					nline);
+					linenum);
 				txt_add((unsigned char *) "K:C", 3);
-				txt_add_eol();
-				txt_add_eol();
-				add_lnum(nline);
+				txt_add_eos(fname, linenum);
 				/* fall thru */
 			case 2:
 				state = 0;
+				strcpy(prefix, prefix_sav);
+				latin = latin_sav;
 				break;
 			}
 			goto next_eol;
@@ -607,25 +623,20 @@ unsigned char *frontend(unsigned char *s,
 			do {
 				q++;
 			} while (*q == ' ' || *q == '\t');
-			if (*q == '%') {
-				if (keep_comments)
-					txt_add(q, l - (q - s));
-				else if (state != 0)	/* inside tune */
-					txt_add(q, 1);	/* keep a single '%' */
-				goto next_eol;
-			}
+			if (*q == '%')
+				goto ignore;
 		}
 
 		if (ftype == FE_PS) {
 			if (*s == '%')
-				goto next_eol;
+				goto ignore;
 			goto next;
 		}
 
 		/* treat the pseudo-comments */
 		if (ftype == FE_FMT) {
 			if (*s == '%')
-				goto next_eol;
+				goto ignore;
 			goto pscom;
 		}
 		if (*s == 'I' && s[1] == ':') {
@@ -639,27 +650,31 @@ unsigned char *frontend(unsigned char *s,
 			goto info;
 		}
 		if (*s == '%') {
-			if (!strchr(prefix, s[1])) {		/* pure comment */
-				if (keep_comments
-				 || strncmp((char *) s, "%abc", 4) == 0)
-					txt_add(s, l);
-				else if (state != 0)		/* if not global */
-					txt_add(s, 1);
-				goto next_eol;
-			}
+			if (!strchr(prefix, s[1]))	/* pure comment */
+				goto ignore;
 			s += 2;
 			l -= 2;
-			if (strncmp((char *) s, "abcm2ps", 7) == 0) {
-				s += 7;
+			if (strncmp((char *) s, "abcm2ps ", 8) == 0) {
+				s += 8;
+				l -= 8;
 				while (*s == ' ' || *s == '\t') {
 					s++;
 					l--;
 				}
-				if (l > sizeof prefix - 1)
-					l = sizeof prefix - 1;
-				memcpy(prefix, s, l);
-				prefix[l] = '\0';
-				goto next_eol;
+				for (i = 0; i < sizeof prefix - 1; i++) {
+					if (*s == ' ' || *s == '\t'
+					 || --l < 0)
+						break;
+					prefix[i] = *s++;
+				}
+				if (i == 0)
+					prefix[i++] = '%';
+				prefix[i] = '\0';
+				goto ignore;
+			}
+			if (strncmp((char *) s, "abc-version ", 12) == 0) {
+				get_vers((char *) s + 12);
+				goto ignore;
 			}
 pscom:
 			while (*s == ' ' || *s == '\t') {
@@ -717,9 +732,8 @@ info:
 				}
 				goto next;
 			}
-			if (include_f
-			 && (strncmp((char *) s, "format ", 7) == 0
-			  || strncmp((char *) s, "abc-include ", 12) == 0)) {
+			if (strncmp((char *) s, "format ", 7) == 0
+			  || strncmp((char *) s, "abc-include ", 12) == 0) {
 				unsigned char sep;
 
 				if (*s == 'f')
@@ -732,20 +746,16 @@ info:
 				while (*q != '\0'
 				    && *q != '%'
 				    && *q != '\n'
-				    && *q != '\n'
 				    && *q != '\r')
 					q++;
 				while (q[-1] == ' ')
 					q--;
 				sep = *q;
 				*q = '\0';
-				offset--;		/* remove one % */
-				dst[offset - 1] = '\0';	/* replace the other % by EOS */
-				include_f(s);
-				offset--;		/* remove the EOS */
+				offset = 0;
+				include_file(s);
 				*q = sep;
-				add_lnum(nline);
-				goto next_eol;
+				goto ignore;
 			}
 			if (strncmp((char *) s, "select", 6) == 0) {
 				s += 6;
@@ -767,9 +777,9 @@ info:
 					if (strncmp((char *) q - 5, " lock", 5) == 0)
 						q -= 5;
 				}
-				if (selection != 0) {
+				if (selection) {
 					free(selection);
-					selection = 0;
+					selection = NULL;
 				}
 				if (q != s) {
 					unsigned char sep;
@@ -779,13 +789,11 @@ info:
 					selection = (unsigned char *) strdup((char *) s);
 					*q = sep;
 				}
-				offset--;		/* remove one % */
-				goto next_eol;
+				offset = 0;
+				goto ignore;
 			}
 			goto next;
 		}
-		if (begin_end)
-			goto next;
 
 		/* treat the information fields */
 		if (s[1] == ':' && (isalpha(*s) || *s == '+')) {
@@ -800,20 +808,23 @@ info:
 				case 1:
 					fprintf(stderr,
 						"Line %d: X: found in tune header - K:C added\n",
-						nline);
+						linenum);
 					txt_add((unsigned char *) "K:C", 3);
-					txt_add_eol();
-					txt_add_eol();	/* empty line */
-					add_lnum(nline);
-					txt_add_eol();
+					txt_add_eos(fname, linenum);
+					txt_add_eos(fname, linenum);	/* empty line */
 					break;
 				case 2:
-					txt_add_eol();	/* no empty line - minor error */
+					txt_add_eos(fname, linenum);	/* no empty line - minor error */
 					break;
 				}
-				if (selection)
+				if (selection) {
 					skip = !tune_select(s);
+					if (skip)
+						goto ignore;
+				}
 				state = 1;
+				strcpy(prefix_sav, prefix);
+				latin_sav = latin;
 				break;
 			case 'U':
 				break;
@@ -822,11 +833,8 @@ info:
 				break;
 			default:
 				if (state == 0			/* if global */
-				 && strchr("dKPQsVWw", *s) != 0) {
-					if (keep_comments)
-						txt_add(s, l);
-					goto next_eol;		/* ignore */
-				}
+				 && strchr("dKPQsVWw", *s) != NULL)
+					goto ignore;
 				if (*s == 'K')
 					state = 2;
 				break;
@@ -844,7 +852,9 @@ info:
 
 		/* treat the music lines */
 		if (state == 0)				/* if not in tune */
-			goto next_eol;			/* ignore */
+			goto ignore;
+#if 0
+// what was this used for?
 		if (!str_cnv_p)
 			goto next;
 		str_cnv_p = 0;
@@ -865,72 +875,23 @@ info:
 			l -= i;
 			i = 0;
 		}
+#endif
 next:
 		if (str_cnv_p)
 			txt_add_cnv(s, l);
 		else
 			txt_add(s, l);
+		if (begin_end)
+			txt_add((unsigned char *) "\n", 1);
+		else
 next_eol:
-		txt_add_eol();
+			txt_add_eos(fname, linenum);
+ignore:
 		s = p;
 	}
-	txt_add((unsigned char *) "", 1);			/* EOS */
-	return dst;
+	if (state == 1)
+		fprintf(stderr,
+			"Line %d: Unexpected EOF in header definition\n",
+			linenum);
+	abc_eof();
 }
-
-#ifdef MAIN
-static void usage(void)
-{
-	printf("ABC frontend\n"
-		"Usage: abcmfe file\n");
-	exit(EXIT_SUCCESS);
-}
-
-int main(int argc, char **argv)
-{
-	char *p, *file, *result;
-	char *fname = 0;
-	FILE *fin;
-	size_t fsize;
-
-	while (--argc > 0) {
-		argv++;
-		p = *argv;
-		if (*p == '-')
-			continue;
-		fname = p;
-	}
-	if (fname == 0)
-		usage();
-
-	if ((fin = fopen(fname, "rb")) == 0) {
-		fprintf(stderr, "Cannot open '%s'\n", fname);
-		exit(EXIT_FAILURE);
-	}
-
-	if (fseek(fin, 0L, SEEK_END) < 0) {
-		fclose(fin);
-		return 0;
-	}
-	fsize = ftell(fin);
-	rewind(fin);
-	if ((file = malloc(fsize + 2)) == 0) {
-		fclose(fin);
-		return 0;
-	}
-
-	if (fread(file, 1, fsize, fin) != fsize) {
-		fclose(fin);
-		free(file);
-		return 0;
-	}
-	file[fsize] = '\0';
-	fclose(fin);
-
-	front_init(0, 0, 0);
-	result = (char *) frontend((unsigned char *) file, 0);
-
-	fputs(result, stdout);
-	return EXIT_SUCCESS;
-}
-#endif

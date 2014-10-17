@@ -48,7 +48,7 @@ struct note {		/* note or rest */
 	short lens[MAXHD];	/* note lengths (# pts in [1] if space) */
 	unsigned char accs[MAXHD]; /* code for accidentals & index in micro_tb */
 	unsigned char sl1[MAXHD]; /* slur start per head */
-	char sl2[MAXHD];	/* number of slur end per head */
+	char sl2[MAXHD];	/* number of slur ends per head */
 	char ti1[MAXHD];	/* flag to start tie here */
 	unsigned char decs[MAXHD]; /* head decorations (index: 5 bits, len: 3 bits) */
 	short chlen;		/* chord length */
@@ -56,6 +56,7 @@ struct note {		/* note or rest */
 	unsigned char slur_st;	/* slurs starting here (2 bits array) */
 	char slur_end;		/* number of slurs ending here */
 	signed char brhythm;	/* broken rhythm */
+	unsigned char microscale; /* microtone denominator - 1 */
 	struct deco dc;		/* decorations */
 };
 
@@ -81,7 +82,6 @@ struct abcsym {
 #define ABC_S_GLOBAL 0			/* global */
 #define ABC_S_HEAD 1			/* in header (after X:) */
 #define ABC_S_TUNE 2			/* in tune (after K:) */
-	unsigned short colnum;	/* ABC source column number */
 	unsigned short flags;
 #define ABC_F_ERROR	0x0001		/* error around this symbol */
 #define ABC_F_INVIS	0x0002		/* invisible symbol */
@@ -91,7 +91,9 @@ struct abcsym {
 #define ABC_F_GRACE	0x0020		/* grace note */
 #define ABC_F_GR_END	0x0040		/* end of grace note sequence */
 #define ABC_F_SAPPO	0x0080		/* short appoggiatura */
+	unsigned short colnum;	/* ABC source column number */
 	int linenum;		/* ABC source line number */
+	char *fn;		/* ABC source file name */
 	char *text;		/* main text (INFO, PSCOM),
 				 * guitar chord (NOTE, REST, BAR) */
 	char *comment;		/* comment part (when keep_comment) */
@@ -108,8 +110,12 @@ struct abcsym {
 #define BAGPIPE 9				/* bagpipe when >= 8 */
 			signed char nacc;	/* number  of explicit accidentals */
 						/* (-1) if no accidental */
+			signed char cue;	/* cue voice (scale 0.7) */
 			signed char octave;	/* 'octave=' */
-#define NO_OCTAVE (10)				/* no 'octave=' */
+#define NO_OCTAVE 10				/* no 'octave=' */
+			unsigned char microscale; /* microtone denominator - 1 */
+			signed char stafflines;
+			float staffscale;
 			signed char pits[8];
 			unsigned char accs[8];
 		} key;
@@ -145,6 +151,9 @@ struct abcsym {
 			signed char dyn;	/* have dynamic marks above or below the staff */
 			signed char lyrics;	/* have lyrics above or below the staff */
 			signed char gchord;	/* have gchord above or below the staff */
+			signed char cue;	/* cue voice (scale 0.7) */
+			signed char stafflines;
+			float staffscale;
 		} voice;
 		struct {		/* bar, mrest or mrep */
 			int type;
@@ -153,19 +162,18 @@ struct abcsym {
 			char dotted;
 			struct deco dc;		/* decorations */
 		} bar;
-		struct clef_s {		/* clef (and staff!) */
+		struct clef_s {		/* clef */
 			char *name;		/* PS drawing function */
-			float staffscale;	/* != 0 when change */
-			signed char stafflines;	/* >= 0 when change */
-			signed char type;	/* no clef if < 0 */
+			signed char type;
 #define TREBLE 0
 #define ALTO 1
 #define BASS 2
 #define PERC 3
+#define AUTOCLEF 4
 			char line;
-			signed char octave;
-			signed char transpose;
-			char invis;
+			signed char octave;	/* '+8' / '-8' */
+			signed char transpose;	/* if '^8' / '_8' */
+			char invis;		/* clef 'none' */
 			char check_pitch;	/* check if old abc2ps transposition */
 		} clef;
 		struct note note;	/* note, rest */
@@ -191,45 +199,32 @@ struct abcsym {
 	} u;
 };
 
-/* tune definition */
-struct abctune {
-	struct abctune *next;	/* next tune */
+/* parse definition */
+struct {
 	struct abcsym *first_sym; /* first symbol */
 	struct abcsym *last_sym; /* last symbol */
 	int abc_vers;		/* ABC version = (H << 16) + (M << 8) + L */
-	void *client_data;	/* client data */
+	char *deco_tb[128];	/* decoration names */
 	unsigned short micro_tb[MAXMICRO]; /* microtone values [ (n-1) | (d-1) ] */
-};
+	int abc_state;		/* parser state */
+} parse;
 
 #ifdef WIN32
 #define strcasecmp stricmp
-#define strncasecmp strnicmp
+#define strncasecmp _strnicmp
+#define strdup _strdup
+#ifdef _MSC_VER
+#define fileno _fileno
+#endif
 #endif
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-extern char *deco_tb[];
+//extern char *deco_tb[];
 extern int severity;
 
-void abc_delete(struct abcsym *as);
-void abc_free(struct abctune *first_tune);
-void abc_init(void *alloc_f_api(int size),
-	      void free_f_api(void *ptr),
-	      void level_f_api(int level),
-	      int client_sz_api,
-	      int keep_comment_api);
-void abc_insert(char *file_api,
-		struct abcsym *s);
-struct abcsym *abc_new(struct abctune *t,
-		       char *p,
-		       char *comment);
-struct abctune *abc_parse(char *file_api);
+void abc_parse(char *p, char *fname, int linenum);
+void abc_eof(void);
 char *get_str(char *d,
 	      char *s,
 	      int maxlen);
 char *parse_deco(char *p,
 		 struct deco *deco);
-#if defined(__cplusplus)
-}
-#endif

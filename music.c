@@ -238,9 +238,9 @@ void unlksym(struct SYMBOL *s)
 		}
 	} else {
 		s->next->prev = s->prev;
-		if (s->type == NOTEREST
-		 && !(s->sflags & S_BEAM_END))
-			s->next->sflags |= S_BEAM_ST;
+//		if (s->type == NOTEREST
+//		 && !(s->sflags & S_BEAM_END))
+//			s->next->sflags |= S_BEAM_ST;
 		if (s->extra) {
 			struct SYMBOL *g;
 
@@ -2796,7 +2796,8 @@ if (staff > nst) {
 							s->multi = -1;
 
 						/* special case for unison */
-						if (s->ts_prev->time == s->time
+						if (s->ts_prev
+						 && s->ts_prev->time == s->time
 						 && s->ts_prev->staff == s->staff
 						 && s->pits[s->nhd] == s->ts_prev->pits[0]
 						 && (s->sflags & (S_BEAM_ST | S_BEAM_END))

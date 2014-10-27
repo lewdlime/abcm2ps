@@ -1,3 +1,12 @@
+---- Version 7.8.9 - 14/10/14 ----
+
+Fix crash when %%combinevoices on beamed notes since 7.8.7
+	(reported by David Lacroix).
+Fix bad start/stop of ties since 7.8.4.
+Fix possible crash with %%alignbars.
+Fix crash when tune starting with grace note in the middle voice
+	of a 3-voices staff.
+
 ---- Version 7.8.8 - 14/08/29 ----
 
 Fix loss of indentation since 7.8.4

@@ -5101,7 +5101,8 @@ center:
 			parsys->voice[i].staff = i;
 			parsys->voice[i].range = i;
 		}
-		voice_tb[i - 1].next = NULL;
+		i--;
+		voice_tb[i].next = NULL;
 		nstaff = i;
 	}
 	return as;

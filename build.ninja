@@ -1,8 +1,9 @@
 # rules for ninja (ninja-build)
 
-VERSION = 7.8.8
+VERSION = 7.8.9
 
 cflags = -g -O2 -Wall -pipe -DHAVE_CONFIG_H  -I.
+#cflags = -g -Wall -pipe -DHAVE_CONFIG_H  -I.
 ldflags = -lm
 
 rule cc
@@ -13,7 +14,8 @@ rule cc
 # -mthumb -march=armv7-a
 
 rule ld
-  command = cc $ldflags -o $out $in
+#  command = cc $ldflags -o $out $in
+  command = clang $ldflags -o $out $in
 
 build abc2ps.o: cc abc2ps.c | config.h abcparse.h abc2ps.h front.h
 build abcparse.o: cc abcparse.c | config.h abcparse.h

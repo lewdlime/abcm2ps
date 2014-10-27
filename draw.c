@@ -185,7 +185,7 @@ static int calculate_beam(struct BEAM *bm,
 			s = sym_dup(s2);
 			s->next = s2->next;
 			if (s->next)
-				s->next->prev = s;;
+				s->next->prev = s;
 			s2->next = s;
 			s->prev = s2;
 			s->ts_next = s2->ts_next;
@@ -3057,41 +3057,31 @@ static void draw_note_ties(struct SYMBOL *k1,
 			break;
 		}
 		if (x2 - x1 > 20) {
-			x1 += 2;
-			x2 -= 2;
+			x1 += 3.5;
+			x2 -= 3.5;
 		}
 
 		y = 3 * (p - 18);
 		if (job != 1 && job != 3) {
-			if (k1->nhd != 0) {
-				x1 += 4.5;
-				y += ((p & 1) ? 2 : 0) * s;
-			} else {
-//				y += ((p & 1) ? 6 : 4) * s;
-				y += ((p & 1) ? 2 : 0) * s;
-			}
+			if (p & 1)
+				y += 2 * s;
 			if (s > 0) {
-				if (k1->nflags > -2 && k1->stem > 0
-				 && k1->nhd == 0)
-					x1 += 4.5;
+//				if (k1->nflags > -2 && k1->stem > 0
+//				 && k1->nhd == 0)
+//					x1 += 4.5;
 				if (!(p & 1) && k1->dots > 0)
 					y = 3 * (p - 18) + 6;
 			}
 		}
 //		if (job != 2) {
 		 else {
-			if (k2->nhd != 0) {
-				x2 -= 4.5;
-				y += ((p & 1) ? 2 : 0) * s;
-			} else {
-//				y += ((p2 & 1) ? 7 : 4) * s;
-				y += ((p2 & 1) ? 2 : 0) * s;
-			}
-			if (s < 0) {
-				if (k2->nflags > -2 && k2->stem < 0
-				 && k2->nhd == 0)
-					x2 -= 4.5;
-			}
+			if (p & 1)
+				y += 2 * s;
+//			if (s < 0) {
+//				if (k2->nflags > -2 && k2->stem < 0
+//				 && k2->nhd == 0)
+//					x2 -= 4.5;
+//			}
 //			if (job != 0)
 //				y1 = y2;
 //		} else {

@@ -1840,9 +1840,9 @@ static int parse_line(char *p)
 								= CHAR_LINEBREAK;
 						break;
 					case '<':
-						if (strcmp(p, "<none>") == 0)
+						if (strncmp(p, "<none>", 6) == 0)
 							return 0;
-						if (strcmp(p, "<EOL>") == 0) {
+						if (strncmp(p, "<EOL>", 5) == 0) {
 							char_tb['\n'] = CHAR_LINEBREAK;
 							p += 5;
 							break;

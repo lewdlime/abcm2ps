@@ -686,7 +686,7 @@ void write_eps(void)
 				p = &info['T' - 'A']->as.text[2];
 				while (isspace((unsigned char) *p))
 					p++;
-					strncpy(&outfnam[i], p, sizeof outfnam - i - 4);
+				strncpy(&outfnam[i], p, sizeof outfnam - i - 4);
 				outfnam[sizeof outfnam - 5] = '\0';
 				epsf_fn_adj(&outfnam[i]);
 			} else {

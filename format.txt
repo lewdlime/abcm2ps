@@ -1492,7 +1492,7 @@ List of the format parameters
 	Scope: generation
 	Description:
 		Stretch the last music line of a tune when it lacks
-		only the <float> fraction of the page width.
+		less than the <float> fraction of the page width.
 		<float> range is 0.0 (no stretch) to 1.0.
 
   stretchstaff <bool>

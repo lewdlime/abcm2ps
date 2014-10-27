@@ -3096,40 +3096,28 @@ static void draw_note_ties(struct SYMBOL *k1,
 			break;
 		}
 		if (x2 - x1 > 20) {
-			x1 += 2;
-			x2 -= 2;
+			x1 += 3.5;
+			x2 -= 3.5;
 		}
 
 		y = 3 * (p - 18);
 		if (job != 1 && job != 3) {
-			if (k1->nhd != 0)
-				x1 += 4.5;
-			y += ((p & 1) ? 2 : 0) * s;
+			if (p & 1)
+				y += 2 * s;
 			if (s > 0) {
-				if (k1->nflags > -2 && k1->stem > 0
-				 && k1->nhd == 0)
-					x1 += 4.5;
+//				if (k1->nflags > -2 && k1->stem > 0
+//				 && k1->nhd == 0)
+//					x1 += 4.5;
 				if (!(p & 1) && k1->dots > 0)
 					y = 3 * (p - 18) + 6;
 			}
-		}
-//		if (job != 2) {
-		 else {
-			if (k2->nhd != 0)
-				x2 -= 4.5;
-			y += ((p & 1) ? 2 : 0) * s;
-			if (s < 0) {
-				if (k2->nflags > -2 && k2->stem < 0
-				 && k2->nhd == 0)
-					x2 -= 4.5;
-			}
-//			if (job != 0)
-//				y1 = y2;
-//		} else {
-//			if (k1 == k2) {		/* if continuation on next line */
-//				k1->as.u.note.ti1[m1] &= SL_DOTTED;
-//				k1->as.u.note.ti1[m1] +=
-//					s > 0 ? SL_ABOVE : SL_BELOW;
+		} else {
+			if (p & 1)
+				y += 2 * s;
+//			if (s < 0) {
+//				if (k2->nflags > -2 && k2->stem < 0
+//				 && k2->nhd == 0)
+//					x2 -= 4.5;
 //			}
 		}
 
@@ -3786,7 +3774,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 				lflag = 0;
 				lastx = s->x + s->wr;
 			}
-			if (*p == LY_HYPH			/* '-' */
+			if (*p == LY_HYPH		/* '-' */
 			 || *p == LY_UNDER) {		/* '_' */
 				if (x0 == 0 && lastx > s->x - 18)
 					lastx = s->x - 18;
@@ -4331,18 +4319,22 @@ static float set_staff(void)
 			break;
 		staff_tb[staff].empty = 1;
 	}
-	if (staff > nstaff)
-		staff--;			/* one staff, empty */
-
 	y = 0;
-	for (i = 0; i < YSTEP; i++) {
-		v = staff_tb[staff].top[i];
-		if (y < v)
-			y = v;
+	if (staff > nstaff) {
+		staff--;			/* one staff, empty */
+	} else {
+		for (i = 0; i < YSTEP; i++) {
+			v = staff_tb[staff].top[i];
+			if (y < v)
+				y = v;
+		}
 	}
 
 	/* draw the parts and tempo indications if any */
 	y += draw_partempo(staff, y);
+
+	if (empty[staff])
+		return y;
 
 	staffsep = cfmt.staffsep * 0.5 +
 			staff_tb[staff].topbar * staff_tb[staff].staffscale;

@@ -587,6 +587,9 @@ void frontend(unsigned char *s,
 			goto next;
 		}
 
+		while (l > 0 && isspace(s[l - 1]))
+			l--;
+
 		if (l == 0) {			/* empty line */
 			switch (state) {
 			default:

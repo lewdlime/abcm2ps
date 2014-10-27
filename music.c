@@ -288,9 +288,9 @@ void unlksym(struct SYMBOL *s)
 		}
 	} else {
 		s->next->prev = s->prev;
-		if (s->type == NOTEREST
-		 && !(s->sflags & S_BEAM_END))
-			s->next->sflags |= S_BEAM_ST;
+//		if (s->type == NOTEREST
+//		 && !(s->sflags & S_BEAM_END))
+//			s->next->sflags |= S_BEAM_ST;
 		if (s->extra) {
 			struct SYMBOL *g;
 
@@ -3654,9 +3654,9 @@ static void set_left(struct SYMBOL *s, float *left)
 	if (s->stem > 0) {
 		w = -w;
 		i = s->pits[0] * 2;
-		j = ((s->ymx - 2) / 3 + 18) * 2;
+		j = ((int) ((s->ymx - 2) / 3) + 18) * 2;
 	} else {
-		i = ((s->ymn + 2) / 3 + 18) * 2;
+		i = ((int) ((s->ymn + 2) / 3) + 18) * 2;
 		j = s->pits[s->nhd] * 2;
 	}
 	if (i < 0)
@@ -3698,18 +3698,18 @@ static void set_right(struct SYMBOL *s, float *right)
 		right[i] = -100;
 
 	/* stem and flags */
-	flags = (s->nflags > 0
+	flags = s->nflags > 0
 	     && (s->sflags & (S_BEAM_ST | S_BEAM_END))
-			== (S_BEAM_ST | S_BEAM_END));
+			== (S_BEAM_ST | S_BEAM_END);
 	w = w_base;
 	if (s->stem < 0) {
 		w = -w;
-		i = ((s->ymn + 2) / 3 + 18) * 2;
+		i = ((int) ((s->ymn + 2) / 3) + 18) * 2;
 		j = s->pits[s->nhd] * 2;
 		k = i + 4;
 	} else {
 		i = s->pits[0] * 2;
-		j = ((s->ymx - 2) / 3 + 18) * 2;
+		j = ((int) ((s->ymx - 2) / 3) + 18) * 2;
 	}
 	if (i < 0)
 		i = 0;
@@ -4037,9 +4037,8 @@ static void set_overlap(void)
 					continue;
 				if (s2->as.u.note.accs[i2] == 0) {
 					if (s2->shhd[i2] < 0
-					 && dp == 3) {
+					 && dp == 3)
 						s1->shac[i1] = 9 + 7;
-					}
 					continue;
 				}
 				if (dp == 0) {
@@ -4113,18 +4112,6 @@ static void set_stems(void)
 
 		/* shift notes in chords (need stem direction to do this) */
 		set_head_directions(s);
-
-#if 0
-		/* standalone with up-stem and flags */
-		if (s->xmx == 0) {
-			if (s->nflags > 0 && s->stem > 0
-//			 && s->xmx == 0 && s->doty == 0
-			 && (s->sflags & (S_BEAM_ST | S_BEAM_END))
-					== (S_BEAM_ST | S_BEAM_END)
-			 && !(s->y % 6))
-				s->xmx = 5;
-		}
-#endif
 
 		/* if start or end of beam, adjust the number of flags
 		 * with the other end */

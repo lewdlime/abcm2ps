@@ -1,3 +1,13 @@
+---- Version 8.3.1 - 14/10/14 ----
+
+Fix crash when %%combinevoices on beamed notes since 8.1.5
+	(reported by David Lacroix).
+Fix bad start/stop of ties since 8.1.0.
+Fix abnormal error when '<none>' or '<EOL>' in %%linebreak ending with 'lock'.
+Fix abnormal error when spaces after backslash in music lines
+	(reported by Daniel Branning).
+Don't advance vertically when all staves are empty.
+
 ---- Version 8.3.0 - 14/10/05 ----
 
 Fix program loop when no measure bar at end of line since 8.2.2.

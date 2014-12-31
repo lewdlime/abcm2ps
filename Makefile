@@ -1,6 +1,6 @@
 # Makefile source for abcm2ps
 
-VERSION = 8.3.1
+VERSION = 8.4.0
 
 CC = gcc
 INSTALL = /usr/bin/install -c
@@ -76,10 +76,8 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/deco.c \
 	abcm2ps-$(VERSION)/deco.abc \
 	abcm2ps-$(VERSION)/draw.c \
-	abcm2ps-$(VERSION)/features.txt \
 	abcm2ps-$(VERSION)/flute.fmt \
 	abcm2ps-$(VERSION)/format.c \
-	abcm2ps-$(VERSION)/format.txt \
 	abcm2ps-$(VERSION)/front.c \
 	abcm2ps-$(VERSION)/glyph.c \
 	abcm2ps-$(VERSION)/landscape.fmt \

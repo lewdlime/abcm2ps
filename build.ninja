@@ -1,6 +1,6 @@
 # rules for ninja (ninja-build)
 
-VERSION = 8.3.1
+VERSION = 8.4.0
 
 cflags = -g -O2 -Wall -pipe -I.
 #cflags = -g -Wall -pipe -I.
@@ -59,10 +59,8 @@ rule dist_tar
   abcm2ps-$VERSION/deco.c $
   abcm2ps-$VERSION/deco.abc $
   abcm2ps-$VERSION/draw.c $
-  abcm2ps-$VERSION/features.txt $
   abcm2ps-$VERSION/flute.fmt $
   abcm2ps-$VERSION/format.c $
-  abcm2ps-$VERSION/format.txt $
   abcm2ps-$VERSION/front.c $
   abcm2ps-$VERSION/glyph.c $
   abcm2ps-$VERSION/landscape.fmt $

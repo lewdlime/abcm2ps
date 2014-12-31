@@ -8,15 +8,6 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the  
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA  02110-1335  USA
  */
 
 #include "config.h"
@@ -36,12 +27,14 @@ static unsigned char microscale; /* current microtone scale */
 static signed char vover;	/* voice overlay (1: single bar, -1: multi-bar */
 static char lyric_started;	/* lyric started */
 static char *gchord;		/* guitar chord */
-static struct deco dc;		/* decorations */
+static struct decos dc;		/* decorations */
 static struct abcsym *deco_start; /* 1st note of the line for d: / s: */
 static struct abcsym *deco_cont; /* current symbol when d: / s: continuation */
 
 static int g_abc_vers, g_ulen, g_microscale;
 static char g_char_tb[128];
+static char *g_deco_tb[128];		/* global decoration names */
+static unsigned short g_micro_tb[MAXMICRO]; /* global microtone values */
 
 #define VOICE_NAME_SZ 64	/* max size of a voice name */
 
@@ -117,11 +110,6 @@ static const char all_notes[] = "CDEFGABcdefgab";
 
 static char *parse_len(char *p,
 			int *p_len);
-static char *parse_basic_note(char *p,
-			      int *pitch,
-			      int *length,
-			      int *accidental,
-			      int *stemless);
 static int parse_info(char *p);
 static char *parse_gchord(char *p);
 static int parse_line(char *p);
@@ -182,6 +170,8 @@ void abc_parse(char *p, char *fname, int ln)
 		g_microscale = microscale;
 		meter = 2;
 		memcpy(g_char_tb, char_tb, sizeof g_char_tb);
+		memcpy(g_deco_tb, parse.deco_tb, sizeof g_deco_tb);
+		memcpy(g_micro_tb, parse.micro_tb, sizeof g_micro_tb);
 		break;
 	case 1:				/* end of tune */
 		if (parse.first_sym) {
@@ -193,10 +183,12 @@ void abc_parse(char *p, char *fname, int ln)
 		ulen = g_ulen;
 		microscale = g_microscale;
 		memcpy(char_tb, g_char_tb, sizeof g_char_tb);
+		memcpy(parse.deco_tb, g_deco_tb, sizeof parse.deco_tb);
+		memcpy(parse.micro_tb, g_micro_tb, sizeof parse.micro_tb);
 		lvlarena(0);
 		if (dc.n > 0)
 			syntax("Decoration without symbol", 0);
-		dc.n = dc.h = dc.s = 0;
+		dc.n = 0;
 		break;
 	}
 }
@@ -284,7 +276,7 @@ static char *parse_extra(char *p,
 			int i;
 
 			i = atoi(p + 11);
-			if (i < 4 || i > 256)
+			if (i < 4 || i >= 256)
 				syntax("Invalid value in microscale=", p);
 			else
 				microscale = i;
@@ -354,7 +346,7 @@ static char *get_deco(char *p,
 	if (*p == sep)
 		p++;
 	for (i = 1, t = &parse.deco_tb[1];
-	     *t && i < 128;
+	     *t && i < DC_NAME_SZ;
 	     i++, t++) {
 		if (strlen(*t) == l
 		 && strncmp(*t, q, l) == 0) {
@@ -364,12 +356,12 @@ static char *get_deco(char *p,
 	}
 
 	/* new decoration */
-	if (i < 128) {
-		if (parse.abc_state != ABC_S_GLOBAL)
-			lvlarena(0);
+	if (i < DC_NAME_SZ) {
+//		if (parse.abc_state != ABC_S_GLOBAL)
+//			lvlarena(0);
 		*t = getarena(l + 1);
-		if (parse.abc_state != ABC_S_GLOBAL)
-			lvlarena(1);
+//		if (parse.abc_state != ABC_S_GLOBAL)
+//			lvlarena(1);
 		memcpy(*t, q, l);
 		(*t)[l] = '\0';
 		*p_dc = i + 128;
@@ -386,8 +378,6 @@ static char *parse_acc(char *p,
 	int pit, len, acc, nostem;
 	unsigned nacc;
 
-	if (s->u.key.empty == 2)
-		syntax("cannot have 'none' and a list of accidentals", p);
 	nacc = 0;
 	for (;;) {
 		if (nacc >= sizeof s->u.key.pits) {
@@ -602,7 +592,7 @@ static int parse_octave(char *p)
 static void parse_key(char *p,
 		      struct abcsym *s)
 {
-	int sf, mode;
+	int sf, mode, key_end;
 	char *clef_name, *clef_middle, *clef_lines, *clef_scale;
 	char *p_octave, *p_cue;
 
@@ -614,20 +604,9 @@ static void parse_key(char *p,
 		s->u.key.empty = 1;
 		return;
 	}
-	if (strncasecmp(p, "none", 4) == 0) {
-		s->u.key.empty = 2;
-		p += 4;
-		while (isspace((unsigned char) *p))
-			p++;
-		if (*p == '\0')
-			return;
-	}
-	clef_name = clef_middle = clef_lines = clef_scale = NULL;
-	p_octave = p_cue = NULL;
-	p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
-			&clef_scale, &p_octave, &p_cue);
 	sf = 0;
 	mode = MAJOR;
+	key_end = 0;
 	switch (*p++) {
 	case 'F': sf = -1; break;
 	case 'B': sf++;
@@ -648,39 +627,34 @@ static void parse_key(char *p,
 			syntax("Unknown bagpipe-like key", p);
 		}
 		break;
-	case '^':
-	case '_':
-	case '=':
-		p--;			/* explicit accidentals */
-		break;
-	case '\0':
-		if (s->u.key.empty == 0)
-			s->u.key.empty = 1;
-		p--;
-		break;
+	case 'n':
+		if (strncmp(p, "one", 3) == 0) {	// none
+			s->u.key.empty = 2;
+			p += 3;
+			while (isspace((unsigned char) *p))
+				p++;
+			if (*p == '\0')
+				return;
+			key_end = 1;
+			break;
+		}
+		// fall thru
 	default:
 		p--;
-		if (s->u.key.empty != 2)
-			syntax("Key not recognized", p);
+		key_end = 1;
 		break;
 	}
-	if (*p == '#') {
-		sf += 7;
-		p++;
-	} else if (*p == 'b') {
-		sf -= 7;
-		p++;
-	}
 
-	while (*p != '\0') {
+	if (!key_end) {
+		if (*p == '#') {
+			sf += 7;
+			p++;
+		} else if (*p == 'b') {
+			sf -= 7;
+			p++;
+		}
 		while (isspace((unsigned char) *p))
 			p++;
-		if (*p == '\0')
-			break;
-		p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
-				&clef_scale, &p_octave, &p_cue);
-		if (*p == '\0')
-			break;
 		switch (*p) {
 		case 'a':
 		case 'A':
@@ -695,13 +669,6 @@ static void parse_key(char *p,
 			if (strncasecmp(p, "dor", 3) == 0) {
 				sf -= 2;
 				mode = 1;
-				break;
-			}
-			goto unk;
-		case 'e':
-		case 'E':
-			if (strncasecmp(p, "exp", 3) == 0) {
-				s->u.key.exp = 1;
 				break;
 			}
 			goto unk;
@@ -749,20 +716,39 @@ static void parse_key(char *p,
 				break;
 			}
 			goto unk;
-		case '^':
-		case '_':
-		case '=':
-			p = parse_acc(p, s);	/* explicit accidentals */
-			continue;
 		default:
-		unk:
-			syntax("Unknown token in key specifier", p);
-			while (!isspace((unsigned char) *p) && *p != '\0')
-				p++;
-			continue;
+unk:
+			key_end = 1;
+			break;
 		}
-		while (isalpha((unsigned char) *p))
-			p++;
+		if (!key_end) {
+			while (isalpha((unsigned char) *p))
+				p++;
+			while (isspace((unsigned char) *p))
+				p++;
+		}
+
+		// [exp] accidentals
+		if (strncmp(p, "exp ", 4) == 0) {
+			p += 4;
+			while (isspace((unsigned char) *p))
+				p++;
+			if (*p == '\0')
+				syntax("no accidental after 'exp'", p);
+			s->u.key.exp = 1;
+		}
+		if (s->u.key.exp && strncmp(p, "none", 4) == 0) {
+			sf = 0;
+			p += 4;
+			while (isspace((unsigned char) *p))
+				p++;
+		} else switch (*p) {
+			case '^':
+			case '_':
+			case '=':
+				p = parse_acc(p, s);		/* accidentals */
+				break;
+		}
 	}
 
 	if (sf > 7 || sf < -7) {
@@ -772,6 +758,13 @@ static void parse_key(char *p,
 		else
 			sf += 12;
 	}
+
+	// extra parameters
+	clef_name = clef_middle = clef_lines = clef_scale = NULL;
+	p_octave = p_cue = NULL;
+	parse_extra(p, &clef_name, &clef_middle, &clef_lines,
+			&clef_scale, &p_octave, &p_cue);
+
 	s->u.key.sf = sf;
 	s->u.key.mode = mode;
 	s->u.key.octave = parse_octave(p_octave);
@@ -1422,7 +1415,7 @@ static char *parse_bar(char *p)
 
 	if (dc.n > 0) {
 		memcpy(&s->u.bar.dc, &dc, sizeof s->u.bar.dc);
-		dc.n = dc.h = dc.s = 0;
+		dc.n = 0;
 	}
 
 	if (!lyric_started) {
@@ -1465,11 +1458,11 @@ static char *parse_bar(char *p)
 
 /* -- parse note or rest with pitch and length -- */
 /* in case of error, 'accidental' is set to -1 */
-static char *parse_basic_note(char *p,
-			      int *pitch,
-			      int *length,
-			      int *accidental,
-			      int *stemless)
+char *parse_basic_note(char *p,
+			int *pitch,
+			int *length,
+			int *accidental,
+			int *stemless)
 {
 	int pit, len, acc, nostem;
 
@@ -1580,24 +1573,25 @@ static char *parse_basic_note(char *p,
 
 /* -- parse the decorations of notes and bars -- */
 char *parse_deco(char *p,
-		 struct deco *deco)
+		 struct decos *deco,
+		 int m)			/* note index */
 {
 	int n;
-	unsigned char c, d;
+	unsigned char t;
 
 	n = deco->n;
 	for (;;) {
-		c = (unsigned char) *p++;
-		if (char_tb[c] != CHAR_DECO && char_tb[c] != CHAR_DECOS)
+		t = (unsigned char) *p++;
+		if (char_tb[t] != CHAR_DECO && char_tb[t] != CHAR_DECOS)
 			break;
-		if (char_tb[c] == CHAR_DECOS) {
-			p = get_deco(p, &d);
-			c = d;
-		}
-		if (n >= MAXDC)
+		if (char_tb[t] == CHAR_DECOS)
+			p = get_deco(p, &t);
+		if (n >= MAXDC) {
 			syntax("Too many decorations for the note", p);
-		else if (c != 0)
-			deco->t[n++] = c;
+		} else if (t != 0) {
+			deco->tm[n].t = t;
+			deco->tm[n++].m = m;
+		}
 	}
 	deco->n = n;
 	return p - 1;
@@ -1607,7 +1601,7 @@ char *parse_deco(char *p,
 static char *parse_decoline(char *p)
 {
 	struct abcsym *is;
-	unsigned char d;
+	unsigned char t;
 	int n;
 
 	if ((is = deco_cont) == NULL)
@@ -1658,13 +1652,13 @@ static char *parse_decoline(char *p)
 			break;
 		default:
 			if (char_tb[(unsigned char) *p] == CHAR_DECOS)
-				p = get_deco(p + 1, &d);
+				p = get_deco(p + 1, &t);
 			else
-				d = (unsigned char) *p++;
+				t = (unsigned char) *p++;
 			break;
 		}
 
-		/* store the decoration / gchord/annotation in the next note */
+		/* store the decoration and gchord/annotation in the next note */
 		while (is && (is->type != ABC_T_NOTE
 				|| (is->flags & ABC_F_GRACE)))
 			is = is->next;
@@ -1688,9 +1682,10 @@ static char *parse_decoline(char *p)
 			n = is->u.note.dc.n;
 			if (n >= MAXDC) {
 				syntax("Too many decorations for the note", p);
-			} else if (d != 0) {
-				is->u.note.dc.t[n] = d;
-				is->u.note.dc.n = n + 1;
+			} else if (t != 0) {
+				is->u.note.dc.tm[n].t = t;
+				is->u.note.dc.tm[n++].m = 255;
+				is->u.note.dc.n = n;
 			}
 		}
 		is = is->next;
@@ -1780,7 +1775,7 @@ static int parse_line(char *p)
 	struct abcsym *s;
 	char *q, c;
 	struct abcsym *last_note_sav = NULL;
-	struct deco dc_sav;
+	struct decos dc_sav;
 	int i, flags, flags_sav = 0, slur;
 	static char qtb[10] = {0, 1, 3, 2, 3, 0, 2, 0, 3, 0};
 
@@ -1857,6 +1852,19 @@ static int parse_line(char *p)
 				}
 				return 0;
 			}
+			if (strncasecmp(p, "microscale ", 11) == 0) {
+				int v;
+
+				p += 11;
+				while (isspace((unsigned char) *p))
+					p++;
+				sscanf(p, "%d", &v);
+				if (v < 4 || v >= 256)
+					syntax("Invalid value in %%microscale", p);
+				else
+					microscale = v;
+				return 0;
+			}
 			if (strncasecmp(p, "user ", 5) == 0) {
 				p += 5;
 				while (isspace((unsigned char) *p))
@@ -1894,8 +1902,8 @@ static int parse_line(char *p)
 	if (parse.abc_state != ABC_S_TUNE)
 		return 0;
 
+	/* music */
 	flags = 0;
-
 	if (parse.abc_vers <= (2 << 16))
 		lyric_started = 0;
 	deco_start = deco_cont = NULL;
@@ -1914,7 +1922,7 @@ static int parse_line(char *p)
 			last_note_sav = curvoice->last_note;
 			curvoice->last_note = NULL;
 			memcpy(&dc_sav, &dc, sizeof dc);
-			dc.n = dc.h = dc.s = 0;
+			dc.n = 0;
 			flags_sav = flags;
 			flags = ABC_F_GRACE;
 			if (*p == '/') {
@@ -1949,8 +1957,7 @@ static int parse_line(char *p)
 					break;
 				}
 			}
-			p = parse_deco(p - 1, &dc);
-			dc.h = dc.s = dc.n;
+			p = parse_deco(p - 1, &dc, 255);
 			break;
 		case CHAR_LINEBREAK:
 			s = abc_new(ABC_T_EOLN, NULL);
@@ -2224,7 +2231,7 @@ static char *parse_note(char *p,
 {
 	struct abcsym *s;
 	char *q;
-	int pit, len, acc, nostem, chord, j, m;
+	int pit, len, acc, nostem, chord, j, m, n;
 
 	if (flags & ABC_F_GRACE) {	/* in a grace note sequence */
 		s = abc_new(ABC_T_NOTE, NULL);
@@ -2296,48 +2303,37 @@ static char *parse_note(char *p,
 	m = 0;
 	nostem = 0;
 	for (;;) {
-		int tmp;
-
 		if (chord) {
 			if (m >= MAXHD) {
 				syntax("Too many notes in chord", p);
 				m--;
 			}
-			tmp = 0;
+			n = 0;
 			if (*p == '.') {
-				tmp = SL_DOTTED;
+				n = SL_DOTTED;
 				p++;
 			}
 			if (*p == '(') {
 				p++;
 				switch (*p) {
 				case '\'':
-					tmp += SL_ABOVE;
+					n += SL_ABOVE;
 					p++;
 					break;
 				case ',':
-					tmp += SL_BELOW;
+					n += SL_BELOW;
 					p++;
 					break;
 				default:
-					tmp += SL_AUTO;
+					n += SL_AUTO;
 					break;
 				}
 				s->u.note.sl1[m] = (s->u.note.sl1[m] << 3)
-							+ tmp;
+							+ n;
 			}
 		}
-		tmp = dc.n;
-		p = parse_deco(p, &dc);		/* note head decorations */
-		if (dc.n != tmp) {
-			if (dc.n - tmp >= 8) {
-				syntax("Too many decorations on this head", p);
-				tmp = dc.n - 7;
-			}
-			s->u.note.decs[m] = (tmp << 3) + dc.n - tmp;
-			dc.s = dc.n;
-		}
-		p = parse_basic_note(p, &pit, &len, &acc, &tmp);
+		p = parse_deco(p, &dc, m);	/* note head decorations */
+		p = parse_basic_note(p, &pit, &len, &acc, &n);
 		if (!(flags & ABC_F_GRACE))
 			len = len * ulen / BASE_LEN;
 		else
@@ -2346,7 +2342,7 @@ static char *parse_note(char *p,
 		s->u.note.pits[m] = pit;
 		s->u.note.lens[m] = len;
 		s->u.note.accs[m] = acc;
-		nostem |= tmp;
+		nostem |= n;
 
 		if (chord) {
 			for (;;) {
@@ -2392,8 +2388,8 @@ static char *parse_note(char *p,
 				p = parse_len(p, &len);
 				s->u.note.chlen = len;
 				for (j = 0; j < m; j++) {
-					tmp = len * s->u.note.lens[j];
-					s->u.note.lens[j] = tmp / BASE_LEN;
+					n = len * s->u.note.lens[j];
+					s->u.note.lens[j] = n / BASE_LEN;
 				}
 			}
 			break;
@@ -2411,6 +2407,29 @@ static char *parse_note(char *p,
 
 	s->u.note.microscale = microscale;
 	s->u.note.nhd = m - 1;
+
+	/* duplicate the head decorations on each note */
+	for (n = dc.n; --n >= 0; ) {
+		int t;
+
+		if (dc.tm[n].m != 255)
+			continue;
+		t = dc.tm[n].t - 128;
+		if (t <= 0)
+			continue;
+		if (strncmp(parse.deco_tb[t], "head-", 5) != 0)
+			continue;
+		dc.tm[n].m = 0;
+		for (m = 1; m <= s->u.note.nhd; m++) {
+			if (dc.n >= MAXDC) {
+				syntax("too many head decorations", p);
+				continue;
+			}
+			j = dc.n++;
+			dc.tm[j].t = dc.tm[n].t;
+			dc.tm[j].m = m;
+		}
+	}
 do_brhythm:
 	if (curvoice->last_note
 	 && curvoice->last_note->u.note.brhythm != 0)
@@ -2421,7 +2440,7 @@ add_deco:
 		memcpy(s->type != ABC_T_MREST ? &s->u.note.dc
 				: &s->u.bar.dc,
 			&dc, sizeof dc);
-		dc.n = dc.h = dc.s = 0;
+		dc.n = 0;
 	}
 
 	/* forbid rests in grace note sequences */

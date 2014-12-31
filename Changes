@@ -1,3 +1,55 @@
+---- Version 8.4.0 - 14/12/16 ----
+
+Remove features.txt from the tarball.
+Fix "%%microscale 4" on SVG output.
+Handle %%microscale.
+Add '+' in %%score/%%staves.
+Fix bad handling of "K:none", especially when transposition.
+Fix bad note heads when %%combinevoices
+	(reported by Johann Schatzer).
+Fix bad transposition of the latin guitar chord "La".
+Fix loss of 'exp none' in K:.
+Fix bad display of unisons
+	(reported by David Lacroix).
+Fix some compilation warnings
+	(reported by John Chambers).
+Fix loss of some clef warnings at end of previous lines.
+
+---- Version 8.3.4 - 14/12/02 ----
+
+Fix double clefs when new voices in %%staves
+	(reported by Francis Stevens).
+Fix loss of 128 decorations per tune since 8.3.0
+	(reported by Henry Bley-Vroman).
+Fix problems with decorations or guitar chords/annotations
+		in sequence/measure repeat.
+	(reported by Frédéric Boulanger).
+
+---- Version 8.3.3 - 14/11/26 ----
+
+Fix no display of lyrics after tune since 8.3.2
+	(reported by Gerhard Schacherl).
+Fix bad position of grace notes in overlay voices at start of measure
+	(reported by Jean-Luc Zins).
+Fix memory leak relative to decorations.
+Set back %%autoclef
+	(asked by Atte Jensen).
+Remove the references to 'format.txt'
+	(reported by Martin Tarenskeen).
+Fix bad repeat font when staves/voices with different scales
+	(reported by Gerhard Schacherl).
+
+---- Version 8.3.2 - 14/11/01 ----
+
+Change the PS font scale of the accidentals according to the FontMatrix
+	(reported by Chuck Boody).
+Remove format.txt from the tarball.
+Add decoration function 'crdc'.
+Fix loss of voice options when many %%voice's without "%%voice end" in %%tune.
+Fix loss of lyrics when ABC version 2.1 and generation restart.
+Accept '<note1><note2>' in %%transpose.
+Fix bad note transposition since 8.2.0.
+
 ---- Version 8.3.1 - 14/10/14 ----
 
 Fix crash when %%combinevoices on beamed notes since 8.1.5
@@ -6,7 +58,7 @@ Fix bad start/stop of ties since 8.1.0.
 Fix abnormal error when '<none>' or '<EOL>' in %%linebreak ending with 'lock'.
 Fix abnormal error when spaces after backslash in music lines
 	(reported by Daniel Branning).
-Don't advance vertically when all staves are empty.
+Don't let vertical space when all staves are empty.
 
 ---- Version 8.3.0 - 14/10/05 ----
 
@@ -185,7 +237,7 @@ Fix bad beams in SVG output
 Fix bad direction of beam stub on last note when !beambr1! / !beambr2!
 	(reported by David Lacroix).
 May have up to 128 decorations per tune
-	(asked by  Henry Bley-Vroman).
+	(asked by Henry Bley-Vroman).
 Fix crash when only P: or Q: in a generation sequence
 	(reported by Henry Bley-Vroman).
 

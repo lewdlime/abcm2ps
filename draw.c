@@ -10,15 +10,6 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA  02110-1335  USA
  */
 
 #include <stdlib.h>
@@ -109,7 +100,6 @@ static struct SYMBOL *sym_dup(struct SYMBOL *s_orig)
 	s->as.flags |= ABC_F_INVIS;
 	s->as.text = NULL;
 	memset(s->as.u.note.sl1, 0, sizeof s->as.u.note.sl1);
-	memset(s->as.u.note.decs, 0, sizeof s->as.u.note.decs);
 	memset(&s->as.u.note.dc, 0, sizeof s->as.u.note.dc);
 	s->gch = NULL;
 	s->ly = NULL;
@@ -928,8 +918,7 @@ static void draw_acc(int acc, int microscale)
 	int n, d;
 
 	n = parse.micro_tb[acc >> 3];
-	if (acc >> 3 != 0
-	 && (cfmt.micronewps || microscale)) {
+	if (acc >> 3 != 0 && microscale) {
 		if (microscale) {
 			d = microscale;
 			n = acc >> 3;
@@ -1232,7 +1221,7 @@ static void draw_bar(struct SYMBOL *s, float bot, float h)
 /* (the staves are defined) */
 static void draw_rest(struct SYMBOL *s)
 {
-	int i, y;
+	int i, y, no_head;
 	float x, dotx, staffb;
 
 static char *rest_tb[NFLAGS_SZ] = {
@@ -1266,8 +1255,8 @@ static char *rest_tb[NFLAGS_SZ] = {
 	} else {
 		x = s->x + s->shhd[0] * cur_scale;
 	}
-	if ((s->as.flags & ABC_F_INVIS)
-	 && !(s->sflags & S_OTHER_HEAD))
+	if (s->as.flags & ABC_F_INVIS)
+//	 && !(s->sflags & S_OTHER_HEAD))	//fixme: before new deco struct
 		return;
 
 	staffb = staff_tb[s->staff].y;		/* bottom of staff */
@@ -1291,10 +1280,16 @@ static char *rest_tb[NFLAGS_SZ] = {
 
 	y = s->y;
 
-	if (s->sflags & S_OTHER_HEAD) {
-		draw_all_deco_head(s, x, y + staffb);
-		return;
+	no_head = 0;
+	for (i = 0; i < s->as.u.note.dc.n; i++) {
+		if (s->as.u.note.dc.tm[i].m == 0)
+			no_head |= draw_deco_head(s->as.u.note.dc.tm[i].t,
+						  x,
+						  y + staffb,
+						  s->stem);
 	}
+	if (no_head)
+		return;
 
 	i = C_XFLAGS - s->nflags;		/* rest_tb index */
 	if (i == 7 && y == 12
@@ -1572,17 +1567,11 @@ static void draw_basic_note(float x,
 	y = 3 * (s->pits[m] - 18);		/* note height on staff */
 	shhd = s->shhd[m] * cur_scale;
 
-	/* draw the note decorations */
-	no_head = (s->sflags & S_OTHER_HEAD);
-	if (no_head)
-		draw_all_deco_head(s, x + shhd, y + staffb);
-	if (s->as.u.note.decs[m] != 0) {
-		int n;
-
-		i = s->as.u.note.decs[m] >> 3;		/* index */
-		n = i + (s->as.u.note.decs[m] & 0x07);	/* # deco */
-		for ( ; i < n; i++)
-			no_head |= draw_deco_head(s->as.u.note.dc.t[i],
+	/* draw the decorations of the note heads */
+	no_head = 0;
+	for (i = 0; i < s->as.u.note.dc.n; i++) {
+		if (s->as.u.note.dc.tm[i].m == m)
+			no_head |= draw_deco_head(s->as.u.note.dc.tm[i].t,
 						  x + shhd,
 						  y + staffb,
 						  s->stem);
@@ -1591,16 +1580,14 @@ static void draw_basic_note(float x,
 		return;
 
 	/* special case when no head */
-	if (s->nohdix >= 0) {
-		if ((s->stem > 0 && m <= s->nohdix)
-		 || (s->stem < 0 && m >= s->nohdix)) {
-			a2b("/x ");			/* set x y */
-			putx(x + shhd);
-			a2b("def/y ");
-			puty(y + staffb);
-			a2b("def");
-			return;
-		}
+	if (s->nohdi1 >= 0
+	 && m >= s->nohdi1 && m <= s->nohdi2) {
+		a2b("/x ");			/* set x y */
+		putx(x + shhd);
+		a2b("def/y ");
+		puty(y + staffb);
+		a2b("def");
+		return;
 	}
 
 	identify_note(s, s->as.u.note.lens[m],
@@ -2562,7 +2549,8 @@ static void draw_slurs(struct SYMBOL *first,
 
 /* -- draw a tuplet -- */
 /* (the staves are not yet defined) */
-/* See 'tuplets' in format.txt about the value of 'u' */
+/* See 'tuplets' in http://moinejf.free.fr/abcm2ps-doc/index.html
+ * about the value of 'u' */
 static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 				  struct SYMBOL *s)	/* main note */
 {
@@ -3722,7 +3710,8 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 		if (s->prev)
 			lastx = s->prev->x;
 		else
-			lastx = 0;
+//			lastx = 0;
+			lastx = tsfirst->x;
 		x0 = 0;
 		if (f != 0)
 			lskip = f->size * 1.1;

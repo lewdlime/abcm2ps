@@ -27,10 +27,10 @@ List of the options
 	Read the abc file from stdin.
 
   --<format> <value>
-	Set the format parameter to <value>. See format.txt.
+	Set the format parameter to <value>. See [1].
 
   -a <float>
-	See: format.txt - maxshrink <float>
+	See: [1] - maxshrink <float>
 
   -A
 	Annotate.
@@ -38,19 +38,19 @@ List of the options
 	or SVG output.
 
   -B <int>, +B
-	See: format.txt - barsperstaff <int>
+	See: [1] - barsperstaff <int>
 
   -b <int>
-	See: format.txt - measurefirst <int>
+	See: [1] - measurefirst <int>
 
   -c, +c
-	See: format.txt - continueall <bool>
+	See: [1] - continueall <bool>
 
   -D <dir>
 	Search the format files in the directory <dir>.
 
   -d <unit>
-	See: format.txt - staffsep <unit>
+	See: [1] - staffsep <unit>
 
   -E
 	Produce EPS output instead of simple PS.
@@ -70,7 +70,7 @@ List of the options
 	 for -r, and 72 is the default resolution)
 
   -e [ <tune index list> ] [ <regular expression> ]
-	See: format.txt - select [ <tune index list> ] [ <regular expression> ]
+	See: [1] - select [ <tune index list> ] [ <regular expression> ]
 
   -F <file>, +F
 	Read the format (or PostScript) file <file>.
@@ -79,10 +79,10 @@ List of the options
 	read.
 
   -f
-	See: format.txt - flatbeams <bool>
+	See: [1] - flatbeams <bool>
 
   -G, +G
-	See: format.txt - graceslurs <bool>
+	See: [1] - graceslurs <bool>
 
   -g
 	Produce SVG output instead of EPS.
@@ -99,13 +99,13 @@ List of the options
 	This also shows the default settings for some parameters.
 
   -I <unit>
-	See: format.txt - indent <unit>
+	See: [1] - indent <unit>
 
   -i, +i
 	Insert a red cercle around the errors in the PostScript output.
 
   -j <int>[b], +j
-	See: format.txt - measurenb <int>
+	See: [1] - measurenb <int>
 
   -k <int>
 	Set the size of the PostScript output buffer in Kibytes.
@@ -114,13 +114,13 @@ List of the options
 	The default value is 64.
 
   -l, +l
-	See: format.txt - landscape <bool>
+	See: [1] - landscape <bool>
 
   -M, +M
-	See: format.txt - writefields w <bool>
+	See: [1] - writefields w <bool>
 
   -m <unit>
-	See: format.txt - leftmargin <unit>
+	See: [1] - leftmargin <unit>
 
   -N <int>, +N
 	Number the pages.
@@ -135,7 +135,7 @@ List of the options
 	If a header is defined ('%%header'), this option is ignored.
 
   -n, +n
-	See: format.txt - writehistory <bool>
+	See: [1] - writehistory <bool>
 
   -O [ <directory> ] [ <name> ], +O
 	Define the output file directory and/or name.
@@ -160,7 +160,7 @@ List of the options
 	When present, only the errors are shown.
 
   -s <float>
-	See: format.txt - scale <float>
+	See: [1] - scale <float>
 
   -S
 	Secure mode.
@@ -175,7 +175,7 @@ List of the options
 		When absent, apply to all voices.
 	Up to 4 such commands may be defined.
 	Ex: '-T1flute +T2'
-	See: format.txt - tablature
+	See: [1] - tablature
 
   -V
 	Show the version number.
@@ -186,14 +186,14 @@ List of the options
 	is 'Outnnn.svg' (see option '-O').
 
   -w <unit>
-	See: format.txt - staffwidth <unit>
+	See: [1] - staffwidth <unit>
 
   -X
 	Produce XML + SVG output instead of simple PS.
 	The default file name is 'Out.xhtml' (see option '-O').
 
   -x, +x
-	See: format.txt - writefields X <bool>
+	See: [1] - writefields X <bool>
 
   -z
 	Produce SVG images from ABC embedded in markup language files
@@ -221,7 +221,9 @@ List of the options
 	See sample8.html for a source example.
 
   -0, +0
-	See: format.txt - splittune <bool>
+	See: [1] - splittune <bool>
 
   -1, +1
-	See: format.txt - oneperpage <bool>
+	See: [1] - oneperpage <bool>
+
+[1] http://moinejf.free.fr/abcm2ps-doc/index.html

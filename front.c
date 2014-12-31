@@ -9,14 +9,6 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -468,10 +460,10 @@ void frontend(unsigned char *s,
 		char *fname,
 		int linenum)
 {
-	unsigned char *p, *q, c, *begin_end;
+	unsigned char *p, *q, c, *begin_end, sep;
 	int i, l, state, str_cnv_p, histo, end_len;
 	char prefix_sav[4];
-	int latin_sav;
+	int latin_sav = 0;		/* have C compiler hppy */
 
 	begin_end = NULL;
 	end_len = 0;
@@ -737,8 +729,6 @@ info:
 			}
 			if (strncmp((char *) s, "format ", 7) == 0
 			  || strncmp((char *) s, "abc-include ", 12) == 0) {
-				unsigned char sep;
-
 				if (*s == 'f')
 					s += 7;
 				else
@@ -785,8 +775,6 @@ info:
 					selection = NULL;
 				}
 				if (q != s) {
-					unsigned char sep;
-
 					sep = *q;
 					*q = '\0';
 					selection = (unsigned char *) strdup((char *) s);
@@ -895,6 +883,10 @@ ignore:
 	if (state == 1)
 		fprintf(stderr,
 			"Line %d: Unexpected EOF in header definition\n",
+			linenum);
+	if (begin_end)
+		fprintf(stderr,
+			"Line %d: No %%%%end after %%%%begin\n",
 			linenum);
 	abc_eof();
 }

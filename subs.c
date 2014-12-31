@@ -1309,13 +1309,13 @@ void put_words(struct SYMBOL *words)
 		}
 		s2 = s_end->next;
 	} else {
-		s_end = 0;
-		s2 = 0;
+		s_end = NULL;
+		s2 = NULL;
 	}
 
 	/* output the text */
 	bskip(cfmt.wordsspace);
-	for (s = words; s != 0 || s2 != 0; ) {
+	for (s = words; s || s2; ) {
 //fixme:should also permit page break on stanza start
 		if (s && s->as.text[2] == '\0')
 			buffer_eob();

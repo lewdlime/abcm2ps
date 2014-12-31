@@ -10,15 +10,6 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA  02110-1335  USA
  */
 
 #include <stdlib.h>
@@ -55,6 +46,7 @@ static struct format {
 	{"alignbars", &cfmt.alignbars, FORMAT_I, 0},
 	{"aligncomposer", &cfmt.aligncomposer, FORMAT_I, 0},
 	{"annotationfont", &cfmt.font_tb[ANNOTATIONFONT], FORMAT_F, 0},
+	{"autoclef", &cfmt.autoclef, FORMAT_B, 0},
 	{"barsperstaff", &cfmt.barsperstaff, FORMAT_I, 0},
 	{"bgcolor", &cfmt.bgcolor, FORMAT_S, 0},
 	{"botmargin", &cfmt.botmargin, FORMAT_U, 0},
@@ -99,7 +91,6 @@ static struct format {
 	{"measurefont", &cfmt.font_tb[MEASUREFONT], FORMAT_F, 2},
 	{"measurenb", &cfmt.measurenb, FORMAT_I, 0},
 	{"micronewps", &cfmt.micronewps, FORMAT_B, 0},
-	{"microscale", &cfmt.microscale, FORMAT_I, 0},
 	{"musicspace", &cfmt.musicspace, FORMAT_U, 0},
 	{"notespacingfactor", &cfmt.notespacingfactor, FORMAT_R, 1},
 	{"oneperpage", &cfmt.oneperpage, FORMAT_B, 0},
@@ -153,7 +144,6 @@ static struct format {
 	{"timewarn", &cfmt.timewarn, FORMAT_B, 0},
 	{"topmargin", &cfmt.topmargin, FORMAT_U, 0},
 	{"topspace", &cfmt.topspace, FORMAT_U, 0},
-	{"transpose", &cfmt.transpose, FORMAT_I, 1},
 	{"tuplets", &cfmt.tuplets, FORMAT_I, 3},
 	{"vocalfont", &cfmt.font_tb[VOCALFONT], FORMAT_F, 0},
 	{"vocalspace", &cfmt.vocalspace, FORMAT_U, 0},
@@ -265,14 +255,22 @@ void define_fonts(void)
 	"/mkfont{findfont dup length 1 add dict begin\n"
 	"	{1 index/FID ne{def}{pop pop}ifelse}forall\n"
 	"	CharStrings/double_sharp known not{\n"
-	"		/CharStrings CharStrings dup length dict copy def\n"
+	"	    /CharStrings CharStrings dup length dict copy def\n"
+	"	    FontMatrix 0 get 1 eq{\n"
+	"		CharStrings/sharp{pop .46 0 setcharwidth .001 dup scale usharp ufill}bind put\n"
+	"		CharStrings/flat{pop .46 0 setcharwidth .001 dup scale uflat ufill}bind put\n"
+	"		CharStrings/natural{pop .40 0 setcharwidth .001 dup scale unat ufill}bind put\n"
+	"		CharStrings/double_sharp{pop .46 0 setcharwidth .001 dup scale udblesharp ufill}bind put\n"
+	"		CharStrings/double_flat{pop .50 0 setcharwidth .001 dup scale udbleflat ufill}bind put\n"
+	"	    }{\n"
 	"		CharStrings/sharp{pop 460 0 setcharwidth usharp ufill}bind put\n"
 	"		CharStrings/flat{pop 460 0 setcharwidth uflat ufill}bind put\n"
 	"		CharStrings/natural{pop 400 0 setcharwidth unat ufill}bind put\n"
 	"		CharStrings/double_sharp{pop 460 0 setcharwidth udblesharp ufill}bind put\n"
 	"		CharStrings/double_flat{pop 500 0 setcharwidth udbleflat ufill}bind put\n"
+	"	    }ifelse\n"
 	"	}if currentdict definefont pop end}!\n";
-	
+
 	fputs(mkfont, fout);
 	make_font_list();
 	for (i = 0; i < nfontnames; i++) {
@@ -371,6 +369,7 @@ void set_format(void)
 	f->parskipfac = 0.4;
 	f->measurenb = -1;
 	f->measurefirst = 1;
+	f->autoclef = 1;
 	f->breakoneoln = 1;
 	f->dblrepbar = (B_COL << 12) + (B_CBRA << 8) + (B_OBRA << 4) + B_COL;
 	f->dynalign = 1;
@@ -471,24 +470,6 @@ static char *yn[2] = {"no","yes"};
 			default:
 				printf("%d\n", *((int *) fd->v));
 				break;
-			case 1: {		/* transpose */
-				int t;
-
-				t = *((int *) fd->v);
-				if (t >= 0)
-					putchar('+');
-				printf("%d", t / 3);
-				switch ((t + 240) % 3) {
-				case 1:
-					putchar('#');
-					break;
-				case 2:
-					putchar('b');
-					break;
-				}
-				putchar('\n');
-				break;
-			    }
 			case 2: {		/* dblrepbar */
 				int v;
 				char tmp[16], *p;
@@ -593,10 +574,6 @@ static int get_posit(char *p)
 /* -- get the option for text -- */
 int get_textopt(char *p)
 {
-	if (*p == '\0'
-	 || *p == '%'
-	 || strncmp(p, "obeylines", 9) == 0)
-		return T_LEFT;
 	if (strncmp(p, "align", 5) == 0
 	 || strncmp(p, "justify", 7) == 0)
 		return T_JUSTIFY;
@@ -609,7 +586,7 @@ int get_textopt(char *p)
 		return T_SKIP;
 	if (strncmp(p, "right", 5) == 0)
 		return T_RIGHT;
-	return -1;
+	return T_LEFT;
 }
 
 /* -- get the double repeat bar -- */
@@ -1193,27 +1170,11 @@ void interpret_fmt_line(char *w,		/* keyword */
 			sscanf(p, "%d", (int *) fd->v);
 		else
 			*((int *) fd->v) = g_logv(p);
-		switch (fd->subtype) {
-		case 1:					/* transpose */
-			cfmt.transpose *= 3;
-			if (p[strlen(p) - 1] == '#') {
-				if (cfmt.transpose > 0)
-					cfmt.transpose++;
-				else
-					cfmt.transpose -= 2;
-			} else if (p[strlen(p) - 1] == 'b') {
-				if (cfmt.transpose > 0)
-					cfmt.transpose += 2;
-				else
-					cfmt.transpose--;
-			}
-			break;
-//		case 2:				/* (free) */
-//			break;
-		case 4:				/* textoption */
-			if (cfmt.textoption < 0)
+		if (fd->subtype == 4) {			/* textoption */
+			if (cfmt.textoption < 0) {
+				cfmt.textoption = 0;
 				goto bad;
-			break;
+			}
 		}
 		break;
 	case FORMAT_R: {

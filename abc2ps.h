@@ -173,7 +173,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define S_BEAM_BR1	0x0004		/* 2nd beam must restart here */
 #define S_BEAM_BR2	0x0008		/* 3rd beam must restart here */
 #define S_BEAM_END	0x0010		/* beam ends here */
-#define S_OTHER_HEAD	0x0020		/* don't draw any note head */
+//#define S_free	0x0020
 #define S_IN_TUPLET	0x0040		/* in a tuplet */
 #define S_TREM2		0x0080		/* tremolo on 2 notes */
 #define S_RRBAR		0x0100		/* right repeat bar (when bar) */
@@ -207,7 +207,11 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define H_OVAL		2
 #define H_SQUARE	3
 	signed char multi;	/* multi voice in the staff (+1, 0, -1) */
-	signed char nohdix;	/* no head index (for unison) */
+	signed char nohdi1;	/* no head index (for unison) / nb of repeat */
+	signed char nohdi2;
+	signed char doty;	/* NOTEREST: y pos of dot when voices overlap
+				 * STBRK: forced
+				 * FMTCHG REPEAT: infos */
 	short u;		/* auxillary information:
 				 *	- CLEF: small clef
 				 *	- KEYSIG: old key signature
@@ -235,9 +239,6 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 	float shac[MAXHD];	/* horizontal shift for accidentals */
 	struct gch *gch;	/* guitar chords / annotations */
 	struct lyrics *ly;	/* lyrics */
-	signed char doty;	/* NOTEREST: y pos of dot when voices overlap
-				 * STBRK: forced
-				 * FMTCHG REPEAT: infos */
 };
 
 /* bar types !tied to abcparse.h! */
@@ -258,13 +259,13 @@ struct FORMAT { 		/* struct for page layout */
 	float breaklimit, maxshrink, lineskipfac, parskipfac, stemheight;
 	float indent, infospace, slurheight, notespacingfactor, scale;
 	float staffsep, sysstaffsep, maxstaffsep, maxsysstaffsep, stretchlast;
-	int abc2pscompat, alignbars, aligncomposer;
+	int abc2pscompat, alignbars, aligncomposer, autoclef;
 	int barsperstaff, breakoneoln, bstemdown, cancelkey;
 	int combinevoices, contbarnb, continueall, custos;
 	int dblrepbar, dynalign, flatbeams;
 	int infoline, gchordbox, graceslurs, gracespace, hyphencont;
 	int keywarn, landscape, linewarn;
-	int measurebox, measurefirst, measurenb, micronewps, microscale;
+	int measurebox, measurefirst, measurenb, micronewps;
 	int oneperpage;
 #ifdef HAVE_PANGO
 	int pango;
@@ -457,6 +458,7 @@ struct SYSTEM {			/* staff system */
 #define CLOSE_BRACE2 0x0200
 #define OPEN_BRACKET2 0x0400
 #define CLOSE_BRACKET2 0x0800
+#define MASTER_VOICE 0x1000
 		char empty;
 		signed char stafflines;
 		float staffscale;
@@ -506,12 +508,11 @@ int (*output)(FILE *out, const char *fmt, ...)
 void write_eps(void);
 /* deco.c */
 void deco_add(char *text);
-void deco_cnv(struct deco *dc, struct SYMBOL *s, struct SYMBOL *prev);
+void deco_cnv(struct decos *dc, struct SYMBOL *s, struct SYMBOL *prev);
 void deco_update(struct SYMBOL *s, float dx);
 float deco_width(struct SYMBOL *s);
 void draw_all_deco(void);
 int draw_deco_head(int deco, float x, float y, int stem);
-void draw_all_deco_head(struct SYMBOL *s, float x, float y);
 void draw_deco_near(void);
 void draw_deco_note(void);
 void draw_deco_staff(void);

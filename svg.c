@@ -1993,6 +1993,22 @@ curveto:
 			xysym(op, D_cpu);
 			return;
 		}
+		if (strcmp(op, "crdc") == 0) {
+			setg(1);
+			y = yoffs - pop_free_val();
+			x = xoffs + pop_free_val();
+			s = pop_free_str();
+			if (!s) {
+				fprintf(stderr, "svg crdc: No string\n");
+				ps_error = 1;
+				return;
+			}
+			fprintf(fout, "<text font-family=\"serif\" font-size=\"16\" font-weight=\"normal\" font-style=\"italic\"\n"
+				"	x=\"%.2f\" y=\"%.2f\" text-anchor=\"left\">%s</text>\n",
+				x, y, s + 1);
+			free(s);
+			return;
+		}
 		if (strcmp(op, "cresc") == 0) {
 			setg(1);
 			y = yoffs - pop_free_val() - 5;
@@ -2389,10 +2405,20 @@ curveto:
 		}
 		if (strcmp(op, "ft4") == 0) {
 			n = pop_free_val();
-			if (n == 1)
-				xysym(op, D_ft1);
-			else
-				xysym(op, D_ft513);
+			switch (n) {
+			case 1:
+				xysym("ft1", D_ft1);
+				break;
+			case 2:
+				xysym("ft0", D_ft0);
+				break;
+			case 3:
+				xysym("ft513", D_ft513);
+				break;
+			default:
+				xysym("dft0", D_dft0);
+				break;
+			}
 			return;
 		}
 		if (strcmp(op, "ft513") == 0) {
@@ -3745,10 +3771,20 @@ rmoveto:
 		}
 		if (strcmp(op, "sh4") == 0) {
 			n = pop_free_val();
-			if (n == 1)
-				xysym(op, D_sh1);
-			else
-				xysym(op, D_sh513);
+			switch (n) {
+			case 1:
+				xysym("sh1", D_sh1);
+				break;
+			case 2:
+				xysym("sh0", D_sh0);
+				break;
+			case 3:
+				xysym("sh513", D_sh513);
+				break;
+			default:
+				xysym("dsh0", D_dsh0);
+				break;
+			}
 			return;
 		}
 		if (strcmp(op, "sh513") == 0) {

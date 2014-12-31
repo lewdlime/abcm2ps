@@ -39,7 +39,7 @@ c/B/ "^chord slur"{(,G}[CA)]3||
 "^standard tuplet"(3A/A/A/ "^no bracket"[I:tuplets 1 0 0](3A/A/A/ \
 "^forced bracket"[I:tuplets 2 0 0](3A/A/A/ "^ratio"[I:tuplets 0 0 2](3A/A/A/| \
 "^nested tuplets"[I:tuplets 2 0 2](7:8:8(3A/A/A/ A/A/A/A/A/|
-"^1/4 tone;sharp"^/G  ^G "^3/4 tone;sharp"^3/2G ^^G |\
+"^1/4 tone;sharp"^/G ^G "^3/4 tone;sharp"^3/2G ^^G |\
 "^1/4 tone;flat"_/G _G "^3/4 tone;flat"_3/2G __G|"^deco on;grace note"{.A4.B4}c4||
 % tremolo: note the position of the decorations and the note lengths
 "^tremolo"C/c/C/c/ C!trem1!c | C2!trem1!c2 | \

@@ -6,8 +6,9 @@
 #define MAXVOICE 32	/* max number of voices */
 
 #define MAXHD	8	/* max heads in a chord */
-#define MAXDC	45	/* max decorations per note/chord/bar */
+#define MAXDC	32	/* max decorations per symbol */
 #define MAXMICRO 32	/* max microtone values (5 bits in accs[]) */
+#define DC_NAME_SZ 128	/* size of the decoration name table */
 
 #define BASE_LEN 1536	/* basic note length (semibreve or whole note - same as MIDI) */
 
@@ -35,12 +36,12 @@ enum accidentals {
 #define SL_AUTO 0x03
 #define SL_DOTTED 0x04		/* (modifier bit) */
 
-/* note structure */
-struct deco {		/* decorations */
+struct decos {		/* decorations */
 	char n;			/* whole number of decorations */
-	char h;			/* start of head decorations */
-	char s;			/* start of decorations from s: (d:) */
-	unsigned char t[MAXDC];	/* decoration type */
+	struct {
+		unsigned char t;	/* decoration index */
+		unsigned char m;	/* index in chord when note */
+	} tm[MAXDC];
 };
 
 struct note {		/* note or rest */
@@ -50,14 +51,13 @@ struct note {		/* note or rest */
 	unsigned char sl1[MAXHD]; /* slur start per head */
 	char sl2[MAXHD];	/* number of slur ends per head */
 	char ti1[MAXHD];	/* flag to start tie here */
-	unsigned char decs[MAXHD]; /* head decorations (index: 5 bits, len: 3 bits) */
 	short chlen;		/* chord length */
 	char nhd;		/* number of notes in chord - 1 */
 	unsigned char slur_st;	/* slurs starting here (2 bits array) */
 	char slur_end;		/* number of slurs ending here */
 	signed char brhythm;	/* broken rhythm */
 	unsigned char microscale; /* microtone denominator - 1 */
-	struct deco dc;		/* decorations */
+	struct decos dc;	/* decorations */
 };
 
 /* symbol definition */
@@ -108,7 +108,7 @@ struct abcsym {
 #define MAJOR 7
 #define MINOR 8
 #define BAGPIPE 9				/* bagpipe when >= 8 */
-			signed char nacc;	/* number  of explicit accidentals */
+			signed char nacc;	/* number of explicit accidentals */
 						/* (-1) if no accidental */
 			signed char cue;	/* cue voice (scale 0.7) */
 			signed char octave;	/* 'octave=' */
@@ -160,7 +160,7 @@ struct abcsym {
 			char repeat_bar;
 			char len;		/* len if mrest or mrep */
 			char dotted;
-			struct deco dc;		/* decorations */
+			struct decos dc;	/* decorations */
 		} bar;
 		struct clef_s {		/* clef */
 			char *name;		/* PS drawing function */
@@ -204,7 +204,7 @@ struct {
 	struct abcsym *first_sym; /* first symbol */
 	struct abcsym *last_sym; /* last symbol */
 	int abc_vers;		/* ABC version = (H << 16) + (M << 8) + L */
-	char *deco_tb[128];	/* decoration names */
+	char *deco_tb[DC_NAME_SZ]; /* decoration names */
 	unsigned short micro_tb[MAXMICRO]; /* microtone values [ (n-1) | (d-1) ] */
 	int abc_state;		/* parser state */
 } parse;
@@ -226,5 +226,9 @@ void abc_eof(void);
 char *get_str(char *d,
 	      char *s,
 	      int maxlen);
-char *parse_deco(char *p,
-		 struct deco *deco);
+char *parse_basic_note(char *p,
+			int *pitch,
+			int *length,
+			int *accidental,
+			int *stemless);
+char *parse_deco(char *p, struct decos *deco, int m);

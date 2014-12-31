@@ -284,6 +284,9 @@ static char ps_head[] =
 	/* str x y dacs - D.C. / D.S. */
 	"/dacs{/Times-Roman 16 selectfont 3 add M showc}!\n"
 
+	/* str x y crdc - italic annotations */
+	"/crdc{/Times-Italic 14 selectfont M show}!\n"
+
 	/* x y brth - breath */
 	"/brth{/Times-BoldItalic 30 selectfont 6 add M(,)show}!\n"
 

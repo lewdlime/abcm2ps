@@ -302,7 +302,7 @@
 %
 % == decoration definitions ==
 %
-% actual syntax (see format.txt):
+% actual syntax (see http://moinejf.free.fr/abcm2ps-doc/index.html):
 %	%%deco <name> <c_func> <ps_func> <h> <wl> <wr> [<str>]
 %
 % -- accent near the note / sforzando

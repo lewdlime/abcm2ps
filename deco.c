@@ -9,15 +9,6 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA  02110-1335  USA
  */
 
 #include <stdlib.h>
@@ -710,17 +701,17 @@ static int get_deco(char *name)
 	return ideco;
 }
 
-static unsigned char deco_build(char *text)
+static unsigned char deco_build(char *name, char *text)
 {
 	struct deco_def_s *dd;
 	int c_func, ideco, h, o, wl, wr, n;
 	unsigned l, ps_x, strx;
-	char name[32];
+	char name2[32];
 	char ps_func[16];
 
 	/* extract the arguments */
 	if (sscanf(text, "%15s %d %15s %d %d %d%n",
-			name, &c_func, ps_func, &h, &wl, &wr, &n) != 6) {
+			name2, &c_func, ps_func, &h, &wl, &wr, &n) != 6) {
 		error(1, 0, "Invalid deco %s", text);
 		return 128;
 	}
@@ -790,7 +781,7 @@ static unsigned char deco_build(char *text)
 
 	/* set the values */
 	if (!dd->name)
-		dd->name = strdup(name);	/* new decoration */
+		dd->name = name;		/* new decoration */
 	dd->func = c_func;
 	if (!ps_func_tb[ps_x]) {
 		if (ps_func[0] == '-' && ps_func[1] == '\0')
@@ -895,7 +886,7 @@ static unsigned char user_deco_define(char *name)
 	for (d = user_deco; d; d = d->next) {
 		if (strncmp(d->text, name, l) == 0
 		 && d->text[l] == ' ')
-			return deco_build(d->text);
+			return deco_build(name, d->text);
 	}
 	return 128;
 }
@@ -914,7 +905,7 @@ static unsigned char deco_define(char *name)
 		 && std_deco_tb[ideco][l] == ' ')
 			break;
 	}
-	return deco_build(std_deco_tb[ideco]);
+	return deco_build(name, std_deco_tb[ideco]);
 }
 
 /* -- convert the external deco number to the internal one -- */
@@ -949,7 +940,7 @@ static unsigned char deco_intern(unsigned char ideco)
 }
 
 /* -- convert the decorations -- */
-void deco_cnv(struct deco *dc,
+void deco_cnv(struct decos *dc,
 		struct SYMBOL *s,
 		struct SYMBOL *prev)
 {
@@ -959,10 +950,10 @@ void deco_cnv(struct deco *dc,
 	static char must_note_fmt[] = "Deco !%s! must be on a note";
 
 	for (i = dc->n; --i >= 0; ) {
-		if ((ideco = dc->t[i]) == 0)
+		if ((ideco = dc->tm[i].t) == 0)
 			continue;
 		ideco = deco_intern(ideco);
-		dc->t[i] = ideco;
+		dc->tm[i].t = ideco;
 		if (ideco == 0)
 			continue;
 
@@ -1034,7 +1025,7 @@ void deco_cnv(struct deco *dc,
 			s->as.flags |= ABC_F_STEMLESS;
 			break;
 		}
-		dc->t[i] = 0;			/* already treated */
+		dc->tm[i].t = 0;	/* already treated */
 	}
 }
 
@@ -1057,7 +1048,7 @@ void deco_update(struct SYMBOL *s, float dx)
 /* -- adjust the symbol width -- */
 float deco_width(struct SYMBOL *s)
 {
-	struct deco *dc;
+	struct decos *dc;
 	int i;
 	float wl;
 
@@ -1069,7 +1060,7 @@ float deco_width(struct SYMBOL *s)
 	for (i = dc->n; --i >= 0; ) {
 		struct deco_def_s *dd;
 
-		dd =  &deco_def_tb[dc->t[i]];
+		dd =  &deco_def_tb[dc->tm[i].t];
 		switch (dd->func) {
 		case 1:			/* slide */
 			if (wl < 7)
@@ -1243,31 +1234,9 @@ int draw_deco_head(int ideco, float x, float y, int stem)
 	return strncmp(dd->name, "head-", 5) == 0;
 }
 
-/* -- draw the chord decorations relative to the heads -- */
-void draw_all_deco_head(struct SYMBOL *s, float x, float y)
-{
-	int k;
-	unsigned char ideco;
-	struct deco *dc;
-	struct deco_def_s *dd;
-
-	dc = &s->as.u.note.dc;
-	for (k = dc->n; --k >= 0; ) {
-		if (k >= dc->h && k < dc->s)	/* skip the head decorations */
-			continue;
-		if ((ideco = dc->t[k]) == 0)
-			continue;
-		dd = &deco_def_tb[ideco];
-
-		if (strncmp(dd->name, "head-", 5) != 0)
-			continue;
-		draw_deco_head(ideco, x, y, s->stem);
-	}
-}
-
 /* -- create the deco elements, and treat the near ones -- */
 static void deco_create(struct SYMBOL *s,
-			struct deco *dc)
+			struct decos *dc)
 {
 	int k, posit;
 	unsigned char ideco;
@@ -1276,9 +1245,9 @@ static void deco_create(struct SYMBOL *s,
 #if 1
 /*fixme:pb with decorations above the staff*/
 	for (k = 0; k < dc->n; k++) {
-		if (k >= dc->h && k < dc->s)	/* skip the head decorations */
+		if (dc->tm[k].m != 255)		/* skip the head decorations */
 			continue;
-		if ((ideco = dc->t[k]) == 0)
+		if ((ideco = dc->tm[k].t) == 0)
 			continue;
 		dd = &deco_def_tb[ideco];
 #else
@@ -1290,9 +1259,9 @@ static void deco_create(struct SYMBOL *s,
 	i = 0;
 	j = dc->n;
 	for (k = 0; k < dc->n; k++) {
-		if (k >= dc->h && k < dc->s)	/* skip the head decorations */
+		if (dc->tm[k].m != 255)		/* skip the head decorations */
 			continue;
-		if ((ideco = dc->t[k]) == 0)
+		if ((ideco = dc->tm[k].t) == 0)
 			continue;
 		dd = &deco_def_tb[ideco];
 		if (dd->func < 3) {		/* if near the note */
@@ -1334,17 +1303,13 @@ static void deco_create(struct SYMBOL *s,
 			break;
 		}
 		if (posit == SL_HIDDEN) {
-			dc->t[k] = 0;
+			dc->tm[k].t = 0;
 			continue;
 		}
 
 		/* memorize the decorations, but not the head ones */
 		if (strncmp(dd->name, "head-", 5) == 0) {
-			switch (s->type) {
-			case NOTEREST:
-				s->sflags |= S_OTHER_HEAD;
-				break;
-			default:
+			if (s->type != NOTEREST) {
 				error(1, s, "Cannot have !%s! on a bar",
 					dd->name);
 				break;
@@ -1391,7 +1356,7 @@ static void deco_create(struct SYMBOL *s,
 void draw_deco_near(void)
 {
 	struct SYMBOL *s, *g;
-	struct deco *dc;
+	struct decos *dc;
 	struct SYMBOL *first;
 
 	deco_head = deco_tail = NULL;
@@ -1449,7 +1414,7 @@ void draw_deco_note(void)
 				char *name;
 
 				l = strlen(dd->name);
-				name = malloc(l + 1);
+				name = getarena(l + 1);
 				strcpy(name, dd->name);
 				name[l - 1] = ')';
 				t = get_deco(name);
@@ -1607,10 +1572,8 @@ void draw_deco_staff(void)
 /*fixme: line cut on repeat!*/
 			if (!s->next)
 				break;
-			if (!first_repeat) {
-				set_font(REPEATFONT);
+			if (!first_repeat)
 				first_repeat = s;
-			}
 			s1 = s;
 
 			/* a bracket may be 4 measures
@@ -1666,6 +1629,7 @@ void draw_deco_staff(void)
 		if (!s)
 			continue;
 		set_sscale(p_voice->staff);
+		set_font(REPEATFONT);
 		repnl = 0;
 		for ( ; s; s = s->next) {
 			char *p;
@@ -2291,8 +2255,8 @@ float draw_partempo(int staff, float top)
 			if (s->type == TIMESIG)
 				beat = get_beat(&s->as.u.meter);
 			g = s->extra;
-			if (!g)
-				continue;
+//			if (!g)
+//				continue;
 			for ( ; g; g = g->next)
 				if (g->type == TEMPO)
 					break;
@@ -2321,8 +2285,6 @@ float draw_partempo(int staff, float top)
 			continue;
 		if (!some_part) {
 			some_part = 1;
-			h = cfmt.font_tb[PARTSFONT].size + 2 + 2;
-						/* + cfmt.partsspace; ?? */
 			str_font(PARTSFONT);
 		}
 		w = tex_str(&g->as.text[2]);
@@ -2333,6 +2295,8 @@ float draw_partempo(int staff, float top)
 	if (!some_part)
 		goto out;
 
+	h = cfmt.font_tb[PARTSFONT].size + 2 + 2;
+						/* + cfmt.partsspace; ?? */
 	if (top < ymin + h + ht)
 		dy = ymin + h + ht - top;
 
@@ -2390,6 +2354,14 @@ void init_deco(void)
 /* reset the decoration table at start of a new tune */
 void reset_deco(void)
 {
+//	struct deco_def_s *dd;
+//	int ideco;
+//
+//	for (ideco = 1, dd = &deco_def_tb[1]; ideco < 128; ideco++, dd++) {
+//		if (!dd->name)
+//			break;
+//		free(dd->name);
+//	}
 	memset(deco_def_tb, 0, sizeof deco_def_tb);
 }
 

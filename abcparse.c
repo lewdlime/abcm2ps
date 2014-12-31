@@ -850,7 +850,7 @@ static int parse_octave(char *p)
 static void parse_key(char *p,
 		      struct abcsym *s)
 {
-	int sf, mode;
+	int sf, mode, key_end;
 	char *clef_name, *clef_middle, *clef_lines, *clef_scale;
 	char *p_octave;
 
@@ -858,20 +858,9 @@ static void parse_key(char *p,
 		s->u.key.empty = 2;
 		return;
 	}
-	if (strncasecmp(p, "none", 4) == 0) {
-		s->u.key.empty = 2;
-		p += 4;
-		while (isspace((unsigned char) *p))
-			p++;
-		if (*p == '\0')
-			return;
-	}
-	clef_name = clef_middle = clef_lines = clef_scale = NULL;
-	p_octave = NULL;
-	p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
-			&clef_scale, &p_octave);
 	sf = 0;
 	mode = MAJOR;
+	key_end = 0;
 	switch (*p++) {
 	case 'F': sf = -1; break;
 	case 'B': sf++;
@@ -892,39 +881,33 @@ static void parse_key(char *p,
 			syntax("Unknown bagpipe-like key", p);
 		}
 		break;
-	case '^':
-	case '_':
-	case '=':
-		p--;			/* explicit accidentals */
-		break;
-	case '\0':
-		if (s->u.key.empty == 0)
-			s->u.key.empty = 1;
-		p--;
-		break;
+	case 'n':
+		if (strncmp(p, "one", 3) == 0) {
+			s->u.key.empty = 2;
+			p += 3;
+			while (isspace((unsigned char) *p))
+				p++;
+			if (*p == '\0')
+				return;
+			key_end = 1;
+			break;
+		}
+		// fall thru
 	default:
 		p--;
-		if (s->u.key.empty != 2)
-			syntax("Key not recognized", p);
+		key_end = 1;
 		break;
 	}
-	if (*p == '#') {
-		sf += 7;
-		p++;
-	} else if (*p == 'b') {
-		sf -= 7;
-		p++;
-	}
-
-	while (*p != '\0') {
+	if (!key_end) {
+		if (*p == '#') {
+			sf += 7;
+			p++;
+		} else if (*p == 'b') {
+			sf -= 7;
+			p++;
+		}
 		while (isspace((unsigned char) *p))
 			p++;
-		if (*p == '\0')
-			break;
-		p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
-				&clef_scale, &p_octave);
-		if (*p == '\0')
-			break;
 		switch (*p) {
 		case 'a':
 		case 'A':
@@ -939,13 +922,6 @@ static void parse_key(char *p,
 			if (strncasecmp(p, "dor", 3) == 0) {
 				sf -= 2;
 				mode = 1;
-				break;
-			}
-			goto unk;
-		case 'e':
-		case 'E':
-			if (strncasecmp(p, "exp", 3) == 0) {
-				s->u.key.exp = 1;
 				break;
 			}
 			goto unk;
@@ -993,20 +969,39 @@ static void parse_key(char *p,
 				break;
 			}
 			goto unk;
-		case '^':
-		case '_':
-		case '=':
-			p = parse_acc(p, s);	/* explicit accidentals */
-			continue;
 		default:
-		unk:
-			syntax("Unknown token in key specifier", p);
-			while (!isspace((unsigned char) *p) && *p != '\0')
-				p++;
-			continue;
+unk:
+			key_end = 1;
+			break;
 		}
-		while (isalpha((unsigned char) *p))
-			p++;
+		if (!key_end) {
+			while (isalpha((unsigned char) *p))
+				p++;
+			while (isspace((unsigned char) *p))
+				p++;
+		}
+
+		// [exp] accidentals
+		if (strncmp(p, "exp ", 4) == 0) {
+			p += 4;
+			while (isspace((unsigned char) *p))
+				p++;
+			if (*p == '\0')
+				syntax("no accidental after 'exp'", p);
+			s->u.key.exp = 1;
+		}
+		if (s->u.key.exp && strncmp(p, "none", 4) == 0) {
+			sf = 0;
+			p += 4;
+			while (isspace((unsigned char) *p))
+				p++;
+		} else switch (*p) {
+			case '^':
+			case '_':
+			case '=':
+				p = parse_acc(p, s);		/* accidentals */
+				break;
+		}
 	}
 
 	if (sf > 7 || sf < -7) {
@@ -1016,6 +1011,12 @@ static void parse_key(char *p,
 		else
 			sf += 12;
 	}
+
+	// extra parameters
+	clef_name = clef_middle = clef_lines = clef_scale = NULL;
+	p_octave = NULL;
+	parse_extra(p, &clef_name, &clef_middle, &clef_lines,
+			&clef_scale, &p_octave);
 	s->u.key.sf = sf;
 	s->u.key.mode = mode;
 	s->u.key.octave = parse_octave(p_octave);

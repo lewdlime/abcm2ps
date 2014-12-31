@@ -1730,6 +1730,21 @@ static void set_allsymwidth(struct SYMBOL *last_s)
 	}
 }
 
+/* change a symbol into a rest */
+static void to_rest(struct SYMBOL *s)
+{
+	s->type = NOTEREST;
+	s->as.type = ABC_T_REST;
+	s->sflags &= S_NL | S_SEQST;
+	s->doty = -1;
+	s->as.u.note.dc.n = 0;
+	s->gch = NULL;
+	s->extra = NULL;
+	s->as.u.note.slur_st = s->as.u.note.slur_end = 0;
+/*fixme: should set many parameters for set_width*/
+//	set_width(s);
+}
+
 /* -- set the repeat sequences / measures -- */
 static void set_repeat(struct SYMBOL *g,	/* repeat format */
 			struct SYMBOL *s)	/* first note */
@@ -1792,24 +1807,18 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 			while (i > 0) {
 				if (s2->staff != staff)
 					continue;
-				if (s2->voice == voice) {
-					if (s2->dur != 0)
-						i--;
-				}
+				if (s2->voice == voice
+				 && s2->dur != 0)
+					i--;
 				s2->extra = NULL;
 				unlksym(s2);
 				s2 = s2->ts_next;
 			}
-			s3->type = NOTEREST;
-			s3->as.type = ABC_T_REST;
+			to_rest(s3);
 			s3->dur = s3->as.u.note.lens[0]
 				= s2->time - s3->time;
-			s3->sflags &= S_NL | S_SEQST;
 //			s3->sflags |= S_REPEAT | S_BEAM_ST;
 			s3->sflags |= S_REPEAT;
-			s3->as.u.note.slur_st = s3->as.u.note.slur_end = 0;
-			s3->doty = -1;
-			s3->extra = NULL;
 			set_width(s3);
 			if (s3->sflags & S_SEQST)
 				s3->space = set_space(s3);
@@ -1883,12 +1892,9 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 			s2->extra = NULL;
 			unlksym(s2);
 		}
-		s3->type = NOTEREST;
-		s3->as.type = ABC_T_REST;
+		to_rest(s3);
 		s3->dur = s3->as.u.note.lens[0] = dur;
 		s3->as.flags = ABC_F_INVIS;
-/*fixme: should set many parameters for set_width*/
-//		set_width(s3);
 		if (s3->sflags & S_SEQST)
 			s3->space = set_space(s3);
 		s2->as.u.bar.len = 2;
@@ -1903,8 +1909,7 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 			unlksym(s2);
 			s2 = s2->next;
 		}
-		s3->type = NOTEREST;
-		s3->as.type = ABC_T_REST;
+		to_rest(s3);
 		s3->dur = s3->as.u.note.lens[0] = dur;
 		s3->as.flags = ABC_F_INVIS;
 		set_width(s3);
@@ -1927,16 +1932,10 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 			s2->extra = NULL;
 			unlksym(s2);
 		}
-		s3->type = NOTEREST;
-		s3->as.type = ABC_T_REST;
+		to_rest(s3);
 		s3->dur = s3->as.u.note.lens[0] = dur;
-		s3->sflags &= S_NL | S_SEQST;
 //		s3->sflags |= S_REPEAT | S_BEAM_ST;
 		s3->sflags |= S_REPEAT;
-		s3->as.u.note.slur_st = s3->as.u.note.slur_end = 0;
-		s3->extra = NULL;
-/*fixme: should set many parameters for set_width*/
-//		set_width(s3);
 		if (s3->sflags & S_SEQST)
 			s3->space = set_space(s3);
 		if (s2->sflags & S_SEQST)

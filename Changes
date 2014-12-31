@@ -1,3 +1,29 @@
+---- Version 7.8.12 - 14/12/16 ----
+
+Fix bad handling of "K:none", especially when transposition.
+Fix bad transposition of latin guitar chord "La".
+Fix loss of 'exp none' in K:.
+Fix some compilation warnings
+	(reported by John Chambers).
+Fix problems with decorations or guitar chords/annotations
+		in sequence/measure repeat.
+	(reported by Frédéric Boulanger).
+
+---- Version 7.8.11 - 14/11/26 ----
+
+Fix bad position of grace notes in overlay voices at start of measure
+	(reported by Jean-Luc Zins).
+Fix bad repeat font when staves/voices with different scales
+	(reported by  Gerhard Schacherl).
+
+---- Version 7.8.10 - 14/11/01 ----
+
+Change the PS font scale of the accidentals according to the FontMatrix
+	(reported by Chuck Boody).
+Fix loss of voice options when many %%voice's without "%%voice end" in %%tune.
+Fix lost of lyrics when ABC version 2.1 and generation restart.
+Fix bad transposition of notes when %%transpose after K:.
+
 ---- Version 7.8.9 - 14/10/14 ----
 
 Fix crash when %%combinevoices on beamed notes since 7.8.7

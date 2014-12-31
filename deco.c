@@ -1572,10 +1572,8 @@ void draw_deco_staff(void)
 /*fixme: line cut on repeat!*/
 			if (!s->next)
 				break;
-			if (!first_repeat) {
-				set_font(REPEATFONT);
+			if (!first_repeat)
 				first_repeat = s;
-			}
 			s1 = s;
 
 			/* a bracket may be 4 measures
@@ -1631,6 +1629,7 @@ void draw_deco_staff(void)
 		if (!s)
 			continue;
 		set_sscale(p_voice->staff);
+		set_font(REPEATFONT);
 		repnl = 0;
 		for ( ; s; s = s->next) {
 			char *p;
@@ -2299,8 +2298,6 @@ float draw_partempo(int staff, float top)
 			continue;
 		if (!some_part) {
 			some_part = 1;
-			h = cfmt.font_tb[PARTSFONT].size + 2 + 2;
-						/* + cfmt.partsspace; ?? */
 			str_font(PARTSFONT);
 		}
 		w = tex_str(&g->as.text[2]);
@@ -2311,6 +2308,8 @@ float draw_partempo(int staff, float top)
 	if (!some_part)
 		goto out;
 
+	h = cfmt.font_tb[PARTSFONT].size + 2 + 2;
+						/* + cfmt.partsspace; ?? */
 	if (top < ymin + h + ht)
 		dy = ymin + h + ht - top;
 

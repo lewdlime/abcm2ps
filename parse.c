@@ -101,17 +101,16 @@ static void sym_link(struct SYMBOL *s, int type);
 static signed char w_tb[NSYMTYPES] = {	/* !! index = symbol type !! */
 	0,
 	9,	/* 1- note / rest */
-	1,	/* 2- space */
-	3,	/* 3- bar */
-	2,	/* 4- clef */
+	3,	/* 2- space */
+	2,	/* 3- bar */
+	1,	/* 4- clef */
 	5,	/* 5- timesig */
 	4,	/* 6- keysig */
 	0,	/* 7- tempo */
 	0,	/* 8- staves */
 	9,	/* 9- mrest */
 	0,	/* 10- part */
-//	8,	/* 11- grace */
-	1,	/* 11- grace */
+	3,	/* 11- grace */
 	0,	/* 12- fmtchg */
 	7,	/* 13- tuplet */
 	6,	/* 14- stbrk */
@@ -1235,7 +1234,7 @@ static void gch_transpose(struct SYMBOL *s)
 		break;
 	case 'L':
 		latin = 1;		/* La */
-		n = 6;
+		n = 5;
 		break;
 	case 'M':
 		latin = 1;		/* Mi */
@@ -1629,7 +1628,7 @@ static struct abcsym *get_lyric(struct abcsym *as)
 			else
 				s = s->next;
 			if (!s) {
-				error(1, s, "w: without music");
+				error(1, (struct SYMBOL *) as, "w: without music");
 				return as;
 			}
 		} else {
@@ -2359,6 +2358,7 @@ static void voice_init(void)
 	     i < MAXVOICE;
 	     i++, p_voice++) {
 		p_voice->sym = p_voice->last_sym = NULL;
+		p_voice->lyric_start = NULL;
 		p_voice->bar_start = 0;
 		p_voice->time = 0;
 		p_voice->slur_st = 0;
@@ -4844,7 +4844,7 @@ center:
 			memcpy(&s2->as.u.key, &curvoice->okey,
 						sizeof s2->as.u.key);
 			key_transpose(&s2->as.u.key);
-			memcpy(&curvoice->ckey, &s->as.u.key,
+			memcpy(&curvoice->ckey, &s2->as.u.key,
 						sizeof curvoice->ckey);
 			if (curvoice->key.empty)
 				curvoice->key.sf = 0;
@@ -4919,20 +4919,24 @@ center:
 			/* link the options */
 			opt->s = s;
 			cur_tune_opts = opt;
-			for ( ; as != as2; as = as->next) {
-				if (as->next->type != ABC_T_PSCOM)
+			as = as->next;
+			for (;;) {
+				if (as->type != ABC_T_PSCOM)
 					continue;
-				if (strncmp(&as->next->text[2], "voice ", 6) == 0) {
-					as = process_pscomment(as->next);
+				if (strncmp(&as->text[2], "voice ", 6) == 0) {
+					as = process_pscomment(as);
 					if (as == as2)
 						break;
 					continue;
 				}
-				as->next->state = ABC_S_HEAD;
+				as->state = ABC_S_HEAD;
 
 				/* !! no reverse link !! */
-				s->next = (struct SYMBOL *) as->next;
+				s->next = (struct SYMBOL *) as;
+				if (as == as2)
+					break;
 				s = s->next;
+				as = as->next;
 			}
 			cur_tune_opts = NULL;
 			return as;

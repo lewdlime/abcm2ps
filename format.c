@@ -266,14 +266,22 @@ void define_fonts(void)
 	"/mkfont{findfont dup length 1 add dict begin\n"
 	"	{1 index/FID ne{def}{pop pop}ifelse}forall\n"
 	"	CharStrings/double_sharp known not{\n"
-	"		/CharStrings CharStrings dup length dict copy def\n"
+	"	    /CharStrings CharStrings dup length dict copy def\n"
+	"	    FontMatrix 0 get 1 eq{\n"
+	"		CharStrings/sharp{pop .46 0 setcharwidth .001 dup scale usharp ufill}bind put\n"
+	"		CharStrings/flat{pop .46 0 setcharwidth .001 dup scale uflat ufill}bind put\n"
+	"		CharStrings/natural{pop .40 0 setcharwidth .001 dup scale unat ufill}bind put\n"
+	"		CharStrings/double_sharp{pop .46 0 setcharwidth .001 dup scale udblesharp ufill}bind put\n"
+	"		CharStrings/double_flat{pop .50 0 setcharwidth .001 dup scale udbleflat ufill}bind put\n"
+	"	    }{\n"
 	"		CharStrings/sharp{pop 460 0 setcharwidth usharp ufill}bind put\n"
 	"		CharStrings/flat{pop 460 0 setcharwidth uflat ufill}bind put\n"
 	"		CharStrings/natural{pop 400 0 setcharwidth unat ufill}bind put\n"
 	"		CharStrings/double_sharp{pop 460 0 setcharwidth udblesharp ufill}bind put\n"
 	"		CharStrings/double_flat{pop 500 0 setcharwidth udbleflat ufill}bind put\n"
+	"	    }ifelse\n"
 	"	}if currentdict definefont pop end}!\n";
-	
+
 	fputs(mkfont, fout);
 	make_font_list();
 	for (i = 0; i < nfontnames; i++) {

@@ -1079,6 +1079,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 	ps_error = 0;
 
 	s = strdup("/defl 0 def\n"
+		   "/svg 1 def\n"
 		   "/gsc{gsave y T .7 dup scale 0 0}def\n");
 	svg_write(s, strlen(s));
 	free(s);

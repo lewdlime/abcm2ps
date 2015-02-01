@@ -735,6 +735,7 @@ info:
 			 && (strncmp((char *) s, "format ", 7) == 0
 			  || strncmp((char *) s, "abc-include ", 12) == 0)) {
 				unsigned char sep;
+				int skip_sav;
 
 				if (*s == 'f')
 					s += 7;
@@ -746,7 +747,6 @@ info:
 				while (*q != '\0'
 				    && *q != '%'
 				    && *q != '\n'
-				    && *q != '\n'
 				    && *q != '\r')
 					q++;
 				while (q[-1] == ' ')
@@ -755,7 +755,9 @@ info:
 				*q = '\0';
 				offset--;		/* remove one % */
 				dst[offset - 1] = '\0';	/* replace the other % by EOS */
+				skip_sav = skip;
 				include_f(s);
+				skip = skip_sav;
 				offset--;		/* remove the EOS */
 				*q = sep;
 				add_lnum(nline);

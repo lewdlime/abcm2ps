@@ -1,3 +1,15 @@
+---- Version 7.8.13 - 15/01/25 ----
+
+Fix bad beams when tremolo inside beamed notes
+	(reported by David Lacroix).
+Fix loss of ABC lines after %%abc-include when %%select did not
+		match the last included tune.
+Fix loop on %%voice since 7.8.10.
+Fix display of rests in empty staves when "%%staffnonote 0".
+Fix loss of key signatures and meters when voice in empty staff
+	(reported by Willem).
+Fix loss of the 'svg' definition used by the PostScript code on SVG output.
+
 ---- Version 7.8.12 - 14/12/16 ----
 
 Fix bad handling of "K:none", especially when transposition.

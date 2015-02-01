@@ -1,10 +1,10 @@
 dnl Configure source for abcm2ps -*- sh -*-
-dnl Copyright (C) 2001-2014 JF Moine.
+dnl Copyright (C) 2001-2015 JF Moine.
 
 AC_INIT(abc2ps.h)
 
-VERSION=7.8.12
-VDATE='December 16, 2014'
+VERSION=7.8.13
+VDATE='January 25, 2015'
 
 AC_CANONICAL_SYSTEM
 

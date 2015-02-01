@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2014 Jean-François Moine
+ * Copyright (C) 1998-2015 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -4925,17 +4925,15 @@ center:
 					continue;
 				if (strncmp(&as->text[2], "voice ", 6) == 0) {
 					as = process_pscomment(as);
-					if (as == as2)
-						break;
-					continue;
-				}
-				as->state = ABC_S_HEAD;
+				} else {
+					as->state = ABC_S_HEAD;
 
-				/* !! no reverse link !! */
-				s->next = (struct SYMBOL *) as;
+					/* !! no reverse link !! */
+					s->next = (struct SYMBOL *) as;
+					s = s->next;
+				}
 				if (as == as2)
 					break;
-				s = s->next;
 				as = as->next;
 			}
 			cur_tune_opts = NULL;

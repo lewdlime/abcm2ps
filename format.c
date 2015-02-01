@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2014 Jean-François Moine
+ * Copyright (C) 1998-2015 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -108,16 +108,8 @@ static struct format {
 	{"rightmargin", &cfmt.rightmargin, FORMAT_U, 0},
 	{"scale", &cfmt.scale, FORMAT_R, 0},
 	{"setdefl", &cfmt.setdefl, FORMAT_B, 0},
-	{"setfont-1", &cfmt.font_tb[1], FORMAT_F, 0},
-	{"setfont-2", &cfmt.font_tb[2], FORMAT_F, 0},
-	{"setfont-3", &cfmt.font_tb[3], FORMAT_F, 0},
-	{"setfont-4", &cfmt.font_tb[4], FORMAT_F, 0},
-#if FONT_UMAX!=5
-#	error Bad number of user fonts
-#endif
 //	{"shifthnote", &cfmt.shiftunison, FORMAT_B, 0},	/*to remove*/
 	{"shiftunison", &cfmt.shiftunison, FORMAT_I, 0},
-	{"shiftunisson", &cfmt.shiftunison, FORMAT_I, 0}, /*to remove*/
 	{"slurheight", &cfmt.slurheight, FORMAT_R, 0},
 	{"splittune", &cfmt.splittune, FORMAT_B, 0},
 	{"squarebreve", &cfmt.squarebreve, FORMAT_B, 0},
@@ -155,7 +147,7 @@ static struct format {
 };
 
 /* -- search a font and add it if not yet defined -- */
-static int get_font(char *fname, int encoding)
+static int get_font(const char *fname, int encoding)
 {
 	int fnum;
 
@@ -212,7 +204,7 @@ static int dfont_set(struct FONTSPEC *f)
 
 /* -- define a font -- */
 static void fontspec(struct FONTSPEC *f,
-		     char *name,
+		     const char *name,
 		     int encoding,
 		     float size)
 {
@@ -231,11 +223,11 @@ static void fontspec(struct FONTSPEC *f,
 		f->swfac *= 1.15;
 	} else if (strncmp(name, "Helvetica", 9) == 0
 		|| strncmp(name, "Palatino", 8) == 0) {
-		f->swfac *= 1.10;
+		f->swfac *= 1.1;
 	} else if (strncmp(name, "Courier", 7) == 0) {
 		f->swfac *= 1.35;
 	} else {
-		f->swfac *= 1.2;		/* unknown font */
+		f->swfac *= 1.1;		/* unknown font */
 	}
 	if (f == &cfmt.font_tb[GCHORDFONT])
 		cfmt.gcf = dfont_set(f);
@@ -337,6 +329,15 @@ void set_format(void)
 {
 	struct FORMAT *f;
 
+	static const char helvetica[] = "Helvetica";
+	static const char times[] = "Times-Roman";
+	static const char times_bold[] = "Times-Bold";
+	static const char times_italic[] = "Times-Italic";
+	static const char sans[] = "sans-serif";
+	static const char serif[] = "serif";
+	static const char serif_italic[] = "serif-Italic";
+	static const char serif_bold[] = "serif-Bold";
+
 	f = &cfmt;
 	memset(f, 0, sizeof *f);
 	f->pageheight = PAGEHEIGHT;
@@ -394,23 +395,43 @@ void set_format(void)
 	f->gracespace = (65 << 16) | (80 << 8) | 120;	/* left-inside-right - unit 1/10 pt */
 	f->textoption = T_LEFT;
 	f->ndfont = FONT_DYN;
-	fontspec(&f->font_tb[ANNOTATIONFONT], "Helvetica", 0, 12.0);
-	fontspec(&f->font_tb[COMPOSERFONT], "Times-Italic", 0, 14.0);
-	fontspec(&f->font_tb[FOOTERFONT], "Times-Roman", 0, 12.0); /* not scaled */
-	fontspec(&f->font_tb[GCHORDFONT], "Helvetica", 0, 12.0);
-	fontspec(&f->font_tb[HEADERFONT], "Times-Roman", 0, 12.0); /* not scaled */
-	fontspec(&f->font_tb[HISTORYFONT], "Times-Roman", 0, 16.0);
-	fontspec(&f->font_tb[INFOFONT],	"Times-Italic", 0, 14.0); /* same as composer by default */
-	fontspec(&f->font_tb[MEASUREFONT], "Times-Italic", 0, 14.0);
-	fontspec(&f->font_tb[PARTSFONT], "Times-Roman", 0, 15.0);
-	fontspec(&f->font_tb[REPEATFONT], "Times-Roman", 0, 13.0);
-	fontspec(&f->font_tb[SUBTITLEFONT], "Times-Roman", 0, 16.0);
-	fontspec(&f->font_tb[TEMPOFONT], "Times-Bold", 0, 15.0);
-	fontspec(&f->font_tb[TEXTFONT],	"Times-Roman", 0, 16.0);
-	fontspec(&f->font_tb[TITLEFONT], "Times-Roman", 0, 20.0);
-	fontspec(&f->font_tb[VOCALFONT], "Times-Bold", 0, 13.0);
-	fontspec(&f->font_tb[VOICEFONT], "Times-Bold", 0, 13.0);
-	fontspec(&f->font_tb[WORDSFONT], "Times-Roman", 0, 16.0);
+	if (svg || epsf > 2) {		// SVG output
+		fontspec(&f->font_tb[ANNOTATIONFONT], sans, 0, 12.0);
+		fontspec(&f->font_tb[COMPOSERFONT], serif_italic, 0, 14.0);
+		fontspec(&f->font_tb[FOOTERFONT], serif, 0, 12.0); /* not scaled */
+		fontspec(&f->font_tb[GCHORDFONT], sans, 0, 12.0);
+		fontspec(&f->font_tb[HEADERFONT], serif, 0, 12.0); /* not scaled */
+		fontspec(&f->font_tb[HISTORYFONT], serif, 0, 16.0);
+		fontspec(&f->font_tb[INFOFONT],	serif_italic, 0, 14.0); /* same as composer by default */
+		fontspec(&f->font_tb[MEASUREFONT], serif_italic, 0, 14.0);
+		fontspec(&f->font_tb[PARTSFONT], serif, 0, 15.0);
+		fontspec(&f->font_tb[REPEATFONT], serif, 0, 13.0);
+		fontspec(&f->font_tb[SUBTITLEFONT], serif, 0, 16.0);
+		fontspec(&f->font_tb[TEMPOFONT], serif_bold, 0, 15.0);
+		fontspec(&f->font_tb[TEXTFONT],	serif, 0, 16.0);
+		fontspec(&f->font_tb[TITLEFONT], serif, 0, 20.0);
+		fontspec(&f->font_tb[VOCALFONT], serif_bold, 0, 13.0);
+		fontspec(&f->font_tb[VOICEFONT], serif_bold, 0, 13.0);
+		fontspec(&f->font_tb[WORDSFONT], serif, 0, 16.0);
+	} else {			// PS output
+		fontspec(&f->font_tb[ANNOTATIONFONT], helvetica, 0, 12.0);
+		fontspec(&f->font_tb[COMPOSERFONT], times_italic, 0, 14.0);
+		fontspec(&f->font_tb[FOOTERFONT], times, 0, 12.0); /* not scaled */
+		fontspec(&f->font_tb[GCHORDFONT], helvetica, 0, 12.0);
+		fontspec(&f->font_tb[HEADERFONT], times, 0, 12.0); /* not scaled */
+		fontspec(&f->font_tb[HISTORYFONT], times, 0, 16.0);
+		fontspec(&f->font_tb[INFOFONT],	times_italic, 0, 14.0); /* same as composer by default */
+		fontspec(&f->font_tb[MEASUREFONT], times_italic, 0, 14.0);
+		fontspec(&f->font_tb[PARTSFONT], times, 0, 15.0);
+		fontspec(&f->font_tb[REPEATFONT], times, 0, 13.0);
+		fontspec(&f->font_tb[SUBTITLEFONT], times, 0, 16.0);
+		fontspec(&f->font_tb[TEMPOFONT], times_bold, 0, 15.0);
+		fontspec(&f->font_tb[TEXTFONT],	times, 0, 16.0);
+		fontspec(&f->font_tb[TITLEFONT], times, 0, 20.0);
+		fontspec(&f->font_tb[VOCALFONT], times_bold, 0, 13.0);
+		fontspec(&f->font_tb[VOICEFONT], times_bold, 0, 13.0);
+		fontspec(&f->font_tb[WORDSFONT], times, 0, 16.0);
+	}
 	f->fields[0] = (1 << ('C' - 'A'))
 		| (1 << ('M' - 'A'))
 		| (1 << ('O' - 'A'))
@@ -1037,6 +1058,17 @@ void interpret_fmt_line(char *w,		/* keyword */
 				cfmt.fields[0] |= (1 << ('Q' - 'A'));
 			else
 				cfmt.fields[0] &= ~(1 << ('Q' - 'A'));
+			return;
+		}
+		break;
+	case 's':
+		if (strncmp(w, "setfont-", 8) == 0) {
+			int i;
+
+			i = w[8] - '0';
+			if (i < 0 || i >= FONT_UMAX)
+				return;
+			g_fspc(p, &cfmt.font_tb[i]);
 			return;
 		}
 		break;

@@ -1,7 +1,7 @@
 /*
  * Generic ABC parser.
  *
- * Copyright (C) 1998-2014 Jean-François Moine
+ * Copyright (C) 1998-2015 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996, 1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -122,7 +122,7 @@ static void vover_new(void);
 static void print_error(char *s, int col)
 {
 	if (col >= 0)
-		fprintf(stderr, "%s:%d.%d: error: %s\n", abc_fn, linenum, col, s);
+		fprintf(stderr, "%s:%d:%d: error: %s\n", abc_fn, linenum, col, s);
 	else
 		fprintf(stderr, "%s:%d: error: %s\n", abc_fn, linenum, s);
 }
@@ -592,7 +592,7 @@ static int parse_octave(char *p)
 static void parse_key(char *p,
 		      struct abcsym *s)
 {
-	int sf, mode, key_end;
+	int sf, mode, empty;
 	char *clef_name, *clef_middle, *clef_lines, *clef_scale;
 	char *p_octave, *p_cue;
 
@@ -606,7 +606,7 @@ static void parse_key(char *p,
 	}
 	sf = 0;
 	mode = MAJOR;
-	key_end = 0;
+	empty = 0;
 	switch (*p++) {
 	case 'F': sf = -1; break;
 	case 'B': sf++;
@@ -629,23 +629,23 @@ static void parse_key(char *p,
 		break;
 	case 'n':
 		if (strncmp(p, "one", 3) == 0) {	// none
-			s->u.key.empty = 2;
+			empty = 2;
 			p += 3;
 			while (isspace((unsigned char) *p))
 				p++;
 			if (*p == '\0')
 				return;
-			key_end = 1;
 			break;
 		}
 		// fall thru
 	default:
 		p--;
-		key_end = 1;
+		empty = 1;
 		break;
 	}
 
-	if (!key_end) {
+	s->u.key.empty = empty;
+	if (!empty) {
 		if (*p == '#') {
 			sf += 7;
 			p++;
@@ -718,10 +718,10 @@ static void parse_key(char *p,
 			goto unk;
 		default:
 unk:
-			key_end = 1;
+			empty = 1;
 			break;
 		}
-		if (!key_end) {
+		if (!empty) {
 			while (isalpha((unsigned char) *p))
 				p++;
 			while (isspace((unsigned char) *p))

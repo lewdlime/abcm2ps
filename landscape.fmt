@@ -1,0 +1,9 @@
+
+% format for wide output in landscape mode
+
+   landscape 1
+
+   titleleft  yes
+   titlefont Palatino-Bold 22
+   composerspace 0.6cm
+   staffsep 60

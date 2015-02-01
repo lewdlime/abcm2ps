@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2014 Jean-François Moine
+ * Copyright (C) 1998-2015 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -176,7 +176,7 @@ static void sort_all(void)
 	set_sy = 1;
 	new_sy = 0;
 	prev = NULL;
-//	fl = 1;				/* set start of sequence */
+	fl = 1;				/* (have gcc happy) */
 	multi = -1;			/* (have gcc happy) */
 	for (;;) {
 		if (set_sy) {
@@ -860,6 +860,7 @@ static void set_bar_num(void)
 				}
 				s->extra = NULL;
 			}
+			s = s2;
 			break;
 		case TIMESIG:
 			wmeasure = s->as.u.meter.wmeasure;
@@ -1446,7 +1447,7 @@ static void gch_build(struct SYMBOL *s)
 		p = s->as.text + gch->idx;
 		str_font(gch->font);
 		w = tex_str(p);
-		gch->w = w + 4;
+		gch->w = w; // + 4;
 		switch (gch->type) {
 		case '_':			/* below */
 			xspc = w * GCHPRE;
@@ -2320,7 +2321,7 @@ static void put_pdfmark(char *p)
 	unsigned char c, *q;
 	int u;
 
-	p = trim_title(p, 0);
+	p = trim_title(p, NULL);
 
 	/* check if pure ASCII without '\', '(' nor ')'*/
 	for (q = (unsigned char *) p; *q != '\0'; q++) {
@@ -4107,7 +4108,7 @@ static void ps_def(struct SYMBOL *s,
 		sym_link(s, FMTCHG);
 		s->u = PSSEQ;
 		s->as.text = p;
-		s->as.flags |= ABC_F_INVIS;
+//		s->as.flags |= ABC_F_INVIS;
 		return;
 	}
 	if (file_initialized > 0 || mbf != outbuf)
@@ -4435,7 +4436,8 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 			return as;
 		}
 		if (strcmp(w, "glyph") == 0) {
-			glyph_add(p);
+			if (!svg && epsf <= 1)
+				glyph_add(p);
 			return as;
 		}
 		break;
@@ -4704,6 +4706,19 @@ static struct abcsym *process_pscomment(struct abcsym *as)
 			}
 			return as;
 		}
+		if (strcmp(w, "staffcolor") == 0) {
+			int color;
+
+			if (sscanf(p, "#%06x", &color) != 1
+			 || (unsigned) color > 0x00ffffff) {
+				error(1, s, "Bad color in %%%%staffcolor");
+				return as;
+			}
+			sym_link(s, FMTCHG);
+			s->u = STAFF_COLOR;
+			s->as.u.length.base_length = color;	// ugly!
+			return as;
+		}
 		if (strcmp(w, "staffscale") == 0) {
 			int voice;
 			char *q;
@@ -4949,17 +4964,15 @@ center:
 					continue;
 				if (strncmp(&as->text[2], "voice ", 6) == 0) {
 					as = process_pscomment(as);
-					if (as == as2)
-						break;
-					continue;
-				}
-				as->state = ABC_S_HEAD;
+				} else {
+					as->state = ABC_S_HEAD;
 
-				/* !! no reverse link !! */
-				s->next = (struct SYMBOL *) as;
+					/* !! no reverse link !! */
+					s->next = (struct SYMBOL *) as;
+					s = s->next;
+				}
 				if (as == as2)
 					break;
-				s = s->next;
 				as = as->next;
 			}
 			cur_tune_opts = NULL;
@@ -5063,6 +5076,19 @@ center:
 				s->next = (struct SYMBOL *) as->next;
 				s = s->next;
 			}
+			return as;
+		}
+		if (strcmp(w, "voicecolor") == 0) {
+			int color;
+
+			if (sscanf(p, "#%06x", &color) != 1
+			 || (unsigned) color > 0x00ffffff) {
+				error(1, s, "Bad color in %%%%voicecolor");
+				return as;
+			}
+			sym_link(s, FMTCHG);
+			s->u = VOICE_COLOR;
+			s->as.u.length.base_length = color;	// ugly!
 			return as;
 		}
 		if (strcmp(w, "voicescale") == 0) {

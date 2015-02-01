@@ -1,3 +1,58 @@
+---- Version 8.5.2 - 15/01/28 ----
+
+Fix bad display when bad ties to grace notes
+	(reported by Willem).
+Change the default fonts to serif and sans-serif
+		instead of Times and Helvetica when SVG output.
+Fix bad guitar box when many guitar chords on a note.
+Fix bad beams when tremolo inside beamed notes
+	(reported by David Lacroix).
+Fix loss of ABC lines after %%abc-include when %%select did not
+		match the last included tune.
+Fix clash of accidentals with stems in some cases of full voice overlap.
+Fix chinese.abc for correct rendering with pango.
+Fix some compilation warnings
+	(reported by Daniel Branning).
+Fix bad measure number when the bar followed by a clef change since 8.3.5
+	(reported by Frédéric Boulanger).
+Fix loss of first note when the tune starts with %%ps since 8.5.0
+	(reported by David Lacroix).
+Fix bad font-family with SVG output since 8.5.1.
+
+---- Version 8.5.1 - 15/01/05 ----
+
+Fix bad handling of voice overlap when at leat one unison.
+Fix bad extra space at end of line when clef change by K:.
+Add file glyphs.abc in the package.
+Fix loss of font change before non-ASCII characters in strings.
+Fix bad offsets and fonts of annotation-like decorations.
+Fix loop on %%voice after %%voice since 8.3.2.
+Fix erroneous display of rests in empty staves when "%%staffnonote 0".
+
+---- Version 8.5.0 - 15/01/02 ----
+
+Fix bad handling of font-style when no '-' in font name.
+Extend %%deco with annotation-like strings.
+Extend "%%setfont-x" up to 9.
+Add %%voicecolor
+	(asked by Frédéric Boulanger).
+Fix "setgray" in SVG output.
+Add some styles (preserve white spaces, svg as block) on XHTML output ('-X').
+Remove '<p>' from '-v -O -' output (many SVG images on stdout).
+Do smaller shifts when voice overlap
+	(asked by David Lacroix).
+Fix bad unisons when different accidentals
+	(reported by David Lacroix).
+Fix loss of key signatures and meters when voice in empty staff
+	(reported by Willem).
+Fix some cases of music lines cut inside beamed notes.
+Adjust the position of the 'crdc' decorations and update deco.abc.
+Fix loss of the 'svg' definition used by the PostScript code on SVG output.
+Fix again bad display of unisons
+	(reported by David Lacroix).
+Apply %%topspace when %%newpage inside a tune
+	(reported by Johann Schatzer).
+
 ---- Version 8.4.0 - 14/12/16 ----
 
 Remove features.txt from the tarball.

@@ -224,7 +224,9 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define REPEAT 2			/* repeat sequence or measure
 					 *	doty: # measures if > 0
 					 *	      # notes/rests if < 0
-					 *	nohdix: # repeat */
+					 *	nohdi1: # repeat */
+#define STAFF_COLOR 3			/* color change: */
+#define VOICE_COLOR 4			/*	color in as.u.length.base_length */
 	float x;		/* x offset */
 	signed char y;		/* y offset of note head */
 	signed char ymn, ymx, yav; /* min, max, avg note head y offset */
@@ -251,6 +253,30 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define B_DREP 0x44		/* ::	double repeat bar */
 #define B_DASH 0x04		/* :	dashed bar */
 
+#define	FONT_UMAX 10		/* max number of user fonts 0..9 */
+enum e_fonts {
+	ANNOTATIONFONT = FONT_UMAX,
+	COMPOSERFONT,
+	FOOTERFONT,
+	GCHORDFONT,
+	HEADERFONT,
+	HISTORYFONT,
+	INFOFONT,
+	MEASUREFONT,
+	PARTSFONT,
+	REPEATFONT,
+	SUBTITLEFONT,
+	TEMPOFONT,
+	TEXTFONT,
+	TITLEFONT,
+	VOCALFONT,
+	VOICEFONT,
+	WORDSFONT,
+	FONT_DYN		/* index of dynamic fonts (gch, an, ly) */
+};
+#define	FONT_DYNX 12				/* number of dynamic fonts */
+#define	FONT_MAX (FONT_DYN + FONT_DYNX)		/* whole number of fonts */
+
 struct FORMAT { 		/* struct for page layout */
 	float pageheight, pagewidth;
 	float topmargin, botmargin, leftmargin, rightmargin;
@@ -276,27 +302,6 @@ struct FORMAT { 		/* struct for page layout */
 	int textoption, titlecaps, titleleft, titletrim;
 	int timewarn, transpose, tuplets;
 	char *bgcolor, *dateformat, *header, *footer, *titleformat;
-#define FONT_UMAX 5		/* max number of user fonts */
-#define ANNOTATIONFONT 5
-#define COMPOSERFONT 6
-#define FOOTERFONT 7
-#define GCHORDFONT 8
-#define HEADERFONT 9
-#define HISTORYFONT 10
-#define INFOFONT 11
-#define MEASUREFONT 12
-#define PARTSFONT 13
-#define REPEATFONT 14
-#define SUBTITLEFONT 15
-#define TEMPOFONT 16
-#define TEXTFONT 17
-#define TITLEFONT 18
-#define VOCALFONT 19
-#define VOICEFONT 20
-#define WORDSFONT 21
-#define FONT_DYN 22		/* index of dynamic fonts (gch, an, ly) */
-#define FONT_DYNX 12		/* number of dynamic fonts */
-#define FONT_MAX (FONT_DYN+FONT_DYNX)		/* whole number of fonts */
 	struct FONTSPEC font_tb[FONT_MAX];
 	char ndfont;		/* current index of dynamic fonts */
 	unsigned char gcf, anf, vof;	/* fonts for guitar chords,
@@ -375,6 +380,7 @@ struct STAFF_S {
 	short botbar, topbar;	/* bottom and top of bar */
 	float y;		/* y position */
 	float top[YSTEP], bot[YSTEP];	/* top/bottom y offsets */
+	int color;
 };
 extern struct STAFF_S staff_tb[MAXSTAFF];
 extern int nstaff;		/* (0..MAXSTAFF-1) */
@@ -422,6 +428,7 @@ struct VOICE_S {
 	unsigned char cstaff;	/* staff (parsing) */
 	unsigned char slur_st;	/* slurs at start of staff */
 	signed char stafflines;
+	int color;
 	float staffscale;
 							/* parsing */
 	struct abcsym *last_note;	/* last note or rest */
@@ -538,13 +545,15 @@ void y_set(int staff,
 void draw_sym_near(void);
 void draw_all_symb(void);
 float draw_systems(float indent);
-void output_ps(struct SYMBOL *s, int state);
+void output_ps(struct SYMBOL *s, int color);
 void putf(float f);
 void putx(float x);
 void puty(float y);
 void putxy(float x, float y);
 void set_scale(struct SYMBOL *s);
 void set_sscale(int staff);
+void set_st_color(int st);
+void set_v_color(int v);
 /* format.c */
 void define_fonts(void);
 int get_textopt(char *p);
@@ -590,7 +599,7 @@ struct SYMBOL *sym_add(struct VOICE_S *p_voice,
 void bug(char *msg, int fatal);
 void error(int sev, struct SYMBOL *s, char *fmt, ...);
 float scan_u(char *str);
-float cwid(unsigned short c);
+float cwid(unsigned char c);
 void get_str_font(int *cft, int *dft);
 void set_str_font(int cft, int dft);
 #ifdef HAVE_PANGO

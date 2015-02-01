@@ -1,7 +1,7 @@
 /*
  * Super Light Regular Expression library
  *
- * Copyright (c) 2012-2014 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (c) 2012-2015 Jean-François Moine (http://moinejf.free.fr)
  * Copyright (c) 2004-2005 Sergey Lyubka <valenok@gmail.com>
  * All rights reserved
  *

@@ -3,21 +3,12 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2014 Jean-François Moine
+ * Copyright (C) 1998-2015 Jean-François Moine
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA  02110-1335  USA
  */
 
 #include <stdarg.h>
@@ -99,33 +90,33 @@ static struct {
 #define D_brace 0
 {	"<path id=\"brace\" fill=\"currentColor\" d=\"m-2.5 101\n"
 	"	c-4.5 -4.6 -7.5 -12.2 -4.4 -26.8\n"
-	"	c3.5 -14.3 3.2 -21.7 -2.1 -24.2\n"
-	"	c7.4 2.4 7.3 14.2 3.5 29.5\n"
-	"	c-2.7 9.5 -1.5 16.2 3 21.5\n"
+	"	3.5 -14.3 3.2 -21.7 -2.1 -24.2\n"
+	"	7.4 2.4 7.3 14.2 3.5 29.5\n"
+	"	-2.7 9.5 -1.5 16.2 3 21.5\n"
 	"	M-2.5 1c-4.5 4.6 -7.5 12.2 -4.4 26.8\n"
 	"	c3.5 14.3 3.2 21.7 -2.1 24.2\n"
-	"	c7.4 -2.4 7.3 -14.2 3.5 -29.5\n"
-	"	c-2.7 -9.5 -1.5 -16.2 3 -21.5\"/>\n"},
+	"	7.4 -2.4 7.3 -14.2 3.5 -29.5\n"
+	"	-2.7 -9.5 -1.5 -16.2 3 -21.5\"/>\n"},
 #define D_utclef 1
 {	"<path id=\"utclef\" fill=\"currentColor\" d=\"m-50 -90\n"
 	"	c-72 -41 -72 -158 52 -188\n"
-	"	c150 -10 220 188 90 256\n"
-	"	c-114 52 -275 0 -293 -136\n"
-	"	c-15 -181 93 -229 220 -334\n"
-	"	c88 -87 79 -133 62 -210\n"
-	"	c-51 33 -94 105 -89 186\n"
-	"	c17 267 36 374 49 574\n"
-	"	c6 96 -19 134 -77 135\n"
-	"	c-80 1 -126 -93 -61 -133\n"
-	"	c85 -41 133 101 31 105\n"
-	"	c23 17 92 37 90 -92\n"
-	"	c-10 -223 -39 -342 -50 -617\n"
-	"	c0 -90 0 -162 96 -232\n"
-	"	c56 72 63 230 22 289\n"
-	"	c-74 106 -257 168 -255 316\n"
-	"	c9 153 148 185 252 133\n"
-	"	c86 -65 29 -192 -80 -176\n"
-	"	c-71 12 -105 67 -59 124\"/>\n"},
+	"	150 -10 220 188 90 256\n"
+	"	-114 52 -275 0 -293 -136\n"
+	"	-15 -181 93 -229 220 -334\n"
+	"	88 -87 79 -133 62 -210\n"
+	"	-51 33 -94 105 -89 186\n"
+	"	17 267 36 374 49 574\n"
+	"	6 96 -19 134 -77 135\n"
+	"	-80 1 -126 -93 -61 -133\n"
+	"	85 -41 133 101 31 105\n"
+	"	23 17 92 37 90 -92\n"
+	"	-10 -223 -39 -342 -50 -617\n"
+	"	0 -90 0 -162 96 -232\n"
+	"	56 72 63 230 22 289\n"
+	"	-74 106 -257 168 -255 316\n"
+	"	9 153 148 185 252 133\n"
+	"	86 -65 29 -192 -80 -176\n"
+	"	-71 12 -105 67 -59 124\"/>\n"},
 #define D_tclef 2
 {	"<use id=\"tclef\" transform=\"scale(0.045)\"\n"
 	"	xlink:href=\"#utclef\"/>\n", D_utclef},
@@ -135,17 +126,17 @@ static struct {
 #define D_ubclef 4
 {	"<path id=\"ubclef\" fill=\"currentColor\" d=\"m-200 -87\n"
 	"	c124 -35 222 -78 254 -236\n"
-	"	c43 -228 -167 -246 -192 -103\n"
-	"	c59 -80 157 22 92 78\n"
-	"	c-62 47 -115 -22 -106 -88\n"
-	"	c21 -141 270 -136 274 52\n"
-	"	c-1 175 -106 264 -322 297\n"
+	"	43 -228 -167 -246 -192 -103\n"
+	"	59 -80 157 22 92 78\n"
+	"	-62 47 -115 -22 -106 -88\n"
+	"	21 -141 270 -136 274 52\n"
+	"	-1 175 -106 264 -322 297\n"
 	"	m357 -250\n"
 	"	c0 -36 51 -34 51 0\n"
-	"	c0 37 -51 36 -51 0\n"
+	"	0 37 -51 36 -51 0\n"
 	"	m-2 -129\n"
 	"	c0 -36 51 -34 51 0\n"
-	"	c0 38 -51 37 -51 0\"/>\n"},
+	"	0 38 -51 37 -51 0\"/>\n"},
 #define D_bclef 5
 {	"<use id=\"bclef\" transform=\"scale(0.045)\"\n"
 	"	xlink:href=\"#ubclef\"/>\n", D_ubclef},
@@ -161,18 +152,18 @@ static struct {
 	"	h13\n"
 	"	v256\n"
 	"	c25 -20 41 -36 63 -109\n"
-	"	c14 31 13 51 56 70\n"
-	"	c90 34 96 -266 -41 -185\n"
-	"	c52 19 27 80 -11 77\n"
-	"	c-90 -38 33 -176 139 -69\n"
-	"	c72 79 1 241 -134 186\n"
+	"	14 31 13 51 56 70\n"
+	"	90 34 96 -266 -41 -185\n"
+	"	52 19 27 80 -11 77\n"
+	"	-90 -38 33 -176 139 -69\n"
+	"	72 79 1 241 -134 186\n"
 	"	l-16 39 16 38\n"
 	"	c135 -55 206 107 134 186\n"
-	"	c-106 108 -229 -31 -139 -69\n"
-	"	c38 -3 63 58 11 77\n"
-	"	c137 81 131 -219 41 -185\n"
-	"	c-43 19 -45 30 -56 64\n"
-	"	c-22 -73 -38 -89 -63 -109\n"
+	"	-106 108 -229 -31 -139 -69\n"
+	"	38 -3 63 58 11 77\n"
+	"	137 81 131 -219 41 -185\n"
+	"	-43 19 -45 30 -56 64\n"
+	"	-22 -73 -38 -89 -63 -109\n"
 	"	m-99 -267\n"
 	"	h57\n"
 	"	v529\n"
@@ -192,19 +183,19 @@ static struct {
 #define D_Hd 12
 {	"<path id=\"Hd\" fill=\"currentColor\" d=\"m3 -1.6\n"
 	"	c-1 -1.8 -7 1.4 -6 3.2\n"
-	"	c1 1.8 7 -1.4 6 -3.2\n"
+	"	1 1.8 7 -1.4 6 -3.2\n"
 	"	m0.5 -0.3\n"
 	"	c2 3.8 -5 7.6 -7 3.8\n"
-	"	c-2 -3.8 5 -7.6 7 -3.8\"/>\n"},
+	"	-2 -3.8 5 -7.6 7 -3.8\"/>\n"},
 #define D_HD 13
 {	"<path id=\"HD\" fill=\"currentColor\" d=\"m-2.7 -1.4\n"
 	"	c1.5 -2.8 6.9 0 5.3 2.7\n"
-	"	c-1.5 2.8 -6.9 0 -5.3 -2.7\n"
+	"	-1.5 2.8 -6.9 0 -5.3 -2.7\n"
 	"	m8.3 1.4\n"
 	"	c0 -1.5 -2.2 -3 -5.6 -3\n"
-	"	c-3.4 0 -5.6 1.5 -5.6 3\n"
-	"	c0 1.5 2.2 3 5.6 3\n"
-	"	c3.4 0 5.6 -1.5 5.6 -3\"/>\n"},
+	"	-3.4 0 -5.6 1.5 -5.6 3\n"
+	"	0 1.5 2.2 3 5.6 3\n"
+	"	3.4 0 5.6 -1.5 5.6 -3\"/>\n"},
 #define D_HDD 14
 {	"<g id=\"HDD\">\n"
 	"	<use xlink:href=\"#HD\"/>\n"
@@ -223,7 +214,7 @@ static struct {
 #define D_ghd 17
 {	"<path id=\"ghd\" fill=\"currentColor\" d=\"m1.7 -1\n"
 	"	c-1 -1.7 -4.5 0.2 -3.4 2\n"
-	"	c1 1.7 4.5 -0.2 3.4 -2\"/>\n"},
+	"	1 1.7 4.5 -0.2 3.4 -2\"/>\n"},
 #define D_r00 18
 {	"<rect id=\"r00\" fill=\"currentColor\"\n"
 	"	x=\"-1.6\" y=\"-6\" width=\"3\" height=\"12\"/>\n"},
@@ -240,12 +231,12 @@ static struct {
 {	"<path id=\"r4\" fill=\"currentColor\" d=\"m-1 -8.5\n"
 	"	l3.6 5.1 -2.1 5.2 2.2 4.3\n"
 	"	c-2.6 -2.3 -5.1 0 -2.4 2.6\n"
-	"	c-4.8 -3 -1.5 -6.9 1.4 -4.1\n"
+	"	-4.8 -3 -1.5 -6.9 1.4 -4.1\n"
 	"	l-3.1 -4.5 1.9 -5.1 -1.5 -3.5\"/>\n"},
 #define D_r8e 23
 {	"<path id=\"r8e\" fill=\"currentColor\" d=\"m 0 0\n"
 	"	c-1.5 1.5 -2.4 2 -3.6 2\n"
-	"	c2.4 -2.8 -2.8 -4 -2.8 -1.2\n"
+	"	2.4 -2.8 -2.8 -4 -2.8 -1.2\n"
 	"	c0 2.7 4.3 2.4 5.9 0.6\"/>\n"},
 #define D_r8 24
 {	"<g id=\"r8\">\n"
@@ -313,22 +304,22 @@ static struct {
 	"	l-32 4\n"
 	"	m32 -332\n"
 	"	c46 -72 152 -90 208 -20\n"
-	"	c100 110 -120 326 -208 348\n"
+	"	100 110 -120 326 -208 348\n"
 	"	m0 -28\n"
 	"	c54 0 200 -206 130 -290\n"
-	"	c-50 -60 -130 -4 -130 34\"/>\n"},
+	"	-50 -60 -130 -4 -130 34\"/>\n"},
 #define D_unat 32
 {	"<path id=\"unat\" fill=\"currentColor\" d=\"\n"
 	"	m96 -750\n"
 	"	h-32\n"
 	"	v716\n"
 	"	l32 -8\n"
-	"	l182 -54\n"
+	"	182 -54\n"
 	"	v282\n"
 	"	h32\n"
 	"	v-706\n"
 	"	l-34 10\n"
-	"	l-180 50\n"
+	"	-180 50\n"
 	"	v-290\n"
 	"	m0 592\n"
 	"	v-190\n"
@@ -341,15 +332,15 @@ static struct {
 	"	v-96\n"
 	"	h-96\n"
 	"	c0 84 -30 118 -68 156\n"
-	"	c-40 -38 -70 -72 -70 -156\n"
+	"	-40 -38 -70 -72 -70 -156\n"
 	"	h-96\n"
 	"	v96\n"
 	"	c86 0 120 30 158 68\n"
-	"	c-38 38 -72 68 -158 68\n"
+	"	-38 38 -72 68 -158 68\n"
 	"	v96\n"
 	"	h96\n"
 	"	c0 -84 30 -118 70 -156\n"
-	"	c38 38 68 72 68 156\n"
+	"	38 38 68 72 68 156\n"
 	"	h96\n"
 	"	v-96\n"
 	"	c-84 0 -118 -30 -158 -68\"/>\n"},
@@ -361,20 +352,20 @@ static struct {
 	"	l-24 4\n"
 	"	m24 -332\n"
 	"	c34 -72 114 -90 156 -20\n"
-	"	c75 110 -98 326 -156 348\n"
+	"	75 110 -98 326 -156 348\n"
 	"	m0 -28\n"
 	"	c40 0 150 -206 97 -290\n"
-	"	c-37 -60 -97 -4 -97 34\n"
+	"	-37 -60 -97 -4 -97 34\n"
 	"	m226 -450\n"
 	"	h24\n"
 	"	v734\n"
 	"	l-24 4\n"
 	"	m24 -332\n"
 	"	c34 -72 114 -90 156 -20\n"
-	"	c75 110 -98 326 -156 348\n"
+	"	75 110 -98 326 -156 348\n"
 	"	m0 -28\n"
 	"	c40 0 150 -206 97 -290\n"
-	"	c-37 -60 -97 -4 -97 34\"/>\n"},
+	"	-37 -60 -97 -4 -97 34\"/>\n"},
 #define D_sh0 35
 {	"<use id=\"sh0\" transform=\"translate(-4,5) scale(0.018)\"\n"
 	"	xlink:href=\"#usharp\"/>\n", D_usharp},
@@ -426,12 +417,12 @@ static struct {
 {	"<path id=\"csig\" fill=\"currentColor\" d=\"\n"
 	"	m1 -17.3\n"
 	"	c0.9 0 2.3 0.7 2.4 2.2\n"
-	"	c-1.2 -2 -3.6 0.1 -1.6 1.7\n"
-	"	c2 1 3.8 -3.5 -0.8 -4.7\n"
-	"	c-2 -0.4 -6.4 1.3 -5.8 7\n"
-	"	c0.4 6.4 7.9 6.8 9.1 0.7\n"
-	"	c-2.3 5.6 -6.7 5.1 -6.8 0\n"
-	"	c-0.5 -4.4 0.7 -7.5 3.5 -6.9\"/>\n"},
+	"	-1.2 -2 -3.6 0.1 -1.6 1.7\n"
+	"	2 1 3.8 -3.5 -0.8 -4.7\n"
+	"	-2 -0.4 -6.4 1.3 -5.8 7\n"
+	"	0.4 6.4 7.9 6.8 9.1 0.7\n"
+	"	-2.3 5.6 -6.7 5.1 -6.8 0\n"
+	"	-0.5 -4.4 0.7 -7.5 3.5 -6.9\"/>\n"},
 #define D_ctsig 47
 {	"<g id=\"ctsig\">\n"
 	"	<use xlink:href=\"#csig\"/>\n"
@@ -498,14 +489,14 @@ static struct {
 {	"<path id=\"grm\" fill=\"currentColor\" d=\"\n"
 	"	m-5 -2.5\n"
 	"	c5 -8.5 5.5 4.5 10 -2\n"
-	"	c-5 8.5 -5.5 -4.5 -10 2\"/>\n"},
+	"	-5 8.5 -5.5 -4.5 -10 2\"/>\n"},
 #define D_stc 64
 {	"<circle id=\"stc\" fill=\"currentColor\" cx=\"0\" cy=\"-3\" r=\"1.2\"/>\n"},
 #define D_sld 65
 {	"<path id=\"sld\" fill=\"currentColor\" d=\"\n"
 	"	m-7.2 4.8\n"
 	"	c1.8 0.7 4.5 -0.2 7.2 -4.8\n"
-	"	c-2.1 5 -5.4 6.8 -7.6 6\"/>\n"},
+	"	-2.1 5 -5.4 6.8 -7.6 6\"/>\n"},
 #define D_emb 66
 {	"<path id=\"emb\" d=\"m-2.5 -3h5\" stroke-width=\"1.2\" stroke-linecap=\"round\" stroke=\"currentColor\"/>\n"},
 #define D_hld 67
@@ -525,7 +516,7 @@ static struct {
 {	"<path id=\"upb\" stroke=\"currentColor\" fill=\"none\" d=\"\n"
 	"	m-2.6 -9.4\n"
 	"	l2.6 8.8\n"
-	"	l2.6 -8.8\"/>\n"},
+	"	2.6 -8.8\"/>\n"},
 #define D_dnb 70
 {	"<g id=\"dnb\">\n"
 	"	<path d=\"M-3.2 -2v-7.2m6.4 0v7.2\" stroke=\"currentColor\" fill=\"none\"/>\n"
@@ -535,13 +526,13 @@ static struct {
 {	"<g id=\"sgno\">\n"
 	"    <path fill=\"currentColor\" d=\"m0 -3\n"
 	"	c1.5 1.7 6.4 -0.3 3 -3.7\n"
-	"	c-10.4 -7.8 -8 -10.6 -6.5 -11.9\n"
-	"	c4 -1.9 5.9 1.7 4.2 2.6\n"
-	"	c-1.3 0.7 -2.9 -1.3 -0.7 -2\n"
-	"	c-1.5 -1.7 -6.4 0.3 -3 3.7\n"
-	"	c10.4 7.8 8 10.6 6.5 11.9\n"
-	"	c-4 1.9 -5.9 -1.7 -4.2 -2.6\n"
-	"	c1.3 -0.7 2.9 1.3 0.7 2\"/>\n"
+	"	-10.4 -7.8 -8 -10.6 -6.5 -11.9\n"
+	"	4 -1.9 5.9 1.7 4.2 2.6\n"
+	"	-1.3 0.7 -2.9 -1.3 -0.7 -2\n"
+	"	-1.5 -1.7 -6.4 0.3 -3 3.7\n"
+	"	10.4 7.8 8 10.6 6.5 11.9\n"
+	"	-4 1.9 -5.9 -1.7 -4.2 -2.6\n"
+	"	1.3 -0.7 2.9 1.3 0.7 2\"/>\n"
 	"    <line x1=\"-6\" y1=\"-4.2\" x2=\"6.6\" y2=\"-16.8\" stroke=\"currentColor\"/>\n"
 	"    <circle cx=\"-6\" cy=\"-10\" r=\"1.2\"/>\n"
 	"    <circle cx=\"6\" cy=\"-11\" r=\"1.2\"/>\n"
@@ -584,13 +575,13 @@ static struct {
 	"	c1.4 0.5 0.9 4.8 -2.2 2.8\n"
 	"	l-4.8 -3.5\n"
 	"	c-3 -2 -5.8 1.8 -3.6 4.4\n"
-	"	c1 1.1 2 0.8 2.1 -0.1\n"
-	"	c0.1 -0.9 -0.7 -1.2 -1.9 -0.6\n"
-	"	c-1.4 -0.5 -0.9 -4.8 2.2 -2.8\n"
+	"	1 1.1 2 0.8 2.1 -0.1\n"
+	"	0.1 -0.9 -0.7 -1.2 -1.9 -0.6\n"
+	"	-1.4 -0.5 -0.9 -4.8 2.2 -2.8\n"
 	"	l4.8 3.5\n"
 	"	c3 2 5.8 -1.8 3.6 -4.4\n"
-	"	c-1 -1.1 -2 -0.8 -2.1 0.1\n"
-	"	c-0.1 0.9 0.7 1.2 1.9 0.6\"/>\n"},
+	"	-1 -1.1 -2 -0.8 -2.1 0.1\n"
+	"	-0.1 0.9 0.7 1.2 1.9 0.6\"/>\n"},
 #define D_turnx 81
 {	"<g id=\"turnx\">\n"
 	"	<use xlink:href=\"#turn\"/>\n"
@@ -1043,6 +1034,10 @@ void define_svg_symbols(char *title, int num, float w, float h)
 			fprintf(fout,
 				"}\n"
 				"\t@page {margin:0;}\n"
+//				"\tdiv.nobrk {page-break-inside: avoid}\n"
+				"\ttext {white-space:pre; fill:currentColor}\n"
+				"\tsvg {display:block}\n"
+//				"\tmedia print {div.newpage {page-break-before: always}}\n"
 				"</style>\n"
 				"<title>%s</title>\n"
 				"</head>\n"
@@ -1064,8 +1059,8 @@ void define_svg_symbols(char *title, int num, float w, float h)
 					"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n"
 					"\t\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n",
 					fout);
-			else if (svg)
-				fputs("<p>\n", fout);
+//			else if (svg)
+//				fputs("<p>\n", fout);
 		}
 		fprintf(fout, svg_head, w / 72, h / 72, w, h, title,
 			epsf ? "tune" : "page", num);
@@ -1089,6 +1084,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 	ps_error = 0;
 
 	s = strdup("/defl 0 def\n"
+		   "/svg 1 def\n"
 		   "/gsc{gsave y T .7 dup scale 0 0}def\n");
 	svg_write(s, strlen(s));
 	free(s);
@@ -1097,36 +1093,58 @@ void define_svg_symbols(char *title, int num, float w, float h)
 static void selfont(int back)
 {
 	char *p;
-	int flags;
+	int i, imin, flags;
 
 	if (gcur.font_n[0] == '\0')
 		return;
 	flags = 0;
+	imin = 255;
 	p = strchr(gcur.font_n, '-');
-	if (!p) {
+	if (p) {
+		imin = p - gcur.font_n;
+		flags = 1;
+	}
+	p = strstr(gcur.font_n, "Bold");
+	if (p) {
+		i = p - gcur.font_n;
+		if (imin > i)
+			imin = i;
+		flags |= 2;
+	}
+	p = strstr(gcur.font_n, "Italic");
+	if (p) {
+		i = p - gcur.font_n;
+		if (imin > i)
+			imin = i;
+		flags |= 4;
+	}
+	p = strstr(gcur.font_n, "Oblique");
+	if (p) {
+		i = p - gcur.font_n;
+		if (imin > i)
+			imin = i;
+		flags |= 8;
+	}
+	if (flags == 0) {
 		fprintf(fout, " font-family=\"%s\" font-size=\"%.2f\"",
 			gcur.font_n, gcur.font_s);
 	} else {
 		fprintf(fout, " font-family=\"%.*s\" font-size=\"%.2f\"",
-			(int) (p - gcur.font_n), gcur.font_n, gcur.font_s);
-		if (strstr(gcur.font_n, "Bold") != NULL) {
+			imin, gcur.font_n, gcur.font_s);
+		if (flags & 2)
 			fprintf(fout, " font-weight=\"bold\"");
-			flags = 1;
-		}
-		if (strstr(gcur.font_n, "Italic") != NULL) {
+		if (flags & 4)
 			fprintf(fout, " font-style=\"italic\"");
-			flags |= 2;
-		} else if (strstr(gcur.font_n, "Oblique") != NULL) {
+		if (flags & 8)
 			fprintf(fout, " font-style=\"oblique\"");
-			flags |= 2;
-		}
 	}
+
 	if (!back)
 		return;
 	if (!(flags & 1)
 	 && strstr(gold.font_n, "Bold") != NULL)
 		fprintf(fout, " font-weight=\"normal\"");
-	if (!(flags & 2)
+	if (!(flags & 6)
 	 && (strstr(gold.font_n, "Italic") != NULL
 	  || strstr(gold.font_n, "Oblique") != NULL))
 		fprintf(fout, " font-style=\"normal\"");
@@ -1134,12 +1152,12 @@ static void selfont(int back)
 
 static float strw(char *s)
 {
-	unsigned short c;
+	unsigned char c;
 	float w;
 
 	w = 0;
 	for (;;) {
-		c = *s++;
+		c = (unsigned char) *s++;
 		if (c == '\0')
 			break;
 		w += cwid(c) * 1.1;
@@ -1180,8 +1198,7 @@ static void defg1(void)
 		fprintf(fout, " stroke-width=\"%.2f\"", gcur.linewidth);
 	selfont(0);
 	if (gcur.rgb != 0)
-		fprintf(fout, " style=\"color:#%06x;fill:#%06x\"",
-				gcur.rgb, gcur.rgb);
+		fprintf(fout, " style=\"color:#%06x\"", gcur.rgb);
 //jfm test
 //	fprintf(fout, "%s>\n", gcur.dash);
 	fprintf(fout, ">\n");
@@ -1849,7 +1866,7 @@ stack_dump();
 			fprintf(fout,
 				"<rect stroke=\"currentColor\" fill=\"none\"\n"
 				"	x=\"%.2f\" y=\"%.2f\" width=\"%.2f\" height=\"%.2f\"/>\n",
-				x, y - h, boxend - (x - xoffs) + 6, h);
+				x, y - h, boxend - (x - xoffs) + 2, h);
 			return;
 		}
 		if (strcmp(op, "boxmark") == 0) {
@@ -1995,7 +2012,7 @@ curveto:
 		}
 		if (strcmp(op, "crdc") == 0) {
 			setg(1);
-			y = yoffs - pop_free_val();
+			y = yoffs - pop_free_val() - 5;
 			x = xoffs + pop_free_val();
 			s = pop_free_str();
 			if (!s) {
@@ -3425,7 +3442,8 @@ rmoveto:
 			return;
 		}
 		if (strcmp(op, "setgray") == 0) {
-			gcur.rgb = pop_free_val() * 0xffffff;
+			n = pop_free_val() * 255;
+			gcur.rgb = (n << 16) | (n << 8) | n;
 			return;
 		}
 		if (strcmp(op, "setlinewidth") == 0) {
@@ -3450,13 +3468,13 @@ rmoveto:
 			if (n == 1) {
 				fprintf(fout,
 					"M%.2f %.2fc0.6 5.6 9.6 9 5.6 18.4\n"
-					"	c1.6 -6 -1.3 -11.6 -5.6 -12.8\n",
+					"	1.6 -6 -1.3 -11.6 -5.6 -12.8\n",
 					x, y);
 			} else {
 				while (--n >= 0) {
 					fprintf(fout,
 						"M%.2f %.2fc0.9 3.7 9.1 6.4 6 12.4\n"
-						"	c1 -5.4 -4.2 -8.4 -6 -8.4\n",
+						"	1 -5.4 -4.2 -8.4 -6 -8.4\n",
 						x, y);
 					y += 5.4;
 				}
@@ -3481,13 +3499,13 @@ rmoveto:
 			if (n == 1) {
 				fprintf(fout,
 					"M%.2f %.2fc0.6 -5.6 9.6 -9 5.6 -18.4\n"
-					"	c1.6 6 -1.3 11.6 -5.6 12.8\n",
+					"	1.6 6 -1.3 11.6 -5.6 12.8\n",
 					x, y);
 			} else {
 				while (--n >= 0) {
 					fprintf(fout,
 						"M%.2f %.2fc0.9 -3.7 9.1 -6.4 6 -12.4\n"
-						"	c1 5.4 -4.2 8.4 -6 8.4\n",
+						"	1 5.4 -4.2 8.4 -6 8.4\n",
 						x, y);
 					y -= 5.4;
 				}
@@ -3554,13 +3572,13 @@ rmoveto:
 			if (n == 1) {
 				fprintf(fout,
 					"M%.2f %.2fc0.6 3.4 5.6 3.8 3 10\n"
-					"	c1.2 -4.4 -1.4 -7 -3 -7\n",
+					"	1.2 -4.4 -1.4 -7 -3 -7\n",
 					x, y);
 			} else {
 				while (--n >= 0) {
 					fprintf(fout,
 						"M%.2f %.2fc1 3.2 5.6 2.8 3.2 8\n"
-						"	c1.4 -4.8 -2.4 -5.4 -3.2 -5.2\n",
+						"	1.4 -4.8 -2.4 -5.4 -3.2 -5.2\n",
 					x, y);
 					y += 3.5;
 				}
@@ -3585,13 +3603,13 @@ rmoveto:
 			if (n == 1) {
 				fprintf(fout,
 					"M%.2f %.2fc0.6 -3.4 5.6 -3.8 3 -10\n"
-					"	c1.2 4.4 -1.4 7 -3 7\n",
+					"	1.2 4.4 -1.4 7 -3 7\n",
 					x, y);
 			} else {
 				while (--n >= 0) {
 					fprintf(fout,
 						"M%.2f %.2fc1 -3.2 5.6 -2.8 3.2 -8\n"
-						"	c1.4 4.8 -2.4 5.4 -3.2 5.2\n",
+						"	1.4 4.8 -2.4 5.4 -3.2 5.2\n",
 						x, y);
 					y -= 3.5;
 				}

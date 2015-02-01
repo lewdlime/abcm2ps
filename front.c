@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2011-2014 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 2011-2015 Jean-François Moine (http://moinejf.free.fr)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -463,7 +463,7 @@ void frontend(unsigned char *s,
 	unsigned char *p, *q, c, *begin_end, sep;
 	int i, l, state, str_cnv_p, histo, end_len;
 	char prefix_sav[4];
-	int latin_sav = 0;		/* have C compiler hppy */
+	int latin_sav = 0;		/* have C compiler happy */
 
 	begin_end = NULL;
 	end_len = 0;
@@ -729,6 +729,8 @@ info:
 			}
 			if (strncmp((char *) s, "format ", 7) == 0
 			  || strncmp((char *) s, "abc-include ", 12) == 0) {
+				int skip_sav;
+
 				if (*s == 'f')
 					s += 7;
 				else
@@ -745,8 +747,10 @@ info:
 					q--;
 				sep = *q;
 				*q = '\0';
+				skip_sav = skip;
 				offset = 0;
 				include_file(s);
+				skip = skip_sav;
 				*q = sep;
 				goto ignore;
 			}

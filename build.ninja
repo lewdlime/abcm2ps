@@ -1,9 +1,9 @@
 # rules for ninja (ninja-build)
 
-VERSION = 8.4.0
+VERSION = 8.5.2
 
-cflags = -g -O2 -Wall -pipe -I.
-#cflags = -g -Wall -pipe -I.
+#cflags = -g -O2 -Wall -pipe -I.
+cflags = -g -Wall -pipe -I.
 ldflags = -lm
 
 rule cc
@@ -18,7 +18,7 @@ rule ld
   command = clang $ldflags -o $out $in
 
 build abc2ps.o: cc abc2ps.c | config.h abcparse.h abc2ps.h
-build abcparse.o: cc abcparse.c | config.h abcparse.h
+build abcparse.o: cc abcparse.c | config.h abcparse.h abc2ps.h
 build buffer.o: cc buffer.c | config.h abcparse.h abc2ps.h
 build deco.o: cc deco.c | config.h abcparse.h abc2ps.h
 build draw.o: cc draw.c | config.h abcparse.h abc2ps.h
@@ -63,6 +63,7 @@ rule dist_tar
   abcm2ps-$VERSION/format.c $
   abcm2ps-$VERSION/front.c $
   abcm2ps-$VERSION/glyph.c $
+  abcm2ps-$VERSION/glyphs.abc $
   abcm2ps-$VERSION/landscape.fmt $
   abcm2ps-$VERSION/music.c $
   abcm2ps-$VERSION/musicfont.fmt $

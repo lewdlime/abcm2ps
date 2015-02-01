@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2000-2014, Jean-François Moine.
+ * Copyright (C) 2000-2015, Jean-François Moine.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ static struct deco_elt {
 #define DE_LDEN 0x80		/* end of long decoration */
 	unsigned char defl;	/* decorations flags - see DEF_xx */
 	float x, y;		/* x, y */
+	float dy;		/* dy for annotation strings */
 	float v;		/* extra value */
 	char *str;		/* string / 0 */
 } *deco_head, *deco_tail;
@@ -251,6 +252,20 @@ void y_set(int staff,
 			i++;
 		}
 	}
+}
+
+// set the string of a decoration
+static char *set_str(struct deco_elt *de, char *str)
+{
+	float dx, dy;
+	int n;
+
+	if (sscanf(str, "@%f,%f%n", &dx, &dy, &n) == 2) {
+		de->x += dx;
+		de->dy = dy;
+		return str + n;
+	}
+	return str;
 }
 
 /* -- get the staff position of the dynamic and volume marks -- */
@@ -466,14 +481,14 @@ static void d_pf(struct deco_elt *de)
 #endif
 	}
 
-	str = dd->name;
-	if (dd->strx != 0 && dd->strx != 255)
-		str = str_tb[dd->strx];
-
 	de->x = x;
 	de->y = y_get(s->staff, up, x, de->v);
 	if (!up)
 		de->y -= dd->h;
+
+	str = dd->name;
+	if (dd->strx != 0 && dd->strx != 255)
+		str = set_str(de, str_tb[dd->strx]);
 	de->str = str;
 	/* (y_set is done later in draw_deco_staff) */
 }
@@ -595,8 +610,6 @@ static void d_upstaff(struct deco_elt *de)
 	w = dd->wl + dd->wr;
 	stafft = staff_tb[s->staff].topbar + 2;
 	staffb = staff_tb[s->staff].botbar - 2;
-	if (dd->strx != 0)
-		de->str = dd->strx == 255 ? dd->name : str_tb[dd->strx];
 
 	switch (s->posit.orn) {
 	case SL_ABOVE:
@@ -669,6 +682,10 @@ static void d_upstaff(struct deco_elt *de)
 	}
 	de->x = x;
 	de->y = yc;
+
+	if (dd->strx != 0)
+		de->str = set_str(de,
+				dd->strx == 255 ? dd->name : str_tb[dd->strx]);
 }
 
 /* -- add a decoration - from %%deco -- */
@@ -697,7 +714,7 @@ static int get_deco(char *name)
 		 || strcmp(dd->name, name) == 0)
 			return ideco;
 	}
-	error(1, 0, "Too many decorations");
+	error(1, NULL, "Too many decorations");
 	return ideco;
 }
 
@@ -712,20 +729,20 @@ static unsigned char deco_build(char *name, char *text)
 	/* extract the arguments */
 	if (sscanf(text, "%15s %d %15s %d %d %d%n",
 			name2, &c_func, ps_func, &h, &wl, &wr, &n) != 6) {
-		error(1, 0, "Invalid deco %s", text);
+		error(1, NULL, "Invalid deco %s", text);
 		return 128;
 	}
 	if ((unsigned) c_func >= sizeof func_tb / sizeof func_tb[0]
 	 && (c_func < 32 || c_func > 40)) {
-		error(1, 0, "%%%%deco: bad C function index (%s)", text);
+		error(1, NULL, "%%%%deco: bad C function index (%s)", text);
 		return 128;
 	}
 	if (h < 0 || wl < 0 || wr < 0) {
-		error(1, 0, "%%%%deco: cannot have a negative value (%s)", text);
+		error(1, NULL, "%%%%deco: cannot have a negative value (%s)", text);
 		return 128;
 	}
 	if (h > 50 || wl > 80 || wr > 80) {
-		error(1, 0, "%%%%deco: abnormal h/wl/wr value (%s)", text);
+		error(1, NULL, "%%%%deco: abnormal h/wl/wr value (%s)", text);
 		return 128;
 	}
 	text += n;
@@ -745,7 +762,7 @@ static unsigned char deco_build(char *name, char *text)
 			break;
 	}
 	if (ps_x == sizeof ps_func_tb / sizeof ps_func_tb[0]) {
-		error(1, 0, "Too many postscript functions");
+		error(1, NULL, "Too many postscript functions");
 		return 128;
 	}
 
@@ -774,7 +791,7 @@ static unsigned char deco_build(char *name, char *text)
 				break;
 		}
 		if (strx == sizeof str_tb / sizeof str_tb[0]) {
-			error(1, 0, "Too many decoration strings");
+			error(1, NULL, "Too many decoration strings");
 			return 128;
 		}
 	}
@@ -909,14 +926,15 @@ static unsigned char deco_define(char *name)
 }
 
 /* -- convert the external deco number to the internal one -- */
-static unsigned char deco_intern(unsigned char ideco)
+static unsigned char deco_intern(unsigned char ideco,
+				struct SYMBOL *s)
 {
 	char *name;
 
 	if (ideco < 128) {
 		name = deco[ideco];
 		if (!name) {
-			error(1, 0, "Notation '%c' not treated", ideco);
+			error(1, s, "Bad character '%c'", ideco);
 			return 0;
 		}
 	} else {
@@ -933,7 +951,7 @@ static unsigned char deco_intern(unsigned char ideco)
 			break;
 	}
 	if (ideco == 128) {
-		error(1, 0, "Decoration !%s! not treated", name);
+		error(1, s, "Decoration !%s! not treated", name);
 		ideco = 0;
 	}
 	return ideco;
@@ -952,7 +970,7 @@ void deco_cnv(struct decos *dc,
 	for (i = dc->n; --i >= 0; ) {
 		if ((ideco = dc->tm[i].t) == 0)
 			continue;
-		ideco = deco_intern(ideco);
+		ideco = deco_intern(ideco, s);
 		dc->tm[i].t = ideco;
 		if (ideco == 0)
 			continue;
@@ -1022,6 +1040,10 @@ void deco_cnv(struct decos *dc,
 			set_feathered_beam(s, dd->name[5] == 'a');
 			break;
 		case 40:		/* 40 = stemless */
+			if (s->as.type != ABC_T_NOTE) {
+				error(1, s, must_note_fmt, dd->name);
+				break;
+			}
 			s->as.flags |= ABC_F_STEMLESS;
 			break;
 		}
@@ -1144,16 +1166,29 @@ void draw_all_deco(void)
 			}
 		}
 
+		set_v_color(de->s->voice);
 		set_scale(de->s);
 		set_defl(de->defl);
 /*fixme: scaled or not?*/
 		if (de->flags & DE_VAL)
 			putf(de->v);
+		x = de->x;
 		if (de->str) {
 			char *p, *q;
 
+			y += dd->h * 0.2;		// font descent
+			p = de->str;
+			if (dd->strx != 0 && dd->strx != 255
+			 && str_tb[dd->strx][0] == '@') { // annotation like
+				str_font(ANNOTATIONFONT);
+				outft = -1;		// force font selection
+				putxy(x, y + de->dy);
+				a2b("M");
+				put_str(p, A_LEFT);
+				continue;
+			}
 			a2b("(");
-			q = p = de->str;
+			q = p;
 			while (*p != '\0') {
 				if (*p == '(' || *p == ')') {
 					if (p != q)
@@ -1167,7 +1202,7 @@ void draw_all_deco(void)
 				a2b("%.*s", (int) (p - q), q);
 			a2b(")");
 		}
-		putxy(de->x, y);
+		putxy(x, y);
 		if (de->flags & DE_LDEN) {
 			if (de->start) {
 				x = de->start->x;
@@ -1195,10 +1230,11 @@ void draw_all_deco(void)
 		}
 	}
 	set_sscale(-1);			/* restore the scale */
+	set_v_color(-1);
 }
 
 /* -- draw a decoration relative to a note head -- */
-/* return 1 if the decoration is a head */
+/* return 1 if the decoration replaces the head */
 int draw_deco_head(int ideco, float x, float y, int stem)
 {
 	struct deco_def_s *dd;
@@ -1226,10 +1262,14 @@ int draw_deco_head(int ideco, float x, float y, int stem)
 		str = dd->name;
 		if (dd->strx != 0 && dd->strx != 255)
 			str = str_tb[dd->strx];
+// no de!
+//			str = set_str(de, str_tb[dd->strx]);
 		a2b("(%s)", str);
 		break;
 	}
+// no de!
 	putxy(x, y);
+//	putxy(x, y + de->dy);
 	a2b("%s ", ps_func_tb[dd->ps_func]);
 	return strncmp(dd->name, "head-", 5) == 0;
 }
@@ -1768,7 +1808,7 @@ static void draw_gchord(struct SYMBOL *s,
 	struct gch *gch, *gch2;
 	int action, ix, box;
 	float x, y, w, h, y_above, y_below;
-	float hbox, xboxh, xboxl, yboxh, yboxl, expdx;
+	float hbox, xboxl, yboxh, yboxl, expdx;
 
 	/* adjust the vertical offset according to the guitar chords */
 //fixme: w may be too small
@@ -1804,7 +1844,7 @@ static void draw_gchord(struct SYMBOL *s,
 	set_font(s->gch->font);			/* needed if scaled staff */
 	set_sscale(s->staff);
 //	action = A_GCHORD;
-	xboxh = xboxl = s->x;
+	xboxl = s->x;
 	yboxh = -100;
 	yboxl = 100;
 	box = 0;
@@ -1814,7 +1854,8 @@ static void draw_gchord(struct SYMBOL *s,
 			break;
 		h = cfmt.font_tb[gch->font].size;
 		str_font(gch->font);
-		w = tex_str(s->as.text + gch->idx);
+		tex_str(s->as.text + gch->idx);
+		w = gch->w;
 		if (gch->type == 'g') {			/* guitar chord */
 			if (!strchr(tex_buf, '\t')) {
 				action = A_GCHORD;
@@ -1875,9 +1916,6 @@ static void draw_gchord(struct SYMBOL *s,
 			if (gch->box) {
 				if (xboxl > x)
 					xboxl = x;
-				w += x;
-				if (xboxh < w)
-					xboxh = w;
 				if (yboxl > y)
 					yboxl = y;
 				if (yboxh < y + h)
@@ -1906,23 +1944,20 @@ static void draw_gchord(struct SYMBOL *s,
 		if (action == A_GCHEXP)
 			a2b("%.2f ", expdx);
 		str_out(tex_buf, action);
-		if (gch->type == 'g' && box > 0)
-			a2b(" boxstart");
+		if (gch->type == 'g' && box > 0) {
+			if (box == 1)
+				a2b(" boxstart");
+			else
+				a2b(" boxmark");
+		}
 		a2b("\n");
 	}
 
-	/* draw the box of the guitar chords */
-	if (xboxh != xboxl) {		/* if any normal guitar chord */
+	/* draw the box around the guitar chords */
+	if (box) {
 		xboxl -= 2;
-		w = xboxh - xboxl + 2;
-		putxy(xboxl, yboxl - 2);
-#if 1
-		a2b("y%d %.1f boxdraw\n",
-			s->staff, yboxh - yboxl + 3);
-#else
-		a2b("y%d %.1f %.1f box\n",
-			s->staff, w, yboxh - yboxl + 3);
-#endif
+		putxy(xboxl, yboxl - 1);
+		a2b("y%d %.1f boxdraw\n", s->staff, yboxh - yboxl + 3);
 	}
 }
 

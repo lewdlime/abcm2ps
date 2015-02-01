@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2014 Jean-François Moine
+ * Copyright (C) 1998-2015 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -763,7 +763,7 @@ static float gchord_width(struct SYMBOL *s,
 			wl = -gch->x;
 			if (wl > lspc)
 				lspc = wl;
-			w = gch->w - wl;
+			w = gch->w + 2 - wl;
 			if (w > rspc)
 				rspc = w;
 			break;
@@ -1887,7 +1887,8 @@ setnl:
 	if (cfmt.custos && !first_voice->next) {
 		custos_add(s);
 	} else {
-		switch (s->ts_prev->type) {
+		s2 = s->ts_prev;
+		switch (s2->type) {
 		case BAR:
 		case FMTCHG:
 		case CLEF:
@@ -1895,7 +1896,6 @@ setnl:
 		case TIMESIG:
 			break;
 		default:			/* add an extra symbol at eol */
-			s2 = s->ts_prev;
 			p_voice = &voice_tb[s2->voice];
 			p_voice->last_sym = s2;
 			p_voice->time = s->time;
@@ -1911,8 +1911,10 @@ setnl:
 			extra->sflags |= S_SEQST;
 			extra->wl = 6;
 			extra->wr = 6;
-			extra->shrink = extra->prev->wr + 6;
-			extra->space = extra->prev->space;
+//			extra->shrink = extra->prev->wr + 6;
+//			extra->space = extra->prev->space;
+			extra->shrink = s->shrink;
+			extra->space = s->space;
 			if (s->x != 0) {	/* auto break */
 				for (s2 = s->ts_next; ; s2 = s2->ts_next) {
 					if (s2->x != 0) {
@@ -2036,10 +2038,12 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 		}
 
 		/* no good place, cut here */
-		for (s = s->ts_prev ; ; s = s->ts_prev) {
-			if (s->x != 0)
-				break;
-		}
+//		for (s = s->ts_prev ; ; s = s->ts_prev) {
+//			if (s->x != 0)
+//				break;
+//		}
+		while (s->x == 0)
+			s = s->ts_prev;
 cut_here:
 		if (s->sflags & S_NL) {		/* already set here - advance */
 			error(0, s, "Line split problem - "
@@ -3572,38 +3576,55 @@ static int same_head(struct SYMBOL *s1, struct SYMBOL *s2)
 	/* check if a common unison */
 	i1 = i2 = 0;
 	if (s1->pits[0] > s2->pits[0]) {
+		if (s1->stem < 0)
+			return 0;
 		while (s2->pits[i2] != s1->pits[0]) {
-			if (i2++ >= s2->nhd)
+			if (++i2 > s2->nhd)
 				return 0;
 		}
 	} else if (s1->pits[0] < s2->pits[0]) {
+		if (s2->stem < 0)
+			return 0;
 		while (s2->pits[0] != s1->pits[i1]) {
-			if (i1++ >= s1->nhd)
+			if (++i1 > s1->nhd)
 				return 0;
 		}
 	}
+	if (s2->as.u.note.accs[i2] != s1->as.u.note.accs[i1])
+		return 0;
 	i11 = i1;
 	i21 = i2;
 	sh1 = s1->shhd[i1];
 	sh2 = s2->shhd[i2];
 	do {
-		if (i1++ >= s1->nhd) {
-			if (s1->pits[0] > s2->pits[0])
-				return 0;
+		i1++;
+		i2++;
+		if (i1 > s1->nhd) {
+//			if (s1->pits[0] < s2->pits[0])
+//				return 0;
 			break;
 		}
-		if (i2++ >= s2->nhd) {
-			if (s1->pits[0] < s2->pits[0])
-				return 0;
+		if (i2 > s2->nhd) {
+//			if (s1->pits[0] > s2->pits[0])
+//				return 0;
 			break;
 		}
 		if (s2->as.u.note.accs[i2] != s1->as.u.note.accs[i1])
 			return 0;
 		if (sh1 < s1->shhd[i1])
 			sh1 = s1->shhd[i1];
-		if (sh2 < s1->shhd[i2])
-			sh2 = s1->shhd[i2];
+		if (sh2 < s2->shhd[i2])
+			sh2 = s2->shhd[i2];
 	} while (s2->pits[i2] == s1->pits[i1]);
+	if (i1 <= s1->nhd) {
+		if (i2 <= s2->nhd)
+			return 0;
+		if (s2->stem > 0)
+			return 0;
+	} else if (i2 <= s2->nhd) {
+		if (s1->stem > 0)
+			return 0;
+	}
 	i12 = i1;
 	i22 = i2;
 
@@ -3869,7 +3890,8 @@ static void set_overlap(void)
 			goto acc_shift;
 
 		if (same_head(s1, s2))
-			goto acc_shift;
+//			goto acc_shift;
+			continue;
 
 #if 0
 		/* check simple unison */
@@ -3939,13 +3961,24 @@ static void set_overlap(void)
 				t = 1;
 				break;
 			case -1:
-				if (s1->dots && s2->dots)
-					t = 1;
+//				if (s1->dots && s2->dots)
+//					t = 1;
+				if (s1->dots && s2->dots) {
+					if (s1->pits[i1] & 1) {
+						s1->doty = 0;
+						s2->doty = 0;
+					} else {
+						s1->doty = -3;
+						s2->doty = -3;
+					}
+				}
 				break;
 			case -2:
 				if (s1->dots && s2->dots
 				 && !(s1->pits[i1] & 1)) {
-					t = 1;
+//					t = 1;
+					s1->doty = 0;
+					s2->doty = 0;
 					break;
 				}
 				break;
@@ -3962,7 +3995,7 @@ static void set_overlap(void)
 			}
 		}
 		
-		if (t < 0) {	/* unison and different accidentals */
+		if (t < 0) {		/* unison and different accidentals */
 			unison_acc(s1, s2, i1, i2);
 			continue;
 		}
@@ -3973,35 +4006,22 @@ static void set_overlap(void)
 			if (s2->dots) {
 				if (!t)			/* if no dot clash */
 					sd = 1;		/* align the dots */
-				if (d2 + dr < d + dr2) {
-					s1 = s2;
-					s2 = s;
-					d = d2;
-					pl = left1;
-					pr = right1;
-					dr2 = dr;
-				}
-			} else if (d2 + dr < d + dr2) {
-				s1 = s2;	/* invert the voices */
-				s2 = s;
-				d = d2;
-				pl = left1;
-				pr = right1;
-				dr2 = dr;
 			}
 		} else if (s2->dots) {
-			;
-		} else {
-			if (d2 + dr < d + dr2) {
-				s1 = s2;	/* invert the voices */
-				s2 = s;
-				d = d2;
-				pl = left1;
-				pr = right1;
-				dr2 = dr;
-			}
+			if (d2 + dr < d + dr2)
+				sd = 1;			/* align the dots */
+		}
+		if (d2 + dr < d + dr2) {
+			s1 = s2;			/* invert the voices */
+			s2 = s;
+			d = d2;
+			pl = left1;
+			pr = right1;
+			dr2 = dr;
 		}
 		d += 3;
+		if (d < 0)
+			d = 0;				// (not return!)
 
 		/* handle the previous shift */
 		m = s1->stem >= 0 ? 0 : s1->nhd;
@@ -4014,7 +4034,6 @@ static void set_overlap(void)
 		 * - if the dots of v1 don't shift, adjust the shift of v2
 		 * - otherwise, align the dots and shift them if clash
 		 */
-//	do_shift:
 		if (s1->dots) {
 			dx = 7.7 + s1->xmx +		// x 1st dot
 				3.5 * s1->dots - 3.5 +	// x last dot
@@ -4075,9 +4094,9 @@ static void set_overlap(void)
 
 		for (m = s2->nhd; m >= 0; m--) {
 			s2->shhd[m] += d;
-			if (s2->as.u.note.accs[m] != 0
-			 && s2->pits[m] < s1->pits[0] - 4)
-				s2->shac[m] -= d;
+//			if (s2->as.u.note.accs[m] != 0
+//			 && s2->pits[m] < s1->pits[0] - 4)
+//				s2->shac[m] -= d;
 		}
 		s2->xmx += d;
 		if (sd)
@@ -4090,8 +4109,8 @@ static void set_overlap(void)
 				continue;
 			for (i2 = 0; i2 <= s2->nhd; i2++) {
 				dp = s1->pits[i1] - s2->pits[i2];
-				if (dp > 5 || dp < -5)
-					continue;
+//				if (dp > 5 || dp < -5)
+//					continue;
 				if (s2->as.u.note.accs[i2] == 0) {
 					if (s2->shhd[i2] < 0
 					 && dp == 3)
@@ -4099,7 +4118,7 @@ static void set_overlap(void)
 					continue;
 				}
 				if (dp == 0) {
-					s2->as.u.note.accs[i2] = 0;
+//					s2->as.u.note.accs[i2] = 0;
 					continue;
 				}
 				dx = (dp <= -4 || dp >= 4) ? 4.5 : 7;
@@ -4765,8 +4784,14 @@ static void gen_init(void)
 	struct SYMBOL *s;
 
 	for (s = tsfirst ; s; s = s->ts_next) {
-		if (s->extra)
-			output_ps(s, ABC_S_HEAD);
+		if (s->extra) {
+			output_ps(s, 0);
+			if (!s->extra && s->type == FMTCHG) {
+				unlksym(s);
+				if (!tsfirst)
+					return;
+			}
+		}
 		if (s->sflags & S_NEW_SY) {
 			s->sflags &= ~S_NEW_SY;
 			cursys = cursys->next;
@@ -4776,15 +4801,8 @@ static void gen_init(void)
 		case KEYSIG:
 		case TIMESIG:
 			continue;
-		case FMTCHG:
-			if (s->extra)
-				output_ps(s, 127);
-			if (!s->extra) {
-				unlksym(s);
-				if (!tsfirst)
-					return;
-			}
-			break;		/* may be Q: */
+//		default:
+//			break;		/* may be Q: */
 		}
 		return;
 	}

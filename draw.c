@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2014 Jean-François Moine
+ * Copyright (C) 1998-2015 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -31,11 +31,43 @@ static int scale_voice;		/* staff (0) or voice(1) scaling */
 static float cur_scale = 1;	/* voice or staff scale */
 static float cur_trans = 0;	/* != 0 when scaled staff */
 static float cur_staff = 1;	/* current scaled staff */
+static int cur_color = 0;	/* current color */
 
 static void draw_note(float x,
 		      struct SYMBOL *s,
 		      int fl);
 static void set_tie_room(void);
+
+/* set the staff / voice color */
+void set_st_color(int st)
+{
+	int old_color = cur_color;
+
+	if (st < 0)
+		cur_color = 0;
+	else
+		cur_color = staff_tb[st].color;
+	if (cur_color != old_color)
+		a2b("%.2f %.2f %.2f setrgbcolor ",
+			(float) (cur_color >> 16) / 255,
+			(float) ((cur_color >> 8) & 0xff) / 255,
+			(float) (cur_color & 0xff) / 255);
+}
+
+void set_v_color(int v)
+{
+	int old_color = cur_color;
+
+	if (v < 0)
+		cur_color = 0;
+	else
+		cur_color = voice_tb[v].color;
+	if (cur_color != old_color)
+		a2b("%.2f %.2f %.2f setrgbcolor ",
+			(float) (cur_color >> 16) / 255,
+			(float) ((cur_color >> 8) & 0xff) / 255,
+			(float) (cur_color & 0xff) / 255);
+}
 
 /* output debug annotations */
 static void anno_out(struct SYMBOL *s, char type)
@@ -584,7 +616,8 @@ static void draw_beams(struct BEAM *bm)
 
 	s1 = bm->s1;
 /*fixme: KO if many staves with different scales*/
-	set_scale(s1);
+//fixme: useless?
+//	set_scale(s1);
 	s2 = bm->s2;
 	if (!(s1->as.flags & ABC_F_GRACE)) {
 		bshift = BEAM_SHIFT;
@@ -671,7 +704,7 @@ static void draw_beams(struct BEAM *bm)
 				if (s == s2)
 					break;
 				if ((s->next->type == NOTEREST
-				  && s->next->nflags < i)
+				  && s->next->nflags - s->next->u < i)
 				 || (s->next->sflags & S_BEAM_BR1)
 				 || ((s->next->sflags & S_BEAM_BR2)
 				  && i > 2))
@@ -1161,6 +1194,7 @@ static void draw_bar(struct SYMBOL *s, float bot, float h)
 	if (s->as.u.bar.len != 0) {
 		struct SYMBOL *s2;
 
+		set_st_color(s->staff);
 		set_scale(s);
 		if (s->as.u.bar.len == 1) {
 			for (s2 = s->prev; s2->as.type != ABC_T_REST; s2 = s2->prev)
@@ -1581,7 +1615,7 @@ static void draw_basic_note(float x,
 
 	/* special case when no head */
 	if (s->nohdi1 >= 0
-	 && m >= s->nohdi1 && m <= s->nohdi2) {
+	 && m >= s->nohdi1 && m < s->nohdi2) {
 		a2b("/x ");			/* set x y */
 		putx(x + shhd);
 		a2b("def/y ");
@@ -3142,6 +3176,8 @@ static void draw_ties(struct SYMBOL *k1,
 		while (k3) {
 			if (k3->type == NOTEREST) {
 				k2 = k3;	/* first grace note */
+				if (job == 2)
+					job = 0;
 				break;
 			}
 			k3 = k3->next;
@@ -4115,6 +4151,8 @@ void draw_sym_near(void)
 		s = p_voice->sym;
 		if (!s)
 			continue;
+//fixme: KO: the voice has no color yet
+//		set_v_color(s.voice);
 		set_sscale(cursys->voice[p_voice - voice_tb].staff);
 
 		/* draw the tuplets near the notes */
@@ -4558,8 +4596,9 @@ float draw_systems(float indent)
 			break;
 		default:
 //fixme:does not work for "%%staves K: M: $" */
-			if (cursys->staff[staff].empty)
-				s->as.flags |= ABC_F_INVIS;
+//removed for K:/M: in empty staves
+//			if (cursys->staff[staff].empty)
+//				s->as.flags |= ABC_F_INVIS;
 			break;
 		}
 	}
@@ -4573,31 +4612,42 @@ float draw_systems(float indent)
 	return line_height;
 }
 
-/* -- output PostScript sequences -- */
-void output_ps(struct SYMBOL *s, int state)
+/* -- output PostScript sequences and set the staff and voice colors -- */
+void output_ps(struct SYMBOL *s, int color)
 {
 	struct SYMBOL *g, *g2;
 
 	g = s->extra;
 	g2 = NULL;
-	for (;;) {
-		if (g->type == FMTCHG
-		 && (g->u == PSSEQ || g->u == SVGSEQ)
-		 && g->as.state <= state) {
-			if (g->u == SVGSEQ)
-				a2b("%%svg %s\n", g->as.text);
-			else
-				a2b("%s\n", g->as.text);
-			if (!g2)
-				s->extra = g->next;
-			else
-				g2->next = g->next;
-		} else {
-			g2 = g;
+	for ( ; g; g = g->next) {
+		if (g->type == FMTCHG) {
+			switch (g->u) {
+			case PSSEQ:
+			case SVGSEQ:
+				if (g->u == SVGSEQ)
+					a2b("%%svg %s\n", g->as.text);
+				else
+					a2b("%s\n", g->as.text);
+				if (!g2)
+					s->extra = g->next;
+				else
+					g2->next = g->next;
+				continue;
+			case STAFF_COLOR:
+				staff_tb[s->staff].color =
+					g->as.u.length.base_length;
+				if (color)
+					set_st_color(s->staff);
+				break;
+			case VOICE_COLOR:
+				voice_tb[s->voice].color =
+					g->as.u.length.base_length;
+				if (color)
+					set_v_color(s->voice);
+				break;
+			}
 		}
-		g = g->next;
-		if (!g)
-			break;
+		g2 = g;
 	}
 }
 
@@ -4609,10 +4659,11 @@ static void draw_symbols(struct VOICE_S *p_voice)
 	float x, y;
 	int staff, first_note;
 
+#if 0
 	/* output the PostScript code at start of line */
 	for (s = p_voice->sym; s; s = s->next) {
 		if (s->extra)
-			output_ps(s, 127);
+			output_ps(s, 1);
 		switch (s->type) {
 		case CLEF:
 		case KEYSIG:
@@ -4622,12 +4673,14 @@ static void draw_symbols(struct VOICE_S *p_voice)
 		}
 		break;
 	}
+#endif
 
 	bm.s2 = NULL;
 	first_note = 1;
+	set_v_color(p_voice - voice_tb);
 	for (s = p_voice->sym; s; s = s->next) {
 		if (s->extra)
-			output_ps(s, 127);
+			output_ps(s, 1);
 		if ((s->as.flags & ABC_F_INVIS)
 		 && s->type != NOTEREST && s->type != GRACE)
 			continue;
@@ -4663,6 +4716,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 		case BAR:
 			break;			/* drawn in draw_systems */
 		case CLEF:
+//fixme: set staff color
 			staff = s->staff;
 			if (s->sflags & S_SECOND)
 /*			 || p_voice->staff != staff)	*/
@@ -4694,6 +4748,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				anno_out(s, 'c');
 			break;
 		case TIMESIG:
+//fixme: set staff color
 			memcpy(&p_voice->meter, &s->as.u.meter,
 					sizeof p_voice->meter);
 			if ((s->sflags & S_SECOND)
@@ -4707,6 +4762,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				anno_out(s, 'M');
 			break;
 		case KEYSIG:
+//fixme: set staff color
 			memcpy(&p_voice->key, &s->as.u.key,
 					sizeof p_voice->key);
 			if ((s->sflags & S_SECOND)
@@ -4742,6 +4798,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 	}
 	set_scale(p_voice->sym);
 	draw_all_ties(p_voice);
+	set_v_color(-1);
 }
 
 /* -- draw all symbols -- */
@@ -4751,10 +4808,11 @@ void draw_all_symb(void)
 	struct SYMBOL *s;
 
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
-#if 1 /*fixme:test*/
+#if 0 /* no: did display the rests when "%%staffnonote 0" */
 		if (!p_voice->sym)
 #else
-		if (staff_tb[p_voice->staff].empty || !p_voice->sym)
+		if (!p_voice->sym
+		 || staff_tb[p_voice->staff].empty)
 #endif
 			continue;
 		draw_symbols(p_voice);
@@ -4798,39 +4856,24 @@ void putxy(float x, float y)
 /* -- set the voice or staff scale -- */
 void set_scale(struct SYMBOL *s)
 {
-	int staff;
 	float scale, trans;
 
-	staff = -1;
 	scale = voice_tb[s->voice].scale;
 	if (scale == 1) {
-		staff = s->staff;
-		scale = staff_tb[staff].staffscale;
+		set_sscale(s->staff);
+		return;
 	}
 /*fixme: KO when both staff and voice are scaled */
-	if (staff >= 0 && scale != 1) {
-		trans = staff_tb[staff].y;
-		scale_voice = 0;
-		if (staff != cur_staff && cur_scale != 1)
-			cur_scale = 0;
-	} else {
-		trans = 0;
-		scale_voice = 1;
-	}
+	trans = 0;
+	scale_voice = 1;
 	if (scale == cur_scale && trans == cur_trans)
 		return;
 	if (cur_scale != 1)
 		a2b("grestore ");
 	cur_scale = scale;
 	cur_trans = trans;
-	if (scale != 1) {
-		if (scale_voice) {
-			a2b("scvo%d ", s->voice);
-		} else {
-			a2b("scst%d ", staff);
-			cur_staff = staff;
-		}
-	}
+	if (scale != 1)
+		a2b("scvo%d ", s->voice);
 }
 
 /* -- set the staff scale (only) -- */
@@ -4935,22 +4978,21 @@ static void set_tie_dir(struct SYMBOL *sym)
 						dir = SL_ABOVE;
 				}
 				continue;
-			} else {
-/* even number of notes, ties divided in opposite directions */
-				ntie /= 2;
-				dir = SL_BELOW;
-				for (i = 0; i <= s->nhd; i++) {
-					ti = s->as.u.note.ti1[i];
-					if (ti == 0)
-						continue;
-					if ((ti & 0x03) == SL_AUTO)
-						s->as.u.note.ti1[i] =
-							(ti & SL_DOTTED) | dir;
-					if (--ntie == 0)
-						dir = SL_ABOVE;
-				}
-				continue;
 			}
+/* even number of notes, ties divided in opposite directions */
+			ntie /= 2;
+			dir = SL_BELOW;
+			for (i = 0; i <= s->nhd; i++) {
+				ti = s->as.u.note.ti1[i];
+				if (ti == 0)
+					continue;
+				if ((ti & 0x03) == SL_AUTO)
+					s->as.u.note.ti1[i] =
+						(ti & SL_DOTTED) | dir;
+				if (--ntie == 0)
+					dir = SL_ABOVE;
+			}
+			continue;
 		}
 /*fixme: treat more than one second */
 /*		if (nsec == 1) {	*/

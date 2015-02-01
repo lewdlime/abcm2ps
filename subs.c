@@ -3,22 +3,13 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2014 Jean-François Moine
+ * Copyright (C) 1998-2015 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA  02110-1335  USA
  */
 
 #include <stdio.h>
@@ -50,38 +41,22 @@ static char strtx;		/* PostScript text outputing (bits) */
 /* these are the widths for Times-Roman, extracted from the 'a2ps' package */
 /*fixme-hack: set 500 to control characters for utf-8*/
 static short cw_tb[] = {
+	500,500,500,500,500,500,500,500,	// 00
 	500,500,500,500,500,500,500,500,
+	500,500,500,500,500,500,500,500,	// 10
 	500,500,500,500,500,500,500,500,
-	500,500,500,500,500,500,500,500,
-	500,500,500,500,500,500,500,500,
-	250,333,408,500,500,833,778,333,
+	250,333,408,500,500,833,778,333,	// 20
 	333,333,500,564,250,564,250,278,
-	500,500,500,500,500,500,500,500,
+	500,500,500,500,500,500,500,500,	// 30
 	500,500,278,278,564,564,564,444,
-	921,722,667,667,722,611,556,722,
+	921,722,667,667,722,611,556,722,	// 40
 	722,333,389,722,611,889,722,722,
-	556,722,667,556,611,722,722,944,
+	556,722,667,556,611,722,722,944,	// 50
 	722,722,611,333,278,333,469,500,
-	333,444,500,444,500,444,333,500,
+	333,444,500,444,500,444,333,500,	// 60
 	500,278,278,500,278,778,500,500,
-	500,500,333,389,278,500,500,722,
+	500,500,333,389,278,500,500,722,	// 70
 	500,500,444,480,200,480,541,500,
-	500,500,500,500,500,500,500,500,
-	500,500,500,500,500,500,500,500,
-	500,500,500,500,500,500,500,500,
-	500,500,500,500,500,500,500,500,
-	250,333,500,500,500,500,200,500,
-	333,760,276,500,564,333,760,333,
-	400,564,300,300,333,500,453,350,
-	333,278,310,500,750,750,750,444,
-	722,722,722,722,722,722,889,667,
-	611,611,611,611,333,333,333,333,
-	722,722,722,722,722,722,722,564,
-	722,722,722,722,722,722,556,500,
-	444,444,444,444,444,444,667,444,
-	444,444,444,444,278,278,278,278,
-	500,500,500,500,500,500,500,564,
-	500,500,500,500,500,500,500,500,
 };
 
 static struct u_ps {
@@ -172,10 +147,13 @@ static void cap_str(char *p)
 }
 
 /* -- return the character width -- */
-float cwid(unsigned short c)
+float cwid(unsigned char c)
 {
-	if (c > sizeof cw_tb / sizeof cw_tb[0])
+	if (c > 0x80) {
+		if (c < 0xc0)
+			return 0;	// not start of utf8 character
 		c = 'a';
+	}
 	return (float) cw_tb[c] / 1000.;
 }
 
@@ -184,7 +162,7 @@ float cwid(unsigned short c)
 float tex_str(char *s)
 {
 	char *d;
-	signed char c1;
+	unsigned char c1;
 	unsigned maxlen, i;
 	float w, swfac;
 
@@ -194,7 +172,10 @@ float tex_str(char *s)
 	if ((i = curft) <= 0)
 		i = defft;
 	swfac = cfmt.font_tb[i].swfac;
-	while ((c1 = *s++) != '\0') {
+	while (1) {
+		c1 = (unsigned char) *s++;
+		if (c1 == '\0')
+			break;
 		switch (c1) {
 		case '\\':
 			c1 = *s++;
@@ -259,19 +240,15 @@ float tex_str(char *s)
 					*d++ = 0x80 | ((v >> 6) & 0x3f);
 					*d++ = 0x80 | (v & 0x3f);
 				}
+				w += cwid('a') * swfac;
 				s += j;
 				continue;
 			}
 			break;
 		}
-		if (c1 < 0) {
-			if ((c1 & 0xc0) == 0x80) {
-				unsigned short unicode;
-
-/*fixme: does not work with utf-8 on 3 characters*/
-				unicode = ((d[-1] & 0x0f) << 6) | (c1 & 0x3f);
-				w += cwid(unicode) * swfac;
-			}
+		if (c1 >= 0x80) {
+			if (c1 >= 0xc0)
+				w += cwid('a') * swfac;	// start of unicode char
 		} else if (c1 <= 5) {		/* accidentals from gchord */
 			if (--maxlen < 4)
 				break;
@@ -307,7 +284,7 @@ float tex_str(char *s)
 			w += cwid('a') * swfac;
 			continue;
 		} else {
-			w += cwid((unsigned short) c1) * swfac;
+			w += cwid(c1) * swfac;
 		}
 	addchar_nowidth:
 		if (--maxlen <= 0)
@@ -846,6 +823,11 @@ static void str_ft_out(char *p, int end)
 //				set_font(curft);
 			}
 			str_end(0);
+			if (curft != outft) {
+				str_end(1);
+				a2b(" ");
+				set_font(curft);
+			}
 			if (!(strtx & TX_ARR)) {
 				a2b("[");
 				strtx |= TX_ARR;
@@ -1458,7 +1440,7 @@ void write_title(struct SYMBOL *s)
 		a2b("%.1f",
 		     0.5 * ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 			- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale);
-	a2b(" %.1f M ", sz * 0.2);
+	a2b(" %.1f M", sz * 0.2);
 	p = trim_title(p, s);
 	put_str(p, cfmt.titleleft ? A_LEFT : A_CENTER);
 }

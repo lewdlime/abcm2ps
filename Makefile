@@ -1,16 +1,16 @@
 # Makefile source for abcm2ps
 
-VERSION = 8.4.0
+VERSION = 8.5.2
 
 CC = gcc
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 
-CPPFLAGS =  -I.
-CPPPANGO = 
+CPPFLAGS = -DHAVE_PANGO=1 -I.
+CPPPANGO = -I/usr/include/pango-1.0 -pthread -I/usr/include/cairo -I/usr/include/glib-2.0 -I/usr/lib/arm-linux-gnueabihf/glib-2.0/include -I/usr/include/pixman-1  -I/usr/include/libpng12 -I/usr/include/freetype2  
 CFLAGS = -g -O2 -Wall -pipe
-LDFLAGS =  -lm
+LDFLAGS =  -lpangocairo-1.0 -lcairo -lpangoft2-1.0 -lpango-1.0 -lgobject-2.0 -lglib-2.0 -lfontconfig -lfreetype   -lm
 
 prefix = /usr/local
 exec_prefix = ${prefix}
@@ -30,8 +30,8 @@ abcm2ps: $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(LDFLAGS)
 
 $(OBJECTS): abcparse.h config.h Makefile
-abc2ps.o buffer.o deco.o draw.o format.o front.o glyph.o music.o parse.o \
-	subs.o svg.o syms.o: abc2ps.h
+abcparse.o abc2ps.o buffer.o deco.o draw.o format.o front.o glyph.o \
+	music.o parse.o subs.o svg.o syms.o: abc2ps.h
 front.o parse.o slre.o: slre.h
 subs.o: subs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPPANGO) -c -o $@ $<
@@ -80,6 +80,7 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/format.c \
 	abcm2ps-$(VERSION)/front.c \
 	abcm2ps-$(VERSION)/glyph.c \
+	abcm2ps-$(VERSION)/glyphs.abc \
 	abcm2ps-$(VERSION)/landscape.fmt \
 	abcm2ps-$(VERSION)/music.c \
 	abcm2ps-$(VERSION)/musicfont.fmt \

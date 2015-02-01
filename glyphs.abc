@@ -1,0 +1,54 @@
+% Definition of the glyph names of some musical unicode characters
+% for use in PostScript output (without pango) with abcm2ps.
+% These values were extracted from FreeSerif.ttf.
+
+%					% character value in string
+%%glyph	 2669 quarternote		% \u2669
+%%glyph	 266a musicalnote		% \u266a
+%%glyph	 266b musicalnotedbl		% \u266b
+%%glyph	 266c beamedsixteenthnotes	% \u266c
+%%glyph	 266d flat			% \u266d
+%%glyph	 266e natural			% \u266e
+%%glyph	 266f sharp			% \u266f
+%%glyph 1d109 dal_segno			% \ud834\udd09
+%%glyph 1d10a dal_capo			% \ud834\udd0a
+%%glyph 1d10b segno			% \ud834\udd0b
+%%glyph 1d10c coda			% \ud834\udd0c
+%%glyph 1d110 fermata			% \ud834\udd10
+%%glyph 1d112 breath_mark		% \ud834\udd12
+%%glyph 1d113 caesura			% \ud834\udd13
+%%glyph 1d114 brace			% \ud834\udd14
+%%glyph 1d115 bracket			% \ud834\udd15
+%%glyph 1d11e g_clef			% \ud834\udd1e
+%%glyph 1d11f g_clef_ottava_alta	% \ud834\udd1f
+%%glyph 1d120 g_clef_ottava_bassa	% \ud834\udd20
+%%glyph 1d121 c_clef			% \ud834\udd21
+%%glyph 1d122 f_clef			% \ud834\udd22
+%%glyph 1d123 f_clef_ottava_alta	% \ud834\udd23
+%%glyph 1d124 f_clef_ottava_bassa	% \ud834\udd24
+%%glyph 1d125 drum_clef_1		% \ud834\udd25
+%%glyph 1d126 drum_clef_2		% \ud834\udd26
+%%glyph 1d12a double_sharp		% \ud834\udd2a
+%%glyph 1d12b double_flat		% \ud834\udd2b
+%%glyph 1d134 common_time		% \ud834\udd34
+%%glyph 1d135 cut_time			% \ud834\udd35
+%%glyph 1d136 ottava_alta		% \ud834\udd36
+%%glyph 1d137 ottava_bassa		% \ud834\udd37
+%%glyph 1d13d quarter_rest		% \ud834\udd3d
+%%glyph 1d15d whole_note		% \ud834\udd5d
+%%glyph 1d15e half_note			% \ud834\udd5e
+%%glyph 1d15f quarter_note		% \ud834\udd5f
+%%glyph 1d160 eighth_note		% \ud834\udd60
+%%glyph 1d18d subito			% \ud834\udd8d
+%%glyph 1d18e z_mus			% \ud834\udd8e
+%%glyph 1d18f piano			% \ud834\udd8f
+%%glyph 1d190 mezzo			% \ud834\udd90
+%%glyph 1d191 forte			% \ud834\udd91
+%%glyph 1d19b ornament_stroke_1		% \ud834\udd9b
+%%glyph 1d19c ornament_stroke_2		% \ud834\udd9c
+%%glyph 1d19d ornament_stroke_3		% \ud834\udd9d
+%%glyph 1d19e ornament_stroke_4		% \ud834\udd9e
+%%glyph 1d1a0 ornament_stroke_6		% \ud834\udda0
+%%glyph 1d1a3 ornament_stroke_9		% \ud834\udda9
+%%glyph 1d1ae pedal_mark		% \ud834\uddae
+%%glyph 1d1af pedal_up_mark		% \ud834\uddaf

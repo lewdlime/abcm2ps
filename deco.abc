@@ -7,11 +7,6 @@
 % == postscript definitions - must be before any tune ==
 %
 %%beginps
-% -- cresc / decresc / dimin
-/crdc{		% usage: str x y crdc - cresc, decresc, ..
-	/Times-Italic 14 selectfont
-	M -6 4 RM show}!
-%
 % -- alternate piano/forte indication between parenthesis
 /apf{		% usage: str x y apf
 	M -6 5 RM
@@ -311,10 +306,10 @@
 %
 % -- dynamic indication below the staff
 %%deco fp 6 pf 18 5 11 fp
-%%deco cresc 6 crdc 20 4 28 Cresc.
-%%deco decresc 6 crdc 20 4 32 Decresc.
-%%deco dimin 6 crdc 20 4 28 Dimin.
-%%deco riten 6 crdc 20 8 40 Poco riten.
+%%deco cresc 6 crdc 20 10 22 Cresc.
+%%deco decresc 6 crdc 20 10 26 Decresc.
+%%deco dimin 6 crdc 20 10 22 Dimin.
+%%deco riten 6 crdc 20 12 34 Poco riten.
 %
 % -- dynamic indication below the staff between parenthesis
 %%deco (p) 6 apf 20 8 16 p
@@ -390,18 +385,17 @@ X:1
 T:Customized decorations
 M:C
 L:1/8
-K:C treble-8
+K:C
 !biga!y!fp!"C"C!t2ub!C !cresc!"D"D!t3tab!D !decresc!"E"E!ubt3ta!E !dimin!"F"F!tbt3!F|\
 !mp!"G"G!t2ta!G !(p)!A!t3b!c T!b!!(pp)!A2 P!#!!(f)!B2|M!=!!(ff)!c8|
 %
-K: clef=treble
 !8(!!riten!EF !-!G2 !ped!GA!ped-end!B!8)!c|!8b(!!bigb!C2!()!E2 !tr(!G3!tr)!!8b)!c!alcoda!|\
 CE!-(!G2!-)!C2c2|
 %
 "Dm"!Dm!e3/d/ d6 | "Bb"!Bb!z2 d/d3/ "C7"!C7!cB/A/- AG |\
 F!accent!G!accn!AB !sfa!c4||
 
-X:3
+X:2
 T:Decorations with abcm2ps 4.x.x
 M:C
 L:1/4

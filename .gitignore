@@ -39,3 +39,13 @@
 Icon?
 ehthumbs.db
 Thumbs.db
+
+# IDE crap #
+############
+.codelite
+*.project
+*.workspace
+
+# Diff and editor detritus #
+############################
+*.rej

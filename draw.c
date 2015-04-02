@@ -1445,6 +1445,7 @@ static void draw_gracenotes(struct SYMBOL *s)
 
 	/* slur */
 	if (voice_tb[s->voice].key.mode >= BAGPIPE /* no slur when bagpipe */
+	 || bagpipe
 	 || !cfmt.graceslurs
 	 || s->as.u.note.slur_st		/* explicit slur */
 	 || !s->next

@@ -44,6 +44,7 @@ int pagenumbers;		/* write page numbers */
 int epsf;			/* 1: EPSF, 2: SVG, 3: embedded ABC */
 int svg;			/* 1: SVG, 2: XHTML */
 int showerror;			/* show the errors */
+int bagpipe = 0;	/* force formatting as a bagpipe tune even if the key is not HP */
 
 char outfn[FILENAME_MAX];	/* output file name */
 int file_initialized;		/* for output file */
@@ -453,6 +454,7 @@ static void usage(void)
 		"     -v      produce SVG output, one page per file\n"
 		"     -X      produce SVG output in one XHTML file\n"
 		"     -z      produce SVG output from embedded ABC\n"
+		"     -p      force tune to be formatted for bagpipers\n"
 		"     -O fff  set outfile name to fff\n"
 		"     -O =    make outfile name from infile/title\n"
 		"     -i      indicate where are the errors\n"
@@ -605,6 +607,9 @@ int main(int argc, char **argv)
 				break;
 			case 'h':
 				usage();	/* no return */
+			case 'p':
+				bagpipe = 1;
+				break;
 			case 'q':
 				quiet = 1;
 				break;
@@ -860,6 +865,7 @@ int main(int argc, char **argv)
 					cfmt.fields[1] &= ~(1 << ('w' - 'a'));
 					lock_fmt(&cfmt.fields);
 					break;
+				case 'p':
 				case 'q':
 				case 'S':
 					break;

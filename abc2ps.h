@@ -339,6 +339,7 @@ extern int pagenumbers; 	/* write page numbers */
 extern int epsf;		/* 1: EPSF, 2: SVG, 3: embedded ABC */
 extern int svg;			/* 1: SVG, 2: XHTML */
 extern int showerror;		/* show the errors */
+extern int bagpipe;		/* force formatting as a bagpipe tune even if the key is not HP */
 
 extern char outfn[FILENAME_MAX]; /* output file name */
 extern char *in_fname;		/* current input file name */

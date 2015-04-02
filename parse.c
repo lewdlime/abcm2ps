@@ -2536,7 +2536,7 @@ static void set_global_def(void)
 	for (i = MAXVOICE, p_voice = voice_tb;
 	     --i >= 0;
 	     p_voice++) {
-		if (p_voice->key.mode >= BAGPIPE
+		if ((p_voice->key.mode >= BAGPIPE || bagpipe)
 		 && p_voice->posit.std == 0)
 			p_voice->posit.std = SL_BELOW;
 		p_voice->transpose = cfmt.transpose;
@@ -3690,7 +3690,7 @@ static void get_key(struct SYMBOL *s)
 					sizeof curvoice->ckey);
 		memcpy(&curvoice->okey, &okey,
 					sizeof curvoice->okey);
-		if (curvoice->key.mode >= BAGPIPE
+		if ((curvoice->key.mode >= BAGPIPE || bagpipe)
 		 && curvoice->posit.std == 0)
 			curvoice->posit.std = SL_BELOW;
 		curvoice->transpose = cfmt.transpose;
@@ -3966,7 +3966,7 @@ static void get_note(struct SYMBOL *s)
 	} else {			/* grace note - adjust its duration */
 		int div;
 
-		if (curvoice->key.mode < BAGPIPE) {
+		if (curvoice->key.mode < BAGPIPE && !bagpipe) {
 			div = 2;
 			if (!prev
 			 || !(prev->as.flags & ABC_F_GRACE)) {

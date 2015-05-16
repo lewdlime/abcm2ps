@@ -23,15 +23,15 @@ datadir = @datarootdir@
 docdir = @docdir@
 
 # unix
-OBJECTS=abc2ps.o \
+OBJECTS=abcm2ps.o \
 	abcparse.o buffer.o deco.o draw.o format.o front.o glyph.o music.o parse.o \
 	slre.o subs.o svg.o syms.o
 abcm2ps: $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(LDFLAGS)
 
-$(OBJECTS): abcparse.h config.h Makefile
-abcparse.o abc2ps.o buffer.o deco.o draw.o format.o front.o glyph.o \
-	music.o parse.o subs.o svg.o syms.o: abc2ps.h
+$(OBJECTS): config.h Makefile
+abcparse.o abcm2ps.o buffer.o deco.o draw.o format.o front.o glyph.o \
+	music.o parse.o subs.o svg.o syms.o: abcm2ps.h
 front.o parse.o slre.o: slre.h
 subs.o: subs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPPANGO) -c -o $@ $<
@@ -62,11 +62,11 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/Makefile \
 	abcm2ps-$(VERSION)/Makefile.in \
 	abcm2ps-$(VERSION)/README \
-	abcm2ps-$(VERSION)/abc2ps.c \
-	abcm2ps-$(VERSION)/abc2ps.h \
+	abcm2ps-$(VERSION)/abcm2ps.c \
+	abcm2ps-$(VERSION)/abcm2ps.h \
 	abcm2ps-$(VERSION)/abcparse.c \
-	abcm2ps-$(VERSION)/abcparse.h \
 	abcm2ps-$(VERSION)/accordion.abc \
+	abcm2ps-$(VERSION)/bravura.abc \
 	abcm2ps-$(VERSION)/build.ninja \
 	abcm2ps-$(VERSION)/buffer.c \
 	abcm2ps-$(VERSION)/chinese.abc \
@@ -78,6 +78,7 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/draw.c \
 	abcm2ps-$(VERSION)/flute.fmt \
 	abcm2ps-$(VERSION)/format.c \
+	abcm2ps-$(VERSION)/free.abc \
 	abcm2ps-$(VERSION)/front.c \
 	abcm2ps-$(VERSION)/glyph.c \
 	abcm2ps-$(VERSION)/glyphs.abc \

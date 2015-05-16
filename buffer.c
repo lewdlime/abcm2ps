@@ -17,11 +17,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#ifdef WIN32
-#define snprintf _snprintf
-#endif
-
-#include "abc2ps.h" 
+#include "abcm2ps.h" 
 
 #define BUFFLN	80		/* max number of lines in output buffer */
 
@@ -34,7 +30,8 @@ static signed char ln_font[BUFFLN];	/* font of buffered lines */
 static float cur_lmarg = 0;	/* current left margin */
 static float min_lmarg, max_rmarg;	/* margins for -E/-g */
 static float cur_scale = 1.0;	/* current scale */
-static float maxy;		/* remaining vertical space in page */
+static float maxy;		/* usable vertical space in page */
+static float remy;		/* remaining vertical space in page */
 static float bposy;		/* current position in buffered data */
 static int nepsf;		/* counter for -E/-g output files */
 static int nbpages;		/* number of pages in the output file */
@@ -329,6 +326,7 @@ void close_page(void)
 	cur_lmarg = 0;
 	cur_scale = 1.0;
 	outft = -1;
+	use_buffer = 0;
 }
 
 /* -- output a header/footer element -- */
@@ -380,7 +378,7 @@ static void format_hf(char *d, char *p)
 			p++;
 			if (*p < 'A' || *p > 'Z' || !info[*p - 'A'])
 				break;
-			d += sprintf(d, "%s", &info[*p - 'A']->as.text[2]);
+			d += sprintf(d, "%s", &info[*p - 'A']->text[2]);
 			break;
 		case 'P':		/* page number */
 			if (p[1] == '0') {
@@ -395,7 +393,7 @@ static void format_hf(char *d, char *p)
 			d += sprintf(d, "%d", pagenum);
 			break;
 		case 'T':		/* tune title */
-			q = &info['T' - 'A']->as.text[2];
+			q = &info['T' - 'A']->text[2];
 			tex_str(q);
 			d += sprintf(d, "%s", tex_buf);
 			break;
@@ -415,11 +413,12 @@ static float headfooter(int header,
 			float pwidth,
 			float pheight)
 {
-	char tmp[TEX_BUF_SZ], str[TEX_BUF_SZ + 1024];
-	char *p, *q, *r, *mbf_sav;
+	char tmp[2048], str[TEX_BUF_SZ + 512];
+	char *p, *q, *r, *outbuf_sav, *mbf_sav;
 	float size, y, wsize;
 	struct FONTSPEC *f, f_sav;
-	int cft_sav, dft_sav;
+
+	int cft_sav, dft_sav, outbufsz_sav;
 
 	if (header) {
 		p = cfmt.header;
@@ -453,6 +452,10 @@ static float headfooter(int header,
 		*r = '\0';
 	}
 	mbf_sav = mbf;
+	outbuf_sav = outbuf;
+	outbufsz_sav = outbufsz;
+	outbuf = tmp;
+	outbufsz = sizeof tmp;
 	for (;;) {
 		tex_str(p);
 		strcpy(tmp, tex_buf);
@@ -465,13 +468,13 @@ static float headfooter(int header,
 				*q = '\0';
 				output(fout, "%.1f %.1f M ",
 					p_fmt->leftmargin, y);
+				mbf = tmp;
 				str_out(p, A_LEFT);
 				a2b("\n");
-				mbf = mbf_sav;
 				if (svg)
-					svg_write(mbf, strlen(mbf));
+					svg_write(tmp, strlen(tmp));
 				else
-					fputs(mbf, fout);
+					fputs(tmp, fout);
 			}
 			p = q + 1;
 		}
@@ -482,13 +485,13 @@ static float headfooter(int header,
 		if (q != p) {
 			output(fout, "%.1f %.1f M ",
 				pwidth * 0.5, y);
+			mbf = tmp;
 			str_out(p, A_CENTER);
 			a2b("\n");
-			mbf = mbf_sav;
 			if (svg)
-				svg_write(mbf, strlen(mbf));
+				svg_write(tmp, strlen(tmp));
 			else
-				fputs(mbf, fout);
+				fputs(tmp, fout);
 		}
 
 		/* right side */
@@ -497,13 +500,13 @@ static float headfooter(int header,
 			if (*p != '\0') {
 				output(fout, "%.1f %.1f M ",
 					pwidth - p_fmt->rightmargin, y);
+				mbf = tmp;
 				str_out(p, A_RIGHT);
 				a2b("\n");
-				mbf = mbf_sav;
 				if (svg)
-					svg_write(mbf, strlen(mbf));
+					svg_write(tmp, strlen(tmp));
 				else
-					fputs(mbf, fout);
+					fputs(tmp, fout);
 			}
 		}
 		if (!r)
@@ -514,8 +517,10 @@ static float headfooter(int header,
 		y -= size;
 	}
 
-	/* restore the fonts */
-	*mbf_sav = '\0';
+	/* restore the buffer and fonts */
+	outbuf = outbuf_sav;
+	outbufsz = outbufsz_sav;
+	mbf = mbf_sav;
 	memcpy(&cfmt.font_tb[0], &f_sav, sizeof cfmt.font_tb[0]);
 	set_str_font(cft_sav, dft_sav);
 	return wsize;
@@ -576,7 +581,7 @@ static void init_page(void)
 			((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 			 - cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale);
 
-	maxy = pheight - cfmt.topmargin - cfmt.botmargin;
+	remy = maxy = pheight - cfmt.topmargin - cfmt.botmargin;
 
 	/* output the header and footer */
 	if (!cfmt.header) {
@@ -597,11 +602,11 @@ static void init_page(void)
 		dy = headfooter(1, pwidth, pheight);
 		if (dy != 0) {
 			output(fout, "0 %.1f T\n", -dy);
-			maxy -= dy;
+			remy -= dy;
 		}
 	}
 	if (cfmt.footer)
-		maxy -= headfooter(0, pwidth, pheight);
+		remy -= headfooter(0, pwidth, pheight);
 	pagenum++;
 	outft = -1;
 }
@@ -625,7 +630,7 @@ static void epsf_title(char *p, int sz)
 {
 	unsigned char c;
 
-	snprintf(p, sz, "%.72s (%.4s)", in_fname, &info['X' - 'A']->as.text[2]);
+	snprintf(p, sz, "%.72s (%.4s)", in_fname, &info['X' - 'A']->text[2]);
 	while ((c = (unsigned char) *p) != '\0') {
 		if (c >= 0x80) {
 			if ((c & 0xf8) == 0xf0) {
@@ -674,7 +679,7 @@ void write_eps(void)
 			fout = stdout;
 		} else {
 			if (outfnam[i] == '=') {
-				p = &info['T' - 'A']->as.text[2];
+				p = &info['T' - 'A']->text[2];
 				while (isspace((unsigned char) *p))
 					p++;
 				strncpy(&outfnam[i], p, sizeof outfnam - i - 4);
@@ -714,14 +719,6 @@ void write_eps(void)
 	cur_scale = 1.0;
 }
 
-/* -- start a new page -- */
-/* epsf is always null */
-static void newpage(void)
-{
-	close_page();
-	init_page();
-}
-
 /*  subroutines to handle output buffer  */
 
 /* -- update the output buffer pointer -- */
@@ -737,7 +734,7 @@ void a2b(char *fmt, ...)
 		}
 		error(0, NULL, "Possible buffer overflow");
 		write_buffer();
-		use_buffer = 0;
+//		use_buffer = 0;
 	}
 	va_start(args, fmt);
 	mbf += vsnprintf(mbf, outbuf + outbufsz - mbf, fmt, args);
@@ -759,8 +756,8 @@ void init_outbuf(int kbsz)
 	if (outbuf)
 		free(outbuf);
 	outbufsz = kbsz * 1024;
-	if (outbufsz < 0x10000)
-		outbufsz = 0x10000;
+//	if (outbufsz < 0x10000)
+//		outbufsz = 0x10000;
 	outbuf = malloc(outbufsz);
 	if (!outbuf) {
 		error(1, NULL, "Out of memory for outbuf - abort");
@@ -801,9 +798,10 @@ void write_buffer(void)
 			}
 		}
 		dp = ln_pos[l] - p1;
-		np = maxy + dp < 0 && !epsf;
+		np = remy + dp < 0 && !epsf;
 		if (np) {
-			newpage();
+			close_page();
+			init_page();
 			if (ln_font[l] >= 0) {
 				struct FONTSPEC *f;
 
@@ -824,7 +822,7 @@ void write_buffer(void)
 		}
 		if (np) {
 			output(fout, "0 %.2f T\n", -cfmt.topspace);
-			maxy -= cfmt.topspace * cfmt.scale;
+			remy -= cfmt.topspace * cfmt.scale;
 		}
 		if (*p_buf != '\001') {
 			if (epsf > 1 || svg)
@@ -874,27 +872,32 @@ void write_buffer(void)
 			}
 		}
 		p_buf = ln_buf[l];
-		maxy += dp;
+		remy += dp;
 		p1 = ln_pos[l];
 	}
 #if 1 //fixme:test
-	if (*p_buf != '\0')
-		fprintf(stderr, "??? bug - buffer not empty:\n%s\n", p_buf);
+	if (*p_buf != '\0') {
+//		fprintf(stderr, "??? bug - buffer not empty:\n%s\n", p_buf);
+		memcpy(outbuf, p_buf, strlen(p_buf) + 1);
+		mbf = &outbuf[strlen(outbuf)];
+	} else {
+		mbf = outbuf;
+	}
 #endif
 	outft = outft_sav;
 	bposy = 0;
 	ln_num = 0;
-	mbf = outbuf;
+	use_buffer = 0;
 }
 
-/* -- add a block in the output buffer -- */
+/* -- add a block of commmon margins / scale in the output buffer -- */
 void block_put(void)
 {
 	if (mbf == outbuf)
 		return;
 //fixme: should be done sooner and should be adjusted when cfmt change...
-	if (maxy == 0)
-		maxy = (cfmt.landscape ? cfmt.pagewidth : cfmt.pageheight)
+	if (remy == 0)
+		remy = maxy = (cfmt.landscape ? cfmt.pagewidth : cfmt.pageheight)
 			- cfmt.topmargin - cfmt.botmargin;
 	if (ln_num > 0 && mbf == ln_buf[ln_num - 1])
 		return;				/* no data */
@@ -908,10 +911,10 @@ void block_put(void)
 		c = *p;				/* (avoid "buffer not empty") */
 		*p = '\0';
 		write_buffer();
-		multicol_start = maxy + bposy;
+		multicol_start = remy + bposy;
 		*p = c;
 		strcpy(outbuf, p);
-		use_buffer = 0;
+//		use_buffer = 0;
 	}
 	ln_buf[ln_num] = mbf;
 	ln_pos[ln_num] = multicol_start == 0 ? bposy : 1;
@@ -933,19 +936,58 @@ void block_put(void)
 /* -- handle completed block in buffer -- */
 /* if the added stuff does not fit on current page, write it out
    after page break and change buffer handling mode to pass though */
-void buffer_eob(void)
+void buffer_eob(int eot)
 {
 	block_put();
-	if (maxy + bposy < 0
-	 && !epsf
-	 && multicol_start == 0) {
-		if (in_page)
-			newpage();
-		write_buffer();
-		use_buffer = 0;
+	if (epsf) {
+		if (epsf == 3)
+			write_eps();		/* close the image */
+		return;
 	}
-	if (epsf == 3)
-		write_eps();		/* close the image */
+	if (remy + bposy >= 0
+	 || multicol_start != 0)
+		return;
+
+	// page full
+	if (!in_page) {
+		if ((cfmt.splittune == 2 && !(nbpages & 1))
+		 || (cfmt.splittune == 3 && (nbpages & 1))) { // wrong odd/even page
+			if (remy + maxy + bposy < 0) {	// 2nd overflow
+				init_page();
+				close_page();
+				write_buffer();
+				return;
+			}
+			if (eot)
+				write_buffer();
+			return;
+		}
+	} else {
+		close_page();
+	}
+	if ((cfmt.splittune == 2 && !(nbpages & 1))
+	 || (cfmt.splittune == 3 && (nbpages & 1)))
+		use_buffer = 1;			// if wrong odd/even page
+	else
+		write_buffer();
+#if 0
+--- old
+		if (use_buffer
+		 && !eot
+		 && ((cfmt.splittune == 2 && !(nbpages & 1))
+		   || (cfmt.splittune == 3 && (nbpages & 1)))) {
+			init_page();
+// 8.7.4
+			use_buffer = 1;
+		} else {
+// 8.7.5 - required to avoid buffer overflow
+			write_buffer();
+		}
+//8.7.0
+//		write_buffer();
+//8.6.2
+//		use_buffer = 0;
+#endif
 }
 
 /* -- dump buffer if not enough place for a music line -- */
@@ -955,12 +997,12 @@ void check_buffer(void)
 		error(0, NULL,
 		      "Possibly bad page breaks, outbufsz exceeded");
 		write_buffer();
-		use_buffer = 0;
+//		use_buffer = 0;
 	}
 }
 
 /* -- return the current vertical offset in the page -- */
 float get_bposy(void)
 {
-	return maxy + bposy;
+	return remy + bposy;
 }

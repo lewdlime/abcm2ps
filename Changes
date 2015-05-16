@@ -1,3 +1,158 @@
+---- Version 8.7.8 - 15/05/15 ----
+
+Fix crash when %%score/%%staves before generation restart
+Fix lack of stem in sample4.abc
+Fix clash of accidentals in complex chords
+	(reported by Hudson Lacerda)
+Fix music line too wide when line split on a beamed sequence
+Fix crash when trying to cut a music line at end of tune
+	(reported by Hudson Lacerda)
+Fix bad offset of tuplets and slurs when voice appearing
+			in a %%score/%%stave sequence
+Fix SVG path to PS translation (in %%beginsvg sequence)
+Accept XML character references and predefined entities
+			("&xxx;") in any string
+
+---- Version 8.7.7 - 15/04/29 ----
+
+Fix abnormal key space when many %%transpose in tune body and K:none
+	(reported by David Lacroix)
+Fix bad linewidth when set by PS sequence since 8.7.4
+	(reported by David Lacroix)
+Accept many invisible notes under beams
+Set the number alone in tuplet closer to beam
+	(reported by Alan Snyder)
+
+---- Version 8.7.6 - 15/04/20 ----
+
+Fix bad SVG definition of !tenuto! when SVG output
+	(reported by David Lacroix)
+
+---- Version 8.7.5 - 15/04/19 ----
+
+Change some decorations of deco.abc
+Fix annotation-like offset of decorations with function 0 (near notes)
+Added files free.abc and bravura.abc
+Accept (some) SVG paths by <defs>..</defs> for PS output
+Accept glyphs by <defs>..</defs> for SVG output
+Fix bad left margin when %%leftmargin inside tune body since 8.7.4
+	(reported by David Lacroix)
+Don't adjust the pitch of notes when the key is 'P' (percussion)
+	(reported by Willem Vree)
+Fix bad output when internal output buffer overflow
+	(reported by Jan Wybren de Jong)
+Fix bad unison display according to %%shiftunison value
+	(reported by David Lacroix)
+Fix bad vertical offset of "@0,0xx" guitar chords when after other
+		guitar chord/annotation on the same note since 7.1.1
+	(reported by Hudson Lacerda)
+Fix abnormal key space when %%transpose in tune header before K:none
+	(reported by David Lacroix)
+Don't set the %%voicecolor to the clef, key and time signatures
+	(asked by David Lacroix)
+
+---- Version 8.7.4 - 15/04/09 ----
+
+Fix "buffer overflow" messages with big tunes
+	(reported by Frédéric Boulanger).
+Fix win32 compilation problems
+	(reported by Jean-Luc Zins)
+Fix 'key,' in %%map which does not depend on the key mode
+	(reported by Hudson Lacerda).
+Fix bad head color when %%voicecolor since 8.7.0
+	(reported by Hudson Lacerda).
+Fix crash on %%voice since 8.7.0
+	(reported by Hudson Lacerda).
+Better handling of %%splittune odd / even.
+Fix bad tie direction after voice combine.
+
+---- Version 8.7.3 - 15/04/05 ----
+
+'all,' added in %%map.
+%%voicecombine added.
+Fix %%tune not working since 8.7.0
+	(reported by Hudson Flavio Meneses Lacerda).
+
+---- Version 8.7.2 - 15/03/31 ----
+
+Fix loss of measure bar after [I:setbarnb x] since 8.7.0.
+Fix warning in accordion.abc
+	(reported by Matthias Rustler).
+Fix bad PS/SVG output with some decorations since 8.7.0.
+Fix bad note octave when note mapping and clef change
+	(reported by David Lacroix).
+Extend ps_func of %%deco with different heads for stem up/down.
+Extend %%map with different heads for stem up/down.
+
+---- Version 8.7.1 - 15/03/28 ----
+
+Fix bad directions/positions since 8.7.0
+	(reported by David Lacroix).
+
+---- Version 8.7.0 - 15/03/27 ----
+
+Fix crash when new music line occuring on a voice out of %%score/%%staves
+	(reported by Frédéric Boulanger).
+Fix loop when no end of chord.
+K:P added.
+map= in V:/K: added for compatibility.
+%%map and %%voicemap added.
+Fix loss of text in %%begintext sequences after '%'.
+Fix bad position of key signatures when declared before a clef
+		or a measure bar.
+Fix bad ties when %%combinevoices
+	(reported by David Lacroix).
+Fix bad transposition of K:none since 8.5.1
+	(reported by David Lacroix).
+
+---- Version 8.6.2 - 15/03/12 ----
+
+Fix bad handling of %%splittune odd / even
+	(reported by Hudson Flavio Meneses Lacerda).
+Revert the changes in 8.6.1 about the '-0' and '-1' behaviour.
+
+---- Version 8.6.1 - 15/03/10 ----
+
+Fix bad staff offset of some decorations
+	(reported by David Lacroix).
+Fix some little errors in SVG output.
+Fix bad colors on SVG output with custumized decorations
+	(reported by David Lacroix).
+Fix command line option '-1' and set oneperpage to 'true'
+Fix command line option '-0' and set splittune to 'true'
+	(reported by Hudson Flavio Meneses Lacerda).
+
+---- Version 8.6.0 - 15/03/06 ----
+
+Fix bad !trem2! since 8.5.2.
+Reduce the width of dotted unisons with note on a staff line
+	(asked by Graham Alsop).
+Extend %%splittune with 'odd' / 'even'
+	(asked by Mike Moroney and Simon Wascher).
+Accept annotation-like decorations on 'near the note' and chord decorations.
+Fix bad handling of %%ornament with %%deco function 3.
+Fix multi display of P: when specified in many voices.
+Fix bad P:'s when many ones in a music line.
+Don't shift a lyric word smaller than 3 characters starting with a digit
+	(asked by Helmut Eberl for fingering in lyrics)
+Fix SVG error when '&', '<' or '>' in T:.
+Add %%abc.
+Fix bad tie at end of line when tie at end of a grace note sequence
+	with the same starting and ending notes since 8.5.2
+	(reported by David Lacroix).
+Fix bad position of '8' in octave clefs.
+Fix some bugs in the PS interpreter as bad 'translate'/'rotate' operators.
+Fix bad measure number offset at start of line.
+Fix bad boxes around parts
+	(reported by Hudson Flavio Meneses Lacerda).
+Don't add index elements of titles which contain '--'
+	(reported by David Lacroix).
+Fix bad music line splits giving measure bars at start of line
+	(reported by David Lacroix).
+Fix lack of notes when voice out of its staff and original staff is empty.
+Fix some more accidental clashes when voice overlap
+	(reported by David Lacroix).
+
 ---- Version 8.5.2 - 15/01/28 ----
 
 Fix bad display when bad ties to grace notes

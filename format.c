@@ -16,7 +16,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "abc2ps.h"
+#include "abcm2ps.h"
 
 struct FORMAT cfmt;		/* current format for output */
 
@@ -111,7 +111,7 @@ static struct format {
 //	{"shifthnote", &cfmt.shiftunison, FORMAT_B, 0},	/*to remove*/
 	{"shiftunison", &cfmt.shiftunison, FORMAT_I, 0},
 	{"slurheight", &cfmt.slurheight, FORMAT_R, 0},
-	{"splittune", &cfmt.splittune, FORMAT_B, 0},
+	{"splittune", &cfmt.splittune, FORMAT_I, 1},
 	{"squarebreve", &cfmt.squarebreve, FORMAT_B, 0},
 	{"staffnonote", &cfmt.staffnonote, FORMAT_I, 0},
 	{"staffsep", &cfmt.staffsep, FORMAT_U, 0},
@@ -295,7 +295,7 @@ static void set_infoname(char *p)
 	s = info['I' - 'A'];
 	prev = NULL;
 	while (s) {
-		if (s->as.text[0] == *p)
+		if (s->text[0] == *p)
 			break;
 		prev = s;
 		s = s->next;
@@ -319,8 +319,8 @@ static void set_infoname(char *p)
 			s->prev = prev;
 		}
 	}
-	s->as.text = (char *) getarena(strlen(p) + 1);
-	strcpy(s->as.text, p);
+	s->text = (char *) getarena(strlen(p) + 1);
+	strcpy(s->text, p);
 }
 
 /* -- set the default format -- */
@@ -643,7 +643,7 @@ static int get_dblrepbar(char *p)
 }
 
 /* -- get a boolean value -- */
-static int g_logv(char *p)
+int get_bool(char *p)
 {
 	switch (*p) {
 	case '\0':
@@ -915,7 +915,7 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 			if (strcmp(w, "exprabove") == 0) {
 				vpar = &vpar[0];	/* dyn */
 				vpar2 = &vpar[6];	/* vol */
-				if (g_logv(p))
+				if (get_bool(p))
 					val = SL_ABOVE;
 				else
 					val = SL_BELOW;
@@ -924,7 +924,7 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 			if (strcmp(w, "exprbelow") == 0) {
 				vpar = &vpar[0];	/* dyn */
 				vpar2 = &vpar[6];	/* vol */
-				if (g_logv(p))
+				if (get_bool(p))
 					val = SL_BELOW;
 				else
 					val = SL_ABOVE;
@@ -934,7 +934,7 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 		case 'v':
 			if (strcmp(w, "vocalabove") == 0) {	/* compatibility */
 				vpar = &vpar[5];	/* voc */
-				if (g_logv(p))
+				if (get_bool(p))
 					val = SL_ABOVE;
 				else
 					val = SL_BELOW;
@@ -1038,7 +1038,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 		break;
 	case 'm':
 		if (strcmp(w, "musiconly") == 0) {	/* compatibility */
-			if (g_logv(p))
+			if (get_bool(p))
 				cfmt.fields[1] &= ~(1 << ('w' - 'a'));
 			else
 				cfmt.fields[1] |= (1 << ('w' - 'a'));
@@ -1047,14 +1047,14 @@ void interpret_fmt_line(char *w,		/* keyword */
 		break;
 	case 'p':
 		if (strcmp(w, "printparts") == 0) {	/* compatibility */
-			if (g_logv(p))
+			if (get_bool(p))
 				cfmt.fields[0] |= (1 << ('P' - 'A'));
 			else
 				cfmt.fields[0] &= ~(1 << ('P' - 'A'));
 			return;
 		}
 		if (strcmp(w, "printtempo") == 0) {	/* compatibility */
-			if (g_logv(p))
+			if (get_bool(p))
 				cfmt.fields[0] |= (1 << ('Q' - 'A'));
 			else
 				cfmt.fields[0] &= ~(1 << ('Q' - 'A'));
@@ -1074,7 +1074,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 		break;
 	case 'w':
 		if (strcmp(w, "withxrefs") == 0) {	/* compatibility */
-			if (g_logv(p))
+			if (get_bool(p))
 				cfmt.fields[0] |= (1 << ('X' - 'A'));
 			else
 				cfmt.fields[0] &= ~(1 << ('X' - 'A'));
@@ -1085,9 +1085,9 @@ void interpret_fmt_line(char *w,		/* keyword */
 			int bool;
 			unsigned u;
 
-			bool = g_logv(p);
+			bool = get_bool(p);
 			for (s = info['I' - 'A']; s != 0; s = s->next) {
-				u = s->as.text[0] - 'A';
+				u = s->text[0] - 'A';
 				if (bool)
 					cfmt.fields[0] |= (1 << u);
 				else
@@ -1131,7 +1131,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 		default:
 		case 0:
 		case 3:				/* %%abc2pscompat */
-			*((int *) fd->v) = g_logv(p);
+			*((int *) fd->v) = get_bool(p);
 			if (fd->subtype == 3) {
 				if (cfmt.abc2pscompat)
 					deco['M'] = "tenuto";
@@ -1149,7 +1149,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 				p++;
 			while (isspace((unsigned char) *p))
 				p++;
-			bool = g_logv(p);
+			bool = get_bool(p);
 			while (*q != '\0' && !isspace((unsigned char) *q)) {
 				u = *q - 'A';
 				if (u < 26) {
@@ -1194,14 +1194,17 @@ void interpret_fmt_line(char *w,		/* keyword */
 			cfmt.gracespace = (i1 << 16) | (i2 << 8) | i3;
 			break;
 		}
-		if (fd->subtype == 4 && !isdigit(*p))	/* textoption */
-			cfmt.textoption = get_textopt(p);
+		if (fd->subtype == 1			/* splittune */
+		  && (strcmp(p, "odd") == 0 || strcmp(p, "even") == 0))
+			cfmt.splittune = p[0] == 'e' ? 2 : 3;
 		else if (fd->subtype == 2)		/* dblrepbar */
 			cfmt.dblrepbar = get_dblrepbar(p);
+		else if (fd->subtype == 4 && !isdigit(*p)) /* textoption */
+			cfmt.textoption = get_textopt(p);
 		else if (isdigit(*p) || *p == '-' || *p == '+')
 			sscanf(p, "%d", (int *) fd->v);
 		else
-			*((int *) fd->v) = g_logv(p);
+			*((int *) fd->v) = get_bool(p);
 		if (fd->subtype == 4) {			/* textoption */
 			if (cfmt.textoption < 0) {
 				cfmt.textoption = 0;

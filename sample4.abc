@@ -49,7 +49,6 @@ C///D///E///F///G///F///E///D///\
 C///D///E///F///G///F///E///D/// \
 "^beam break"C///D///E///F///!beambr2!G///F///E///D///\
 !beambr1!C///D///E///F///!beambr2!G///F///E///D///||
-T:		% needed with abcm2ps-5.x.x
 %%staves 1 2
 %%rightmargin 12cm
 V:1
@@ -73,7 +72,7 @@ V:chords
 V:melody2
 %%stemdir up
 %%voicescale 0.8
-ie3/id/ id6 | x2 d/dc/.- c/B3/ AG |
+e3/d/ d6 | x2 d/dc/.- c/B3/ AG |
 w: used to be, | There's a shad-_ow hang-ing |
 
 X:4

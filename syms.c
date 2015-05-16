@@ -14,10 +14,16 @@
 
 #include <string.h>
 
-#include "abc2ps.h"
+#include "abcm2ps.h"
 
 static char ps_head[] =
+	"/xydef{/y exch def/x exch def}!\n"
 	"/xymove{/x 2 index def/y 1 index def M}!\n"
+
+	/* redefine show to handle array of {strings, glyphs} */
+//fixme:showarray - removed
+//	"/showorig/show load def"
+//	"/show{dup type/arraytype eq{arrayshow}{showorig}ifelse}!"
 
 	/* str showc - center at current pt */
 	"/showc{dup stringwidth pop .5 mul neg 0 RM show}!\n"
@@ -59,10 +65,13 @@ static char ps_head[] =
 	"/tclef{gsave T -10 0 T .045 dup scale utclef ufill grestore}!\n"
 	"/stclef{gsave T -10 0 T .037 dup scale utclef ufill grestore}!\n"
 
-	/* x y octu - upper '8' */
-	"/octu{/Times-Roman 12 selectfont M -2.5 0 RM(8)show}!\n"
-	/* x y octl - lower '8' */
-	"/octl{/Times-Roman 12 selectfont M -3.5 0 RM(8)show}!\n"
+	/* x y oct - upper/lower clef '8' */
+	"/oct{/Times-Roman 12 selectfont M(8)show}!\n"
+
+	/* x y octu - upper '8' - compatibility */
+	"/octu{oct}!\n"
+	/* x y octl - lower '8'  - compatibility */
+	"/octl{oct}!\n"
 
 	/* x y bclef - bass clef */
 	"/ubclef{<95200046\n"
@@ -556,9 +565,9 @@ static char ps_head[] =
 	"/gcshow{show}!\n"
 	/* x y w h box - draw a box */
 	"/box{.6 SLW rectstroke}!\n"
-	/* set the start of a guitar chord in a box */
-	"/boxstart{currentpoint pop/x exch def}!\n"
-	/* mark the end of a guitar chord in a box */
+	/* set the end of a box */
+	"/boxend{currentpoint pop/x exch def}!\n"
+	/* mark the right most  end of a box */
 	"/boxmark{currentpoint pop dup x gt\n"
 	"	{/x exch def}{pop}ifelse}!\n"
 	/* x y dy boxdraw - draw a box around a guitar chord */

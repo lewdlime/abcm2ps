@@ -16,7 +16,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "abc2ps.h"
+#include "abcm2ps.h"
 
 static char *c2[64] = {
 	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,

@@ -21,7 +21,7 @@
 #define strdup _strdup
 #endif
 
-#include "abc2ps.h"
+#include "abcm2ps.h"
 #include "slre.h"
 
 static unsigned char *dst;
@@ -119,7 +119,7 @@ static void txt_add(unsigned char *s, int sz)
 
 /* add text to the output buffer translating
  * the escape sequences and the non utf-8 characters */
-static void txt_add_cnv(unsigned char *s, int sz)
+static void txt_add_cnv(unsigned char *s, int sz, int comment)
 {
 	unsigned char *p, c, tmp[4];
 	int in_string = 0;
@@ -128,10 +128,11 @@ static void txt_add_cnv(unsigned char *s, int sz)
 	while (sz > 0) {
 		switch (*p) {
 		case '"':
-			in_string = !in_string;
+			if (comment)
+				in_string = !in_string;
 			break;
 		case '%':
-			if (in_string)
+			if (in_string || !comment)
 				break;
 			while (--p >= s) {	// start of comment
 				if (*p != ' ' && *p != '\t')
@@ -642,13 +643,18 @@ void frontend(unsigned char *s,
 				l--;
 			}
 			txt_add((unsigned char *) "%%", 2);
-			goto info;
+			goto pcinfo;
 		}
 		if (*s == '%') {
 			if (!strchr(prefix, s[1]))	/* pure comment */
 				goto ignore;
 			s += 2;
 			l -= 2;
+			if (strncmp((char *) s, "abc ", 4) == 0) {
+				s += 4;
+				l -= 4;
+				goto info;
+			}
 			if (strncmp((char *) s, "abcm2ps ", 8) == 0) {
 				s += 8;
 				l -= 8;
@@ -684,7 +690,7 @@ pscom:
 				end_len = q - begin_end;
 				goto next;
 			}
-info:
+pcinfo:
 			if (strncmp((char *) s, "encoding ", 9) == 0
 			 || strncmp((char *) s, "abc-charset ", 12) == 0) {
 				if (*s == 'e')
@@ -748,8 +754,11 @@ info:
 				sep = *q;
 				*q = '\0';
 				skip_sav = skip;
+//fixme: pb when different encoding in included file: != behaviour .fmt or .abc...
+//				latin_sav = latin;
 				offset = 0;
 				include_file(s);
+//				latin = latin_sav;
 				skip = skip_sav;
 				*q = sep;
 				goto ignore;
@@ -791,6 +800,7 @@ info:
 		}
 
 		/* treat the information fields */
+info:
 		if (s[1] == ':' && (isalpha(*s) || *s == '+')) {
 			c = *s;
 			switch (c) {
@@ -848,32 +858,9 @@ info:
 		/* treat the music lines */
 		if (state == 0)				/* if not in tune */
 			goto ignore;
-#if 0
-// what was this used for?
-		if (!str_cnv_p)
-			goto next;
-		str_cnv_p = 0;
-		for (i = 0; i < l; i++) {
-			if (s[i] != '"')
-				continue;
-			i++;
-			txt_add(s, i);
-			s += i;
-			l -= i;
-			for (i = 0; i < l; i++) {
-				if (s[i] == '"' && s[i - 1] != '\\')
-					break;
-			}
-//fixme: if i == l, no end of string - error
-			txt_add_cnv(s, i);
-			s += i;
-			l -= i;
-			i = 0;
-		}
-#endif
 next:
 		if (str_cnv_p)
-			txt_add_cnv(s, l);
+			txt_add_cnv(s, l, !begin_end);
 		else
 			txt_add(s, l);
 		if (begin_end)

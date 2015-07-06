@@ -1680,10 +1680,7 @@ static void draw_basic_note(float x,
 			}
 			/* fall thru */
 		case H_SQUARE:
-			if (note->len < BREVE * 2)
-				p = "breve";
-			else
-				p = "longa";
+			p = note->len < BREVE * 2 ? "breve" : "longa";
 
 			/* don't display dots on last note of the tune */
 			if (!tsnext && s->next
@@ -1715,8 +1712,10 @@ static void draw_basic_note(float x,
 		float dotx;
 		int doty;
 
-		dotx = 7.7 + s->xmx - shhd;
+		dotx = 7.7 + s->xmx - note->shhd;
 		doty = y_tb[m] - y;
+		if (scale_voice)
+			doty /= cur_scale;
 		while (--dots >= 0) {
 			a2b(" %.1f %d dt", dotx, doty);
 			dotx += 3.5;
@@ -3322,7 +3321,8 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 	}
 	rtie = p_voice->rtie;			/* tie from 1st repeat bar */
 	for (s2 = s1; s2; s2 = s2->next) {
-		if (s2->abc_type == ABC_T_NOTE
+//		if (s2->abc_type == ABC_T_NOTE
+		if (s2->dur
 		 || s2->type == GRACE)
 			break;
 		if (s2->type != BAR
@@ -3362,6 +3362,8 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 				rtie = NULL;
 				continue;
 			}
+			if (s1->u.bar.type == B_BAR)
+				continue;		// not a repeat
 			for (s2 = s1->next; s2; s2 = s2->next)
 				if (s2->abc_type == ABC_T_NOTE)
 					break;
@@ -3375,6 +3377,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			tie.staff = s2->staff;
 			tie.time = s2->time - tie.dur;
 			draw_ties(&tie, s2, 1);
+			continue;
 		}
 		if (!s1)
 			break;
@@ -4772,7 +4775,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 					y += s->ymx - 9;
 				else
 					y += s->ymn;
-				putxy(x - 3, y);
+				putxy(x - 2, y);
 				a2b("oct\n");
 			}
 			if (annotate)

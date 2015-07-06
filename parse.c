@@ -3048,7 +3048,9 @@ static void get_bar(struct SYMBOL *s)
 	int bar_type;
 	struct SYMBOL *s2;
 
-	if (curvoice->norepbra && s->u.bar.repeat_bar)
+	if (s->u.bar.repeat_bar
+	 && curvoice->norepbra
+	 && !curvoice->second)
 		s->sflags |= S_NOREPBRA;
 	if (curvoice->auto_len)
 		adjust_dur(s);
@@ -3080,7 +3082,7 @@ static void get_bar(struct SYMBOL *s)
 
 	/* link the bar in the voice */
 	/* the bar must appear before a key signature */
-	s2 = curvoice->last_sym;
+//	s2 = curvoice->last_sym;
 	if (s2 && s2->type == KEYSIG) {
 		curvoice->last_sym = s2->prev;
 		if (!curvoice->last_sym)
@@ -3998,7 +4000,7 @@ static void get_voice(struct SYMBOL *s)
 }
 
 /* sort the notes of the chord by pitch (lowest first) */
-void sort_pitch(struct SYMBOL *s, int combine)
+void sort_pitch(struct SYMBOL *s)
 {
 	int i, nx, k;
 	struct note v_note;
@@ -4172,7 +4174,7 @@ static void get_note(struct SYMBOL *s)
 		if (!(s->flags & ABC_F_GRACE)
 		 && curvoice->map_name)
 			set_map(s);
-		sort_pitch(s, 0);
+		sort_pitch(s);
 	}
 
 	/* get the max head type, number of dots and number of flags */
@@ -4273,7 +4275,7 @@ static void parse_path(char *p, char *q, char *id, int idsz)
 	r += idsz;
 	*r++ = '{';
 	*r++ = 'M';
-	if (width < q) {
+	if (width && width < q) {
 		*r++ = ' ';
 		width += 13;
 		while (isdigit(*width) || *width == '.')
@@ -4583,12 +4585,12 @@ static int get_transpose(char *p)
 }
 
 // create a note mapping
-// %%map map_name note param*
+// %%map map_name note [print [heads]] [param]*
 static void get_map(char *p)
 {
 	struct map *map;
 	struct note_map *note_map;
-	char *name;
+	char *name, *q;
 	int l, type, pit, acc;
 
 	if (*p == '\0')
@@ -4603,23 +4605,31 @@ static void get_map(char *p)
 	/* base note */
 	while (isspace((unsigned char) *p))
 		p++;
-	if (strncmp(p, "octave,", 7) == 0) {
+	if (*p == '*') {
+		type = MAP_ALL;
+		p++;
+	} else if (strncmp(p, "octave,", 7) == 0) {
 		type = MAP_OCT;
 		p += 7;
 	} else if (strncmp(p, "key,", 4) == 0) {
 		type = MAP_KEY;
 		p += 4;
-	} else if (strncmp(p, "all,", 4) == 0) {
+	} else if (strncmp(p, "all", 3) == 0) {
 		type = MAP_ALL;
-		p += 4;
+		while (!isspace((unsigned char) *p) && *p != '\0')
+			p++;
 	} else {
 		type = MAP_ONE;
 	}
-	p = parse_acc_pit(p, &pit, &acc);
-	if (type == MAP_OCT || type == MAP_KEY) {
-		pit %= 7;
-		if (type == MAP_KEY)
-			acc = A_NULL;
+	if (type != MAP_ALL) {
+		p = parse_acc_pit(p, &pit, &acc);
+		if (type == MAP_OCT || type == MAP_KEY) {
+			pit %= 7;
+			if (type == MAP_KEY)
+				acc = A_NULL;
+		}
+	} else {
+		pit = acc = 0;
 	}
 
 	// get/create the map
@@ -4652,6 +4662,46 @@ static void get_map(char *p)
 		note_map->acc = acc;
 		note_map->print_pit = -128;
 		note_map->color = -1;
+	}
+
+	/* try the optional 'print' and 'heads' parameters */
+	while (isspace((unsigned char) *p))
+		p++;
+	if (*p == '\0')
+		return;
+	q = p;
+	while (!isspace((unsigned char) *q) && *q != '\0') {
+		if (*q == '=')
+			break;
+		q++;
+	}
+	if (isspace((unsigned char) *q) || *q == '\0') {
+		if (*p != '*') {
+			p = parse_acc_pit(p, &pit, &acc);
+			note_map->print_pit = pit;
+			note_map->print_acc = acc;
+			if (*p == '\0')
+				return;
+		}
+		p = q;
+		while (isspace((unsigned char) *p))
+			p++;
+		if (*p == '\0')
+			return;
+		q = p;
+		while (!isspace((unsigned char) *q) && *q != '\0') {
+			if (*q == '=')
+				break;
+			q++;
+		}
+		if (isspace((unsigned char) *q) || *q == '\0') {
+			name = p;
+			p = q;
+			l = p - name;
+			note_map->heads = getarena(l + 1);
+			strncpy(note_map->heads, name, l);
+			note_map->heads[l] = '\0';
+		}
 	}
 
 	/* loop on the parameters */

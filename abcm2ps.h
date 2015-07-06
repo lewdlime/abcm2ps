@@ -838,7 +838,7 @@ void identify_note(struct SYMBOL *s,
 		int *p_head,
 		int *p_dots,
 		int *p_flags);
-void sort_pitch(struct SYMBOL *s, int combine);
+void sort_pitch(struct SYMBOL *s);
 struct SYMBOL *sym_add(struct VOICE_S *p_voice,
 			int type);
 /* subs.c */

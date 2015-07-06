@@ -614,7 +614,7 @@ static void d_upstaff(struct deco_elt *de)
 	struct deco_def_s *dd;
 	char *ps_name;
 	float x, yc, stafft, staffb, w;
-	int pos, inv;
+	int up, inv;
 
 	s = de->s;
 	dd = &deco_def_tb[de->t];
@@ -626,17 +626,25 @@ static void d_upstaff(struct deco_elt *de)
 	stafft = staff_tb[s->staff].topbar + 2;
 	staffb = staff_tb[s->staff].botbar - 2;
 
-	pos = 1;			// above or below
+	up = -1;			// undefined
 	if (dd->func == 4) {		// upstaff below
-		pos = -1;
+		up = 0;
 	} else {
 		switch (s->posit.orn) {
 		case SL_ABOVE:
-			pos = 0;
+			up = 1;
 			break;
 		case SL_BELOW:
-			pos = -1;
+			up = 0;
 			break;
+//		default:
+//			if (s->multi > 0)
+//				up = 1;
+//			else if (s->multi < 0)
+//				up = 0;
+//			else
+//				up = s->stem < 0;
+//			break;
 		}
 	}
 
@@ -647,9 +655,10 @@ static void d_upstaff(struct deco_elt *de)
 //	 || strcmp(dd->name, "roll") == 0) {
 	if (strcmp(ps_name, "accent") == 0
 	 || strcmp(ps_name, "cpu") == 0) {
-		if (pos < 0
-		 || s->multi < 0
-		 || (s->multi == 0 && s->stem > 0)) {
+		if (!up
+		 || (up < 0
+		  && (s->multi < 0
+		   || (s->multi == 0 && s->stem > 0)))) {
 			yc = y_get(s->staff, 0, s->x - dd->wl, w);
 			if (yc > staffb)
 				yc = staffb;
@@ -683,9 +692,9 @@ static void d_upstaff(struct deco_elt *de)
 	} else {
 		if (strncmp(dd->name, "invert", 6) == 0)
 			inv = 1;
-		if (s->multi >= 0
-		 && strcmp(dd->name, "invertedfermata") != 0
-		 && pos >= 0) {
+		if (strcmp(dd->name, "invertedfermata") != 0
+		 && (up > 0
+		  || (up < 0 && s->multi >= 0))) {
 			yc = y_get(s->staff, 1, s->x - dd->wl, w);
 			if (yc < stafft)
 				yc = stafft;

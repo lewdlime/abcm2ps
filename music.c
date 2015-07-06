@@ -197,23 +197,23 @@ static void set_head_directions(struct SYMBOL *s)
 	s->xmx = dx_max;				/* shift the dots */
 
 	/* set the accidental shifts */
-	if (s->stem < 0) {			// set the shifts from the head shifts
-		for (i = n; --i >= 0; ) {	// (no shift on top)
-			dx = s->u.note.notes[i].shhd;
-			if (dx == 0)
+	// set the shifts from the head shifts
+	for (i = n; --i >= 0; ) {	// (no shift on top)
+		dx = s->u.note.notes[i].shhd;
+		if (dx == 0 || dx > 0)
+			continue;
+		dx = dx_head - dx;
+		ps = s->pits[i];
+		for (i1 = n; i1 >= 0; i1--) {
+			if (!s->u.note.notes[i1].acc)
 				continue;
-			dx = dx_head - dx;
-			ps = s->pits[i];
-			for (i1 = n; i1 >= 0; i1--) {
-				if (i1 == i || !s->u.note.notes[i1].acc)
-					continue;
-				p1 = s->pits[i1];
-				if (p1 < ps - 3)
-					break;
-				if (p1 > ps + 3)
-					continue;
+			p1 = s->pits[i1];
+			if (p1 < ps - 3)
+				break;
+			if (p1 > ps + 3)
+				continue;
+			if (s->u.note.notes[i1].shac < dx)
 				s->u.note.notes[i1].shac = dx;
-			}
 		}
 	}
 	for (i = n; i >= 0; i--) {		// from top to bottom
@@ -358,7 +358,7 @@ static int may_combine(struct SYMBOL *s)
 static void do_combine(struct SYMBOL *s)
 {
 	struct SYMBOL *s2;
-	int i, nhd, nhd2, type;
+	int i, m, nhd, nhd2, type;
 
 again:
 	nhd = s->nhd;
@@ -403,7 +403,22 @@ again:
 	nhd += nhd2;
 	s->nhd = nhd;
 
-	sort_pitch(s, 1);		/* sort the notes by pitch */
+	sort_pitch(s);			/* sort the notes by pitch */
+
+	if (s->combine >= 3) {		// remove unison heads
+		for (m = nhd; m > 0; m--) {
+			if (s->u.note.notes[m].pit == s->u.note.notes[m - 1].pit
+			 && s->u.note.notes[m].acc == s->u.note.notes[m - 1].acc) {
+				memmove(&s->u.note.notes[m - 1],
+					&s->u.note.notes[m],
+					sizeof s->u.note.notes[0]);
+				memmove(&s->pits[m - 1], &s->pits[m],
+					sizeof s->pits[0]);
+				s->nhd = --nhd;
+			}
+		}
+	}
+
 	s->ymx = 3 * (s->pits[nhd] - 18) + 4;
 	s->ymn = 3 * (s->pits[0] - 18) - 4;
 	s->yav = (s->ymx + s->ymn) / 2;
@@ -1117,10 +1132,10 @@ static void set_width(struct SYMBOL *s)
 		break;
 	case CLEF:
 		/* shift the clef to the left - see draw_symbols() */
-		if (!(s->flags & ABC_F_INVIS)) {
+//		if (!(s->flags & ABC_F_INVIS)) {
 			s->wl = 12 + 10;
 			s->wr = (s->aux ? 10 : 12) - 10;
-		}
+//		}
 		break;
 	case KEYSIG: {
 		int n1, n2, esp;
@@ -1746,6 +1761,7 @@ static struct SYMBOL *set_nl(struct SYMBOL *s)
 		s = s->next;
 		if (!s)
 			return s;
+
 		while (!(s->sflags & S_SEQST))
 			s = s->ts_prev;
 		goto setnl;
@@ -2096,7 +2112,8 @@ static void cut_tune(float lwidth, float indent)
 			if (cfmt.linewarn)
 				error(0, s, "Line overfull (%.0fpt of %.0fpt)",
 					xmin, lwidth);
-			for (s = s->ts_next; s; s = s->ts_next) {
+//			for (s = s->ts_next; s; s = s->ts_next) {
+			for ( ; s; s = s->ts_next) {
 				if (s->sflags & S_EOLN)
 					break;
 			}
@@ -2105,6 +2122,7 @@ static void cut_tune(float lwidth, float indent)
 				break;
 			xmin = s->shrink;
 			indent = 0;
+			continue;
 		}
 		if (!(s->sflags & S_EOLN))
 			continue;
@@ -2136,25 +2154,21 @@ static void set_yval(struct SYMBOL *s)
 		switch (s->u.clef.type) {
 		default:			/* treble / perc */
 			s->y = -2 * 6;
-//			s->ymx = 24 + 15;
-			s->ymx = 24 + 8;
-//			s->ymn = -11;
-			s->ymn = -8;
+			s->ymx = 24 + 12;
+			s->ymn = -9;
 			break;
 		case ALTO:
 			s->y = -3 * 6;
-//			s->ymx = 24 + 6;
-			s->ymx = 24 + 3;
-			s->ymn = -3;
+			s->ymx = 24 + 2;
+			s->ymn = -1;
 			break;
 		case BASS:
 			s->y = -4 * 6;
-//			s->ymx = 24 + 6;
-			s->ymx = 24 + 3;
-			s->ymn = -3;
+			s->ymx = 24 + 2;
+			s->ymn = 2;
 			break;
 		}
-		if (s->aux) {
+		if (s->aux) {			// small clef
 			s->ymx -= 2;
 			s->ymn += 2;
 		}
@@ -3151,7 +3165,7 @@ static void init_music_line(void)
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		int i;
 
-		if (p_voice->bar_start == 0)
+		if (!p_voice->bar_start)
 			continue;
 		voice = p_voice - voice_tb;
 		if (cursys->voice[voice].range < 0
@@ -4294,7 +4308,7 @@ static void check_bar(struct SYMBOL *s)
 		if (s->type == TIMESIG
 		 && s->time > p_voice->sym->time)	/* if not empty voice */
 			insert_meter |= 1;	/* meter in the next line */
-		if ((s = s->prev) == 0)
+		if ((s = s->prev) == NULL)
 			return;
 	}
 	if (s->type != BAR)
@@ -4312,6 +4326,7 @@ static void check_bar(struct SYMBOL *s)
 			p_voice->bar_start |= 0x8000;
 		if (s->sflags & S_NOREPBRA)
 			p_voice->bar_start |= 0x4000;
+		return;
 	}
 	bar_type = s->u.bar.type;
 	if (bar_type == B_COL)			/* ':' */

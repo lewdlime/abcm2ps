@@ -21,7 +21,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 #ifndef NaN
-#define NaN ((float) (2 << 12))
+#define NaN ((float) (2 << 22))
 #endif
 
 #include "abcm2ps.h"
@@ -4134,10 +4134,12 @@ translate:
 		break;
 	}
 	// check if already a SVG definition from %%beginsvg
-	s = strstr(defs, op);
-	if (s && s[-1] == '"' && s[strlen(op)] == '"') {
-		xysym(op, -1);
-		return;
+	if (defs) {
+		s = strstr(defs, op);
+		if (s && s[-1] == '"' && s[strlen(op)] == '"') {
+			xysym(op, -1);
+			return;
+		}
 	}
 	fprintf(stderr, "svg: Symbol '%s' not defined\n", op);
 	ps_error = 1;

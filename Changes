@@ -1,3 +1,35 @@
+---- Version 8.8.2 - 15/06/17 ----
+
+Fix bad output (PS) or crash (SVG) when the last symbol of a secondary voice
+		is alone in a music line
+Fix crash when special glyph and no <defs> on SVG output
+Adjust the '8's in octava clefs
+	(reported by David Lacroix)
+
+---- Version 8.8.1 - 15/06/14 ----
+
+Fix bad start of ties in second repeats at start of line
+Fix lack of ties in second repeats at start of line when many voices
+	(reported by Gerhard Schacherl)
+Fix offset of note dots when scaled staff or voice
+Fix offset of '8' in octava clefs
+Fix loss of line break when occuring just at minimal spacing
+Fix bad offset of some decorations with %%deco function 3 since 8.8.0
+	(reported by David Lacroix and Gerhard Schacherl)
+
+---- Version 8.8.0 - 15/05/21 ----
+
+Fix again bad handling of %%ornament with %%deco function 3
+	(reported by Lou Montulli)
+Extend the syntax of %%map
+	(asked by David Webber)
+Replace "all,<any_note>" by "*" in %%map
+Fix crash when PS output with SVG glyph definition and no "stroke-width:"
+Add "%%combinevoices 3"
+	(asked by Alan Snyder)
+Fix clash of accidentals in chords with unisons
+	(reported by David Lacroix)
+
 ---- Version 8.7.8 - 15/05/15 ----
 
 Fix crash when %%score/%%staves before generation restart

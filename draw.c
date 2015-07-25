@@ -1831,7 +1831,9 @@ static void draw_note(float x,
 	 && (s->sflags & S_TREM1)) {
 		float x1;
 
-		x1 = x;
+		x1 = x + (s->stem > 0 ? s->u.note.notes[0].shhd :
+					s->u.note.notes[s->nhd].shhd)
+				* cur_scale;
 		slen = 3 * (s->pits[s->stem > 0 ? s->nhd : 0] - 18);
 		if (s->head >= H_OVAL) {
 			if (s->stem > 0)
@@ -2622,7 +2624,8 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	some_slur = 0;
 	upstaff = s->staff;
 	for (s2 = s; s2; s2 = s2->next) {
-		if (s2 != s) {
+		if (s2 != s
+		 && (s2->sflags & S_IN_TUPLET)) {
 			for (g = s2->extra; g; g = g->next) {
 				if (g->type == TUPLET) {
 					sy = draw_tuplet(g, s2);
@@ -2643,7 +2646,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			}
 			continue;
 		}
-		if (s2->u.note.slur_st	/* if slur start/end */
+		if (s2->u.note.slur_st		/* if slur start/end */
 		 || s2->u.note.slur_end
 		 || (s2->sflags & (S_SL1 | S_SL2)))
 			some_slur = 1;
@@ -2667,7 +2670,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		 || (s1->sflags & S_SL1))
 			return next;
 		for (sy = s1->next; sy != s2; sy = sy->next) {
-			if (sy->u.note.slur_st	/* if slur start/end */
+			if (sy->u.note.slur_st		/* if slur start/end */
 			 || sy->u.note.slur_end
 			 || (sy->sflags & (S_SL1 | S_SL2)))
 				return next;		/* don't draw now */
@@ -2795,7 +2798,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		 || (s1->sflags & S_SL1))
 			return next;
 		for (sy = s1->next; sy != s2; sy = sy->next) {
-			if (sy->u.note.slur_st	/* if slur start/end */
+			if (sy->u.note.slur_st		/* if slur start/end */
 			 || sy->u.note.slur_end
 			 || (sy->sflags & (S_SL1 | S_SL2)))
 				return next;		/* don't draw now */
@@ -2903,7 +2906,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			break;
 	}
 
-	ym += dy + 4;
+	ym += dy + 2;
 	y1 = ym + a * (x1 - xm);
 	y2 = ym + a * (x2 - xm);
 	putxy(x2 - x1, y2 - y1);
@@ -3006,7 +3009,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			break;
 	}
 
-	ym += dy - 12;
+	ym += dy - 10;
 	y1 = ym + a * (x1 - xm);
 	y2 = ym + a * (x2 - xm);
 	putxy(x2 - x1, y2 - y1);
@@ -3014,7 +3017,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	a2b("y%d tubrl",upstaff);
 
 	/* shift the slurs / decorations */
-	ym -= 8;
+	ym -= 2;
 	for (sy = s1; ; sy = sy->next) {
 		if (sy->staff == upstaff) {
 			if (sy == s2)
@@ -4102,7 +4105,8 @@ static void draw_all_lyrics(void)
 void draw_sym_near(void)
 {
 	struct VOICE_S *p_voice;
-	struct SYMBOL *s;
+	struct SYMBOL *s, *g;
+	int i, staff;
 
 	/* calculate the beams but don't draw them (the staves are not yet defined) */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
@@ -4121,14 +4125,10 @@ void draw_sym_near(void)
 	}
 
 	/* initialize the y offsets */
-	{
-		int i, staff;
-
-		for (staff = 0; staff <= nstaff; staff++) {
-			for (i = 0; i < YSTEP; i++) {
-				staff_tb[staff].top[i] = 0;
-				staff_tb[staff].bot[i] = 24;
-			}
+	for (staff = 0; staff <= nstaff; staff++) {
+		for (i = 0; i < YSTEP; i++) {
+			staff_tb[staff].top[i] = 0;
+			staff_tb[staff].bot[i] = 24;
 		}
 	}
 
@@ -4138,7 +4138,6 @@ void draw_sym_near(void)
 	/* set the min/max vertical offsets */
 	for (s = tsfirst; s; s = s->ts_next) {
 		int y;
-		struct SYMBOL *g;
 
 		if (s->flags & ABC_F_INVIS)
 			continue;
@@ -4197,12 +4196,9 @@ void draw_sym_near(void)
 		set_sscale(p_voice->staff);
 
 		/* draw the tuplets near the notes */
-		for (s = s->next; s; s = s->next) {
-			struct SYMBOL *g;
-
-			if ((s->sflags & S_IN_TUPLET)
-			 && (g = s->extra) != NULL) {
-				for ( ; g; g = g->next) {
+		for ( ; s; s = s->next) {
+			if (s->sflags & S_IN_TUPLET) {
+				for (g = s->extra; g; g = g->next) {
 					if (g->type == TUPLET) {
 						s = draw_tuplet(g, s);
 						break;
@@ -4214,11 +4210,8 @@ void draw_sym_near(void)
 
 		/* draw the tuplets over the slurs */
 		for (s = p_voice->sym; s; s = s->next) {
-			struct SYMBOL *g;
-
-			if ((s->sflags & S_IN_TUPLET)
-			 && (g = s->extra) != NULL) {
-				for ( ; g; g = g->next) {
+			if (s->sflags & S_IN_TUPLET) {
+				for (g = s->extra ; g; g = g->next) {
 					if (g->type == TUPLET) {
 						s = draw_tuplet(g, s);
 						break;
@@ -4230,7 +4223,7 @@ void draw_sym_near(void)
 
 	/* set the top and bottom for all symbols to be out of the staves */
 	{
-		int top, bot, i, staff;
+		int top, bot;
 
 		for (staff = 0; staff <= nstaff; staff++) {
 			top = staff_tb[staff].topbar + 2;

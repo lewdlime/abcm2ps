@@ -1,3 +1,14 @@
+---- Version 8.8.3 - 15/07/13 ----
+
+Fix bad horizontal offset of tremolos when the notes are shifted
+	(reported by David Lacroix)
+Fix bad accidentals in overlaid voices when %%transpose
+	(reported by David Lacroix)
+Give more information about errors in %%transpose
+Set smaller vertical height of tuplets
+Fix double tuplet number when nested tuplets at start of a secundary voice
+	(reported by David Lacroix)
+
 ---- Version 8.8.2 - 15/06/17 ----
 
 Fix bad output (PS) or crash (SVG) when the last symbol of a secondary voice

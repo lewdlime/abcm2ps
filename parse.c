@@ -1000,10 +1000,14 @@ static void gen_ly(int eob)
  * in the current voice and return its accidental or (-1) */
 static int acc_same_pitch(int pitch)
 {
-	struct SYMBOL *s;
+	struct SYMBOL *s = curvoice->last_sym;
 	int i;
 
-	for (s = curvoice->last_sym; s; s = s->prev) {
+	// the overlaid voices may have no measure bars
+	if (curvoice->id[0] == '&')
+		s = voice_tb[curvoice->mvoice].last_sym;
+
+	for (; s; s = s->prev) {
 		switch (s->abc_type) {
 		case ABC_T_BAR:
 			return -1;	/* no same pitch */
@@ -1078,6 +1082,11 @@ static void note_transpose(struct SYMBOL *s)
 			case A_NT:
 				break;
 			default:
+#if 1
+// if 0
+// Always set natural accidentals when transposing K:none (modified in 7.5.3)
+// David Lacroix's request...
+// endif
 				if (other_acc < 0) {
 					if (a == A_NT)
 						a = 0;
@@ -1085,6 +1094,7 @@ static void note_transpose(struct SYMBOL *s)
 					if (a == other_acc)
 						a = 0;
 				}
+#endif
 				break;
 			}
 		} else if (s->u.note.notes[i].acc != 0) {
@@ -4532,6 +4542,10 @@ static int get_transpose(char *p)
 
 	// by music interval
 	p = parse_acc_pit(p, &pit1, &acc);
+	if (acc < 0) {
+		error(1, NULL, "  in %%%%transpose");
+		return 0;
+	}
 	pit1 += 126 - 2;    // for value > 0 and 'C' % 7 == 0
 	pit1 = (pit1 / 7) * 12 + pit_st[pit1 % 7];
 	switch (acc) {
@@ -4549,6 +4563,10 @@ static int get_transpose(char *p)
 		break;
 	}
 	p = parse_acc_pit(p, &pit2, &acc);
+	if (acc < 0) {
+		error(1, NULL, "  in %%%%transpose");
+		return 0;
+	}
 	pit2 += 126 - 2;
 	pit2 = (pit2 / 7) * 12 + pit_st[pit2 % 7];
 	switch (acc) {

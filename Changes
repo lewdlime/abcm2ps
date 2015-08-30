@@ -1,3 +1,11 @@
+---- Version 8.8.4 - 15/08/24 ----
+
+Fix loss of tuplet when starting with grace notes
+	(reported by Lou Montulli)
+Fix clash of accidentals when voice overlap
+	(reported by David Lacroix)
+Fix lack of !head-xx! decorations with U: letters on single notes
+
 ---- Version 8.8.3 - 15/07/13 ----
 
 Fix bad horizontal offset of tremolos when the notes are shifted

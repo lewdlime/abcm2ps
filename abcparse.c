@@ -1717,8 +1717,8 @@ static char *parse_decoline(char *p)
 				syntax("Too many decorations for the note", p);
 			} else if (t != 0) {
 				is->u.note.dc.tm[n].t = t;
-				is->u.note.dc.tm[n++].m = 255;
-				is->u.note.dc.n = n;
+				is->u.note.dc.tm[n].m = 255;
+				is->u.note.dc.n = ++n;
 			}
 		}
 		is = is->abc_next;
@@ -2444,28 +2444,6 @@ static char *parse_note(char *p,
 	s->u.note.microscale = microscale;
 	s->nhd = m - 1;
 
-	/* duplicate the head decorations on each note */
-	for (n = dc.n; --n >= 0; ) {
-		int t;
-
-		if (dc.tm[n].m != 255)
-			continue;
-		t = dc.tm[n].t - 128;
-		if (t <= 0)
-			continue;
-		if (strncmp(parse.deco_tb[t], "head-", 5) != 0)
-			continue;
-		dc.tm[n].m = 0;
-		for (m = 1; m <= s->nhd; m++) {
-			if (dc.n >= MAXDC) {
-				syntax("too many head decorations", p);
-				continue;
-			}
-			j = dc.n++;
-			dc.tm[j].t = dc.tm[n].t;
-			dc.tm[j].m = m;
-		}
-	}
 do_brhythm:
 	if (curvoice->last_note
 	 && curvoice->last_note->u.note.brhythm != 0)

@@ -998,7 +998,7 @@ void deco_cnv(struct decos *dc,
 		struct SYMBOL *s,
 		struct SYMBOL *prev)
 {
-	int i, j;
+	int i, j, k;
 	struct deco_def_s *dd;
 	unsigned char ideco;
 	static char must_note_fmt[] = "Deco !%s! must be on a note";
@@ -1015,6 +1015,26 @@ void deco_cnv(struct decos *dc,
 		dd = &deco_def_tb[ideco];
 		switch (dd->func) {
 		default:
+			if (strncmp(dd->name, "head-", 5) == 0
+			 && dc->tm[i].m == 255) {	// apply !head-xx! to each head
+//				if (s->type != NOTEREST) {
+//					error(1, s,
+//						"!%s! must be on a note or a rest",
+//						dd->name);
+//					break;
+//				}
+				dc->tm[i].m = 0;
+				k = dc->n;
+				if (k + s->nhd >= MAXDC) {
+					error(1, s, "Too many decorations");
+					break;
+				}
+				for (j = 1; j < s->nhd; j++) {
+					dc->tm[k].t = ideco;
+					dc->tm[k++].m = j;
+				}
+				dc->n = k;
+			}
 			continue;
 		case 32:		/* 32 = invisible */
 			s->flags |= ABC_F_INVIS;

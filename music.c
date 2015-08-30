@@ -109,18 +109,13 @@ static float set_heads(struct SYMBOL *s)
 }
 
 /* -- decide whether to shift heads to other side of stem on chords -- */
-/* also position accidentals to avoid too much overlap */
 /* and set the head of the notes */
 /* this routine is called only once per tune for normal notes
  * it is called on setting symbol width for grace notes */
 static void set_head_directions(struct SYMBOL *s)
 {
-	int i, i1, i2, n, sig, d, shift;
-//, i3
-	int p1, ps;
-//, p2, p3, m, nac
-	float dx, dx1, dx_max, dx_head;
-//, dx2, dx3, shmin, shmax
+	int i, i1, i2, n, sig, d, shift, ps;
+	float dx, dx_max, dx_head;
 //	unsigned char ax_tb[MAXHD], ac_tb[MAXHD];
 	/* distance for no overlap - index: [prev acc][cur acc] */
 //	static char dt_tb[4][4] = {
@@ -195,45 +190,51 @@ static void set_head_directions(struct SYMBOL *s)
 		}
 	}
 	s->xmx = dx_max;				/* shift the dots */
+}
 
-	/* set the accidental shifts */
+// set the accidental shifts for a set of chords
+static void acc_shift(struct note *notes[], int n, float dx_head)
+{
+	int i, i1, ps, p1, acc;
+	float dx, dx1;
+
 	// set the shifts from the head shifts
-	for (i = n; --i >= 0; ) {	// (no shift on top)
-		dx = s->u.note.notes[i].shhd;
+	for (i = n - 1; --i >= 0; ) {	// (no shift on top)
+		dx = notes[i]->shhd;
 		if (dx == 0 || dx > 0)
 			continue;
 		dx = dx_head - dx;
-		ps = s->pits[i];
-		for (i1 = n; i1 >= 0; i1--) {
-			if (!s->u.note.notes[i1].acc)
+		ps = notes[i]->pit;
+		for (i1 = n; --i1 >= 0; ) {
+			if (!notes[i1]->acc)
 				continue;
-			p1 = s->pits[i1];
+			p1 = notes[i1]->pit;
 			if (p1 < ps - 3)
 				break;
 			if (p1 > ps + 3)
 				continue;
-			if (s->u.note.notes[i1].shac < dx)
-				s->u.note.notes[i1].shac = dx;
+			if (notes[i1]->shac < dx)
+				notes[i1]->shac = dx;
 		}
 	}
-	for (i = n; i >= 0; i--) {		// from top to bottom
-		unsigned char acc = s->u.note.notes[i].acc;
+	for (i = n; --i >= 0; ) {		// from top to bottom
+		acc = notes[i]->acc;
 
 		if (!acc)
 			continue;
-		dx = s->u.note.notes[i].shac;
+		dx = notes[i]->shac;
 		if (dx == 0) {
-			dx = s->u.note.notes[i].shhd;
+			dx = notes[i]->shhd;
 			if (dx < 0)
 				dx = dx_head - dx;
 			else
 				dx = dx_head;
 		}
-		ps = s->pits[i];
-		for (i1 = n; i1 > i; i1--) {
-			if (!s->u.note.notes[i1].acc)
+		ps = notes[i]->pit;
+		for (i1 = n; --i1 > i; ) {
+			if (!notes[i1]->acc)
 				continue;
-			p1 = s->pits[i1];
+			p1 = notes[i1]->pit;
 			if (p1 >= ps + 4) {	// pitch far enough
 				if (p1 > ps + 4) // if more than a fifth
 					continue;
@@ -243,20 +244,84 @@ static void set_head_directions(struct SYMBOL *s)
 				case A_DF:
 					continue;
 				}
-				switch (s->u.note.notes[i1].acc) {
+				switch (notes[i1]->acc) {
 				case A_NULL:
 				case A_FT:
 				case A_DF:
 					continue;
 				}
 			}
-			if (dx > s->u.note.notes[i1].shac - 6) {
-				dx1 = s->u.note.notes[i1].shac + 7;
+			if (dx > notes[i1]->shac - 6) {
+				dx1 = notes[i1]->shac + 7;
 				if (dx1 > dx)
 					dx = dx1;
 			}
 		}
-		s->u.note.notes[i].shac = dx;
+		notes[i]->shac = dx;
+	}
+}
+
+/* set the horizontal shift of accidentals */
+/* this routine is called only once per tune */
+static void set_acc_shft(void)
+{
+	struct SYMBOL *s, *s2;
+	int i, staff, t, acc, n, nx;
+	float dx_head;
+	struct note *notes[MAXHD * 4];	// (4 voices per staff)
+	struct note *nt;
+
+	s = tsfirst;
+	while (s) {
+		if (s->abc_type != ABC_T_NOTE
+		 || (s->flags & ABC_F_INVIS)) {
+			s = s->ts_next;
+			continue;
+		}
+		staff = s->staff;
+		t = s->time;
+		acc = 0;
+		for (s2 = s; s2; s2 = s2->ts_next) {
+			if (s2->time != t
+			 || s2->abc_type != ABC_T_NOTE
+			 || s2->staff != staff)
+				break;
+			if (acc)
+				continue;
+			for (i = 0; i <= s2->nhd; i++) {
+				if (s2->u.note.notes[i].acc) {
+					acc = 1;
+					continue;
+				}
+			}
+		}
+		if (!acc) {
+			s = s2;
+			continue;
+		}
+
+		dx_head = set_heads(s) + 2;
+		n = 0;
+		for ( ; s != s2; s = s->ts_next) {
+			for (i = 0; i <= s->nhd; i++)
+				notes[n++] = &s->u.note.notes[i];
+		}
+
+		// sort the notes
+		for (;;) {
+			nx = 0;
+			for (i = 1; i < n; i++) {
+				if (notes[i]->pit >= notes[i - 1]->pit)
+					continue;
+				nt = notes[i];
+				notes[i] = notes[i - 1];
+				notes[i - 1] = nt;
+				nx++;
+			}
+			if (nx == 0)
+				break;
+		}
+		acc_shift(notes, n, dx_head);
 	}
 }
 
@@ -3877,33 +3942,10 @@ static void set_overlap(void)
 		sd = 0;
 		if (s1->ymn > s2->ymx
 		 || s1->ymx < s2->ymn)
-			goto acc_shift;
-
-		if (same_head(s1, s2))
-//			goto acc_shift;
 			continue;
 
-#if 0
-		/* check simple unison */
-		if (s1->pits[0] == s2->pits[s2->nhd]
-		 || s2->pits[0] == s1->pits[s1->nhd]) {
-			if (s1->pits[0] == s2->pits[s2->nhd]) {
-				if (s1->u.note.notes[0].acc !=
-						s2->u.note.notes[s2->nhd].acc) {
-					unison_acc(s1, s2, 0, s2->nhd);
-					continue;
-				}
-			} else {
-				if (s2->u.note.notes[0].acc !=
-						s1->u.note.notes[s1->nhd].acc) {
-					unison_acc(s2, s1, 0, s1->nhd);
-					continue;
-				}
-			}
-			if (same_head(s1, s2))
-				goto acc_shift;
-		}
-#endif
+		if (same_head(s1, s2))
+			continue;
 
 		/* compute the minimum space for 's1 s2' and 's2 s1' */
 		set_right(s1, right1);
@@ -3920,7 +3962,7 @@ static void set_overlap(void)
 			 || s1->pits[s1->nhd] + 2 !=
 					s2->pits[0]
 			 || (s2->pits[0] & 1))
-				goto acc_shift;
+				continue;
 		}
 
 		set_right(s2, right2);
@@ -4094,54 +4136,6 @@ static void set_overlap(void)
 		s2->xmx += d;
 		if (sd)
 			s1->xmx = s2->xmx;	// align the dots
-
-		/* shift the accidentals */
-	acc_shift:
-		for (i1 = 0; i1 <= s1->nhd; i1++) {
-			if (s1->u.note.notes[i1].acc == 0)
-				continue;
-			for (i2 = 0; i2 <= s2->nhd; i2++) {
-				dp = s1->pits[i1] - s2->pits[i2];
-				if (dp >= 5 || dp <= -5)
-					continue;
-				if (s2->u.note.notes[i2].acc == 0) {
-					if (s2->u.note.notes[i2].shhd < 0
-					 && dp == 3)
-						s1->u.note.notes[i1].shac = 9 + 7;
-					continue;
-				}
-				if (dp == 0) {
-					s2->u.note.notes[i2].acc = 0;
-					continue;
-				}
-				dx = (dp <= -4 || dp >= 4) ? 4.5 : 7;
-				if (dp > 0) {
-					if (s1->u.note.notes[i1].acc & 0xf8)
-						dx += 2;
-					if (s2->u.note.notes[i2].shac <
-							s1->u.note.notes[i1].shac + dx
-					 && s2->u.note.notes[i2].shac >
-							s1->u.note.notes[i1].shac - dx)
-						s2->u.note.notes[i2].shac =
-							s1->u.note.notes[i1].shac + dx;
-
-					// shift the lower accidentals
-					for (m = i2 - 1; m >= 0; m--) {
-						if (s2->pits[m] <= s2->pits[i2] - 5)
-							break;
-						if (!s2->u.note.notes[m].acc)
-							continue;
-						s2->u.note.notes[m].shac += dx;
-					}
-//				} else {
-//					if (s2->u.note.accs[i2] & 0xf8)
-//						dx += 2;
-//					if (s1->shac[i1] < s2->shac[i2] + dx
-//					 && s1->shac[i1] > s2->shac[i2] - dx)
-//						s1->shac[i1] = s2->shac[i2] + dx;
-				}
-			}
-		}
 	}
 }
 
@@ -4872,6 +4866,7 @@ void output_music(void)
 		set_rest_offset();	/* set the vertical offset of rests */
 		set_overlap();		/* shift the notes on voice overlap */
 	}
+	set_acc_shft();			// set the horizontal offset of accidentals
 	set_allsymwidth(NULL);		/* set the width of all symbols */
 
 	lwidth = ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)

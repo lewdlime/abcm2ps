@@ -3666,7 +3666,7 @@ static void key_transpose(struct key_s *key)
 }
 
 /* -- set the accidentals when K: with modified accidentals -- */
-static void set_acc(struct SYMBOL *s)
+static void set_k_acc(struct SYMBOL *s)
 {
 	int i, j, nacc;
 	char accs[8], pits[8];
@@ -3731,7 +3731,7 @@ static void get_key(struct SYMBOL *s)
 	if (s->u.key.sf != 0
 	 && !s->u.key.exp
 	 && s->u.key.nacc != 0)
-		set_acc(s);
+		set_k_acc(s);
 
 	memcpy(&okey, &s->u.key, sizeof okey);
 	if (s->state == ABC_S_HEAD)		/* if first K: (start of tune) */
@@ -4034,7 +4034,7 @@ void sort_pitch(struct SYMBOL *s)
 			s->pits[i - 1] = k;
 			k = new_order[i];
 			new_order[i] = new_order[i - 1];
-			new_order[i-1] = k;
+			new_order[i - 1] = k;
 			nx++;
 		}
 		if (nx == 0)
@@ -5737,8 +5737,7 @@ static void set_tuplet(struct SYMBOL *t)
 				if (--r2 <= 0)
 					break;
 			}
-			l2 = l2 * s->u.tuplet.q_plet
-					/ s->u.tuplet.p_plet;
+			l2 = l2 * s->u.tuplet.q_plet / s->u.tuplet.p_plet;
 			s->aux = l2;
 			l += l2;
 			r -= s->u.tuplet.r_plet;
@@ -5815,10 +5814,10 @@ static void set_tuplet(struct SYMBOL *t)
 			continue;
 		if (s->u.note.notes[0].len == 0)
 			continue;
+		s->sflags |= S_IN_TUPLET;
 		if (grace ^ (s->flags & ABC_F_GRACE))
 			continue;
 		s1 = s;
-		s1->sflags |= S_IN_TUPLET;
 		olddur = s->dur;
 		s1->dur = (olddur * lplet) / l;
 		if (--r <= 0)

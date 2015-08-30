@@ -178,7 +178,7 @@ struct notes {		/* note chord or rest */
 	char slur_end;		/* number of slurs ending here */
 	signed char brhythm;	/* broken rhythm */
 	unsigned char microscale; /* microtone denominator - 1 */
-	float sdx;		/* x offset of the stemm */
+	float sdx;		/* x offset of the stem */
 	struct decos dc;	/* decorations */
 };
 

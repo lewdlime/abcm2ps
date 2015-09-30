@@ -161,7 +161,7 @@ float cwid(unsigned char c)
 /* Return an estimated width of the string. */
 float tex_str(char *s)
 {
-	char *d;
+	char *d, *p;
 	unsigned char c1;
 	unsigned maxlen, i;
 	float w, swfac;
@@ -213,8 +213,16 @@ float tex_str(char *s)
 			}
 			break;
 		case '&':			/* treat XML characters */
-			if (svg || epsf > 1)
-				break;
+			if (svg || epsf > 1) {
+				p = strchr(s, ';');
+				if (!p || p - s >= 10)
+					break;
+				*d++ = c1;
+				while (s <= p)
+					*d++ = *s++;
+				w += cwid('a') * swfac;
+				continue;
+			}
 			if (*s == '#') {
 				int j;
 				long v;
@@ -1400,7 +1408,7 @@ static char buf[STRL1];
 		q = strrchr(p, ',');
 		if (q) {
 			if (q[1] != ' ' || !isupper((unsigned char) q[2])
-			 || strlen(q) > 7	/* word no more than 4 characters */
+			 || strlen(q) > 7	/* word no more than 5 characters */
 			 || strchr(q + 2, ' '))
 				q = NULL;
 		}

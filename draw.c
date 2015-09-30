@@ -2092,78 +2092,85 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 		else
 			x2 = k->x;
 	}
-	y1 = (float) (s > 0 ? k1->ymx + 2 : k1->ymn - 2);
-	y2 = (float) (s > 0 ? k2->ymx + 2 : k2->ymn - 2);
 
-	if (k1->abc_type == ABC_T_NOTE) {
-		if (s > 0) {
-			if (k1->stem > 0) {
-				x1 += 5;
-				if ((k1->sflags & S_BEAM_END)
-				 && k1->nflags >= -1	/* if with a stem */
+	if (m1 >= 0) {
+		y1 = (float) (3 * (k1->pits[m1] - 18) + 5 * s);
+	} else {
+		y1 = (float) (s > 0 ? k1->ymx + 2 : k1->ymn - 2);
+		if (k1->abc_type == ABC_T_NOTE) {
+			if (s > 0) {
+				if (k1->stem > 0) {
+					x1 += 5;
+					if ((k1->sflags & S_BEAM_END)
+					 && k1->nflags >= -1	/* if with a stem */
 //fixme: check if at end of tuplet
-				 && (!(k1->sflags & S_IN_TUPLET))) {
-//				  || k1->ys > y1 - 3)) {
-					if (k1->nflags > 0) {
-						x1 += 2;
-						y1 = k1->ys - 3;
+					 && (!(k1->sflags & S_IN_TUPLET))) {
+//					  || k1->ys > y1 - 3)) {
+						if (k1->nflags > 0) {
+							x1 += 2;
+							y1 = k1->ys - 3;
+						} else {
+							y1 = k1->ys - 6;
+						}
 					} else {
-						y1 = k1->ys - 6;
-					}
-				} else {
-					y1 = k1->ys + 3;
-				}
-			} else {
-				y1 = k1->y + 8;
-			}
-		} else {
-			if (k1->stem < 0) {
-				x1 -= 1;
-				if ((k1->sflags & S_BEAM_END)
-				 && k1->nflags >= -1
-				 && (!(k1->sflags & S_IN_TUPLET)
-				  || k1->ys < y1 + 3)) {
-					if (k1->nflags > 0) {
-						x1 += 2;
 						y1 = k1->ys + 3;
-					} else {
-						y1 = k1->ys + 6;
 					}
 				} else {
-					y1 = k1->ys - 3;
+					y1 = k1->y + 8;
 				}
 			} else {
-				y1 = k1->y - 8;
+				if (k1->stem < 0) {
+					x1 -= 1;
+					if ((k1->sflags & S_BEAM_END)
+					 && k1->nflags >= -1
+					 && (!(k1->sflags & S_IN_TUPLET)
+					  || k1->ys < y1 + 3)) {
+						if (k1->nflags > 0) {
+							x1 += 2;
+							y1 = k1->ys + 3;
+						} else {
+							y1 = k1->ys + 6;
+						}
+					} else {
+						y1 = k1->ys - 3;
+					}
+				} else {
+					y1 = k1->y - 8;
+				}
 			}
 		}
 	}
-
-	if (k2->abc_type == ABC_T_NOTE) {
-		if (s > 0) {
-			if (k2->stem > 0) {
-				x2 += 1;
-				if ((k2->sflags & S_BEAM_ST)
-				 && k2->nflags >= -1
-				 && (!(k2->sflags & S_IN_TUPLET)))
-//					|| k2->ys > y2 - 3))
-					y2 = k2->ys - 6;
-				else
-					y2 = k2->ys + 3;
+	if (m2 >= 0) {
+		y2 = (float) (3 * (k2->pits[m2] - 18) + 5 * s);
+	} else {
+		y2 = (float) (s > 0 ? k2->ymx + 2 : k2->ymn - 2);
+		if (k2->abc_type == ABC_T_NOTE) {
+			if (s > 0) {
+				if (k2->stem > 0) {
+					x2 += 1;
+					if ((k2->sflags & S_BEAM_ST)
+					 && k2->nflags >= -1
+					 && (!(k2->sflags & S_IN_TUPLET)))
+//						|| k2->ys > y2 - 3))
+						y2 = k2->ys - 6;
+					else
+						y2 = k2->ys + 3;
+				} else {
+					y2 = k2->y + 8;
+				}
 			} else {
-				y2 = k2->y + 8;
-			}
-		} else {
-			if (k2->stem < 0) {
-				x2 -= 5;
-				if ((k2->sflags & S_BEAM_ST)
-				 && k2->nflags >= -1
-				 && (!(k2->sflags & S_IN_TUPLET)))
-//					|| k2->ys < y2 + 3))
-					y2 = k2->ys + 6;
-				else
-					y2 = k2->ys - 3;
-			} else {
-				y2 = k2->y - 8;
+				if (k2->stem < 0) {
+					x2 -= 5;
+					if ((k2->sflags & S_BEAM_ST)
+					 && k2->nflags >= -1
+					 && (!(k2->sflags & S_IN_TUPLET)))
+//						|| k2->ys < y2 + 3))
+						y2 = k2->ys + 6;
+					else
+						y2 = k2->ys - 3;
+				} else {
+					y2 = k2->y - 8;
+				}
 			}
 		}
 	}
@@ -2211,28 +2218,6 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 			}
 		}
 	}
-
-#if 0
-	/* shift endpoints */
-	addx = .04 * (x2 - x1);
-	if (addx > 3.0)
-		addx = 3.0;
-	addy = .01 * (x2 - x1);
-	if (addy > 3.0)
-		addy = 3.0;
-	x1 += addx;
-	x2 -= addx;
-
-/*fixme: to simplify*/
-	if (k1->staff == upstaff)
-		y1 += s * addy;
-	else
-		y1 = -6;
-	if (k2->staff == upstaff)
-		y2 += s * addy;
-	else
-		y2 = -6;
-#endif
 
 	a = (y2 - y1) / (x2 - x1);		/* slur steepness */
 	if (a > SLUR_SLOPE || a < -SLUR_SLOPE) {
@@ -2368,12 +2353,6 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 			height = -.8 * y;
 	}
 	height *= cfmt.slurheight;
-
-/*fixme: ugly!*/
-	if (m1 >= 0)
-		y1 = (float) (3 * (k1->pits[m1] - 18) + 5 * s);
-	if (m2 >= 0)
-		y2 = (float) (3 * (k2->pits[m2] - 18) + 5 * s);
 
 	slur_out(x1, y1, x2, y2, s, height, slur_type & SL_DOTTED, upstaff);
 
@@ -3423,12 +3402,12 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 		for (s3 = s1->ts_next; s3; s3 = s3->ts_next) {
 			if (s3->staff != s1->staff)
 				continue;
+			if (s3->time > time)
+				break;
 			if (s3->type == CLEF) {
 				clef_chg = 1;
 				continue;
 			}
-			if (s3->time > time)
-				break;
 			if (s3->type == BAR) {
 				if ((s3->sflags & S_RRBAR)
 				 || s3->u.bar.type == B_THIN_THICK

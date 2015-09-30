@@ -1,3 +1,23 @@
+---- Version 8.8.5 - 15/09/24 ----
+
+Handle "\*" as the character '*' in lyrics (w:)
+	(reported by John Chambers)
+Adjust the vertical room of rests
+Fix clash of rests when more than 2 voices per staff
+	(reported by David Lacroix)
+Fix bad head of top note when !head-xx! decoration on chord
+	(reported by David Lacroix)
+Fix bad tie when clef change just later
+	(reported by Jean-Luc Zins)
+Fix double accidental when unison
+	(reported by Jean-Luc Zins)
+Fix bad string width computation when XML character references and SVG output
+Add %%decoerr
+Change '%%dynamic'... to '%%pos dyn'...
+Add '%abc-2.1' as the first line in chinese.abc
+	(reported by Seymour Shlien)
+Fix bad slur when between chord and non chord
+
 ---- Version 8.8.4 - 15/08/24 ----
 
 Fix loss of tuplet when starting with grace notes

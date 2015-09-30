@@ -62,6 +62,7 @@ static struct format {
 	{"custos", &cfmt.custos, FORMAT_B, 0},
 	{"dateformat", &cfmt.dateformat, FORMAT_S, 0},
 	{"dblrepbar", &cfmt.dblrepbar, FORMAT_I, 2},
+	{"decoerr", &cfmt.decoerr, FORMAT_B, 0},
 	{"dynalign", &cfmt.dynalign, FORMAT_B, 0},
 	{"footer", &cfmt.footer, FORMAT_S, 0},
 	{"footerfont", &cfmt.font_tb[FOOTERFONT], FORMAT_F, 0},
@@ -373,6 +374,7 @@ void set_format(void)
 	f->autoclef = 1;
 	f->breakoneoln = 1;
 	f->dblrepbar = (B_COL << 12) + (B_CBRA << 8) + (B_OBRA << 4) + B_COL;
+	f->decoerr = 1;
 	f->dynalign = 1;
 	f->keywarn = 1;
 	f->linewarn = 1;
@@ -895,15 +897,16 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 			char *p)		/* argument */
 {
 	const struct vpar *vpar, *vpar2 = NULL;
-	int i, val;
+	int i, l, val;
 
+	l = strlen(w);
 	for (vpar = vpar_tb; vpar->name; vpar++) {
-		if (strcmp(w, vpar->name))
+		if (strncmp(w, vpar->name, l))
 			continue;
 		if (!isdigit(*p))
 			val = get_posit(p);
 		else
-			val = strtod(p, 0);
+			val = strtol(p, 0, 10);
 		if ((unsigned) val > vpar->max)
 			goto err;
 		break;

@@ -35,19 +35,17 @@ float space_tb[NFLAGS_SZ] = {
 static int smallest_duration;
 
 /* upper and lower space needed by rests */
-static struct {
-	char u, l;
-} rest_sp[NFLAGS_SZ] = {
-	{16, 31},
-	{16, 25},
-	{16, 19},
-	{10, 19},
-	{10, 13},
-	{10, 13},			/* crotchet */
-	{7, 7},
+static char rest_sp[NFLAGS_SZ][2] = {
+	{18, 18},
+	{12, 18},
+	{12, 12},
+	{8, 12},
+	{6, 8},
+	{10, 10},			/* crotchet */
+	{6, 4},
+	{10, 0},
 	{10, 4},
-	{10, 7},
-	{10, 13}
+	{10, 10}
 };
 
 /* set the head of the notes */
@@ -112,7 +110,7 @@ static float set_heads(struct SYMBOL *s)
 /* and set the head of the notes */
 /* this routine is called only once per tune for normal notes
  * it is called on setting symbol width for grace notes */
-static void set_head_directions(struct SYMBOL *s)
+static void set_head_shift(struct SYMBOL *s)
 {
 	int i, i1, i2, n, sig, d, shift, ps;
 	float dx, dx_max, dx_head;
@@ -763,7 +761,7 @@ static float set_graceoffs(struct SYMBOL *s)
 				break;
 			continue;
 		}
-		set_head_directions(g);
+		set_head_shift(g);
 		for (m = g->nhd; m >= 0; m--) {
 			if (g->u.note.notes[m].acc) {
 				xx += 5;
@@ -2707,8 +2705,8 @@ static void set_pitch(struct SYMBOL *last_s)
 			if (s->abc_type != ABC_T_NOTE
 			 && !first_voice->next) {
 				s->y = 12;		/* rest single voice */
-				s->ymx = 12 + 8;
-				s->ymn = 12 - 8;
+				s->ymx = 24;
+				s->ymn = 0;
 				break;
 			}
 			np = s->nhd;
@@ -2718,12 +2716,15 @@ static void set_pitch(struct SYMBOL *last_s)
 				for (m = np; m >= 0; m--)
 					s->pits[m] += delta;
 			}
-			s->ymx = 3 * (s->pits[np] - 18) + 4;
-			s->ymn = 3 * (s->pits[0] - 18) - 4;
-			s->yav = (s->ymx + s->ymn) / 2;
-// test rest offset
-			if (s->abc_type != ABC_T_NOTE)
-				s->y = s->yav / 6 * 6;
+			if (s->abc_type == ABC_T_NOTE) {
+				s->ymx = 3 * (s->pits[np] - 18) + 4;
+				s->ymn = 3 * (s->pits[0] - 18) - 4;
+				s->yav = (s->ymx + s->ymn) / 2;
+			} else {
+				s->y = s->yav = (s->pits[0] - 18) / 2 * 6;
+				s->ymx = s->y + rest_sp[5 - s->nflags][0];
+				s->ymn = s->y - rest_sp[5 - s->nflags][1];
+			}
 			if (s->dur < dur)
 				dur = s->dur;
 			break;
@@ -2923,55 +2924,13 @@ if (staff > nst) {
 	}
 }
 
-/* -- shift a rest vertically or horizontally -- */
-static void shift_rest(struct SYMBOL *s,	/* rest */
-			struct SYMBOL *s2,	/* other note/rest */
-			struct SYSTEM *sy)
-{
-	int y, us, ls, ymx, ymn;
-
-	us = rest_sp[C_XFLAGS - s->nflags].u;
-	ls = rest_sp[C_XFLAGS - s->nflags].l;
-
-	/* check if clash */
-	ymx = s->y + us;
-	ymn = s->y - ls;
-	if (ymx < s2->ymn
-	 || ymn > s2->ymx)
-		return;			/* no */
-
-	/* decide to move the rest upper or lower
-	 * according to the voice ranges */
-	if (sy->voice[s->voice].range > sy->voice[s2->voice].range)
-		ymx = s2->ymn;			/* lower */
-	else
-		ymx = s2->ymx;			/* upper */
-
-	/* change the rest vertical offset */
-	if (ymx >= s2->ymx) {
-		y = (s2->ymx + ls + 3) / 6 * 6;
-		if (y < 12)
-			y = 12;
-		if (s->y < y)
-			s->y = y;
-	} else {
-		y = (s2->ymn - us - 3) / 6 * 6;
-		if (y > 12)
-			y = 12;
-		if (s->y > y)
-			s->y = y;
-	}
-	s->ymx = s->y + us;
-	s->ymn = s->y - ls;
-}
-
 /* -- adjust the offset of the rests when many voices -- */
 /* this function is called only once per tune */
 static void set_rest_offset(void)
 {
 	struct SYSTEM *sy;
-	struct SYMBOL *s, *s2, *prev;
-	int nvoice, voice, end_time, not_alone;
+	struct SYMBOL *s, *s2;
+	int nvoice, voice, end_time, not_alone, do_shift, ymax, ymin, shift;
 	struct {
 		struct SYMBOL *s;
 		int staff;
@@ -2999,20 +2958,33 @@ static void set_rest_offset(void)
 			continue;
 
 		/* check if clash with previous symbols */
-		not_alone = 0;
-		prev = NULL;
+		ymin = -127;
+		ymax = 127;
+		not_alone = do_shift = 0;
 		for (voice = 0, v = vtb; voice <= nvoice; voice++, v++) {
-			if (!v->s
+			s2 = v->s;
+			if (!s2
 			 || v->staff != s->staff
 			 || voice == s->voice)
 				continue;
 			if (v->end_time <= s->time)
 				continue;
 			not_alone++;
-			shift_rest(s, v->s, sy);
-			if (voice < s->voice && v->s->time == s->time)
-				prev = v->s;
-			break;
+			if (sy->voice[s2->voice].range < sy->voice[s->voice].range) {
+				if (s2->ymn < ymax) {
+					if (s2->time == s->time)
+						ymax = s2->ymn, do_shift = 1;
+					else
+						ymax = (s2->ymx + s2->ymn) / 2;
+				}
+			} else {
+				if (s2->ymx > ymin) {
+					if (s2->time == s->time)
+						ymin = s2->ymx, do_shift = 1;
+					else
+						ymin = (s2->ymx + s2->ymn) / 2;
+				}
+			}
 		}
 
 		/* check if clash with next symbols */
@@ -3025,31 +2997,56 @@ static void set_rest_offset(void)
 			 || (s2->flags & ABC_F_INVIS))
 				continue;
 			not_alone++;
-			if (s2->abc_type != ABC_T_REST) {
-				shift_rest(s, s2, sy);
-
-				/* shift to the right if same time and clash */
-				if (prev
-				 && s2->time == s->time
-				 && (s2->ymx > s->ymn
-				  || prev->ymn < s->ymx)) {
-					int y;
-
-					s->u.note.notes[0].shhd = 10;
-					s->xmx = 10;
-					y = (prev->ymn + s2->ymx) / 2;
-					if (y < 12)
-						y += 5;
-					s->y = y / 6 * 6;
-					s->ymx = s->y + 8;
-					s->ymn = s->y - 8;
+			if (sy->voice[s2->voice].range < sy->voice[s->voice].range) {
+				if (s2->ymn < ymax) {
+					if (s2->time == s->time)
+						ymax = s2->ymn, do_shift = 1;
+					else
+						ymax = (s2->ymx + s2->ymn) / 2;
 				}
+			} else {
+				if (s2->ymx > ymin) {
+					if (s2->time == s->time)
+						ymin = s2->ymx, do_shift = 1;
+					else
+						ymin = (s2->ymx + s2->ymn) / 2;
+				}
+			}
+		}
+		shift = ymax - s->ymx;
+		if (shift < 0) {
+			shift = (-shift + 5) / 6 * 6;
+			if (s->ymn - shift >= ymin) {
+				s->y -= shift;
+				s->ymx -= shift;
+				s->ymn -= shift;
+				continue;
+			}
+			if (do_shift) {
+				s->u.note.notes[0].shhd = 10;
+				s->xmx = 10;
+				continue;
+			}
+		}
+		shift = ymin - s->ymn;
+		if (shift > 0) {
+			shift = (shift + 5) / 6 * 6;
+			if (s->ymx + shift <= ymax) {
+				s->y += shift;
+				s->ymx += shift;
+				s->ymn += shift;
+				continue;
+			}
+			if (do_shift) {
+				s->u.note.notes[0].shhd = 10;
+				s->xmx = 10;
+				continue;
 			}
 		}
 		if (!not_alone) {
 			s->y = 12;
-			s->ymx = 12 + 8;
-			s->ymn = 12 - 8;
+			s->ymx = 24;
+			s->ymn = 0;
 		}
 	}
 }
@@ -3991,6 +3988,8 @@ static void set_overlap(void)
 					t = -1;
 					break;
 				}
+				if (s2->u.note.notes[i2].acc)
+					s2->u.note.notes[i2].acc = 0;
 				if (s1->dots && s2->dots
 				 && (s1->pits[i1] & 1))
 					t = 1;
@@ -4186,7 +4185,7 @@ static void set_stems(void)
 		}
 
 		/* shift notes in chords (need stem direction to do this) */
-		set_head_directions(s);
+		set_head_shift(s);
 
 		/* if start or end of beam, adjust the number of flags
 		 * with the other end */

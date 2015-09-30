@@ -987,7 +987,8 @@ static unsigned char deco_intern(unsigned char ideco,
 			break;
 	}
 	if (ideco == 128) {
-		error(1, s, "Decoration !%s! not treated", name);
+		if (cfmt.decoerr)
+			error(1, s, "Decoration !%s! not defined", name);
 		ideco = 0;
 	}
 	return ideco;
@@ -1029,7 +1030,7 @@ void deco_cnv(struct decos *dc,
 					error(1, s, "Too many decorations");
 					break;
 				}
-				for (j = 1; j < s->nhd; j++) {
+				for (j = 1; j <= s->nhd; j++) {
 					dc->tm[k].t = ideco;
 					dc->tm[k++].m = j;
 				}

@@ -229,7 +229,7 @@ static void sort_all(void)
 			if (s->type == MREST) {
 				if (s->u.bar.len == 1)
 					mrest_expand(s);
-				else if (multi)
+				else if (multi > 0)
 					mrest_time = time;
 			}
 		}
@@ -1642,8 +1642,8 @@ static struct SYMBOL *get_lyric(struct SYMBOL *s)
 				p++;
 				break;
 			case '*':
-				word[0] = *p++;
-				word[1] = '\0';
+				word[0] = '\0';
+				p++;
 				break;
 			default:
 				q = word;
@@ -1706,7 +1706,7 @@ static struct SYMBOL *get_lyric(struct SYMBOL *s)
 				error(1, s2, "Too many words in lyric line");
 				goto ly_next;
 			}
-			if (word[0] != '*'
+			if (word[0] != '\0'
 			 && s1->posit.voc != SL_HIDDEN) {
 				struct lyl *lyl;
 				float w;
@@ -5047,6 +5047,11 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 		}
 		break;
 	case 'p':
+		if (strcmp(w, "pos") == 0) {	// %%pos <type> <position>
+			p = get_str(w, p, sizeof w);
+			set_voice_param(curvoice, s->state, w, p);
+			return s;
+		}
 		if (strcmp(w, "ps") == 0
 		 || strcmp(w, "postscript") == 0) {
 			ps_def(s, p, 'b');

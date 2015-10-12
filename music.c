@@ -65,37 +65,36 @@ static float set_heads(struct SYMBOL *s)
 		note = &s->u.note.notes[m];
 		p = note->head;			/* list of heads from parsing */
 		i = -s->nflags;
-		if (!p) {
-		} else {
-			if (i < 0)
-				i = 0;
-			for (;;) {		// search the head for the duration
-				q = strchr(p, ',');
-				if (!q)
-					break;
-				if (--i < 0)
-					break;
-				p = q + 1;
-			}
+		if (!p)
+			continue;
+		if (i < 0)
+			i = 0;
+		for (;;) {		// search the head for the duration
+			q = strchr(p, ',');
 			if (!q)
-				q = p + strlen(p);
-			r = strchr(p, '/');
-			if (r && r < q) {	// search the head for the stem direction
-				if (s->stem >= 0)
-					q = r;
-				else
-					p = r + 1;
-			}
-			r = strchr(p, ':');		// width separator
-			if (r && r < q) {
-				q = r;
-				sscanf(r, ":%f", &w);
-				if (w > wmax)
-					wmax = w;
-			}
-			note->head = p;
-			note->hlen = q - p;
+				break;
+			if (--i < 0)
+				break;
+			p = q + 1;
 		}
+		if (!q)
+			q = p + strlen(p);
+		r = strchr(p, '/');
+		if (r && r < q) {	// search the head for the stem direction
+			if (s->stem >= 0)
+				q = r;
+			else
+				p = r + 1;
+		}
+		r = strchr(p, ':');		// width separator
+		if (r && r < q) {
+			q = r;
+			sscanf(r, ":%f", &w);
+			if (w > wmax)
+				wmax = w;
+		}
+		note->head = p;
+		note->hlen = q - p;
 	}
 	if (wmax < 0) {
 		wmax = dx_tb[s->head];
@@ -3709,16 +3708,16 @@ same_head:
 head_1:
 	s2->nohdi1 = i21;	/* keep heads of 1st voice */
 	s2->nohdi2 = i22;
-//	for (; i2 <= s2->nhd; i2++)
-//		s2->u.note.accs[i2] = 0;
+	for (i2 = i21; i2 < i22; i2++)
+		s2->u.note.notes[i2].acc = 0;
 	for (i2 = 0; i2 <= s2->nhd; i2++)
 		s2->u.note.notes[i2].shhd += sh1;
 	return 1;
 head_2:
 	s1->nohdi1 = i11;	/* keep heads of 2nd voice */
 	s1->nohdi2 = i12;
-//	for (; i1 >= 0; i1--)
-//		s1->u.note.accs[i1] = 0;
+	for (i1 = i11; i1 < i12; i1--)
+		s1->u.note.notes[i1].acc = 0;
 	for (i1 = 0; i1 <= s1->nhd; i1++)
 		s1->u.note.notes[i1].shhd += sh2;
 	return 1;
@@ -3726,7 +3725,7 @@ head_2:
 
 /* width of notes for voice overlap - index = head */
 static float w_note[] = {
-	3.5, 3.5, 5, 7
+	3.5, 3.7, 5, 7
 };
 
 /* handle unison with different accidentals */
@@ -3935,8 +3934,6 @@ static void set_overlap(void)
 			s1->doty = -3;
 
 		/* no shift if no overlap */
-		d = 0;
-		sd = 0;
 		if (s1->ymn > s2->ymx
 		 || s1->ymx < s2->ymn)
 			continue;
@@ -3952,7 +3949,7 @@ static void set_overlap(void)
 			if (left2[i] + right1[i] > d)
 				d = left2[i] + right1[i];
 		}
-		if (d < 0) {			// no clash if no dots clash
+		if (d < -3) {			// no clash if no dots clash
 			if (!s1->dots || !s2->dots
 			 || s2->doty >= 0
 			 || s1->stem > 0 || s2->stem < 0
@@ -4034,6 +4031,7 @@ static void set_overlap(void)
 			continue;
 		}
 
+		sd = 0;
 		pl = left2;
 		pr = right2;
 		if (s1->dots) {

@@ -1901,14 +1901,14 @@ static struct SYMBOL *prev_scut(struct SYMBOL *s)
 	}
 
 	/* return a symbol of any voice starting before the start of the voice */
+	s = voice_tb[s->voice].sym;
 	while (s->type != CLEF)
 		s = s->ts_prev;		/* search a main voice */
-	while (s->type == CLEF
-	    || s->type == KEYSIG
-	    || s->type == TIMESIG) {
+	if (s->next->type == KEYSIG)
 		s = s->next;
-	}
-	return s->prev;
+	if (s->next->type == TIMESIG)
+		s = s->next;
+	return s;
 }
 
 /* -- decide whether a slur goes up or down -- */
@@ -2037,16 +2037,20 @@ static int slur_multi(struct SYMBOL *k1,
 /* -- draw a phrasing slur between two symbols -- */
 /* (the staves are not yet defined) */
 /* (not a pretty routine, this) */
-static int draw_slur(struct SYMBOL *k1,
+static int draw_slur(struct SYMBOL *k1_orig,
 		     struct SYMBOL *k2,
 		     int m1,
 		     int m2,
 		     int slur_type)
 {
-	struct SYMBOL *k;
+	struct SYMBOL *k1, *k;
 	float x1, y1, x2, y2, height, addy;
 	float a, y, z, h, dx, dy;
 	int s, nn, upstaff, two_staves;
+
+	k1 = k1_orig;
+	while (k1->voice != k2->voice)
+		k1 = k1->ts_next;
 
 /*fixme: if two staves, may have upper or lower slur*/
 	switch (slur_type & 0x07) {	/* (ignore dot bit) */
@@ -2079,7 +2083,7 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 
 	/* fix endpoints */
 //	x1 = k1->x + k1->xmx;		/* take the max right side */
-	x1 = k1->x + k1->u.note.notes[0].shhd;
+	x1 = k1_orig->x + k1_orig->u.note.notes[0].shhd;
 	if (k1 != k2) {
 //		x2 = k2->x;
 		x2 = k2->x + k2->u.note.notes[0].shhd;

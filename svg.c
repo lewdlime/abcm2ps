@@ -1033,7 +1033,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 		"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\"\n"
 		"\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
 		"\txml:space='preserve' color=\"black\"\n"
-		"\twidth=\"%.2fin\" height=\"%.2fin\" viewBox=\"0 0 %.0f %.0f\">\n"
+		"\twidth=\"%.2fpx\" height=\"%.2fpx\">\n"
 		"<style type=\"text/css\">\n"
 		".fill {fill: currentColor}\n"
 		".stroke {stroke: currentColor; fill: none}\n"
@@ -1078,7 +1078,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 			fputs("<br/>\n", fout);
 		}
 //		fputs("<p>\n", fout);
-		fprintf(fout, svg_head1, w / 72, h / 72, w, h);
+		fprintf(fout, svg_head1, w, h);
 		xml_str_out(title);
 		fprintf(fout, svg_head2, "page", num);
 //		if (cfmt.bgcolor && cfmt.bgcolor[0] != '\0')
@@ -1095,7 +1095,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 //			else if (svg)
 //				fputs("<p>\n", fout);
 		}
-		fprintf(fout, svg_head1, w / 72, h / 72, w, h);
+		fprintf(fout, svg_head1, w, h);
 		xml_str_out(title);
 		fprintf(fout, svg_head2, epsf ? "tune" : "page", num);
 		fputs("<!-- Creator: abcm2ps-" VERSION " -->\n", fout);

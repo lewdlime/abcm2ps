@@ -751,7 +751,7 @@ static char ps_head[] =
 	"/pshhd{/x 2 index def/y 1 index def dsh0}!\n"
 	/* x y pfthd - percussion flat head */
 	"/pfthd{/x 2 index def/y 1 index def dsh0\n"
-	"	.7 SLW x y 4 0 360 arc stroke}!\n"
+	"	.7 SLW x y M x y 4 0 360 arc stroke}!\n"
 	/* same for dble sharp/flat */
 	"/pdshhd{pshhd}!\n"
 	"/pdfthd{pfthd}!\n"

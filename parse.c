@@ -4972,7 +4972,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 		if (strcmp(w, "maxsysstaffsep") == 0) {
 			if (s->state != ABC_S_TUNE)
 				break;
-			parsys->voice[curvoice - voice_tb].maxsep = scan_u(p);
+			parsys->voice[curvoice - voice_tb].maxsep = scan_u(p, 0);
 			return s;
 		}
 		if (strcmp(w, "multicol") == 0) {
@@ -5154,21 +5154,21 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 				- cfmt.leftmargin - cfmt.rightmargin;
 			h1 = h2 = len = 0;
 			if (*p != '\0') {
-				h1 = scan_u(p);
+				h1 = scan_u(p, 0);
 				while (*p != '\0' && !isspace((unsigned char) *p))
 					p++;
 				while (isspace((unsigned char) *p))
 					p++;
 			}
 			if (*p != '\0') {
-				h2 = scan_u(p);
+				h2 = scan_u(p, 0);
 				while (*p != '\0' && !isspace((unsigned char) *p))
 					p++;
 				while (isspace((unsigned char) *p))
 					p++;
 			}
 			if (*p != '\0')
-				len = scan_u(p);
+				len = scan_u(p, 0);
 			if (h1 < 1)
 				h1 = 0.5 CM;
 			if (h2 < 1)
@@ -5206,7 +5206,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			if (s->state != ABC_S_TUNE)
 				return s;
 			if (isdigit(*p)) {
-				s->xmx = scan_u(p);
+				s->xmx = scan_u(p, 0);
 				if (s->xmx < 0) {
 					error(1, s, "Bad value in %%%s", w);
 					return s;
@@ -5270,7 +5270,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 		if (strcmp(w, "sysstaffsep") == 0) {
 			if (s->state != ABC_S_TUNE)
 				break;
-			parsys->voice[curvoice - voice_tb].sep = scan_u(p);
+			parsys->voice[curvoice - voice_tb].sep = scan_u(p, 0);
 			return s;
 		}
 		break;
@@ -5659,7 +5659,7 @@ center:
 				if (epsf || in_fname == 0)
 					return s;
 			}
-			bskip(scan_u(p));
+			bskip(scan_u(p, 0));
 			buffer_eob(0);
 			return s;
 		}

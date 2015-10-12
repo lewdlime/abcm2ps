@@ -97,26 +97,6 @@ void error(int sev,	/* 0: warning, 1: error */
 		severity = sev;
 }
 
-/* -- read a number with a unit -- */
-float scan_u(char *str)
-{
-	float a;
-	int nch;
-
-	if (sscanf(str, "%f%n", &a, &nch) == 1) {
-		if (str[nch] == '\0' || str[nch] == ' ')
-			return a PT;
-		if (!strncasecmp(str + nch, "cm", 2))
-			return a CM;
-		if (!strncasecmp(str + nch, "in", 2))
-			return a IN;
-		if (!strncasecmp(str + nch, "pt", 2))
-			return a PT;
-	}
-	error(1, NULL, "Unknown unit value \"%s\"", str);
-	return 20 PT;
-}
-
 /* -- capitalize a string -- */
 static void cap_str(char *p)
 {

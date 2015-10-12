@@ -54,9 +54,9 @@ enum accidentals {
 #endif
 #endif
 
-#define CM		* 28.35	/* factor to transform cm to pt */
+#define CM		* 37.8	/* factor to transform cm to pt */
 #define PT			/* factor to transform pt to pt */
-#define IN		* 72.0	/* factor to transform inch to pt */
+#define IN		* 96.0	/* factor to transform inch to pt */
 
 /* basic page dimensions */
 #ifdef A4_FORMAT
@@ -844,7 +844,7 @@ struct SYMBOL *sym_add(struct VOICE_S *p_voice,
 /* subs.c */
 void bug(char *msg, int fatal);
 void error(int sev, struct SYMBOL *s, char *fmt, ...);
-float scan_u(char *str);
+float scan_u(char *str, int type);
 float cwid(unsigned char c);
 void get_str_font(int *cft, int *dft);
 void set_str_font(int cft, int dft);

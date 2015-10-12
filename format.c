@@ -49,7 +49,7 @@ static struct format {
 	{"autoclef", &cfmt.autoclef, FORMAT_B, 0},
 	{"barsperstaff", &cfmt.barsperstaff, FORMAT_I, 0},
 	{"bgcolor", &cfmt.bgcolor, FORMAT_S, 0},
-	{"botmargin", &cfmt.botmargin, FORMAT_U, 0},
+	{"botmargin", &cfmt.botmargin, FORMAT_U, 1},
 	{"breaklimit", &cfmt.breaklimit, FORMAT_R, 3},
 	{"breakoneoln", &cfmt.breakoneoln, FORMAT_B, 0},
 	{"bstemdown", &cfmt.bstemdown, FORMAT_B, 0},
@@ -81,7 +81,7 @@ static struct format {
 	{"infospace", &cfmt.infospace, FORMAT_U, 0},
 	{"keywarn", &cfmt.keywarn, FORMAT_B, 0},
 	{"landscape", &cfmt.landscape, FORMAT_B, 0},
-	{"leftmargin", &cfmt.leftmargin, FORMAT_U, 0},
+	{"leftmargin", &cfmt.leftmargin, FORMAT_U, 1},
 	{"lineskipfac", &cfmt.lineskipfac, FORMAT_R, 0},
 	{"linewarn", &cfmt.linewarn, FORMAT_B, 0},
 	{"maxshrink", &cfmt.maxshrink, FORMAT_R, 2},
@@ -95,8 +95,9 @@ static struct format {
 	{"musicspace", &cfmt.musicspace, FORMAT_U, 0},
 	{"notespacingfactor", &cfmt.notespacingfactor, FORMAT_R, 1},
 	{"oneperpage", &cfmt.oneperpage, FORMAT_B, 0},
-	{"pageheight", &cfmt.pageheight, FORMAT_U, 0},
-	{"pagewidth", &cfmt.pagewidth, FORMAT_U, 0},
+	{"pageheight", &cfmt.pageheight, FORMAT_U, 1},
+	{"pagewidth", &cfmt.pagewidth, FORMAT_U, 1},
+	{"pagescale", &cfmt.scale, FORMAT_R, 0},
 #ifdef HAVE_PANGO
 	{"pango", &cfmt.pango, FORMAT_B, 2},
 #endif
@@ -106,8 +107,8 @@ static struct format {
 	{"partsspace", &cfmt.partsspace, FORMAT_U, 0},
 	{"pdfmark", &cfmt.pdfmark, FORMAT_I, 0},
 	{"repeatfont", &cfmt.font_tb[REPEATFONT], FORMAT_F, 0},
-	{"rightmargin", &cfmt.rightmargin, FORMAT_U, 0},
-	{"scale", &cfmt.scale, FORMAT_R, 0},
+	{"rightmargin", &cfmt.rightmargin, FORMAT_U, 1},
+//	{"scale", &cfmt.scale, FORMAT_R, 0},
 	{"setdefl", &cfmt.setdefl, FORMAT_B, 0},
 //	{"shifthnote", &cfmt.shiftunison, FORMAT_B, 0},	/*to remove*/
 	{"shiftunison", &cfmt.shiftunison, FORMAT_I, 0},
@@ -116,7 +117,7 @@ static struct format {
 	{"squarebreve", &cfmt.squarebreve, FORMAT_B, 0},
 	{"staffnonote", &cfmt.staffnonote, FORMAT_I, 0},
 	{"staffsep", &cfmt.staffsep, FORMAT_U, 0},
-	{"staffwidth", &staffwidth, FORMAT_U, 1},
+	{"staffwidth", &staffwidth, FORMAT_U, 2},
 	{"stemheight", &cfmt.stemheight, FORMAT_R, 0},
 	{"straightflags", &cfmt.straightflags, FORMAT_B, 0},
 	{"stretchlast", &cfmt.stretchlast, FORMAT_R, 2},
@@ -135,7 +136,7 @@ static struct format {
 	{"titlespace", &cfmt.titlespace, FORMAT_U, 0},
 	{"titletrim", &cfmt.titletrim, FORMAT_B, 0},
 	{"timewarn", &cfmt.timewarn, FORMAT_B, 0},
-	{"topmargin", &cfmt.topmargin, FORMAT_U, 0},
+	{"topmargin", &cfmt.topmargin, FORMAT_U, 1},
 	{"topspace", &cfmt.topspace, FORMAT_U, 0},
 	{"tuplets", &cfmt.tuplets, FORMAT_I, 3},
 	{"vocalfont", &cfmt.font_tb[VOCALFONT], FORMAT_F, 0},
@@ -146,6 +147,15 @@ static struct format {
 	{"writefields", &cfmt.fields, FORMAT_B, 1},
 	{0, 0, 0, 0}		/* end of table */
 };
+
+static const char helvetica[] = "Helvetica";
+static const char times[] = "Times-Roman";
+static const char times_bold[] = "Times-Bold";
+static const char times_italic[] = "Times-Italic";
+static const char sans[] = "sans-serif";
+static const char serif[] = "serif";
+static const char serif_italic[] = "serif-Italic";
+static const char serif_bold[] = "serif-Bold";
 
 /* -- search a font and add it if not yet defined -- */
 static int get_font(const char *fname, int encoding)
@@ -217,12 +227,12 @@ static void fontspec(struct FONTSPEC *f,
 	f->swfac = size;
 	if (swfac_font[f->fnum] != 0) {
 		f->swfac *= swfac_font[f->fnum];
-	} else if (strncmp(name, "Times", 5) == 0) {
-		if (strcmp(name, "Times-Bold") == 0)
+	} else if (strncmp(name, times, 5) == 0) {
+		if (strcmp(name, times_bold) == 0)
 			f->swfac *= 1.05;
 	} else if (strcmp(name, "Helvetica-Bold") == 0) {
 		f->swfac *= 1.15;
-	} else if (strncmp(name, "Helvetica", 9) == 0
+	} else if (strncmp(name, helvetica, 9) == 0
 		|| strncmp(name, "Palatino", 8) == 0) {
 		f->swfac *= 1.1;
 	} else if (strncmp(name, "Courier", 7) == 0) {
@@ -330,15 +340,6 @@ void set_format(void)
 {
 	struct FORMAT *f;
 
-	static const char helvetica[] = "Helvetica";
-	static const char times[] = "Times-Roman";
-	static const char times_bold[] = "Times-Bold";
-	static const char times_italic[] = "Times-Italic";
-	static const char sans[] = "sans-serif";
-	static const char serif[] = "serif";
-	static const char serif_italic[] = "serif-Italic";
-	static const char serif_bold[] = "serif-Bold";
-
 	f = &cfmt;
 	memset(f, 0, sizeof *f);
 	f->pageheight = PAGEHEIGHT;
@@ -347,19 +348,19 @@ void set_format(void)
 	f->rightmargin = MARGIN;
 	f->topmargin = 1.0 CM;
 	f->botmargin = 1.0 CM;
-	f->topspace = 0.8 CM;
-	f->titlespace = 0.2 CM;
-	f->subtitlespace = 0.1 CM;
-	f->composerspace = 0.2 CM;
-	f->musicspace = 0.2 CM;
-	f->partsspace = 0.3 CM;
+	f->topspace = 22.0 PT;
+	f->titlespace = 6.0 PT;
+	f->subtitlespace = 3.0 PT;
+	f->composerspace = 6.0 PT;
+	f->musicspace = 6.0 PT;
+	f->partsspace = 8.0 PT;
 	f->staffsep = 46.0 PT;
 	f->sysstaffsep = 34.0 PT;
 	f->maxstaffsep = 2000.0 PT;
 	f->maxsysstaffsep = 2000.0 PT;
 	f->vocalspace = 23.0 PT;
-	f->textspace = 0.5 CM;
-	f->scale = 0.75;
+	f->textspace = 14 PT;
+	f->scale = 1.0;
 	f->slurheight = 1.0;
 	f->maxshrink = 0.65;
 	f->breaklimit = 0.7;
@@ -400,9 +401,9 @@ void set_format(void)
 	if (svg || epsf > 2) {		// SVG output
 		fontspec(&f->font_tb[ANNOTATIONFONT], sans, 0, 12.0);
 		fontspec(&f->font_tb[COMPOSERFONT], serif_italic, 0, 14.0);
-		fontspec(&f->font_tb[FOOTERFONT], serif, 0, 12.0); /* not scaled */
+		fontspec(&f->font_tb[FOOTERFONT], serif, 0, 16.0); /* not scaled */
 		fontspec(&f->font_tb[GCHORDFONT], sans, 0, 12.0);
-		fontspec(&f->font_tb[HEADERFONT], serif, 0, 12.0); /* not scaled */
+		fontspec(&f->font_tb[HEADERFONT], serif, 0, 16.0); /* not scaled */
 		fontspec(&f->font_tb[HISTORYFONT], serif, 0, 16.0);
 		fontspec(&f->font_tb[INFOFONT],	serif_italic, 0, 14.0); /* same as composer by default */
 		fontspec(&f->font_tb[MEASUREFONT], serif_italic, 0, 14.0);
@@ -418,9 +419,9 @@ void set_format(void)
 	} else {			// PS output
 		fontspec(&f->font_tb[ANNOTATIONFONT], helvetica, 0, 12.0);
 		fontspec(&f->font_tb[COMPOSERFONT], times_italic, 0, 14.0);
-		fontspec(&f->font_tb[FOOTERFONT], times, 0, 12.0); /* not scaled */
+		fontspec(&f->font_tb[FOOTERFONT], times, 0, 16.0); /* not scaled */
 		fontspec(&f->font_tb[GCHORDFONT], helvetica, 0, 12.0);
-		fontspec(&f->font_tb[HEADERFONT], times, 0, 12.0); /* not scaled */
+		fontspec(&f->font_tb[HEADERFONT], times, 0, 16.0); /* not scaled */
 		fontspec(&f->font_tb[HISTORYFONT], times, 0, 16.0);
 		fontspec(&f->font_tb[INFOFONT],	times_italic, 0, 14.0); /* same as composer by default */
 		fontspec(&f->font_tb[MEASUREFONT], times_italic, 0, 14.0);
@@ -557,8 +558,10 @@ static char *yn[2] = {"no","yes"};
 		}
 		case FORMAT_U:
 			if (fd->subtype == 0)
+				printf("%.2f\n", *((float *) fd->v));
+			else if (fd->subtype == 1)
 				printf("%.2fcm\n", *((float *) fd->v) / (1 CM));
-			else
+			else //if (fd->subtype == 2)
 				printf("%.2fcm\n",
 					(cfmt.pagewidth
 						- cfmt.leftmargin
@@ -571,6 +574,32 @@ static char *yn[2] = {"no","yes"};
 			break;
 		}
 	}
+}
+
+/* -- get a number with a unit -- */
+/* The type may be
+ *	= 0: internal space - convert 'cm' and 'in' to 72 PPI
+ *	!= 0: page dimensions and margins
+ */
+float scan_u(char *str, int type)
+{
+	float a;
+	int nch;
+
+	if (sscanf(str, "%f%n", &a, &nch) == 1) {
+		if (str[nch] == '\0' || str[nch] == ' '
+		 || !strncasecmp(str + nch, "pt", 2)) {
+			if (type != 0)
+				error(0, NULL, "Bad unit \"%s\"", str);
+			return a PT;
+		}
+		if (!strncasecmp(str + nch, "cm", 2))
+			return type ? a CM : a * 28.35;
+		if (!strncasecmp(str + nch, "in", 2))
+			return type ? a IN : a * 72;
+	}
+	error(1, NULL, "Unknown unit value \"%s\"", str);
+	return 20 PT;
 }
 
 /* -- get an encoding -- */
@@ -799,14 +828,14 @@ struct tblt_s *tblt_parse(char *p)
 		error(1, NULL, "Invalid width/height in %%%%tablature");
 		return 0;
 	}
-	tblt->hu = scan_u(p);
+	tblt->hu = scan_u(p, 0);
 	while (*p != '\0' && !isspace((unsigned char) *p))
 		p++;
 	while (isspace((unsigned char) *p))
 		p++;
 	if (isdigit(*p)) {
 		tblt->ha = tblt->hu;
-		tblt->hu = scan_u(p);
+		tblt->hu = scan_u(p, 0);
 		while (*p != '\0' && !isspace((unsigned char) *p))
 			p++;
 		while (isspace((unsigned char) *p))
@@ -814,7 +843,7 @@ struct tblt_s *tblt_parse(char *p)
 		if (isdigit(*p)) {
 			tblt->wh = tblt->ha;
 			tblt->ha = tblt->hu;
-			tblt->hu = scan_u(p);
+			tblt->hu = scan_u(p, 0);
 			while (*p != '\0' && !isspace((unsigned char) *p))
 				p++;
 			while (isspace((unsigned char) *p))
@@ -969,10 +998,13 @@ err:
 
 /* -- parse a format line -- */
 void interpret_fmt_line(char *w,		/* keyword */
-			char *p,		/* argument */
+			char *p,		/* value */
 			int lock)
 {
 	struct format *fd;
+	int i;
+	char *q;
+	float f;
 
 	switch (*w) {
 	case 'b':
@@ -987,7 +1019,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 		break;
 	case 'f':
 		if (strcmp(w, "font") == 0) {
-			int i, fnum, encoding;
+			int fnum, encoding;
 			float swfac;
 			char fname[80];
 
@@ -1010,13 +1042,10 @@ void interpret_fmt_line(char *w,		/* keyword */
 						p++;
 				}
 				if (isdigit((unsigned char) *p)) {
-					char *q;
-					float v;
-
-					v = strtod(p, &q);
-					if (v > 2 || (*q != '\0' && *q != '\0'))
+					f = strtod(p, &q);
+					if (f > 2 || (*q != '\0' && *q != '\0'))
 						goto bad;
-					swfac = v;
+					swfac = f;
 				}
 			}
 			fnum = get_font(fname, encoding);
@@ -1066,12 +1095,17 @@ void interpret_fmt_line(char *w,		/* keyword */
 		break;
 	case 's':
 		if (strncmp(w, "setfont-", 8) == 0) {
-			int i;
-
 			i = w[8] - '0';
 			if (i < 0 || i >= FONT_UMAX)
 				return;
 			g_fspc(p, &cfmt.font_tb[i]);
+			return;
+		}
+		if (strcmp(w, "scale") == 0) {
+			f = strtod(p, &q);
+			if (*q != '\0' && *q != ' ')
+				goto bad;
+			cfmt.scale = f / 0.75;		// old -> new scale
 			return;
 		}
 		break;
@@ -1106,14 +1140,10 @@ void interpret_fmt_line(char *w,		/* keyword */
 	if (fd->name == 0)
 		return;
 
-	{
-		int l;
-
-		l = strlen(p);
-		if (strcmp(p + l - 5, " lock") == 0) {
-			p[l - 5] = '\0';
-			lock = 1;
-		}
+	i = strlen(p);
+	if (strcmp(p + i - 5, " lock") == 0) {
+		p[i - 5] = '\0';
+		lock = 1;
 	}
 	if (lock)
 		fd->lock = 1;
@@ -1143,8 +1173,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 			}
 			break;
 		case 1:	{			/* %%writefields */
-			char *q;
-			int bool, i;
+			int bool;
 			unsigned u;
 
 			q = p;
@@ -1215,50 +1244,45 @@ void interpret_fmt_line(char *w,		/* keyword */
 			}
 		}
 		break;
-	case FORMAT_R: {
-		char *q;
-		int i;
-		float v;
-
-		v = strtod(p, &q);
+	case FORMAT_R:
+		f = strtod(p, &q);
 		if (*q != '\0' && *q != ' ')
 			goto bad;
 		switch (fd->subtype) {
 		default:
-			if (v <= 0)
+			if (f <= 0)
 				goto bad;
 			break;
 		case 1: {			/* note spacing factor */
 			float v2;
 
-			if (v < 1 || v > 2)
+			if (f < 1 || f > 2)
 				goto bad;
 			i = C_XFLAGS;		/* crotchet index */
 			v2 = space_tb[i];
 			for ( ; --i >= 0; ) {
-				v2 /= v;
+				v2 /= f;
 				space_tb[i] = v2;
 			}
 			i = C_XFLAGS;
 			v2 = space_tb[i];
 			for ( ; ++i < NFLAGS_SZ; ) {
-				v2 *= v;
+				v2 *= f;
 				space_tb[i] = v2;
 			}
 			break;
 		    }
 		case 2:				/* maxshrink / stretchlast */
-			if (v < 0 || v > 1)
+			if (f < 0 || f > 1)
 				goto bad;
 			break;
 		case 3:				/* breaklimit */
-			if (v < 0.5 || v > 1)
+			if (f < 0.5 || f > 1)
 				goto bad;
 			break;
 		}
-		*((float *) fd->v) = v;
+		*((float *) fd->v) = f;
 		break;
-	    }
 	case FORMAT_F: {
 		int b;
 
@@ -1278,29 +1302,26 @@ void interpret_fmt_line(char *w,		/* keyword */
 		break;
 	    }
 	case FORMAT_U:
-		*((float *) fd->v) = scan_u(p);
-		if (fd->subtype == 1) {		/* staffwidth */
-			float rmargin;
-
-			rmargin = (cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
+		*((float *) fd->v) = scan_u(p, fd->subtype);
+		switch (fd->subtype) {
+		case 2:					/* staffwidth */
+			f = (cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 					- staffwidth - cfmt.leftmargin;
-			if (rmargin < 0)
+			if (f < 0)
 				error(1, NULL, "'staffwidth' too big\n");
 			else
-				cfmt.rightmargin = rmargin;
+				cfmt.rightmargin = f;
+			break;
 		}
 		break;
-	case FORMAT_S: {
-		int l;
-
-		l = strlen(p) + 1;
-		*((char **) fd->v) = getarena(l);
+	case FORMAT_S:
+		i = strlen(p) + 1;
+		*((char **) fd->v) = getarena(i);
 		if (*p == '"')
-			get_str(*((char **) fd->v), p, l);
+			get_str(*((char **) fd->v), p, i);
 		else
 			strcpy(*((char **) fd->v), p);
 		break;
-	    }
 	}
 	return;
 bad:

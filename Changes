@@ -1,3 +1,14 @@
+---- Version 8.9.0 - 15/10/10 ----
+
+%%pagescale added
+Change PPI from 72 to 96
+Fix abnormal line to the circle-x note head with PS output
+	(reported by Atte Jensen)
+Fix bad staff of slur continuation in secondary voices when many staves
+	(reported by Jean-Luc Zins)
+Fix too much space after accidental when unison
+	(reported by David Lacroix)
+
 ---- Version 8.8.5 - 15/09/24 ----
 
 Handle "\*" as the character '*' in lyrics (w:)

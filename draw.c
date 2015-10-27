@@ -2084,7 +2084,7 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 	/* fix endpoints */
 //	x1 = k1->x + k1->xmx;		/* take the max right side */
 	x1 = k1_orig->x + k1_orig->u.note.notes[0].shhd;
-	if (k1 != k2) {
+	if (k1_orig != k2) {
 //		x2 = k2->x;
 		x2 = k2->x + k2->u.note.notes[0].shhd;
 	} else {		/* (the slur starts on last note of the line) */
@@ -4125,12 +4125,10 @@ void draw_sym_near(void)
 		if (s->flags & ABC_F_INVIS)
 			continue;
 		if (s->type == GRACE) {
-			float w = ((cfmt.gracespace >> 8) & 0xff) * 0.1;
-			g = s->extra;
-			for ( ; g; g = g->next) {
-				y_set(s->staff, 1, g->x - w / 2, w,
+			for (g = s->extra; g; g = g->next) {
+				y_set(s->staff, 1, g->x - 2, 4,
 						g->ymx + 1);
-				y_set(s->staff, 0, g->x - w / 2, w,
+				y_set(s->staff, 0, g->x - 2, 4,
 						g->ymn - 1);
 			}
 			continue;

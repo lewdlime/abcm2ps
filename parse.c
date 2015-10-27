@@ -771,8 +771,6 @@ static void set_bar_num(void)
 	int bar_num, bar_rep;
 
 	wmeasure = voice_tb[cursys->top_voice].meter.wmeasure;
-	if (wmeasure == 0)				/* if M:none */
-		wmeasure = 1;
 	bar_rep = nbar;
 
 	/* don't count a bar at start of line */
@@ -873,8 +871,6 @@ static void set_bar_num(void)
 			break;
 		case TIMESIG:
 			wmeasure = s->u.meter.wmeasure;
-			if (wmeasure == 0)
-				wmeasure = 1;
 			if (s->time < bar_time)
 				bar_time = s->time + wmeasure;
 			break;
@@ -3199,11 +3195,8 @@ void do_tune(void)
 		}
 		s1->u.clef.line = 2;		/* treble clef on 2nd line */
 		p_voice->s_clef = s1;
-		p_voice->meter.nmeter = 1;
-		p_voice->meter.wmeasure = BASE_LEN;
-		p_voice->meter.meter[0].top[0] = '4';
-		p_voice->meter.meter[0].bot[0] = '4';
-		p_voice->wmeasure = BASE_LEN;
+		p_voice->meter.wmeasure = 1;	// M:none
+		p_voice->wmeasure = 1;
 		p_voice->scale = 1;
 		p_voice->clone = -1;
 		p_voice->over = -1;

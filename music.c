@@ -1148,17 +1148,20 @@ static void set_width(struct SYMBOL *s)
 		if (!(s->flags & ABC_F_INVIS)) {
 			int bar_type;
 
-			w = 5;
 			bar_type = s->u.bar.type;
 			switch (bar_type) {
+			case B_BAR:
+				w = 5 + 3;
+				break;
 			case (B_BAR << 4) + B_COL:
 			case (B_COL << 4) + B_BAR:
-				w += 3 + 3 + 5;
+				w = 5 + 3 + 3 + 5;
 				break;
 			case (B_COL << 4) + B_COL:
-				w += 5 + 3 + 3 + 3 + 5;
+				w = 5 + 5 + 3 + 3 + 3 + 5;
 				break;
 			default:
+				w = 5;
 				for (;;) {
 					switch (bar_type & 0x0f) {
 					case B_OBRA:
@@ -1886,7 +1889,7 @@ normal:
 		switch (s->type) {
 		case BAR:
 			if (done
-			 || (s->aux == 0		/* incomplete measure */
+			 || (s->aux == 0	/* incomplete measure */
 			  && s->next		/* not at end of tune */
 			  && (s->u.bar.type & 0x0f) == B_COL
 			  && !(s->sflags & S_RRBAR)))
@@ -2929,7 +2932,9 @@ static void set_rest_offset(void)
 {
 	struct SYSTEM *sy;
 	struct SYMBOL *s, *s2;
-	int nvoice, voice, end_time, not_alone, do_shift, ymax, ymin, shift;
+	int nvoice, voice, end_time, not_alone, ymax, ymin,
+		shift, dots;
+	float dx;
 	struct {
 		struct SYMBOL *s;
 		int staff;
@@ -2959,7 +2964,7 @@ static void set_rest_offset(void)
 		/* check if clash with previous symbols */
 		ymin = -127;
 		ymax = 127;
-		not_alone = do_shift = 0;
+		not_alone = dots = 0;
 		for (voice = 0, v = vtb; voice <= nvoice; voice++, v++) {
 			s2 = v->s;
 			if (!s2
@@ -2969,19 +2974,25 @@ static void set_rest_offset(void)
 			if (v->end_time <= s->time)
 				continue;
 			not_alone++;
-			if (sy->voice[s2->voice].range < sy->voice[s->voice].range) {
+			if (sy->voice[voice].range < sy->voice[s->voice].range) {
 				if (s2->ymn < ymax) {
-					if (s2->time == s->time)
-						ymax = s2->ymn, do_shift = 1;
-					else
+					if (s2->time == s->time) {
+						ymax = s2->ymn;
+						if (s2->dots)
+							dots = 1;
+					} else {
 						ymax = (s2->ymx + s2->ymn) / 2;
+					}
 				}
 			} else {
 				if (s2->ymx > ymin) {
-					if (s2->time == s->time)
-						ymin = s2->ymx, do_shift = 1;
-					else
+					if (s2->time == s->time) {
+						ymin = s2->ymx;
+						if (s2->dots)
+							dots = 1;
+					} else {
 						ymin = (s2->ymx + s2->ymn) / 2;
+					}
 				}
 			}
 		}
@@ -2998,17 +3009,23 @@ static void set_rest_offset(void)
 			not_alone++;
 			if (sy->voice[s2->voice].range < sy->voice[s->voice].range) {
 				if (s2->ymn < ymax) {
-					if (s2->time == s->time)
-						ymax = s2->ymn, do_shift = 1;
-					else
+					if (s2->time == s->time) {
+						ymax = s2->ymn;
+						if (s2->dots)
+							dots = 1;
+					} else {
 						ymax = (s2->ymx + s2->ymn) / 2;
+					}
 				}
 			} else {
 				if (s2->ymx > ymin) {
-					if (s2->time == s->time)
-						ymin = s2->ymx, do_shift = 1;
-					else
+					if (s2->time == s->time) {
+						ymin = s2->ymx;
+						if (s2->dots)
+							dots = 1;
+					} else {
 						ymin = (s2->ymx + s2->ymn) / 2;
+					}
 				}
 			}
 		}
@@ -3021,11 +3038,10 @@ static void set_rest_offset(void)
 				s->ymn -= shift;
 				continue;
 			}
-			if (do_shift) {
-				s->u.note.notes[0].shhd = 10;
-				s->xmx = 10;
-				continue;
-			}
+			dx = dots ? 15 : 10;
+			s->u.note.notes[0].shhd = dx;
+			s->xmx = dx;
+			continue;
 		}
 		shift = ymin - s->ymn;
 		if (shift > 0) {
@@ -3036,11 +3052,10 @@ static void set_rest_offset(void)
 				s->ymn += shift;
 				continue;
 			}
-			if (do_shift) {
-				s->u.note.notes[0].shhd = 10;
-				s->xmx = 10;
-				continue;
-			}
+			dx = dots ? 15 : 10;
+			s->u.note.notes[0].shhd = dx;
+			s->xmx = dx;
+			continue;
 		}
 		if (!not_alone) {
 			s->y = 12;
@@ -3716,7 +3731,7 @@ head_1:
 head_2:
 	s1->nohdi1 = i11;	/* keep heads of 2nd voice */
 	s1->nohdi2 = i12;
-	for (i1 = i11; i1 < i12; i1--)
+	for (i1 = i11; i1 < i12; i1++)
 		s1->u.note.notes[i1].acc = 0;
 	for (i1 = 0; i1 <= s1->nhd; i1++)
 		s1->u.note.notes[i1].shhd += sh2;
@@ -4317,7 +4332,6 @@ static void check_bar(struct SYMBOL *s)
 			p_voice->bar_start |= 0x8000;
 		if (s->sflags & S_NOREPBRA)
 			p_voice->bar_start |= 0x4000;
-		return;
 	}
 	bar_type = s->u.bar.type;
 	if (bar_type == B_COL)			/* ':' */

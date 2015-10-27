@@ -935,7 +935,7 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 		if (!isdigit(*p))
 			val = get_posit(p);
 		else
-			val = strtol(p, 0, 10);
+			val = strtol(p, NULL, 10);
 		if ((unsigned) val > vpar->max)
 			goto err;
 		break;

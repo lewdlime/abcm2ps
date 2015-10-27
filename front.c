@@ -56,7 +56,7 @@ static unsigned char circumflex[] = "AÂEÊIÎOÔUÛaâeêiîoôuûHĤJĴhĥjĵC
 static unsigned char cedilla[] = "CÇcçSŞsşTŢtţRŖLĻGĢrŗlļgģNŅKĶnņkķ";
 static unsigned char umlaut[] = "AÄEËIÏOÖUÜYŸaäeëiïoöuüyÿ";
 static unsigned char tilde[] = "AÃNÑOÕaãnñoõIĨiĩUŨuũ";
-static unsigned char ring[] = "AÅaåUŮuů";
+static unsigned char ring[] = "AÅaåUŮuůeœ";
 static unsigned char macron[] = "AĀDĐEĒHĦIĪOŌTŦUŪaādđeēhħiīoōtŧuū"; /* and stroke! */
 static unsigned char slash[] = "OØoøDĐdđLŁlł";
 static unsigned char ogonek[] = "AĄEĘIĮUŲaąeęiįuų";
@@ -65,7 +65,7 @@ static unsigned char breve[] = "AĂaăEĔeĕGĞgğIĬiĭOŎoŏUŬuŭ";
 static unsigned char hungumlaut[] = "OŐUŰoőuű";
 static unsigned char dot[] = "ZŻzżIİiıCĊcċGĠgġEĖeė";
 /* the items of this table are 4 bytes long */
-static unsigned char ligature[] = "AAÅaaåAEÆaeæccçcCÇDHÐdhðngŋOEŒoeœssßTHÞthþ";
+static unsigned char ligature[] = "AAÅaaåAEÆaeæccçcCÇDHÐdhðngŋOEŒssßTHÞthþ";
 
 /* latin conversion tables - range 0xa0 .. 0xff */
 static unsigned char latin2[] = {

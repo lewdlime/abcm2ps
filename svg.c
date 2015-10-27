@@ -176,7 +176,7 @@ static struct {
 {	"<use id=\"scclef\" transform=\"translate(0,-2) scale(0.037)\"\n"
 	"	xlink:href=\"#ucclef\"/>\n", D_ucclef},
 #define D_pclef 10
-{	"<path id=\"pclef\" d=\"m-2.7 -2h5.4v-20h-5.4v20\" class=\"stroke\" stroke-width=\"1.4\"/>\n"},
+{	"<path id=\"pclef\" d=\"m-2.7 -2h5.4v-20h-5.4v20\" class=\"stroke\" style=\"stroke-width:1.4\"/>\n"},
 #define D_hd 11
 {	"<ellipse id=\"hd\" rx=\"4.1\" ry=\"2.9\"\n"
 	"	transform=\"rotate(-20)\" class=\"fill\"/>\n"},
@@ -203,12 +203,12 @@ static struct {
 	"</g>\n", D_HD},
 #define D_breve 15
 {	"<g id=\"breve\" class=\"stroke\">\n"
-	"	<path d=\"m-6 -2.7h12m0 5.4h-12\" stroke-width=\"2.5\"/>\n"
+	"	<path d=\"m-6 -2.7h12m0 5.4h-12\" style=\"stroke-width:2.5\"/>\n"
 	"	<path d=\"m-6 -5v10m12 0v-10\"/>\n"
 	"</g>\n"},
 #define D_longa 16
 {	"<g id=\"longa\" class=\"stroke\">\n"
-	"	<path d=\"m-6 2.7h12m0 -5.4h-12\" stroke-width=\"2.5\"/>\n"
+	"	<path d=\"m-6 2.7h12m0 -5.4h-12\" style=\"stroke-width:2.5\"/>\n"
 	"	<path d=\"m-6 5v-10m12 0v16\"/>\n"
 	"</g>\n"},
 #define D_ghd 17
@@ -276,7 +276,7 @@ static struct {
 #define D_mrest 29
 {	"<g id=\"mrest\" class=\"stroke\">\n"
 	"	<path d=\"m-20 -6v-12m40 0v12\"/>\n"
-	"	<path d=\"m-20 -12h40\" stroke-width=\"5\"/>\n"
+	"	<path d=\"m-20 -12h40\" style=\"stroke-width:5\"/>\n"
 	"</g>\n"},
 #define D_usharp 30
 {	"<path id=\"usharp\" class=\"fill\" d=\"\n"
@@ -402,7 +402,7 @@ static struct {
 	"	<path class=\"fill\" d=\"M0.6 -2.7\n"
 	"		c-5.7 -3.1 -5.7 3.6 0 6.7c-3.9 -4 -4 -7.6 0 -5.8\n"
 	"		M1 -2.7c5.7 -3.1 5.7 3.6 0 6.7c3.9 -4 4 -7.6 0 -5.8\"/>\n"
-	"	<path d=\"M1.6 3.5v-13M0 3.5v-13\" class=\"stroke\" stroke-width=\".6\"/>\n"
+	"	<path d=\"M1.6 3.5v-13M0 3.5v-13\" class=\"stroke\" style=\"stroke-width:.6\"/>\n"
 	"</g>\n"},
 #define D_pshhd 44
 {	"<g id=\"pshhd\">\n"
@@ -429,7 +429,7 @@ static struct {
 	"	<path d=\"m0 -4v-16\" class=\"stroke\"/>\n"
 	"</g>\n", D_csig},
 #define D_pmsig 48
-{	"<path id=\"pmsig\" class=\"stroke\" stroke-width=\".8\"\n"
+{	"<path id=\"pmsig\" class=\"stroke\" style=\"stroke-width:.8\"\n"
 	"	d=\"M0 -7a5 5 0 0 1 0 -10a5 5 0 0 1 0 10\"/>\n"},
 #define D_pMsig 49
 {	"<g id=\"pMsig\">\n"
@@ -437,7 +437,7 @@ static struct {
 	"	<path class=\"fill\" d=\"M0 -10a2 2 0 0 1 0 -4a2 2 0 0 1 0 4\"/>\n"
 	"</g>\n", D_pmsig},
 #define D_imsig 50
-{	"<path id=\"imsig\" class=\"stroke\" stroke-width=\".8\"\n"
+{	"<path id=\"imsig\" class=\"stroke\" style=\"stroke-width:.8\"\n"
 	"	d=\"M0 -7a5 5 0 1 1 0 -10\"/>\n"},
 #define D_iMsig 51
 {	"<g id=\"iMsig\">\n"
@@ -468,11 +468,11 @@ static struct {
 {	"<g id=\"mrep2\" class=\"fill\">\n"
 	"	<path d=\"M-5.5 -19.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\n"
 	"		M5 -7.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\"/>\n"
-	"	<path d=\"M-7 -4l14 -10m-14 4l14 -10\" class=\"stroke\" stroke-width=\"1.8\"/>\n"
+	"	<path d=\"M-7 -4l14 -10m-14 4l14 -10\" class=\"stroke\" style=\"stroke-width:1.8\"/>\n"
 	"</g>\n"},
 #define D_accent 60
 {	"<g id=\"accent\" class=\"stroke\">\n"
-	"	<path d=\"m-4 0l8 -2l-8 -2\" stroke-width=\"1.2\"/>\n"
+	"	<path d=\"m-4 0l8 -2l-8 -2\" style=\"stroke-width:1.2\"/>\n"
 	"</g>\n"},
 #define D_umrd 61
 {	"<path id=\"umrd\" class=\"fill\" d=\"m0 -4\n"
@@ -483,7 +483,7 @@ static struct {
 #define D_lmrd 62
 {	"<g id=\"lmrd\">\n"
 	"	<use xlink:href=\"#umrd\"/>\n"
-	"	<line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"-8\" class=\"stroke\" stroke-width=\".6\"/>\n"
+	"	<line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"-8\" class=\"stroke\" style=\"stroke-width:.6\"/>\n"
 	"</g>\n", D_umrd},
 #define D_grm 63
 {	"<path id=\"grm\" class=\"fill\" d=\"\n"
@@ -498,7 +498,7 @@ static struct {
 	"	c1.8 0.7 4.5 -0.2 7.2 -4.8\n"
 	"	-2.1 5 -5.4 6.8 -7.6 6\"/>\n"},
 #define D_emb 66
-{	"<path id=\"emb\" d=\"m-2.5 -3h5\" class=\"stroke\" stroke-width=\"1.2\" stroke-linecap=\"round\"/>\n"},
+{	"<path id=\"emb\" d=\"m-2.5 -3h5\" class=\"stroke\" style=\"stroke-width:1.2\" stroke-linecap=\"round\"/>\n"},
 #define D_hld 67
 {	"<g id=\"hld\" class=\"fill\">\n"
 	"	<circle cx=\"0\" cy=\"-3\" r=\"1.3\"/>\n"
@@ -540,19 +540,19 @@ static struct {
 #define D_coda 72
 {	"<g id=\"coda\" class=\"stroke\">\n"
 	"	<path d=\"m0 -2v-20m-10 10h20\"/>\n"
-	"	<circle cx=\"0\" cy=\"-12\" r=\"6\" stroke-width=\"1.7\"/>\n"
+	"	<circle cx=\"0\" cy=\"-12\" r=\"6\" style=\"stroke-width:1.7\"/>\n"
 	"</g>\n"},
 #define D_dplus 73
-{	"<path id=\"dplus\" class=\"stroke\" stroke-width=\"1.7\"\n"
+{	"<path id=\"dplus\" class=\"stroke\" style=\"stroke-width:1.7\"\n"
 	"	d=\"m0 -0.5v-6m-3 3h6\"/>\n"},
 #define D_lphr 74
-{	"<path id=\"lphr\" class=\"stroke\" stroke-width=\"1.2\"\n"
+{	"<path id=\"lphr\" class=\"stroke\" style=\"stroke-width:1.2\"\n"
 	"	d=\"m0 0v18\"/>\n"},
 #define D_mphr 75
-{	"<path id=\"mphr\" class=\"stroke\" stroke-width=\"1.2\"\n"
+{	"<path id=\"mphr\" class=\"stroke\" style=\"stroke-width:1.2\"\n"
 	"	d=\"m0 0v12\"/>\n"},
 #define D_sphr 76
-{	"<path id=\"sphr\" class=\"stroke\" stroke-width=\"1.2\"\n"
+{	"<path id=\"sphr\" class=\"stroke\" style=\"stroke-width:1.2\"\n"
 	"	d=\"m0 0v6\"/>\n"},
 #define D_opend 77
 {	"<circle id=\"opend\" class=\"stroke\"\n"
@@ -602,7 +602,7 @@ static struct {
 	"	<path d=\"M3.5 0l5 -7\" class=\"stroke\"/>\n"
 	"</g>\n"},
 #define D_showerror 85
-{	"<circle id=\"showerror\" r=\"30\" stroke=\"#ffc0c0\" stroke-width=\"2.5\" fill=\"none\"/>\n"},
+{	"<circle id=\"showerror\" r=\"30\" stroke=\"#ffc0c0\" style=\"stroke-width:2.5\" fill=\"none\"/>\n"},
 #define D_sfz 86
 {	"<text id=\"sfz\" font-family=\"serif\" font-size=\"14\" font-style=\"italic\" font-weight=\"normal\"\n"
 	"	x=\"-5\" y=\"-7\">s<tspan\n"
@@ -1036,7 +1036,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 		"\twidth=\"%.2fpx\" height=\"%.2fpx\">\n"
 		"<style type=\"text/css\">\n"
 		".fill {fill: currentColor}\n"
-		".stroke {stroke: currentColor; fill: none}\n"
+		".stroke {stroke: currentColor; fill: none; stroke-width: .7}\n"
 		"</style>\n"
 		"<title>";
 	static const char *svg_head2 =
@@ -1250,11 +1250,15 @@ static void defg1(void)
 		}
 		fputs("\"", fout);
 	}
-	if (gcur.linewidth != 1)
-		fprintf(fout, " stroke-width=\"%.2f\"", gcur.linewidth);
 	output_font(0);
-	if (gcur.rgb != 0)
-		fprintf(fout, " style=\"color:#%06x\"", gcur.rgb);
+	if (gcur.linewidth != DLW || gcur.rgb != 0) {
+		fprintf(fout, " style=\"");
+		if (gcur.linewidth != DLW)
+			fprintf(fout, "stroke-width:%.2f;", gcur.linewidth);
+		if (gcur.rgb != 0)
+			fprintf(fout, "color:#%06x;", gcur.rgb);
+		fprintf(fout, "\"");
+	}
 //jfm test
 //	fprintf(fout, "%s>\n", gcur.dash);
 	fprintf(fout, ">\n");
@@ -1342,7 +1346,7 @@ static void def_use(int def)
 {
 	int i;
 
-	gcur.linewidth = DLW;
+//	gcur.linewidth = DLW;
 //	if (g == 2) {		-- may have other changes
 //		fputs("</text>\n", fout);
 //		g = 1;
@@ -1492,7 +1496,7 @@ static void stem(char *op)
 	struct ps_sym_s *sym;
 	float x, y, dx, h;
 
-	gcur.linewidth = DLW;
+//	gcur.linewidth = DLW;
 
 	setg(1);
 	h = pop_free_val();
@@ -1613,7 +1617,7 @@ back:
 	if (type == 'b') {
 		setg(1);
 		fprintf(fout,
-			"<rect class=\"stroke\" stroke-width=\"0.6\"\n"
+			"<rect class=\"stroke\" style=\"stroke-width:0.6\"\n"
 			"	x=\"%.2f\" y=\"%.2f\" width=\"%.2f\" height=\"%.2f\"/>\n",
 			gcur.xoffs + gcur.cx - 2, gcur.yoffs - y - gcur.font_s + 2,
 			w + 4, gcur.font_s + 1);
@@ -2738,7 +2742,7 @@ curveto:
 			d = 25 + (int) w / 20 * 3;
 			n = (w - 15.) / d;
 			x += (w - d * n - 5) / 2;
-			fprintf(fout, "<path class=\"stroke\" stroke-width=\"1.2\"\n"
+			fprintf(fout, "<path class=\"stroke\" style=\"stroke-width:1.2\"\n"
 				"	stroke-dasharray=\"5,%d\"\n"
 				"	d=\"M%.2f %.2fh%d\"/>\n",
 				d - 5,
@@ -3794,7 +3798,7 @@ rmoveto:
 			return;
 		}
 		if (strcmp(op, "staff") == 0) {
-			gcur.linewidth = DLW;
+//			gcur.linewidth = DLW;
 			setg(1);
 			y = gcur.yoffs - pop_free_val();
 			x = gcur.xoffs + pop_free_val();
@@ -3962,7 +3966,7 @@ translate:
 			x = gcur.xoffs + pop_free_val() + 1.5;
 			h = pop_free_val();
 			fprintf(fout,
-				"<path class=\"stroke\" stroke-width=\"3\"\n"
+				"<path class=\"stroke\" style=\"stroke-width:3\"\n"
 				"	d=\"M%.2f %.2fv%.2f\"/>\n",
 				x, y, -h);
 			return;
@@ -4081,7 +4085,7 @@ translate:
 			y = pop_free_val();
 			x = pop_free_val();
 			w = pop_free_val();
-			fprintf(fout, "<path class=\"stroke\" stroke-width=\"0.8\"\n"
+			fprintf(fout, "<path class=\"stroke\" style=\"stroke-width:0.8\"\n"
 				"	d=\"M%.2f %.2fh%.2f\"/>\n",
 				gcur.xoffs + x, gcur.yoffs - y, w);
 			return;

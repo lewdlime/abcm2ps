@@ -865,22 +865,24 @@ static char *get_len(char *p,
 
 /* -- parse a 'M:' -- */
 static char *parse_meter(char *p,
-			 struct SYMBOL *s)
+				struct SYMBOL *s)
 {
 	int m1, m2, d, wmeasure, nm, in_parenth;
 	unsigned i;
 	char *q;
-static char *top_err = "Cannot identify meter top";
+static char top_err[] = "Cannot identify meter top";
 
 	if (*p == '\0')
 		return "Empty meter string";
 	nm = 0;
 	in_parenth = 0;
-	wmeasure = 0;
 	m1 = 0;
 	if (strncmp(p, "none", 4) == 0) {
 		p += 4;				/* no meter */
-	} else while (*p != '\0') {
+		wmeasure = 1;	/* simplify measure numbering and MREST conversion */
+	} else {
+	    wmeasure = 0;
+	    while (*p != '\0') {
 		if (*p == '=')
 			break;
 		if (nm >= MAX_MEASURE)
@@ -975,6 +977,7 @@ static char *top_err = "Cannot identify meter top";
 			p++;
 		else if (*p == '+')
 			s->u.meter.meter[nm++].top[0] = *p++;
+	    }
 	}
 	meter = m1;
 	if (*p == '=') {

@@ -21,18 +21,6 @@
 	font-size="24" font-weight="normal" font-style="normal">&#xe062;</text>
     <text id="csig" x="-5" y="-12" font-family="Bravura"
 	font-size="24" font-weight="normal" font-style="normal">&#xe08a;</text>
-<!--
-    <text id="flat" x="-2" y="0" font-family="Bravura"
-	font-size="24" font-weight="normal" font-style="normal">&#xe260;</text>
-    <text id="natural" x="-2" y="0" font-family="Bravura"
-	font-size="24" font-weight="normal" font-style="normal">&#xe261;</text>
-    <text id="sharp" x="-2" y="0" font-family="Bravura"
-	font-size="24" font-weight="normal" font-style="normal">&#xe262;</text>
-    <text id="double_sharp" x="-2" y="0" font-family="Bravura"
-	font-size="24" font-weight="normal" font-style="normal">&#xe263;</text>
-    <text id="double_flat" x="-3" y="0" font-family="Bravura"
-	font-size="24" font-weight="normal" font-style="normal">&#xe264;</text>
--->
     <text id="ft0" x="-2" y="0" font-family="Bravura"
 	font-size="24" font-weight="normal" font-style="normal">&#xe260;</text>
     <text id="nt0" x="-2" y="0" font-family="Bravura"

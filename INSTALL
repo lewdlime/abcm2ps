@@ -15,22 +15,39 @@ and then, as root, do:
 
 	make install
 
-If you are not happy with the Makefile options (install programm,
-installation directories..), you may create a file 'custom' with
-your own values (Bourne shell syntax) and use the script 'configure'
-to create an other Makefile.
-The variables which may be customized are at the head of the script
-configure. For example, if you prefer to use 'clang' instead of 'gcc',
-the file 'custom' would contain the single line
+If you are not happy with the Makefile options (install program,
+installation directories..), these ones may be customized
+using the furnished script 'configure'.
+The variables and their default values are:
+
+CC=gcc
+CFLAGS="-g -O2 -Wall -pipe"
+srcdir=.
+prefix=/usr/local
+INSTALL="/usr/bin/install -c"
+INSTALL_DATA='${INSTALL} -m 644'
+INSTALL_PROGRAM='${INSTALL}'
+exec_prefix='${prefix}'
+bindir='${exec_prefix}/bin'
+libdir='${exec_prefix}/lib'
+datarootdir='${prefix}/share'
+docdir='${prefix}/doc'
+DEFAULT_FDIR="$prefix/share/abcm2ps"
+
+The script 'configure' first tries to read the file 'custom'
+in which you may set your own values (Bourne shell syntax).
+For example, if you prefer to use 'clang' instead of 'gcc',
+the file 'custom' would contain the single line:
 
 	CC=clang
 
-then, you do
+then, you do:
 
 	./configure
 	make
 
-Without a file 'custom', you may do the same with
+The script 'configure' may also get the values of the variables from
+the command line. These settings must start with '--':
 
 	./configure --CC=clang
 
@@ -75,7 +92,5 @@ if you do only SVG/(X)HTML output, you don't need this library.
 In Unix(-like) systems, at configure time, the pango generation elements
 are searched by pkg-config in the gdk-2.0 library. If this library or
 pkg_config are not found, the rendering of non latin characters with
-pango will be disabled, but this rendering may be done by other means,
-especially by CMap (see the file chinese.abc). Note also that, when
-pango is defined, it may be disabled at command line level by
-'--pango 0'.
+pango will be disabled. Note also that, when pango is defined, it may be
+disabled at command line level by '--pango 0'.

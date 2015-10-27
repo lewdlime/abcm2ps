@@ -1,38 +1,55 @@
 #! /bin/sh
 
-### custom variables ###
-
 CC=gcc
 CFLAGS="-g -O2 -Wall -pipe"
 
-INSTALL="/usr/bin/install -c"
-INSTALL_DATA='${INSTALL} -m 644'
-INSTALL_PROGRAM='${INSTALL}'
-
-prefix=/usr/local
-exec_prefix='${prefix}'
 srcdir=.
-bindir='${exec_prefix}/bin'
-libdir='${exec_prefix}/lib'
-datarootdir='${prefix}/share'
-docdir='${prefix}/doc'
-DEFAULT_FDIR="$prefix/share/abcm2ps"
+prefix=/usr/local
 
-### custom end ###
+INSTALL="/usr/bin/install -c"
 
 if test -f ./custom; then
 	. ./custom
 fi
 
-VERSION=8.9.0
-VDATE='October 10, 2015'
+VERSION=8.9.2
+VDATE='October 26, 2015'
 
-case "$1" in
+for c in $@; do
+ case "$c" in
 	--*=*)
-		cmd=${1#--}
-		eval $cmd
+#		cmd=${1#--}
+#		eval $cmd
+		eval ${c#--}
 		;;
-esac
+ esac
+done
+
+if test "x$INSTALL_DATA" = x; then
+	INSTALL_DATA='${INSTALL} -m 644'
+fi
+if test "x$INSTALL_PROGRAM" = x; then
+	INSTALL_PROGRAM='${INSTALL}'
+fi
+
+if test "x$exec_prefix" = x; then
+	exec_prefix='${prefix}'
+fi
+if test "x$bindir" = x; then
+	bindir='${exec_prefix}/bin'
+fi
+if test "x$libdir" = x; then
+	libdir='${exec_prefix}/lib'
+fi
+if test "x$datarootdir" = x; then
+	datarootdir='${prefix}/share'
+fi
+if test "x$docdir" = x; then
+	docdir='${prefix}/doc'
+fi
+if test "x$DEFAULT_FDIR" = x; then
+	DEFAULT_FDIR="$prefix/share/abcm2ps"
+fi
 
 if which pkg-config > /dev/null ; then
 	if pkg-config --exists freetype2 ; then

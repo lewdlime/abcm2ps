@@ -19,6 +19,7 @@
 
 #include "abcm2ps.h" 
 
+#define PPI_96_72 0.75		// convert page format to 72 PPI
 #define BUFFLN	80		/* max number of lines in output buffer */
 
 static int ln_num;		/* number of lines in buffer */
@@ -138,17 +139,17 @@ static void init_ps(char *str)
 		cur_lmarg = min_lmarg - 10;
 		fprintf(fout, "%%!PS-Adobe-2.0 EPSF-2.0\n"
 			"%%%%BoundingBox: 0 0 %.0f %.0f\n",
-			(p_fmt->landscape ? p_fmt->pageheight : p_fmt->pagewidth)
-				- cur_lmarg - max_rmarg + 10,
-			-bposy);
+			((p_fmt->landscape ? p_fmt->pageheight : p_fmt->pagewidth)
+				- cur_lmarg - max_rmarg + 10) * PPI_96_72,
+			-bposy * PPI_96_72);
 		marg_init();
 	} else {
 		if (!fout)
 			open_fout();
 		fprintf(fout, "%%!PS-Adobe-2.0\n");
 		fprintf(fout, "%%%%BoundingBox: 0 0 %.0f %.0f\n",
-			p_fmt->pagewidth,
-			p_fmt->pageheight);
+			p_fmt->pagewidth * PPI_96_72,
+			p_fmt->pageheight * PPI_96_72);
 	}
 	fprintf(fout, "%%%%Title: %s\n", str);
 	time(&ltime);
@@ -214,7 +215,8 @@ static void init_ps(char *str)
 	if (!epsf)
 		fprintf(fout, "/setpagedevice where{pop\n"
 			"	<</PageSize[%.0f %.0f]>>setpagedevice}if\n",
-				p_fmt->pagewidth, p_fmt->pageheight);
+				p_fmt->pagewidth * PPI_96_72,
+				p_fmt->pageheight * PPI_96_72);
 	fprintf(fout, "%%%%EndSetup\n");
 	file_initialized = 1;
 }
@@ -312,16 +314,10 @@ void close_page(void)
 //		else
 //			fputs("</p>\n", fout);
 	} else {
-#if 1
 		fprintf(fout, "grestore\n"
 				"showpage\n"
 				"%%%%EndPage: %d %d\n",
 				nbpages, nbpages);
-#else
-		fputs("%%PageTrailer\n"
-			"grestore\n"
-			"showpage\n", fout);
-#endif
 	}
 	cur_lmarg = 0;
 	cur_scale = 1.0;
@@ -564,13 +560,13 @@ static void init_page(void)
 		pwidth = cfmt.pageheight;
 		if (!svg)
 			fprintf(fout, "%%%%PageOrientation: Landscape\n"
-				"gsave 90 rotate 0 %.1f T\n",
+				"gsave 0.75 dup scale 90 rotate 0 %.1f T\n",
 				-cfmt.topmargin);
 	} else {
 		pheight = cfmt.pageheight;
 		pwidth = p_fmt->pagewidth;
 		if (!svg)
-			fprintf(fout, "gsave 0 %.1f T\n",
+			fprintf(fout, "gsave 0.75 dup scale 0 %.1f T\n",
 				pheight - cfmt.topmargin);
 	}
 	if (svg)
@@ -578,8 +574,8 @@ static void init_page(void)
 	else
 		output(fout,
 			"%% --- width %.1f\n",		/* for index */
-			((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
-			 - cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale);
+			(pwidth - cfmt.leftmargin - cfmt.rightmargin) /
+					cfmt.scale);
 
 	remy = maxy = pheight - cfmt.topmargin - cfmt.botmargin;
 
@@ -701,7 +697,7 @@ void write_eps(void)
 	epsf_title(title, sizeof title);
 	if (epsf == 1) {
 		init_ps(title);
-		fprintf(fout, "0 %.1f T\n", -bposy);
+		fprintf(fout, "0.75 dup scale 0 %.1f T\n", -bposy);
 		write_buffer();
 		fprintf(fout, "showpage\nrestore\n");
 	} else {

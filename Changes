@@ -1,3 +1,37 @@
+---- Version 8.9.2 - 15/10/26 ----
+
+Fix bad display of double repeat bars when crossing 2 music lines
+		since 8.8.2
+	(reported by Jean-Luc Zins)
+Fix bad measure duration since 8.9.1
+Fix bad slur when ending on first symbol from the previous music line
+		and in a second voice
+	(reported by Frédéric Boulanger and Jean-Luc Zins)
+Update the INSTALL documentation
+Fix bad scale with EPS output
+	(reported by Martin Tarenskeen)
+Fix error in SVG when non-default stroke width and voice color
+	(reported by David Lacroix)
+Fix bad setting of the configure variables when done in the command line
+	(reported by Martin Tarenskeen)
+Change the default meter from 4/4 to none when M: is absent,
+		in accordance with the standard
+Set the duration of a measure to a non null value when M:none
+		and avoid strange rendering of multi-rests ("Z")
+	(reported by Jakob Englhauser)
+
+---- Version 8.9.1 - 15/10/15 ----
+
+Fix bad height of fingering in groups of grace notes
+Set back the PS out in 72 PPI
+	('gv' problem reported by Jean-Luc Zins)
+Fix crash when some cases of voice unison
+	(reported by Jean-Luc Zins)
+Fix stroke width in SVG images
+	(after tests with Larry Myerscough)
+Fix bad conversion of "\oe" into œ
+	(reported by Guido Gonzato)
+
 ---- Version 8.9.0 - 15/10/10 ----
 
 %%pagescale added

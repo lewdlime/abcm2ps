@@ -1,3 +1,17 @@
+---- Version 8.9.3 - 15/11/22 ----
+
+Fix bad length of long decorations when %%staffscale or %%voicescale
+	(reported by Gerhard Schacherl)
+Fix bad heads when %%voicecombine and head decorations
+	(reported by Johann Schatzer)
+%%voicecombine may be global
+Fix bad handling of "$n" in lyrics
+	(reported by Gerhard Schacherl)
+Don't draw a line above a measure bar up to the upper staff
+		when this upper staff has no bar
+Draw the measure bars a bit thicker
+	(asked by Guido Gonzato)
+
 ---- Version 8.9.2 - 15/10/26 ----
 
 Fix bad display of double repeat bars when crossing 2 music lines

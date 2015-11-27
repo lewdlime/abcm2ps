@@ -1208,6 +1208,13 @@ static void draw_bar(struct SYMBOL *s, float bot, float h)
 			}
 		}
 	}
+
+	/* don't put a line between the staves if there is no bar above */
+	if (staff != 0
+	 && s->ts_prev
+	 && (s->ts_prev->type != BAR || s->ts_prev->staff != staff - 1))
+		h = staff_tb[staff].topbar * staff_tb[staff].staffscale;
+
 	dotted = s->u.bar.dotted || s->u.bar.type == B_COL;
 	bar_type = bar_cnv(s->u.bar.type);
 	if (bar_type == 0)
@@ -3721,11 +3728,11 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 			 float y,
 			 int incr)	/* 1: below, -1: above */
 {
-	int hyflag, l, j, lflag;
+	int hyflag, l, j, lflag, ft, curft, defft;
 	char *p;
 	float lastx, w, lskip, desc;
 	struct SYMBOL *s;
-	struct FONTSPEC *f;
+//	struct FONTSPEC *f;
 	struct lyrics *ly;
 	struct lyl *lyl;
 
@@ -3740,7 +3747,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 
 	outft = -1;				/* force font output */
 	lskip = 0;				/* (compiler warning) */
-	f = NULL;				/* (force new font) */
+//	f = NULL;				/* (force new font) */
 	if (incr > 0) {				/* under the staff */
 		j = 0;
 /*fixme: may not be the current font*/
@@ -3758,6 +3765,8 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 	}
 /*fixme: may not be the current font*/
 	desc = cfmt.font_tb[VOCALFONT].size * .25;	/* descent */
+	str_font(VOCALFONT);
+	ft = -1;
 	for (; j != nly ; j += incr) {
 		float x0, shift;
 
@@ -3777,8 +3786,8 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 //			lastx = 0;
 			lastx = tsfirst->x;
 		x0 = 0;
-		if (f != 0)
-			lskip = f->size * 1.1;
+//		if (f)
+//			lskip = f->size * 1.1;
 		for ( ; s; s = s->next) {
 			ly = s->ly;
 			if (!ly
@@ -3799,12 +3808,22 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 				}
 				continue;
 			}
+#if 1
+			ft = lyl->f - cfmt.font_tb;
+			get_str_font(&curft, &defft);
+			if (ft != curft) {
+				set_str_font(ft, defft);
+				if (lskip < lyl->f->size * 1.1)
+					lskip = lyl->f->size * 1.1;
+			}
+#else
 			if (lyl->f != f) {		/* font change */
 				f = lyl->f;
 				str_font(f - cfmt.font_tb);
 				if (lskip < f->size * 1.1)
 					lskip = f->size * 1.1;
 			}
+#endif
 			p = lyl->t;
 			w = lyl->w;
 			shift = lyl->s;
@@ -4480,26 +4499,24 @@ static float set_staff(void)
 /* -- set the bottom and height of the measure bars -- */
 static void bar_set(float *bar_bot, float *bar_height)
 {
-	int staff, nlines;
-	float dy, staffscale;
-			/* !! max number of staff lines !! */
-	static const char top[10] = {18, 18, 12, 18, 18, 24, 30, 36, 42, 48};
-	static const char bot[10] = { 6,  6,  6,  6,  0,  0,  0,  0,  0,  0};
+	int staff;
+	float dy, staffscale, top, bot;
 
 	dy = 0;
 	for (staff = 0; staff <= nstaff; staff++) {
-		nlines = staff_tb[staff].stafflines;
-		staffscale = staff_tb[staff].staffscale;
 		if (cursys->staff[staff].empty) {
 			bar_bot[staff] = bar_height[staff] = 0;
 			continue;
 		}
+		staffscale = staff_tb[staff].staffscale;
+		top = staff_tb[staff].topbar * staffscale;
+		bot = staff_tb[staff].botbar * staffscale;
 		if (dy == 0)
-			dy = staff_tb[staff].y + top[nlines] * staffscale;
+			dy = staff_tb[staff].y + top;
 		bar_height[staff] = dy
-				- staff_tb[staff].y - bot[nlines] * staffscale;
+				- staff_tb[staff].y - bot;
 
-		bar_bot[staff] = staff_tb[staff].y + bot[nlines] * staffscale;
+		bar_bot[staff] = staff_tb[staff].y + bot;
 
 		if (cursys->staff[staff].flags & STOP_BAR)
 			dy = 0;
@@ -4549,14 +4566,13 @@ float draw_systems(float indent)
 					x2 = s->ts_prev->x;
 				else
 					x2 = s->x - s->wl - 2;
-				if (next_sy->staff[staff].empty) { // staff stop
+				if (next_sy->staff[staff].empty)	// staff stop
 					xstaff[staff] = -1;
-				} else if (next_sy->staff[staff].stafflines
-						== cursys->staff[staff].stafflines) {
+				else if (next_sy->staff[staff].stafflines
+						== cursys->staff[staff].stafflines)
 					continue;
-				} else {
+				else
 					xstaff[staff] = x2;
-				}
 				draw_staff(staff, x, x2);
 			}
 			cursys = next_sy;

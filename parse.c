@@ -1,5 +1,5 @@
 /*
- * PARSING functions.
+ * Parsing functions.
  *
  * This file is part of abcm2ps.
  *
@@ -2663,7 +2663,7 @@ static void save_maps(void)
 /* -- identify info line, store in proper place	-- */
 static struct SYMBOL *get_info(struct SYMBOL *s)
 {
-	struct SYMBOL *s1, *s2;
+	struct SYMBOL *s2;
 	struct VOICE_S *p_voice;
 	char *p;
 	char info_type;
@@ -2673,7 +2673,6 @@ static struct SYMBOL *get_info(struct SYMBOL *s)
 	/* change arena to global or tune */
 	old_lvl = lvlarena(s->state != ABC_S_GLOBAL);
 
-	s1 = s;
 	info_type = s->text[0];
 	switch (info_type) {
 	case 'd':
@@ -4038,7 +4037,7 @@ void sort_pitch(struct SYMBOL *s)
 	if (s->nhd > 0) {
 		for (i = 0; i <= s->nhd; i++)
 			inv_order[new_order[i]] = i;
-		for (i = 0; i <= s->nhd; i++) {
+		for (i = 0; i <= s->u.note.dc.n; i++) {
 			k = s->u.note.dc.tm[i].m;
 			if (k != 255)
 				s->u.note.dc.tm[i].m = inv_order[k];
@@ -4755,7 +4754,7 @@ static void get_map(char *p)
 static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 {
 	char w[32], *p, *q;
-	int lock;
+	int lock, voice;
 	float h1;
 
 	p = s->text + 2;		/* skip '%%' */
@@ -5215,7 +5214,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			return s;
 		}
 		if (strcmp(w, "stafflines") == 0) {
-			int voice, lines;
+			int lines;
 
 			lines = atoi(p);
 			if ((unsigned) lines >= 10) {
@@ -5231,7 +5230,6 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			return s;
 		}
 		if (strcmp(w, "staffscale") == 0) {
-			int voice;
 			char *q;
 			float scale;
 
@@ -5605,16 +5603,26 @@ center:
 		if (strcmp(w, "voicecombine") == 0) {
 			int combine;
 
-			if (sscanf(p, "%d", &combine) != 1)
+			if (sscanf(p, "%d", &combine) != 1) {
 				error(1, s, "Bad value in %%%%voicecombine");
-			else if (curvoice)
+				return s;
+			}
+			switch (s->state) {
+			case ABC_S_GLOBAL:
+				cfmt.combinevoices = combine;
+				break;
+			case ABC_S_HEAD:
+				for (voice = 0; voice < MAXVOICE; voice++)
+					voice_tb[voice].combine = combine;
+				break;
+			default:
 				curvoice->combine = combine;
+				break;
+			}
 			return s;
 		}
 		if (strcmp(w, "voicemap") == 0) {
 			if (s->state != ABC_S_TUNE) {
-				int voice;
-
 				for (voice = 0; voice < MAXVOICE; voice++)
 					voice_tb[voice].map_name = p;
 			} else {
@@ -5623,7 +5631,6 @@ center:
 			return s;
 		}
 		if (strcmp(w, "voicescale") == 0) {
-			int voice;
 			char *q;
 			float scale;
 

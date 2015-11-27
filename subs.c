@@ -802,7 +802,7 @@ static char *strop_tb[] = {	/* index = action (A_xxxx) */
 	"gxshow",
 };
 
-/* -- output a string and the font changes -- */
+/* -- output a string handling the font changes -- */
 static void str_ft_out(char *p, int end)
 {
 	int use_glyph;
@@ -913,8 +913,7 @@ void str_out(char *p, int action)
 	}
 #endif
 
-	/* direct output if no font change
-	 * nor non ASCII characters */
+	/* direct output if no font change and only ASCII characters */
 	if (!strchr(p, '$')
 	 && !non_ascii_p(p)) {
 		strop = strop_tb[action];

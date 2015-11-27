@@ -1852,7 +1852,7 @@ stack_dump();
 			y = gcur.yoffs - pop_free_val();
 			x = gcur.xoffs + pop_free_val();
 			h = pop_free_val();
-			fprintf(fout, "<path class=\"stroke\"\n"
+			fprintf(fout, "<path class=\"stroke\" style=\"stroke-width:1\"\n"
 				"	d=\"M%.2f %.2fv%.2f\"/>\n",
 				x, y, -h);
 			return;

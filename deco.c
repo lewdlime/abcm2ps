@@ -1242,9 +1242,12 @@ void draw_all_deco(void)
 		set_v_color(de->s->voice);
 		set_scale(de->s);
 		set_defl(de->defl);
-/*fixme: scaled or not?*/
-		if (de->flags & DE_VAL)
-			putf(de->v);
+		if (de->flags & DE_VAL) {
+			if (dd->func != 2 || voice_tb[de->s->voice].scale != 1)
+				putx(de->v);
+			else
+				putf(de->v);
+		}
 		x = de->x;
 		if (de->str) {
 			char *p, *q;

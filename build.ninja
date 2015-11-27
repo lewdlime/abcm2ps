@@ -1,21 +1,19 @@
 # rules for ninja (ninja-build)
 
-VERSION = 8.9.2
+VERSION = 8.9.3
+
+cc=gcc
+#cc=clang
 
 #cflags = -g -O2 -Wall -pipe -I.
 cflags = -g -Wall -pipe -I.
 ldflags = -lm
 
 rule cc
-#  command = gcc $cflags -c $in -o $out
-  command = clang $cflags -c $in -o $out
-# -mcpu=iwmmxt
-# -mcpu=iwmmxt2
-# -mthumb -march=armv7-a
+  command = $cc $cflags -c $in -o $out
 
 rule ld
-#  command = cc $ldflags -o $out $in
-  command = clang $ldflags -o $out $in
+  command = $cc $ldflags -o $out $in
 
 build abcm2ps.o: cc abcm2ps.c | config.h abcm2ps.h
 build abcparse.o: cc abcparse.c | config.h abcm2ps.h

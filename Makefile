@@ -1,6 +1,6 @@
 # Makefile source for abcm2ps
 
-VERSION = 8.9.2
+VERSION = 8.9.3
 
 CC = gcc
 INSTALL = /usr/bin/install -c

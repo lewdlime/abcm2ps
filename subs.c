@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2003 Jean-François Moine
+ * Copyright (C) 1998-2006 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -31,7 +31,16 @@
 #include "abcparse.h"
 #include "abc2ps.h" 
 
-static float twidth;		/* text width for %%begintext..%%endtext */
+char tex_buf[512];		/* result of tex_str() */
+struct FONTSPEC *font_init;	/* font in case of page break */
+int strcf;			/* current string font */
+
+static char *strop;		/* current string output operation */
+static float strlw;		/* line width */
+static float strtw = -1;	/* current text width */
+static int strns;		/* number of spaces (justify) */
+static int strfc;		/* force a font change before bext */
+static int strtx;		/* PostScript text outputing */
 
 /* width of characters according to the encoding */
 /* these are the widths for Times-Roman, extracted from the 'a2ps' package */
@@ -186,15 +195,15 @@ static char *esc_tb[] = {
 	ISOLatin6_c
 };
 
-static struct text {
-	struct text *next;
-	float textw;
+static struct u_ps {
+	struct u_ps *next;
 	char text[2];
-} *text_tb[TEXT_MAX];
+} *user_ps;
+
+static char *trim_title(char *p, int first);
 
 /* -- print message for internal error and maybe stop -- */
-void bug(char *msg,
-	 int fatal)
+void bug(char *msg, int fatal)
 {
 	error(1, 0, "This cannot happen!\n"
 	       "Internal error: %s.\n", msg);
@@ -207,35 +216,30 @@ void bug(char *msg,
 
 /* -- print an error message -- */
 void error(int sev,	/* 0: warning, 1: error */
-	   int linenum,
+	   struct SYMBOL *s,
 	   char *fmt, ...)
 {
 	va_list args;
-static char *t;
+static struct SYMBOL *t;
 
-	if (t != info.title[0]) {
-		t = info.title[0];
-		fprintf(stderr, "   - In tune `%s':\n", t);
+	if (t != info.title) {
+		char *p;
+
+		t = info.title;
+		p = &t->as.text[2];
+		while (isspace((unsigned char) *p))
+			p++;
+		fprintf(stderr, "   - In tune `%s':\n", p);
 	}
-	fprintf(stderr,
-		"%s in line %d: ", sev == 0 ? "Warning" : "Error", linenum);
+	fprintf(stderr, sev == 0 ? "Warning " : "Error ");
+	if (s != 0)
+		fprintf(stderr, "in line %d.%d",
+			s->as.linenum, s->as.colnum);
+	fprintf(stderr, ": ");
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	va_end(args);
 	fprintf(stderr, "\n");
-}
-
-/* -- return random float between x1 and x2 -- */
-float ranf(float x1,
-	   float x2)
-{
-static int first = 1;
-
-	if (first) {
-		srand(time(0));
-		first = 0;
-	}
-	return x1 + (x2 - x1) * (float) (rand() & 0x7fff) / 32768.;
 }
 
 /* -- read a number with a unit -- */
@@ -246,77 +250,87 @@ float scan_u(char *str)
 
 	if (sscanf(str, "%f%n", &a, &nch) == 1) {
 		if (str[nch] == '\0' || str[nch] == ' ')
-			return a * PT;
+			return a PT;
 		if (!strncasecmp(str + nch, "cm", 2))
-			return a * CM;
+			return a CM;
 		if (!strncasecmp(str + nch, "in", 2))
-			return a * IN;
+			return a IN;
 		if (!strncasecmp(str + nch, "pt", 2))
-			return a * PT;
+			return a PT;
 	}
 	error(1, 0, "\n++++ Unknown unit value \"%s\"", str);
-	return 20 * PT;
+	return 20 PT;
 }
 
 /* -- capitalize a string -- */
-void cap_str(unsigned char *p)
+static void cap_str(char *p)
 {
 	while (*p != '\0') {
 #if 1
 /* pb with toupper - works with ASCII only */
 		unsigned char c;
 
-		c = *p;
+		c = (unsigned char) *p;
 		if ((c >= 'a' && c <= 'z')
 		    || (c >= 0xe0 && c <= 0xfe))
 			*p = c & ~0x20;
 #else
-		*p = toupper(*p);
+		*p = toupper((unsigned char) *p);
 #endif
 		p++;
 	}
 }
 
-/*  miscellaneous subroutines  */
-
 /* -- return the character width -- */
 float cwid(unsigned char c)
 {
 	short *w;
+	unsigned enc;
 
+	if ((enc = cfmt.encoding) >= sizeof cw_tb / sizeof cw_tb[0])
+		enc = 0;
 	if (c < 160)		/* (0xa0) */
 		w = ISOLatin1_w;
-	else	w = cw_tb[cfmt.encoding];
+	else	w = cw_tb[enc];
 	return (float) w[c] / 1000.;
+}
+
+/* -- memorize the current font in case of page break -- */
+static void set_font_init(void)
+{
+	if (strcf < 0)
+		return;
+	font_init = &cfmt.font_tb[strcf];
 }
 
 /* -- change string taking care of some tex-style codes -- */
 /* Puts \ in front of ( and ) in case brackets are not balanced,
  * interprets all ISOLatin1..6 escape sequences as defined in rfc1345.
- * Returns the length of the string as finally given out on paper.
- * Also returns an estimate of the string width... */
-void tex_str(char *d,
-	     char *s,
-	     int maxlen,
-	     float *wid)
+ * Returns an estimate of the string width. */
+float tex_str(char *s)
 {
-	float w;
-	char c1, c2;
-	char *p_enc, *p;
-	int i;
+	char *d, c1, c2, *p_enc, *p;
+	int maxlen, i;
+	float w, swfac;
 
 	w = 0;
-	maxlen--;		/* have room for EOS */
-	p_enc = esc_tb[cfmt.encoding];
-	while ((c1 = *s) != '\0') {
+	d = tex_buf;
+	maxlen = sizeof tex_buf - 1;		/* have room for EOS */
+	if ((i = strcf) < 0)
+		i = 0;
+	swfac = cfmt.font_tb[i].swfac;
+	i = font_enc[cfmt.font_tb[i].fnum];
+	if ((unsigned) i >= sizeof esc_tb / sizeof esc_tb[0])
+		i = 0;
+	p_enc = esc_tb[i];
+	while ((c1 = *s++) != '\0') {
 		switch (c1) {
 		case '\\':			/* backslash sequences */
-			s++;
-			if ((c1 = *s) == '\0')
+			if ((c1 = *s++) == '\0')
 				break;
 			if (c1 == ' ')
 				goto addchar1;
-			if (c1 == '\\' || (c2 = s[1]) == '\0') {
+			if (c1 == '\\' || (c2 = *s) == '\0') {
 				if (--maxlen <= 0)
 					break;
 				*d++ = '\\';
@@ -325,15 +339,15 @@ void tex_str(char *d,
 			/* treat escape with octal value */
 			if ((unsigned) (c1 - '0') <= 3
 			    && (unsigned) (c2 - '0') <= 7
-			    && (unsigned) (s[2] - '0') <= 7) {
+			    && (unsigned) (s[1] - '0') <= 7) {
 				if ((maxlen -= 4) <= 0)
 					break;
 				*d++ = '\\';
 				*d++ = c1;
 				*d++ = c2;
-				*d++ = s[2];
-				c1 = ((c1 - '0') << 6) + ((c2 - '0') << 3) + s[2] - '0';
-				w += cwid(c1);
+				*d++ = s[1];
+				c1 = ((c1 - '0') << 6) + ((c2 - '0') << 3) + s[1] - '0';
+				w += cwid((unsigned char) c1) * swfac;
 				s += 2;
 				break;
 			}
@@ -365,9 +379,29 @@ void tex_str(char *d,
 				}
 			}
 			goto addchar1;
+#if 0
 		case '{':
 		case '}':
 			break;
+#endif
+		case '$':
+			if (isdigit((unsigned char) *s)
+			    && (unsigned) (*s - '0') < DFONT_MIN) {
+				i = *s - '0';
+				swfac = cfmt.font_tb[i].swfac;
+				i = cfmt.font_tb[i].fnum;
+				i = font_enc[i];
+				if ((unsigned) i >= sizeof esc_tb / sizeof esc_tb[0])
+					i = 0;
+				p_enc = esc_tb[i];
+			} else if (*s == '$') {
+				if (--maxlen <= 0)
+					break;
+				*d++ = c1;
+				w += cwid((unsigned char) c1) * swfac;
+				s++;
+			}
+			goto addchar1;
 		case '(':
 		case ')':			/* ( ) becomes \( \) */
 			if (--maxlen <= 0)
@@ -379,171 +413,359 @@ void tex_str(char *d,
 			if (--maxlen <= 0)
 				break;
 			*d++ = c1;
-			w += cwid(c1);
+			w += cwid((unsigned char) c1) * swfac;
+			break;
 		}
-		s++;
 	}
 	*d = '\0';
-	if (wid)
-		*wid = w;
+	return w;
 }
 
-/* -- output a string in postscript -- */
-static void put_str(char *str)
+/* -- set the default font of a string -- */
+void str_font(struct FONTSPEC *font)
 {
-	char s[801];
-
-	tex_str(s, str, sizeof s, 0);
-	PUT1("%s", s);
+	memcpy(&cfmt.font_tb[0], font, sizeof cfmt.font_tb[0]);
+	strcf = -1;
 }
 
-/* -- output a string in postscript with head and tail -- */
-static void put_str3(char *head,
-		     char *str,
-		     char *tail)
+/* -- output one string -- */
+static void str_ft_out1(char *p, int l)
 {
-	PUT0(head);
-	put_str(str);
-	PUT0(tail);
+	if (strfc) {
+		strfc = 0;
+		if (strtx) {
+			PUT1(")%s ", strop);
+			strtx = 0;
+		}
+		set_font(&cfmt.font_tb[strcf]);
+		if (font_init != 0)
+			set_font_init();
+	}
+	if (!strtx) {
+		PUT0("(");
+		strtx = 1;
+	}
+	PUT2("%.*s", l, p);
 }
 
-/* -- set font and memorize in case of page break -- */
-static void set_font_init(struct FONTSPEC *font)
+/* -- output a string and the font changes -- */
+static void str_ft_out(char *p, int end)
 {
-	set_font(font);
-	sprintf(page_init, "%.1f F%d ", font->size, font->fnum);
+	char *q;
+
+	q = p;
+	while (*p != '\0') {
+		if (*p == '$') {
+			if (isdigit((unsigned char) p[1])
+			    && (unsigned) (p[1] - '0') < DFONT_MIN) {
+				if (p > q)
+					str_ft_out1(q, p - q);
+				if (strcf != p[1] - '0') {
+					strcf = p[1] - '0';
+					strfc = 1;
+				}
+				p += 2;
+				q = p;
+				continue;
+			}
+			if (p[1] == '$') {
+				str_ft_out1(q, p - q);
+				q = ++p;
+			}
+		}
+		p++;
+	}
+	if (p > q)
+		str_ft_out1(q, p - q);
+	if (end && strtx) {
+		PUT1(")%s ", strop);
+		strtx = 0;
+	}
 }
 
-/* -- add_to_text_block -- */
-void add_to_text_block(char *s,
-		       int job)
+/* -- output a string, handling the font changes -- */
+void str_out(char *p, int action)
 {
-	float lw;
-	char buf[256];
+	if (strcf < 0) {		/* first call */
+		strcf = 0;
+		strfc = 1;
+	}
 
-	tex_str(buf, s, sizeof buf, &lw);
+	/* special case when font change at start of text */
+	if (*p == '$' && isdigit((unsigned char) p[1])
+	    && (unsigned) (p[1] - '0') < DFONT_MIN) {
+		if (strcf != p[1] - '0') {
+			strcf = p[1] - '0';
+			strfc = 1;
+		}
+		p += 2;
+	}
+
+	/* direct output if no font change */
+	if (strchr(p, '$') == 0) {
+		char *op;
+
+		if (strfc) {
+			set_font(&cfmt.font_tb[strcf]);
+			strfc = 0;
+		}
+		if (action == A_CENTER)
+			op = "c";
+		else if (action == A_RIGHT)
+			op = "r";
+		else	op = "";
+		PUT2("(%s)show%s ", p, op);
+		return;
+	}
+
+	/* if not left aligned, build a PS function */
+	if (action == A_LEFT)
+		strop = "show";
+	else {
+		PUT0("/str{");
+		strfc = 1;
+		strop = "strop";
+	}
+
+	str_ft_out(p, 1);		/* output the string */
+
+	/* if not left aligned, call the PS function */
+	if (action == A_LEFT)
+		return;
+	PUT0("}def\n"
+		"/strop/strw load def/w 0 def str w ");
+	if (action == A_CENTER)
+		PUT0("0.5 mul ");
+	PUT0("neg 0 RM/strop/show load def str ");
+}
+
+/* -- output a string with TeX translation -- */
+void put_str(char *str, int action)
+{
+	tex_str(str);
+	str_out(tex_buf, action);
+	PUT0("\n");
+}
+
+/* -- output a header information -- */
+static void put_inf(struct SYMBOL *s)
+{
+	char *p;
+
+	p = s->as.text;
+	if (p[1] == ':')
+		p += 2;
+	while (isspace((unsigned char) *p))
+		p++;
+	put_str(p, A_LEFT);
+}
+
+/* -- output a header format '111 (222)' -- */
+static void put_inf2r(struct SYMBOL *s1,
+		      struct SYMBOL *s2,
+		      int action)
+{
+	char buf[512], *p, *q;
+
+	if (s1 == 0) {
+		s1 = s2;
+		s2 = 0;
+	}
+	p = s1->as.text;
+	if (p[1] == ':')
+		p += 2;
+	while (isspace((unsigned char) *p))
+		p++;
+	if (s1->as.text[0] == 'T' && s1->as.text[1] == ':')
+		p = trim_title(p, s1 == info.title);
+	if (s2 != 0) {
+		buf[sizeof buf - 1] = '\0';
+		strncpy(buf, p, sizeof buf - 1);
+		q = buf + strlen(buf);
+		if (q < buf + sizeof buf - 4) {
+			*q++ = ' ';
+			*q++ = '(';
+			p = s2->as.text;
+			if (p[1] == ':')
+				p += 2;
+			while (isspace((unsigned char) *p))
+				p++;
+			strncpy(q, p, buf + sizeof buf - 2 - q);
+			q += strlen(q);
+			*q++ = ')';
+			*q = '\0';
+		}
+		p = buf;
+	}
+	put_str(p, action);
+}
+
+/* -- add text to a block -- */
+void add_to_text_block(char *s, int job)
+{
+	float baseskip, lw;
+	char *p, sep;
+	struct FONTSPEC *f;
 
 	/* if first line, set the fonts */
-	if (twidth == 0)
-		set_font_init(&cfmt.textfont);
+	if (strtw < 0) {
+		font_init = &cfmt.textfont;
+		str_font(&cfmt.textfont);
+		strlw = ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
+			- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale;
+	}
+
+	if (strcf >= 0)
+		f = &cfmt.font_tb[strcf];
+	else	f = &cfmt.font_tb[0];
+	baseskip = f->size * cfmt.lineskipfac;
 
 	/* follow lines */
 	if (job == OBEYLINES || job == OBEYCENTER) {
-		bskip(cfmt.textfont.size * cfmt.lineskipfac);
-		if (buf[0] != '\0') {
-			if (job == OBEYLINES)
-				PUT1("0 0 M (%s) show\n", buf);
-			else	{
-				PUT2("%.1f 0 M (%s) cshow\n",
-				     ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
-					- cfmt.leftmargin - cfmt.rightmargin)
-					* 0.5 / cfmt.scale,
-				     buf);
+		if (*s != '\0') {
+			bskip(baseskip);
+			if (job == OBEYLINES) {
+				PUT0("0 0 M ");
+				put_str(s, A_LEFT);
+			} else	{
+				PUT1("%.1f 0 M ", strlw * 0.5);
+				put_str(s, A_CENTER);
 			}
-		}
+		} else	bskip(baseskip * 0.5);
 		buffer_eob();
-		twidth += lw;
+		strtw = 0;
 		return;
 	}
 
 	/* fill or justify lines */
-	if (twidth == 0) {		/* if first line */
-		float baseskip;
-
-		baseskip = cfmt.textfont.size * cfmt.lineskipfac;
-		PUT1("/LF {0 %.1f RM}!\n", -baseskip);
+	if (strtw < 0) {		/* if first line */
+		strcf = 0;
+		strfc = 1;
 		bskip(baseskip);
-		PUT0("0 0 M (");
+		PUT0("0 0 M ");
+		if (job == T_FILL)
+			strop = "show";
+		else {
+			PUT0("/str{");
+			strop = "strop";
+		}
+		strns = 0;
+		strtw = 0;
 	}
-	PUT1("%s ", buf);
-	twidth += lw;
+
+	if (*s == '\0') {			/* empty line */
+		if (strtx) {
+			PUT1(")%s", strop);
+			strtx = 0;
+		}
+		if (job == T_JUSTIFY)
+			PUT0("}def\n"
+				"/strop/show load def str\n");
+		else	PUT0("\n");
+		font_init = f;
+		bskip(f->size * cfmt.lineskipfac * 1.5);
+		buffer_eob();
+		PUT0("0 0 M ");
+		if (job == T_JUSTIFY) {
+			PUT0("/str{");
+			strfc = 1;
+		}
+		strns = 0;
+		strtw = 0;
+		return;
+	}
+
+	p = s;
+	for (;;) {
+		while (*p != ' ' && *p != '\0')
+			p++;
+		sep = *p;
+		*p = '\0';
+		lw = tex_str(s);
+		if (strtw + lw > strlw) {
+			if (strtx) {
+				PUT1(")%s ", strop);
+				strtx = 0;
+			}
+			if (job == T_JUSTIFY) {
+				if (strns == 0)
+					strns = 1;
+				PUT2("}def\n"
+					"/strop/strw load def/w 0 def str"
+					"/w %.1f w sub %d div def"
+					"/strop/jshow load def str ",
+					strlw, strns);
+				strns = 0;
+			}
+			bskip(cfmt.font_tb[strcf].size * cfmt.lineskipfac);
+			PUT0("0 0 M ");
+			if (job == T_JUSTIFY) {
+				PUT0("/str{");
+				strfc = 1;
+			}
+			strtw = 0;
+		}
+		if (strtw != 0) {
+			str_ft_out(" ", 0);
+			strtw += cwid(' ') * cfmt.font_tb[strcf].swfac;
+			strns++;
+		}
+		str_ft_out(tex_buf, 0);
+		strtw += lw;
+		*p = sep;
+		while (*p == ' ')
+			p++;
+		if (*p == '\0')
+			break;
+		s = p;
+	}
 }
 
-/* -- write_text_block -- */
-void write_text_block(int job,
-		      int abc_state)
+/* -- write a text block -- */
+void write_text_block(int job, int abc_state)
 {
-	if (twidth == 0)
+	if (strtw < 0)
 		return;
 
-	if (job == T_FILL || job == T_JUSTIFY) {
-		int ntline, nbreak;
-		float textwidth, ftline, swfac, baseskip;
-		float lwidth;
-
-		baseskip = cfmt.textfont.size * cfmt.lineskipfac;
-		lwidth = ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
-			- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale;
-
-		/* estimate text widths.. ok for T-R, wild guess for other fonts */
-		swfac = cfmt.textfont.swfac;
-
-		PUT2(") %.1f P%d\n",
-		     lwidth, job == T_FILL ? 1 : 2);
-
-		/* estimate the skip:
-		 * 1- (total textwidth)/(available width) */
-		textwidth = twidth * swfac * cfmt.textfont.size;
-		ftline = textwidth / lwidth;
-		/* 2- assume some chars lost at each line end */
-		nbreak = ftline;
-		textwidth += 5 * nbreak * cwid('a') * swfac * cfmt.textfont.size;
-		ftline = textwidth / lwidth;
-		ntline = ftline + 1.0;
-		bskip((ntline - 1) * baseskip);
+	if (strtx) {
+		PUT1(")%s", strop);
+		strtx = 0;
 	}
+	if (job == T_JUSTIFY)
+		PUT0("}def\n"
+			"/strop/show load def str\n");
+	else if (job == T_FILL)
+		PUT0("\n");
 	bskip(cfmt.textfont.size * cfmt.parskipfac);
 	buffer_eob();
 
 	/* next line to allow pagebreak after each paragraph */
-	if (!epsf && abc_state != ABC_S_TUNE && multicol_start == 0)
+	if (!epsf && abc_state != ABC_S_TUNE)
 		write_buffer();
-	page_init[0] = '\0';
-
-	twidth = 0;
-}
-
-/* -- clear_text -- */
-void clear_text(void)
-{
-	int i;
-
-	for (i = TEXT_MAX; --i >= 0;) {
-		if (i != TEXT_PS)
-			text_tb[i] = 0;
-	}
-}
-
-/* -- add_text -- */
-void add_text(char *s,
-	      int type)
-{
-	struct text *t, *r;
-
-	t = (struct text *) getarena(sizeof (struct text) - 2
-				     + strlen(s) + 1);
-	strcpy(t->text, s);
-	t->textw = cwid('a') * strlen(s);
-	t->next = 0;
-	if ((r = text_tb[type]) == 0)
-		text_tb[type] = t;
-	else {
-		while (r->next != 0)
-			r = r->next;
-		r->next = t;
-	}
+	font_init = 0;
+	strtw = -1;
 }
 
 /* -- output a line of words after tune -- */
-static void put_wline(unsigned char *p,
-		      float x,
-		      int right)
+static int put_wline(char *p,
+		     float x,
+		     int right)
 {
-	unsigned char *q, *r, sep;
+	char *q, *r, sep;
 
+	while (isspace((unsigned char) *p))
+		p++;
+	if (*p == '$' && isdigit((unsigned char) p[1])
+	    && (unsigned) (p[1] - '0') < DFONT_MIN) {
+		if (strcf != p[1] - '0') {
+			strcf = p[1] - '0';
+			strfc = 1;
+		}
+		p += 2;
+	}
 	r = 0;
 	q = p;
-	if (isdigit(*p) || p[1] == '.') {
+	if (isdigit((unsigned char) *p) || p[1] == '.') {
 		while (*p != '\0') {
 			p++;
 			if (*p == ' '
@@ -558,48 +780,50 @@ static void put_wline(unsigned char *p,
 
 	/* on the left side, permit page break at empty lines or stanza start */
 	if (!right
-	   && (*p == '\0' || r != 0))
+	   && (*p == '\0' || r != 0)) {
+		set_font_init();
 		buffer_eob();
+	}
 
 	if (r != 0) {
 		sep = *r;
 		*r = '\0';
-		PUT1("%.2f 0 M(", x);
-		put_str(q);
-		PUT0(")lshow\n");
+		PUT1("%.1f 0 M ", x);
+		put_str(q,  A_RIGHT);
 		*r = sep;
 	}
 	if (*p != '\0') {
-		PUT1("%.2f 0 M(", x + 5);
-		put_str(p);
-		PUT0(")show\n");
+		PUT1("%.1f 0 M ", x + 5);
+		put_str(p, A_LEFT);
 	}
+	return *p == '\0' && r == 0;
 }
 
-/* -- put_words -- */
-void put_words(void)
+/* -- output the words after tune -- */
+void put_words(struct SYMBOL *words)
 {
-	struct text *t, *u, *t_end;
-	int n, have_text;
-	float middle, max2col;
+	struct SYMBOL *s, *s_end, *s2;
+	char *p;
+	int i, n, have_text, max2col;
+	float middle;
 
-	if ((u = text_tb[TEXT_W]) == 0)
-		return;
-
-	set_font_init(&cfmt.wordsfont);
+	str_font(&cfmt.wordsfont);
 
 	/* see if we may have 2 columns */
 	middle = 0.5 * ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 		- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale;
-	max2col = (middle - 45.) / (cfmt.wordsfont.swfac * cfmt.wordsfont.size);
+	max2col = (int) ((middle - 45.) / (cwid('a') * cfmt.wordsfont.swfac));
 	n = 0;
 	have_text = 0;
-	for (t = u; t != 0; t = t->next) {
-		if (t->textw > max2col) {
+	for (s = words; s != 0; s = s->next) {
+		p = &s->as.text[2];
+		while (isspace((unsigned char) *p))
+			p++;
+		if (strlen(p) > max2col) {
 			n = 0;
 			break;
 		}
-		if (t->text[0] == '\0') {
+		if (*p == '\0') {
 			if (have_text) {
 				n++;
 				have_text = 0;
@@ -607,45 +831,44 @@ void put_words(void)
 		} else	have_text = 1;
 	}
 	if (n > 0) {
-		int i;
-
 		n++;
 		n /= 2;
 		i = n;
 		have_text = 0;
+		s_end = words;
 		for (;;) {
-			if (u->text[0] == '\0') {
-				if (have_text
-				    && --i <= 0)
+			p = &s_end->as.text[2];
+			while (isspace((unsigned char) *p))
+				p++;
+			if (*p == '\0') {
+				if (have_text && --i <= 0)
 					break;
 				have_text = 0;
 			} else	have_text = 1;
-			u = u->next;
+			s_end = s_end->next;
 		}
-		t_end = u;
-		u = u->next;
+		s2 = s_end->next;
 	} else {
-		t_end = 0;
-		u = 0;
+		s_end = 0;
+		s2 = 0;
 	}
 
 	/* output the text */
 	bskip(cfmt.wordsspace);
-	for (t = text_tb[TEXT_W]; t != 0 || u != 0;) {
+	for (s = words; s != 0 || s2 != 0; ) {
 		bskip(cfmt.lineskipfac * cfmt.wordsfont.size);
-		if (t != 0) {
-			put_wline(t->text, 45., 0);
-			t = t->next;
-			if (t == t_end)
-				t = 0;
+		if (s != 0) {
+			put_wline(&s->as.text[2], 45., 0);
+			s = s->next;
+			if (s == s_end)
+				s = 0;
 		}
-		if (u != 0) {
-			put_wline(u->text, 20. + middle, 1);
-			if (u->text[0] == '\0') {
+		if (s2 != 0) {
+			if (put_wline(&s2->as.text[2], 20. + middle, 1)) {
 				if (--n == 0) {
-					if (t != 0)
+					if (s != 0)
 						n++;
-					else if (u->next != 0) {
+					else if (s2->next != 0) {
 
 						/* center the last words */
 /*fixme: should compute the width average.. */
@@ -653,204 +876,389 @@ void put_words(void)
 					}
 				}
 			}
-			u = u->next;
+			s2 = s2->next;
 		}
 	}
-
+	set_font_init();
 	buffer_eob();
-	page_init[0] = '\0';
+	font_init = 0;
 }
 
-/* -- put_text -- */
-static void put_text(int type,
-		     char *str)
+/* -- output history lines -- */
+static void put_text(char *head,
+		     struct SYMBOL *s)
 {
-	struct text *t;
-	char buf[256];
+	float h;
 
-	if ((t = text_tb[type]) == 0)
+	if (s == 0)
 		return;
-
-	tex_str(buf, t->text, sizeof buf, 0);
-	bskip(cfmt.textfont.size * cfmt.lineskipfac);
-	PUT2("0 0 M (%s %s) show\n", str, buf);
-	while ((t = t->next) != 0) {
-		bskip(cfmt.textfont.size * cfmt.lineskipfac);
-		tex_str(buf, t->text, sizeof buf, 0);
-		PUT1("20 0 M (%s) show\n", buf);
+	if (strcf != 0) {
+		set_font(&cfmt.historyfont);
+		strcf = 0;
+		set_font_init();
 	}
-	bskip(cfmt.textfont.size * cfmt.lineskipfac);
+	h = font_init->size * cfmt.lineskipfac;
+	bskip(h * 1.2);
+	PUT1("w%s ", head);
+	bskip(h);
+	do {
+		PUT0("50 0 M ");
+		put_inf(s);
+		bskip(h);
+	} while ((s = s->next) != 0);
 	buffer_eob();
 }
 
-/* -- put_history -- */
+/* -- output history -- */
 void put_history(void)
 {
-	struct text *t;
-	float baseskip, parskip;
-
-	set_font_init(&cfmt.textfont);
-	baseskip = cfmt.textfont.size * cfmt.lineskipfac;
-	parskip = cfmt.textfont.size * cfmt.parskipfac;
-
 	bskip(cfmt.textspace);
+	str_font(&cfmt.historyfont);
+	if (!cfmt.infoline)
+		put_text("rhythm", info.rhythm);
+	put_text("book", info.book);
+	put_text("source", info.src);
+	put_text("disco", info.disco);
+	put_text("notes", info.notes);
+	put_text("trans", info.trans);
+	put_text("histo", info.histo);
+	font_init = 0;
+}
 
-	if (info.rhyth && !cfmt.infoline) {
-		bskip(baseskip);
-		put_str3("0 0 M (Rhythm: ",
-			 info.rhyth,
-			 ") show\n");
-		bskip(parskip);
+/* -- move trailing "The" to front, set to uppercase letters or add xref -- */
+static char *trim_title(char *p, int first)
+{
+	char *b, *q;
+	int l, mxl, trim;
+static char buf[256];
+
+	l = strlen(p);
+	q = p + l - 3;
+	trim = strcmp(q, "The") == 0;
+	if (!trim && !cfmt.titlecaps && !(first && cfmt.withxrefs))
+		return p;
+	b = buf;
+	mxl = sizeof buf - 1;
+	if (first && cfmt.withxrefs) {
+		l = sprintf(b, "%s.  ", info.xref);
+		b += l;
+		mxl -= l;
 	}
-
-	if (info.book) {
-		bskip(0.5 * CM);
-		put_str3("0 0 M (Book: ",
-			 info.book,
-			 ") show\n");
-		bskip(parskip);
+	if (trim) {
+		q--;
+		while (isspace((unsigned char) *q))
+			q--;
+		if (*q == ',') {
+			strcpy(b, "The ");
+			b += 4;
+			mxl -= 4;
+			l = q - p;
+			if (l > mxl)
+				l = mxl;
+			strncpy(b, p, l);
+			b[l] = '\0';
+		} else	trim = 0;
 	}
-
-	if (info.src) {
-		bskip(0.5 * CM);
-		put_str3("0 0 M (Source: ",
-			 info.src,
-			 ") show\n");
-		bskip(parskip);
+	if (!trim) {
+		strncpy(b, p, mxl);
+		b[mxl] = '\0';
 	}
-
-	put_text(TEXT_D, "Discography: ");
-	put_text(TEXT_N, "Notes: ");
-	put_text(TEXT_Z, "Transcription: ");
-
-	if ((t = text_tb[TEXT_H]) != 0) {
-		while (t != 0) {
-			bskip(0.5 * CM);
-			put_str3("0 0 M (",
-				 t->text,
-				 ") show\n");
-			t = t->next;
-		}
-		bskip(parskip);
-	}
-	buffer_eob();
-	page_init[0] = '\0';
+	if (cfmt.titlecaps)
+		cap_str(buf);
+	return buf;
 }
 
 /* -- write a title -- */
-void write_title(int i)
+void write_title(struct SYMBOL *s)
 {
-	char t[200];
+	char *p;
 
-	if (i == 0) {
+	p = &s->as.text[2];
+	while (isspace((unsigned char) *p))
+		p++;
+	if (*p == '\0' || strcmp(p, "(notitle)") == 0)
+		return;
+	p = trim_title(p, s == info.title);
+	if (s == info.title) {
 		bskip(cfmt.titlespace + cfmt.titlefont.size);
 		set_font(&cfmt.titlefont);
 	} else {
 		bskip(cfmt.subtitlespace + cfmt.subtitlefont.size);
 		set_font(&cfmt.subtitlefont);
 	}
-
-	strncpy(t, info.title[i], sizeof t - 1);
-	t[sizeof t - 1] = '\0';
-
-	if (cfmt.titlecaps)
-		cap_str(t);
-	PUT0(" (");
-	if (i == 0 && cfmt.withxrefs)
-		PUT1("%s.  ", info.xref);
-	put_str(t);
 	if (cfmt.titleleft)
-		PUT0(") 0 0 M show\n");
-	else	PUT1(") %.1f 0 M cshow\n",
+		PUT0("0 0 M(");
+	else	PUT1("%.1f 0 M(",
 		     0.5 * ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 		     - cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale);
+	tex_str(p);
+	PUT2("%s)show%s\n", tex_buf, cfmt.titleleft ? "" : "c");
+}
+
+/* -- write_heading with format -- */
+static void write_headform(float lwidth)
+{
+	char *p;
+	struct SYMBOL *s, *title, xref_sym;
+	struct FONTSPEC *f;
+	int align;
+	float x, y, yl, yc, yr;
+
+	title = info.title;
+	yl = yc = yr = 0;
+	p = cfmt.titleformat;
+	for (;;) {
+		f = &cfmt.historyfont;
+		while (isspace((unsigned char) *p))
+			p++;
+		switch (*p++) {
+		case '\0':
+			if (yc > yl)
+				yl = yc;
+			if (yr > yl)
+				yl = yr;
+			yc = yr = yl;
+			bskip(yl);
+			return;
+		case 'A':
+			s = info.area;
+			f = &cfmt.infofont;
+			break;
+		case 'B':
+			s = info.book;
+			break;
+		case 'C':
+			s = info.comp;
+			f = &cfmt.composerfont;
+			break;
+		case 'D':
+			s = info.disco;
+			break;
+		case 'H':
+			s = info.histo;
+			break;
+		case 'N':
+			s = info.notes;
+			break;
+		case 'O':
+			s = info.orig;
+			f = &cfmt.composerfont;
+			break;
+		case 'P':
+			s = info.parts;
+			f = &cfmt.partsfont;
+			break;
+		case 'R':
+			s = info.rhythm;
+			f = &cfmt.infofont;
+			break;
+		case 'S':
+			s = info.src;
+			break;
+		case 'T':
+			s = title;
+			f = (s == info.title) ? &cfmt.titlefont
+					 : &cfmt.subtitlefont;
+			break;
+		case 'X':
+			s = &xref_sym;
+			s->as.text = info.xref;
+			s->next = 0;
+			f = &cfmt.titlefont;
+			break;
+		case 'Z':
+			s = info.trans;
+			break;
+		case ',':
+			if (yc > yl)
+				yl = yc;
+			if (yr > yl)
+				yl = yr;
+			yc = yr = yl;
+			continue;
+		default:
+			continue;
+		}
+		if (s == 0)
+			continue;
+		switch (*p) {
+		default:
+			align = A_CENTER;
+			x = lwidth * 0.5;
+			y = yc;
+			break;
+		case '1':
+			align = A_RIGHT;
+			x = lwidth;
+			y = yr;
+			p++;
+			break;
+		case '-':
+			align = A_LEFT;
+			x = 0;
+			y = yl;
+			p++;
+			break;
+		}
+		do {
+			str_font(f);
+			PUT2("%.1f %.1f M ", x, -y);
+			put_inf2r(s, 0, align);
+			y += f->size * 1.1;
+			if (s == title) {
+				title = title->next;
+				break;
+			}
+			s = s->next;
+		} while (s != 0);
+		switch (align) {
+		case A_LEFT:
+			yl = y;
+			break;
+		case A_RIGHT:
+			yr = y;
+			break;
+		default:
+			yc = y;
+			break;
+		}
+	}
+	/*not reached*/
 }
 
 /* -- write_heading -- */
-void write_heading(void)
+void write_heading(struct abctune *t)
 {
+	struct SYMBOL *s, *rhythm, *area, *author;
 	float lwidth, down1, down2;
-	int i, ncl;
-	char *rhythm;
 
 	lwidth = ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 		- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale;
 
+	if (cfmt.titleformat != 0) {
+		write_headform(lwidth);
+		return;
+	}
+
 	/* titles */
-	for (i = 0; i < info.ntitle; i++)
-		write_title(i);
+	for (s = info.title; s != 0; s = s->next)
+		write_title(s);
 
 	/* rhythm, composer, origin */
 	down1 = cfmt.composerspace + cfmt.composerfont.size;
-	rhythm = (first_voice->key.bagpipe && !cfmt.infoline) ? info.rhyth : 0;
+	rhythm = (first_voice->key.bagpipe && !cfmt.infoline) ? info.rhythm : 0;
 	if (rhythm) {
-		set_font(&cfmt.composerfont);
-		PUT2("0 -%.1f M (%s) show\n",
-		     cfmt.composerspace + cfmt.composerfont.size,
-		     info.rhyth);
+		str_font(&cfmt.composerfont);
+		PUT1("0 %.1f M ",
+		     -(cfmt.composerspace + cfmt.composerfont.size));
+		put_inf(rhythm);
 		down1 -= cfmt.composerfont.size;
 	}
-	if ((ncl = info.ncomp) > 0 || info.orig) {
-		set_font(&cfmt.composerfont);
-		bskip(cfmt.composerspace);
-		if (ncl == 0)
-			ncl = 1;
-		for (i = 0; i < ncl; i++) {
-			bskip(cfmt.composerfont.size);
-			PUT1("%.1f 0 M (", lwidth);
-			if (info.comp[i])
-				put_str(info.comp[i]);
-			if (info.orig && i == ncl - 1)
-				put_str3(" \\(",
-					 info.orig,
-					 "\\)");
-			PUT0(") lshow\n");
-		}
-		down1 += cfmt.composerfont.size * (ncl - 1);
+	area = author = 0;
+	if (t->abc_vers < 2)
+		area = info.area;
+	else	author = info.area;
+	if ((s = info.comp) != 0 || info.orig || author != 0) {
+		float xcomp;
+		int align;
 
-		rhythm = rhythm ? 0 : info.rhyth;
-		if ((rhythm || info.area) && cfmt.infoline) {
+		str_font(&cfmt.composerfont);
+		bskip(cfmt.composerspace);
+		if (cfmt.aligncomposer < 0) {
+			xcomp = 0;
+			align = A_LEFT;
+		} else if (cfmt.aligncomposer == 0) {
+			xcomp = lwidth * 0.5;
+			align = A_CENTER;
+		} else {
+			xcomp = lwidth;
+			align = A_RIGHT;
+		}
+		down2 = down1;
+		if (author != 0) {
+			for (;;) {
+				bskip(cfmt.composerfont.size);
+				down2 += cfmt.composerfont.size;
+				PUT0("0 0 M ");
+				put_inf(author);
+				if ((author = author->next) == 0)
+					break;
+			}
+		}
+		if ((s = info.comp) != 0 || info.orig) {
+			if (cfmt.aligncomposer >= 0
+			    && down1 != down2)
+				bskip(down1 - down2);
+			for (;;) {
+				bskip(cfmt.composerfont.size);
+				PUT1("%.1f 0 M ", xcomp);
+				put_inf2r(s,
+					  (s == 0 || s->next == 0) ? info.orig : 0,
+					  align);
+				if (s == 0)
+					break;
+				if ((s = s->next) == 0)
+					break;
+				down1 += cfmt.composerfont.size;
+			}
+			if (down2 > down1)
+				bskip(down2 - down1);
+		}
+
+		rhythm = rhythm ? 0 : info.rhythm;
+		if ((rhythm || area) && cfmt.infoline) {
 
 			/* if only one of rhythm or area then do not use ()'s
 			 * otherwise output 'rhythm (area)' */
-			set_font(&cfmt.infofont);
+			str_font(&cfmt.infofont);
 			bskip(cfmt.infofont.size + cfmt.infospace);
-			PUT1("%.1f 0 M (", lwidth);
-			if (rhythm) {
-				PUT1("%s", rhythm);
-				if (info.area)
-					PUT1(" \\(%s\\)", info.area);
-			} else	PUT1("%s", info.area);
-			PUT0(") lshow\n");
+			PUT1("%.1f 0 M ", lwidth);
+			put_inf2r(rhythm, area, A_RIGHT);
 			down1 += cfmt.infofont.size + cfmt.infospace;
 		}
 		down2 = 0;
-	} else {
-		down2 = cfmt.composerspace + cfmt.composerfont.size;
-	}
+	} else	down2 = cfmt.composerspace + cfmt.composerfont.size;
 
 	/* parts */
-	if (info.parts && cfmt.printparts) {
+	if (info.parts) {
 		down1 = cfmt.partsspace + cfmt.partsfont.size - down1;
 		if (down1 > 0)
 			down2 += down1;
 		if (down2 > 0.01)
 			bskip(down2);
-		PUT2("%.1f F%d ", cfmt.partsfont.size, cfmt.partsfont.fnum);
-		put_str3("0 0 M (", info.parts, ") show\n");
+		str_font(&cfmt.partsfont);
+		PUT0("0 0 M ");
+		put_inf(info.parts);
 		down2 = 0;
 	}
 	bskip(down2 + cfmt.musicspace);
 }
 
-/* -- output the user defined postscript sequences -- */
-void write_user_ps(void)
+/* -- memorize a PS line -- */
+void user_ps_add(char *s)
 {
-	struct text *t;
+	struct u_ps *t, *r;
+	int l;
 
-	t = text_tb[TEXT_PS];
-	while (t != 0) {
-		fprintf(fout, "%s\n", t->text);
-		t = t->next;
+	l = strlen(s);
+	t = (struct u_ps *) malloc(sizeof *user_ps - sizeof user_ps->text
+				   + l + 1);
+	strcpy(t->text, s);
+	t->next = 0;
+	if ((r = user_ps) == 0)
+		user_ps = t;
+	else {
+		while (r->next != 0)
+			r = r->next;
+		r->next = t;
 	}
+}
+
+/* -- output the user defined postscript sequences -- */
+void user_ps_write(void)
+{
+	struct u_ps *t;
+
+	for (t = user_ps; t != 0; t = t->next)
+		fprintf(fout, "%s\n", t->text);
 }

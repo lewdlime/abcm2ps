@@ -9,7 +9,7 @@ K:C
 C2D2 E2F2G2{FG}|G4-G6|1.2[M:5/4 (2/4 3/4)]G4{AB}z6:|["last time"A2B2 c6||
 %%multicol start
 %%rightmargin 11.5cm
-[M:2/4]C2G2|C4|//|
+[M:2/4]C2G2|C4|
 %%multicol new
 %%leftmargin 11.5cm
 %%begintext
@@ -51,11 +51,11 @@ X:2
 T:Staff break
 M:none
 L:1/8
-K:G clef=C
+K:G ^F ^F, clef=C
 %%staffbreak 0.2cm
-[K:G clef=treble][M:C]SDE FG|AB !alcoda!cdO|AB cdS||\
+[K:G clef=treble][M:C]SDE FG|AG !alcoda!FEO|DE FES||\
 %%staffbreak 2cm
-[K:G clef=treble]OA2d2||
+[K:G clef=treble]OC2D2||
 
 X:3
 T:Staff break multi-staves
@@ -63,17 +63,18 @@ M:none
 L:1/8
 %%staves {1 2}
 K:G
-V:1 clef=C
+V:1
+[K:G ^F ^F, clef=C]
 %%staffbreak 0.2cm
 V:2 clef=F
 %%staffbreak 0.2cm
 V:1
-[K:G clef=treble][M:C]SDE FG|AB !alcoda!cdO|AB cdS||\
+[K:G clef=treble][M:C]SDE FG|AG !alcoda!FEO|DE FES||\
 V:2
-[K:G clef=bass]D,4|A,4|D,4|
+[K:G clef=bass]D,4|A,4|D,4||
 V:1
 %%staffbreak 2cm
-[K:G clef=treble]OA2d2||
+[K:G clef=treble]OC2D2||
 V:2
 %%staffbreak 2cm
 [K:G clef=bass]A,,2D,,2||
@@ -83,16 +84,17 @@ T:Voice overlay and chords
 M:C
 L:1/4
 K:C
-[C2G]A[B3/G2]c/|cdef&ABcd|GA{[FA]}[GB][Ac]|defg&&Bcde|
-GABc|efga&&FGAB&&CDEF|GA(&&Bc|de&&FG|AB)cd|
+[C2G]A[B3/G2]c/|cdef&ABcd|GA{[FA]}[GB][Ac]|defg&Bcde|
+GABc|efga&FGAB&CDEF|GA(&Bc|de&FG|AB&)cd|
 
 X:5
-T:Annotations in guitar chords
+T:Annotations and guitar chords
 M:C
 L:1/8
 %%gchordbox 1
+%%freegchord 1
 K:C
-"^normal""in box"CD"_below"EG "<left"cd">right"ec|\
+"^annotation""gchord in box"CD"_below"EG "<left"cd">right"ec|\
 "@20,-50anywhere"gf"<("">)"ed (c4y)||
 
 X:6

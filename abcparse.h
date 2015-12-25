@@ -5,8 +5,9 @@
 
 #define MAXVOICE 32	/* max number of voices */
 
-#define MAXHD	8	/* max heads on one stem */
-#define MAXDC	7	/* max decorations */
+#define MAXHD	8	/* max heads in a chord */
+#define MAXDC	45	/* max decorations per note/chord/bar */
+#define MAXMICRO 32	/* max microtone values (5 bits in accs[]) */
 
 #define BASE_LEN 1536	/* basic note length (semibreve or whole note - same as MIDI) */
 
@@ -26,31 +27,39 @@ enum accidentals {
 #define B_CBRA 3	/* ] */
 #define B_COL 4		/* : */
 
+/* slur types (2 bits) */
+#define SL_ABOVE 0x01
+#define SL_BELOW 0x02
+#define SL_AUTO 0x03
+
 /* note structure */
-struct deco {			/* describes decorations */
-	char n;			/* number of decorations */
+struct deco {		/* decorations */
+	char n;			/* whole number of decorations */
+	char h;			/* start of head decorations */
+	char s;			/* start of decorations from s: (d:) */
 	unsigned char t[MAXDC];	/* decoration type */
 };
 
 struct note {		/* note or rest */
-	signed char pits[MAXHD]; /* pitches for notes */
-	short lens[MAXHD];	/* note lengths as multiple of BASE */
-	unsigned char accs[MAXHD]; /* code for accidentals */
-	char sl1[MAXHD];	/* which slur starts on this head */
-	char sl2[MAXHD];	/* which slur ends on this head */
+	signed char pits[MAXHD]; /* pitches */
+	short lens[MAXHD];	/* note lengths (# pts in [1] if space) */
+	unsigned char accs[MAXHD]; /* code for accidentals & index in micro_tb */
+	unsigned char sl1[MAXHD]; /* slur start per head */
+	char sl2[MAXHD];	/* number of slur end per head */
 	char ti1[MAXHD];	/* flag to start tie here */
-	char ti2[MAXHD];	/* flag to end tie here */
-	short len;		/* note length (shortest in chords) */
-	unsigned invis:1;	/* invisible rest */
+	unsigned char decs[MAXHD]; /* head decorations (index: 5 bits, len: 3 bits) */
+	unsigned invis:1;	/* invisible rest (x / y) */
 	unsigned word_end:1;	/* 1 if word ends here */
 	unsigned stemless:1;	/* note with no stem */
 	unsigned lyric_start:1;	/* may start a lyric here */
 	unsigned grace:1;	/* grace note */
 	unsigned sappo:1;	/* short appoggiatura */
+	unsigned dotted_slur:1;	/* dotted slur */
+	unsigned dotted_tie:1;	/* dotted tie */
+	short chlen;		/* chord length */
 	char nhd;		/* number of notes in chord - 1 */
-	char p_plet, q_plet, r_plet; /* data for n-plets */
-	char slur_st; 		/* how many slurs start here */
-	char slur_end;		/* how many slurs end here */
+	unsigned char slur_st;	/* slurs starting here (2 bits array) */
+	char slur_end;		/* number of slurs ending here */
 	signed char brhythm;	/* broken rhythm */
 	struct deco dc;		/* decorations */
 };
@@ -59,8 +68,7 @@ struct note {		/* note or rest */
 struct abctune;
 struct abcsym {
 	struct abctune *tune;	/* tune */
-	struct abcsym *next;	/* next symbol */
-	struct abcsym *prev;	/* previous symbol */
+	struct abcsym *next, *prev; /* next / previous symbol */
 	char type;		/* symbol type */
 #define ABC_T_NULL 0
 #define ABC_T_INFO 1		/* (text[0] gives the info type) */
@@ -74,12 +82,14 @@ struct abcsym {
 #define ABC_T_MREST 9		/* multi-measure rest */
 #define ABC_T_MREP 10		/* measure repeat */
 #define ABC_T_V_OVER 11		/* voice overlay */
+#define ABC_T_TUPLET 12		/* tuplet */
 	char state;		/* symbol state in file/tune */
 #define ABC_S_GLOBAL 0			/* global */
 #define ABC_S_HEAD 1			/* in header (after X:) */
 #define ABC_S_TUNE 2			/* in tune (after K:) */
 #define ABC_S_EMBED 3			/* embedded header (between [..]) */
-	short linenum;		/* line number / ABC file */
+	unsigned short colnum;	/* ABC source column number */
+	int linenum;		/* ABC source line number */
 	char *text;		/* main text (INFO, PSCOM),
 				 * guitar chord (NOTE, REST, BAR) */
 	char *comment;		/* comment part (when keep_comment) */
@@ -88,8 +98,8 @@ struct abcsym {
 			signed char sf;		/* sharp (> 0) flats (< 0) */
 			char bagpipe;		/* HP or Hp */
 			char minor;		/* major (0) / minor (1) */
-			char empty;		/* clef alone if 1 */
-			char nacc;		/* explicit accidentals */
+			char empty;		/* clef alone if 1, 'none' if 2 */
+			signed char nacc;	/* explicit accidentals */
 			char pits[8];
 			char accs[8];
 		} key;
@@ -98,7 +108,8 @@ struct abcsym {
 		} length;
 		struct meter_s {	/* M: info */
 			short wmeasure;		/* duration of a measure */
-			short nmeter;		/* number of meter elements */
+			char nmeter;		/* number of meter elements */
+			char expdur;		/* explicit measure duration */
 #define MAX_MEASURE 6
 			struct {
 				char top[8];	/* top value */
@@ -108,25 +119,32 @@ struct abcsym {
 		struct {		/* Q: info */
 			char *str1;		/* string before */
 			short length[4];	/* up to 4 note lengths */
-			short value;		/* tempo value */
+			char *value;		/* tempo value */
 			char *str2;		/* string after */
 		} tempo;
 		struct {		/* V: info */
 			char *name;		/* name */
 			char *fname;		/* full name */
 			char *nname;		/* nick name */
+			float scale;		/* != 0 when change */
 			unsigned char voice;	/* voice number */
 			char merge;		/* merge with previous voice */
-			signed char stem;	/* have all stems up or down */
+			signed char stem;	/* have stems up or down (2 = auto) */
+			signed char gstem;	/* have grace stems up or down (2 = auto) */
+			signed char dyn;	/* have dynamic marks above or below the staff */
+			signed char lyrics;	/* have lyrics above or below the staff */
 		} voice;
 		struct {		/* bar, mrest or mrep */
 			struct deco dc;		/* decorations */
 			int type;
 			char repeat_bar;
 			char len;		/* len if mrest or mrep */
+			char dotted;
 		} bar;
-		struct clef_s {		/* clef */
-			char type;
+		struct clef_s {		/* clef (and staff!) */
+			float staffscale;	/* != 0 when change */
+			signed char stafflines;	/* >= 0 when change */
+			signed char type;	/* no clef if < 0 */
 #define TREBLE 0
 #define ALTO 1
 #define BASS 2
@@ -158,13 +176,15 @@ struct abcsym {
 		} staves[MAXVOICE];
 		struct {		/* voice overlay */
 			char type;
-#define V_OVER_S 0				/* single & */
-#define V_OVER_D 1				/* && */
-#define V_OVER_SS 2				/* (& */
-#define V_OVER_SD 3				/* (&& */
-#define V_OVER_E 4				/* )& */
+#define V_OVER_V 0				/* & */
+#define V_OVER_S 1				/* (& */
+#define V_OVER_E 2				/* &) */
 			unsigned char voice;
 		} v_over;
+		struct {		/* tuplet */
+			char grace;
+			char p_plet, q_plet, r_plet;
+		} tuplet;
 	} u;
 };
 
@@ -174,7 +194,9 @@ struct abctune {
 	struct abctune *prev;	/* previous tune */
 	struct abcsym *first_sym; /* first symbol */
 	struct abcsym *last_sym; /* last symbol */
-	int client_data;	/* client data */
+	int abc_vers;		/* ABC version */
+	void *client_data;	/* client data */
+	unsigned short micro_tb[MAXMICRO]; /* microtone values [ (n-1) | (d-1) ] */
 };
 
 #ifdef WIN32
@@ -187,6 +209,7 @@ extern "C" {
 #endif
 extern char *deco_tb[];
 extern int severity;
+
 void abc_delete(struct abcsym *as);
 void abc_free(struct abctune *first_tune);
 void abc_init(void *alloc_f_api(int size),
@@ -197,15 +220,14 @@ void abc_init(void *alloc_f_api(int size),
 void abc_insert(char *file_api,
 		struct abcsym *s);
 struct abcsym *abc_new(struct abctune *t,
-		       unsigned char *p,
-		       unsigned char *comment);
+		       char *p,
+		       char *comment);
 struct abctune *abc_parse(char *file_api);
-char *get_str(unsigned char *d,
-	      unsigned char *s,
+char *get_str(char *d,
+	      char *s,
 	      int maxlen);
-void note_sort(struct abcsym *s);
-unsigned char *parse_deco(unsigned char *p,
-			  struct deco *deco);
+char *parse_deco(char *p,
+		 struct deco *deco);
 #if defined(__cplusplus)
 }
 #endif

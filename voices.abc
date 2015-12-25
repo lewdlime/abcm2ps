@@ -28,6 +28,7 @@ Q:1/8=66
 %%staves {1 2}
 K:Cm
 % .. even when there are a lot of notes
+V:1
 !fp![E,4G,4C4]- [E,3/G,3/C3/]!3![G,/C/]!4![G,3/=B,3/D3/]!5![G,/C/E/] ([=A,4C4E4]!4![=B,2D2])z2|\
 !fp!!3![=B,4D4F4]- [B,3/D3/F3/][B,/D/F/][B,3/D3/G3/][B,/D/A/] ([B,4D4A4]!3![C2E2G2])z2|
 V:2
@@ -57,6 +58,7 @@ L:1/8
 Q:1/4=66
 %%staves {1 (2 3)}
 K:G
+V:1
 (!p!B2AB G3)(A |Bcd[Ge]) ([F3A3][^GB])|([A2c2][^GB][Ac] AF=GA)|[G2B2][F2A2] {/G}G3B|
 V:2
 % this voice is not complete, but the measure must be respected
@@ -72,18 +74,18 @@ T:(Mor Fawr Wyt Ti!)
 M:4/4
 L:1/8
 Q:1/4=48
-%%staves [(1 2) (3 4)]
+%%staves [(S A) (T B)]
 K:A
 % Breton words on a Wales choral
-V:1
+V:S
 EEE	  |C3E	   EEFF        |(D2F3)	  FFF	 |E3C   EEDD		 |C4   z:|
 w:Ka-na a |rin, ka-na a rin be-|pred,* rag an Ao-|trou en-eus va zan-tel-|let.
 w:Eñ eo va|nerz, eñ eo i-vez va|Zad,*    eñ eo va|han, ka-na a rin e     |hloar.
-V:2
+V:A
 CCC	  |A,3A,   B,CA,A,     |(B,2A,3)  DDB,   |C3A,  B,A,A,G,	 |A,4  z:|
-V:3
+V:T
 A,A,A,	  |E,3E,   G,A,F,F,    |(F,2F,3)  A,A,G, |A,3A, G,A,F,E,	 |E,4  z:|
-V:4
+V:B
 A,,A,,A,, |A,,3C,  B,,A,,D,D,  |(B,,2D,3) D,D,B,,|E,3F, E,C,B,,E,,	 |A,,4 z:|
 
 % --- organ ---
@@ -100,16 +102,16 @@ V:2 nm="Organo"
 K:C
 V:1
 %%MIDI program 53
-A3B    c2c2    |d2e2    de/f/P^c3/d/|d8    |z8		 |
+A3B    c2c2    |d2e2    de/f/P ^c3/d/|d8    |z8		  |
 V:2
 %%MIDI program 73
-z2E2-  E2AG    |F2E2    F2E2	    |F6  F2|E2CD   E3F/G/|
+z2E2-  E2AG    |F2E2    F2E2	     |F6  F2|E2CD   E3F/G/|
 V:3
 %%MIDI program 73
-z2C2-  CB,A,2  |A,8		    |A,6 D2|C2A,B, C3D/E/|
+z2C2-  CB,A,2  |A,8		     |A,6 D2|C2A,B, C3D/E/|
 V:4
 %%MIDI program 73
-z2A,2- A,G,F,E,|D,2^C,2 D,2A,,2     |D,,8  |z4	   z2A,2 |
+z2A,2- A,G,F,E,|D,2^C,2 D,2A,,2      |D,,8  |z4	    z2A,2 |
 
 X:7
 T:Qui Tolis (Trio)
@@ -122,10 +124,10 @@ K:F
 %
 V:Pos1
 %%MIDI program 78
-"Positif"x3  |x3    |c'>ba|Pga/g/f|:g2a  |ba2    |g2c- |c2P=B  |c>de  |fga    |
+"^Positif"x3  |x3    |c'>ba|Pga/g/f|:g2a  |ba2    |g2c- |c2P=B  |c>de  |fga    |
 V:Pos2
 %%MIDI program 78
-	Mf>ed|cd/c/B|PA2d |ef/e/d |:e2f  |ef2    |c>BA |GA/G/F |E>FG  |ABc-   |
+	 Mf>ed|cd/c/B|PA2d |ef/e/d |:e2f  |ef2    |c>BA |GA/G/F |E>FG  |ABc-   |
 V:Trompette
 %%MIDI program 56
-"Trompette"z3|z3    |z3   |z3     |:Mc>BA|PGA/G/F|PE>EF|PEF/E/D|C>CPB,|A,G,F,-|
+"^Trompette"z3|z3    |z3   |z3     |:Mc>BA|PGA/G/F|PE>EF|PEF/E/D|C>CPB,|A,G,F,-|

@@ -17,6 +17,7 @@ L: 1/4
 X:3
 T:Short and Long Notes, Beams, N-tuplets
 C:Trad
+%%halfbeam 0	% abcm2ps: don't do beam break
 M:C
 K:C
 L: 1/8
@@ -94,10 +95,11 @@ K: G
 [^c^f^a] [^c^f^b] [^c^f^c'] [^c^f^d'] [^c^f^e'] |\
 [^c^e^f] [^c^f^g] [^c^g^a] [^c^g^b] |\
  [^c^d^c'] [^c^e^c'] [^A^e^c']   [^G^e^c']   \
- [^c^d^c'][^c^e^c'][^A^e^c'][^G^e^c']   ||
+ [^c_e^g][^c^f^g][^c^g^a][^c^d^g][^G^e^c']   ||
 
 X:11
 T:Horizontal beams
+%%halfbeam 0	% abcm2ps: don't do beam break
 M:9/8
 K:C
 L: 1/8

@@ -13,17 +13,11 @@
 /* Define to handle the european A4 format.  */
 #define A4_FORMAT 1
 
-/* Define to let the B note have always its stem down.  */
-/* #undef BSTEM_DOWN */
-
 /* Define to have clef definition changing the note pitch.  */
 /* #undef CLEF_TRANSPOSE */
 
 /* Define to have ~ as roll instead of twiddle.  */
 /* #undef DECO_IS_ROLL */
 
-/* Define the PostScript language level (1, 2, 3) */
-#define PS_LEVEL 2
-
-#define VERSION "3.7.21"
-#define VDATE "December 16, 2004"
+#define VERSION "4.12.30"
+#define VDATE "May 28, 2007"

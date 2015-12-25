@@ -1,19 +1,19 @@
-# abcm2ps version 3.1.x
+# abcm2ps version 4.x.x
 
 ## Overview
 ---
 
-abcm2ps is a program which converts music tunes from ABC format to PostScript. Based on abc2ps version 1.2.5 (see [Contacts](#contacts) below), it was developped mainly to print barock organ scores which have independant voices played on one or many keyboards and a pedal-board.
+abcm2ps is a program which converts music tunes from ABC format to PostScript. Based on abc2ps version 1.2.5 (see Contacts below), it was developped mainly to print barock organ scores which have independant voices played on one or many keyboards and a pedal-board.
 
 ## Features
 ---
 
-The main features of abcm2ps are quite the same as the abc2ps ones and the file '[`features.txt`](features.txt)' contains an updated description of these ones.
+The main features of abcm2ps are quite the same as the abc2ps ones, but they are closer to the current ABC standard (draft IV - 14/8/2003): [abc.sourceforge.net/standard/abc2-draft.html](http://abc.sourceforge.net/standard/abc2-draft.html)
 
 ## Installation and usage
 ---
 
-The installation procedure is described in the file [`INSTALL`](INSTALL).
+The installation procedure is described in the file [`INSTALL`](./INSTALL).
 
 Basically, the program usage is:
 
@@ -24,25 +24,29 @@ where `file1, file2, ..` are the ABC input files. This will generate a Postscrip
 ## Documentation
 ---
 
-- [`abc-draft.txt`](abc-draft.txt) is the ABC draft on which abcm2ps is developped.
-- [`options.txt`](options.txt) contains the list of the command line options.
-- [`format.txt`](format.txt) contains the list of the format parameters.
-- [`features.txt`](features.txt) lists some differences from, and extensions to the ABC standard.
+- [`options.txt`](./options.txt) contains the list of the command line options.
+- [`format.txt`](./format.txt) contains the list of the format parameters.
+- [`features.txt`](./features.txt) lists the differences from the current ABC standard.
 
 ## Differences with abc2ps
 ---
 
-- The algorithms relative to voice and staff handling are different and may give better or worse results depending on the tunes.
+- the algorithms relative to voice and staff handling are different and may give better or worse results depending on the tunes.
 - abcm2ps does not print the list of tunes and has different filtering functions. On the command line:
     - '`-o`' is implicit
     - '`-e`' accepts only one parameter.
     - '`-C`', '`-R`', '`-S`', '`-T`' don't exist anymore. If you want such filtering, you should to use some external script or program instead.
-- abcm2ps has no interactive mode ('`-i`' - did anybody use it?).
+- There is no interactive mode ('`-i`').
+- The scale is global (it was restricted to the music part in abc2ps).
+- The characters '`\\`' don't do a line break.
+- In landscape format, the values of '`pagewidth`' and '`pageheight`' are internally exchanged, so there is no need to set them explicitely.
+- The format '`staffwidth`' is obsolete. Use '`pagewidth`' instead.
+- Look also in the file '[`sample.abc`](./sample.abc)' for other incompatibilities.
 
 ## Limits
 ---
 
-Many limits may be changed at compilation time (number of voices, staves, ..). The current version does not handle correctly more than 2 voices per staff.
+Many limits may be changed at compilation time (number of voices, staves, ..).
 
 ## Contacts
 ---
@@ -51,20 +55,21 @@ The primary abcm2ps site is:
 
 [moinejf.free.fr](http://moinejf.free.fr/)
 
-My friend Guido Gonzatto maintains Win32 and RedHat binaries at:
+Guido Gonzatto maintains Win32 and RedHat binaries and some more
+documentation at:
 
 [abcplus.sourceforge.net](http://abcplus.sourceforge.net/)
 
 abc2ps was developped by Michael Methfessel:
 
-[www.ihp-ffo.de/~msm/](http://www.ihp-ffo.de/~msm/)
+[www.ihp-ffo.de/~msm](http://www.ihp-ffo.de/~msm/)
 
-    msm (at) ihp-ffo (dot) de
+msm (at) ihp-ffo (dot) de
 
 To know more about the ABC notation, have a look at:
 
-[www.gre.ac.uk/~c.walshaw/abc](http://www.gre.ac.uk/~c.walshaw/abc/)
+[abc.sourceforge.net](http://abc.sourceforge.net/)
 
 For any comment:
 
-    moinejf (at) free (dot) fr
+moinejf (at) free (dot) fr

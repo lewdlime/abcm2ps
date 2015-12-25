@@ -36,8 +36,8 @@ List of the options
   -E, +E
 	Produce EPS output instead of simple PS.
 	In this mode, each tune goes to a different file which
-	name is '<name>nnn.eps' (see '-O' for <name> - 	'nnn' is
-	the tune sequence number.
+	name is '<name>nnn.eps' or <title>.eps (see option '-O'
+	- 'nnn' is a sequence number incremented at each tune).
 	EPS files are normally embedded into Postscript documents,
 	but they may be a way to generate graphical images. For
 	example, using GhostScript:
@@ -114,15 +114,17 @@ List of the options
   -n, +n
 	See: format.txt - writehistory <bool>
 
-  -O<name>, +O
+  -O[<directory>][<name>], +O
 	Define the output file name.
+	By default, the output file goes to the current directory.
 	By default, the output file name is 'Out.ps' for PS, and
-	'Outnnn.eps' for EPSF (see option '-E' for the Postscript
-	mode).
+	'Outnnn.eps' for EPS (see option '-E').
 	With this option, it will be <name> or <name>nnn.eps.
-	If <name> is '=', the output file has the name of the ABC
-	source file with the extension '.ps' or '.eps'.
-	If <name> is '-', the result is written on stdout.
+	If <name> is '=', the output file is the name of the ABC
+	source file with the extension '.ps' for PS, or the title
+	of the tune for EPS.
+	If <name> is '-', the result is output on stdout (PS only).
+	'+O' is the same as '-O'.
 
   -s<float>
 	See: format.txt - scale <float>

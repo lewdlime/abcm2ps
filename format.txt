@@ -25,18 +25,48 @@ Format parameters may appear in the command line by:
 
 Some pseudo-comments are treated while being parsed and cannot appear
 in a format file nor in the command line. These ones are listed at the
-end of this file and are fully described in the file features.txt.
+end of this file.
 
 
 List of the format parameters
 -----------------------------
+
+  alignbars <int>
+	Default: 0
+	Compilation: none
+	Command line: none
+	Description:
+		Align the bars of the next <int> music lines.
+		Such an alignment works only when there is only one
+		voice in the music lines (no V: or %%staves allowed).
+
+  aligncomposer <int>
+	Default: 1
+	Compilation: none
+	Command line: none
+	Description:
+		Tell where to display the composer field.
+		A negative value means 'on the left', 0 means 'center',
+		and a positive value means 'on the right'.
+			
+
+  annotationfont <font> [<encoding>] <size>
+	Default: Helvetica 12
+	Compilation: none
+	Command line: none
+	Description:
+		Set the annotation font to <font> with a size <size>.
 
   autoclef <bool>
 	Default: 1
 	Compilation: none
 	Command line: none
 	Description:
-		Adjust the clefs when not defined in K: or V:.
+		When true, set the clefs and possibly insert clef
+		changes when no clef is defined in K: or V:.
+
+  barnumbers <int>
+	Same as 'measurenb'.
 
   barsperstaff <int>
 	Default: 0
@@ -45,6 +75,17 @@ List of the format parameters
 	Description:
 		Try to typeset with <int> bars on each line.
 
+  beginps
+	Default: none
+	Compilation: none
+	Command line: none
+	Description:
+		Start a PostScript sequence which ends on 'endps'.
+		This parameter may be found only in a format or ABC
+		file (it cannot appear in the command line).
+		Each line between 'beginps' and 'endps' is included in
+		the PostScript output file.
+
   botmargin <unit>
 	Default: 1cm
 	Compilation: none
@@ -52,7 +93,34 @@ List of the format parameters
 	Description:
 		Set the bottom margin to <unit>.
 
-  composerfont <font> <size>
+  bstemdown <bool>
+	Default: 0
+	Compilation: none
+	Command line: none
+	Description:
+		When set, the stem of the note on the middle of the
+		staff goes downwards. Otherwise, it goes upwards
+		or downwards according to the previous note.
+
+  comball <bool>
+	Default: 0
+	Compilation: none
+	Command line: none
+	Description:
+		When 'combinevoices' is set, voice combination does not
+		occurs when the pitches are a second, unisson or inverted.
+		Setting this flag makes the combination to occur in all
+		cases.
+
+  combinevoices <bool>
+	Default: 0
+	Compilation: none
+	Command line: none
+	Description:
+		If 1, the notes of same duration belonging to voices of
+		the same staff are combined giving chords.
+
+  composerfont <font> [<encoding>] <size>
 	Default: Times-Italic 14
 	Compilation: none
 	Command line: none
@@ -66,12 +134,31 @@ List of the format parameters
 	Description:
 		Set the vertical space before the composer to <unit>.
 
+  contbarnb <bool>
+	Default: 0
+	Compilation: none
+	Command line: none
+	Description:
+		If 0, the bar number of the second repeat(s) is reset to
+		the number of the first repeat.
+		If 1, the bars are sequencially numbered.
+
   continueall <bool>
 	Default: 0
 	Compilation: none
 	Command line: -c
 	Description:
 		Ignore the line breaks in tune if true.
+
+  dateformat <text>
+	Default: "\%b \%e, \%Y \%H:\%M"
+	Compilation: none
+	Command line: none
+	Description:
+		Define the format of the date and time.
+		The possible values of this parameter are described
+		in the manual pages of date(1) and strftime(3).
+		Note: the '%'s must be escaped as '\%'.
 
   deco <name> <c_func> <ps_func> <h> <wl> <wr> [<str>]
 	Default: none
@@ -96,26 +183,53 @@ List of the format parameters
 				3: general
 				4: below the staff
 				5: long 'trill' (with start and stop)
-			6, 7: decoration tied to the staff,
+			6, 7: decoration tied to the staff (dynamic marks),
 					generally printed below the staff.
 				6: general
 				7: long dynamic (with start and stop)
 		<ps_func>: postscript function name or '-' if start of a long
 			decoration.
 		<h>: decoration height.
-		<wl> and <wr>: left and right widths (not used actually).
+			It is the minimum height for +arpeggio+.
+		<wl> and <wr>: left and right widths.
+			These values are actually used for general dynamic
+			marks only.
 		<str>: text to display (for some postscript functions
 			- see code).
+		Decorations which names begin with 'head-' prevent the
+		note head(s) to be drawn.
 
-  encoding <int>
+  dynalign <bool>
+	Default: 1
+	Compilation: none
+	Command line: none
+	Description:
+		When true, horizontally align the dynamic marks.
+
+  encoding <encoding> | <int>
 	Default: 0
 	Compilation: none
 	Command line: -L<int>
 	Description:
-		Set the language encoding to ISO-Latin<int>.
+		Set the global font encoding to <encoding>, or to
+		ISO-Latin<int>.
+		The recognized encodings are:
+			us-ascii
+			iso-8859-1	(latin1)
+			iso-8859-2	(latin2)
+			iso-8859-3	(latin3)
+			iso-8859-4	(latin4)
+			iso-8859-9	(latin5)
+			iso-8859-10	(latin6)
+			native
+		When the encoding is 'native', the encoding vectors
+		of the fonts are not changed.
+		<encoding> may be any string. In this case, the encoding
+		vector must be defined by a sequence of 'postscript'
+		commands.
 		<int> may take values from '0' to '6'.
 		The value '0' is the same as '1', but the PostScript
-		encoding table is not output.
+		encoding vector for Latin1 is not output.
 
   exprabove <bool>
 	Default: 0
@@ -146,6 +260,19 @@ List of the format parameters
 	Description:
 		Have flat beams in bagpipe tunes.
 
+  font <font> [<encoding>]
+	Default: none
+	Compilation: none
+	Command line: none
+	Description:
+		Define a font and its encoding.
+		This parameter is required when specific fonts are
+		defined later in ABC files/tunes, and it must be defined
+		before any PostScript output is done, generally in a
+		format file.
+		When absent, <encoding> defaults to the current
+		'encoding' parameter (see above).
+
   footer <text>
 	Default: none
 	Compilation: none
@@ -161,6 +288,8 @@ List of the format parameters
 		not '\t') and may be empty (if the left area is empty,
 		quote the string - see sample3.abc for example).
 		The character '$' introduces variable expansion:
+			- '$d' is the date and time of the last modification
+			   of the current ABC input file,
 			- '$D' is the current date and time,
 			- '$F' is the current input file name,
 			- '$P' is the current page number,
@@ -172,14 +301,26 @@ List of the format parameters
 		as:
 			%%header "$P0		$P1"
 		(note the 2 TABs).
+		A little trick: when a header or footer is defined inside
+		a tune, it is printed on the next page. This may be used
+		for example to have no header/footer on the 1st page.
 
-  footerfont <font> <size>
+  footerfont <font> [<encoding>] <size>
 	Default: Times-Roman 12
 	Compilation: none
 	Command line: none
 	Description:
 		Set the footer font to <font> with a size <size>.
 		Note that the footer is not scaled.
+
+  format <filename>
+	Default: none
+	Compilation: none
+	Command line: none
+	Description:
+		Read the format file <filename>.
+		When found in the command line, this parameter is the
+		same as '-F'.
 
   freegchord <bool>
 	Default: 0
@@ -199,7 +340,7 @@ List of the format parameters
 		Draw a box around the guitar chords.
 		This value may be set to 'true' by %%gchordfont.
 
-  gchordfont <font> <size> [box]
+  gchordfont <font> [<encoding>] <size> [box]
 	Default: Helvetica 12
 	Compilation: none
 	Command line: none
@@ -222,13 +363,28 @@ List of the format parameters
 		Set the text printed at the top of each page.
 		See 'footer' above for the header syntax.
 
-  headerfont <font> <size>
+  headerfont <font> [<encoding>] <size>
 	Default: Times-Roman 12
 	Compilation: none
 	Command line: none
 	Description:
 		Set the header font to <font> with a size <size>.
 		Note that the header is not scaled.
+
+  historyfont <font> [<encoding>] <size>
+	Default: Times-Roman 16
+	Compilation: none
+	Command line: none
+	Description:
+		Set the history font to <font> with a size <size>.
+
+  hyphencont <bool>
+	Default: 0
+	Compilation: none
+	Command line: none
+	Description:
+		When a lyric under staff ends with a hyphen, put a
+		hyphen in the next line.
 
   indent <unit>
 	Default: 0
@@ -237,7 +393,7 @@ List of the format parameters
 	Description:
 		Indent the first line of the tune by <unit>.
 
-  infofont <font> <size>
+  infofont <font> [<encoding>] <size>
 	Default: Times-Italic 14
 	Compilation: none
 	Command line: none
@@ -249,7 +405,8 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Display the rhythm and the origin on the same line.
+		Display the rhythm and origin on a same line, and also
+		display the area ('A:').
 
   infospace <unit>
 	Default: 0
@@ -277,7 +434,8 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Set the factor for spacing between lines of text to <float>.
+		Set the factor for spacing between lines of text
+		to <float>.
 
   maxshrink <float>
 	Default: 0.65
@@ -287,6 +445,20 @@ List of the format parameters
 		Set how much to compress horizontally when staff breaks
 		are chosen automatically.
 		<float> must be between 0 and 1.
+
+  maxstaffsep <unit>
+	Default: 2000pt
+	Compilation: none
+	Command line: none
+	Description:
+		Set the maximum vertical interstaff space to <unit>.
+
+  maxsysstaffsep <unit>
+	Default: 2000pt
+	Compilation: none
+	Command line: none
+	Description:
+		Set the maximum vertical system interstaff space to <unit>.
 
   measurebox <bool>
 	Default: 0
@@ -301,11 +473,11 @@ List of the format parameters
 	Compilation: none
 	Command line: -b<int>
 	Description:
-		Start measure numbering of the tune at <int>.
-		If the measure number needs to be changed inside a tune,
-		use '%%setbarnb' (see features.txt).
+		Start numbering the measures of the tune from <int>.
+		This parameter is obsolete and should be replaced by
+		'%%setbarnb' (outside the tune body).
 
-  measurefont <font> <size> [box]
+  measurefont <font> [<encoding>] <size> [box]
 	Default: Times-Italic 14
 	Compilation: none
 	Command line: none
@@ -319,9 +491,9 @@ List of the format parameters
 	Compilation: none
 	Command line: -j<int>[b] or -k<int>[b]
 	Description:
-		Draw the measure number each <int> bars.
-		If <int> = 0, the measure number appears only on the left
-		of each staff.
+		If positive, draw the measure number each <int> bars.
+		If <int> = 0, the measure number appears only on the
+		left of each staff system.
 		On the command line, if a trailing 'b' is present, a box
 		is drawn around the measure numbers.
 
@@ -382,7 +554,8 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Set the factor for spacing between parts to <float>.
+		Set the factor for spacing between text paragraphs
+		to <float>.
 
   partsbox <bool>
 	Default: 0
@@ -392,7 +565,7 @@ List of the format parameters
 		Draw a box around the part names.
 		This value may be set to 'true' by %%partsfont.
 
-  partsfont <font> <size> [box]
+  partsfont <font> [<encoding>] <size> [box]
 	Default: Times-Roman 15
 	Compilation: none
 	Command line: none
@@ -412,13 +585,18 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Define a postscript sequence to be included in the
-		header of the output file.
-		This format may be used to override any postscript function
-		or to define new functions for use in the 'deco' format.
-		Such commands should be parsed before any output occurs,
-		that is in a format file or at the beginning of the first
-		ABC file.
+		Define a line to be included in the PostScript output
+		file.
+		This parameter may be used to override any PostScript
+		function or to define new functions for use in a 'deco'
+		format.
+
+  pslevel <int>
+	Default: 2
+	Compilation: none
+	Command line: none
+	Description:
+		Set the PostScript level for output. It may be 1, 2 or 3.
 
   printparts <bool>
 	Default: 1
@@ -434,7 +612,7 @@ List of the format parameters
 	Description:
 		Print the tempo indications (Q:).
 
-  repeatfont <font> <size>
+  repeatfont <font> [<encoding>] <size>
 	Default: Times-Roman 13
 	Compilation: none
 	Command line: none
@@ -455,6 +633,38 @@ List of the format parameters
 	Description:
 		Set the page scale factor to <float>.
 		Note that the header and footer are not scaled.
+
+  setdefl <bool>
+	Default: 0
+	Compilation: none
+	Command line: none
+	Description:
+		When true, output some indications about the note/chord
+		and/or decorations for customization purpose. These
+		indications are stored in the PostScript variable 'defl'.
+
+  setfont-1 <font> [<encoding>] <size>
+  setfont-2 <font> [<encoding>] <size>
+  setfont-3 <font> [<encoding>] <size>
+  setfont-4 <font> [<encoding>] <size>
+	Default: Times-Roman 0
+	Compilation: none
+	Command line: none
+	Description:
+		Set the alternate fonts of strings.
+		In most strings, the current font may be changed
+		by "$n" (n = 0, 1 .. 4 - "$0" resets the font to
+		its default value.
+
+  shifthnote <bool>
+	Default: 0
+	Compilation: none
+	Command line: none
+	Description:
+		In multivoice tunes, when voices go to unisson with
+		a minim (half note) and a note smaller than crotchet
+		(black note), there is only one note head, the minim
+		one. When this flag is set, a note shift is done.
 
   slurheight <float>
 	Default: 1.0
@@ -493,6 +703,13 @@ List of the format parameters
 	Description:
 		Adjust the right margin so that the staff width is <unit>.
 
+  stemheight <float>
+	Default: 20.0
+	Compilation: none
+	Command line: none
+	Description:
+		Set the stem height to <float>.
+
   straightflags <bool>
 	Default: 0
 	Compilation: none
@@ -505,7 +722,8 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Stretch the last staff of the tune when underfull.
+		Stretch the last staff of the tune when more expanded
+		than the previous line.
 
   stretchstaff <bool>
 	Default: 1
@@ -514,7 +732,7 @@ List of the format parameters
 	Description:
 		Stretch underfull staves across page.
 
-  subtitlefont <font> <size>
+  subtitlefont <font> [<encoding>] <size>
 	Default: Times-Roman 16
 	Compilation: none
 	Command line: none
@@ -533,28 +751,51 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Set the vertical system interstaff space to <unit>.
+		Set the vertical space between staves in a system to <unit>.
 
-  tempofont <font> <size>
+  tempofont <font> [<encoding>] <size>
 	Default: Times-Bold 15
 	Compilation: none
 	Command line: none
 	Description:
 		Set the tempo font to <font> with a size <size>.
 
-  textfont <font> <size>
+  textfont <font> [<encoding>] <size>
 	Default: Times-Roman 16
 	Compilation: none
 	Command line: none
 	Description:
 		Set the text font to <font> with a size <size>.
 
+  textoption <int>
+	Default: 0 (obeylines)
+	Compilation: none
+	Command line: none
+	Description:
+		Set the default text option to <int>. This option is
+		used for text between '%%begintext' and '%%endtext'.
+		<int> may be a keyword. The values are:
+			0: obeylines
+			1: justify
+			2: fill
+			3: center
+			4: skip
+
   textspace <unit>
 	Default: 0.5cm
 	Compilation: none
 	Command line: none
 	Description:
-		Set the vertical space before texts to <unit>.
+		Set to <unit> the vertical space before the history.
+
+  timewarn <bool>
+	Default: 0
+	Compilation: none
+	Command line: none
+	Description:
+		When set, if a time signature occurs at the beginning
+		of a music line, a cautionary time signature is added
+		at the end of the previous line.
 
   titlecaps <bool>
 	Default: 0
@@ -563,12 +804,39 @@ List of the format parameters
 	Description:
 		Output the title in uppercase letters.
 
-  titlefont <font> <size>
+  titlefont <font> [<encoding>] <size>
 	Default: Times-Roman 20
 	Compilation: none
 	Command line: none
 	Description:
 		Set the title font to <font> with a size <size>.
+
+  titleformat <text>
+	Default: none
+	Compilation: none
+	Command line: none
+	Description:
+		Define the format of the tune title.
+		This format overrides the standard way to display the
+		tune title, i.e. parameters as %%titleleft, %%infoline
+		or %%composerspace will be ignored. The format is
+		a set of letters, numbers and commas. Unrecognized
+		characters are ignored.
+		A letter is the ABC header infomation type. It may be
+		'A', 'B', 'C', 'D', 'H', 'N', 'O', 'P', 'R', 'S',
+		'T', 'X' or 'Z'.
+		A number may follow a letter. It may be:
+			'0' for 'center',
+			'1' for 'right align' or
+			'-1' for 'left align'.
+		When absent, the number defaults to '0' (center).
+		A comma sets the next fields to appear lower in the page.
+		For example:
+			%%titleformat T-1 T1 T1, R0 C1 A1
+		displays the first title on the left, the second and
+		third titles, if any, on the right. The rhythm is centered
+		a bit below, with the composer and author/area on the
+		right.
 
   titleleft <bool>
 	Default: 0
@@ -596,7 +864,27 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Set the vertical space at the top of a tune to <unit>.
+		Set the top vertical space to <unit>. This space is put
+		above the tune and also on top of continuation pages.
+
+  tuplets <int> <int> <int>
+	Default: 0 0 0
+	Compilation: none
+	Command line: none
+	Description:
+		Define how to draw the tuplets.
+		The first <int> tells when to draw:
+			0: auto (draw when no beam at endings)
+			1: never
+			2: always
+		The second <int> tells what to draw:
+			0: a square bracket
+			1: a slur
+			2: do beam extension on rests (does not work yet)
+		The third <int> tells which value to print:
+			0: a simple number (value of 'p')
+			1: no value
+			2: a ratio ('p':'q')
 
   vocalabove <bool>
 	Default: 0
@@ -605,7 +893,7 @@ List of the format parameters
 	Description:
 		Set the vocals above the staff.
 
-  vocalfont <font> <size>
+  vocalfont <font> [<encoding>] <size>
 	Default: Times-Bold 13
 	Compilation: none
 	Command line: none
@@ -621,13 +909,21 @@ List of the format parameters
 		Set the vertical space before the lyrics under staves
 		to <unit>.
 
+  voicefont <font> [<encoding>] <size>
+	Default: Times-Bold 13
+	Compilation: none
+	Command line: none
+	Description:
+		Set the font of the voice names to <font> with
+		a size <size>.
+
   withxrefs <bool>
 	Default: 0
 	Compilation: none
 	Command line: -x
 		Print the X: number in the title.
 
-  wordsfont <font> <size>
+  wordsfont <font> [<encoding>] <size>
 	Default: Times-Roman 16
 	Compilation: none
 	Command line: none
@@ -655,48 +951,61 @@ List of the format parameters
 List of the pseudo-comments treated while parsed
 ------------------------------------------------
 
-  begintext [<parameter>]
+  begintext [<option>]
 	Start printing a free text. The text appears on the next lines
 	(starting with '%%' or not). The text ends on a line containing
 		%%endtext
-	'parameter' may be:
-	    obeylines:		keep lines as they are (default)
-	    align or justify:	justify the lines
-	    ragged or fill:	fill the lines
-	    skip:		don't print the lines (same as comments)
+	<option> may be:
+	    'obeylines':	  keep lines as they are (default)
+	    'align' or 'justify': justify the lines
+	    'ragged' or 'fill':	  fill the lines
+	    'center':		  center the lines
+	    'skip':		  don't print the lines (same as comments)
 
   center <line of text>
 	Print one line of centered text.
 
   EPS <eps_file>
-	Include the file 'eps_file'.
+	Include the file <eps_file>.
 
   endtext
 	See 'begintext'.
 
   multicol <command>
 	Define multicolomn printing.
-	'command' may be:
-	    start:	save the current vertical position and the left
+	<command> may be:
+	    'start':	save the current vertical position and the left
 			and right margins. Then, these margins may
 			be changed to print music or text.
-	    new:	reset the vertical offset at the place of the
+	    'new':	reset the vertical offset at the place of the
 			previous '%%multicol start', and restore the left
 			and right margins.
-	    end:	restore the left and right margins, and skip down
+	    'end':	restore the left and right margins, and skip down
 			to a safe place.
 	(see 'sample3.abc' for example).
 
   newpage [<int>]
-	Continue printing on a new page and eventually restart page
-	numbering from 'int'.
+	Continue printing on a new page and possibly restart page
+	numbering from <int>.
+
+  repbra <bool>
+	The repeat brackets are normally displayed as found in a voice.
+	'%%repbra 0' prevents displaying them for the current voice.
 
   sep [<h1> <h2> <len>]
-	Print a separator of length 'len' with space 'h1' above and
-	space 'h2' below (defaults: h1 = h2 = 0.5cm, len = 3.0cm).
+	Print a separator of length <len> with space <h1> above and
+	space <h2> below (defaults: h1 = h2 = 0.5cm, len = 3.0cm).
 
   setbarnb <int>
-	Set the measure number to <int>.
+	Set the number of the next measure to <int>.
+	When found outside a tune, this command is the same as
+	'%%measurefirst'. If it appears at the beginning of the tune
+	(after K:), only the 2nd measure will have the new number.
+
+  staff <["+" | "-"] int>
+	Put the next symbols of the current voice on the staff <int>
+	(1..n - see sample4.abc for example), or on the <+int>th or
+	<-int>th staff.
 
   staffbreak <unit>
 	Have a break in the current staff. <unit> gives the width of the
@@ -712,4 +1021,4 @@ List of the pseudo-comments treated while parsed
 	Print one line of text.
 
   vskip <h>
-	Skip vertical space of height 'h'.
+	Skip vertical space of height <h>.

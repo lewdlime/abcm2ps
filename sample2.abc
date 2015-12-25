@@ -15,34 +15,34 @@ K:C bass
 
 X:2
 T:Key signature change
-T:multi rests and measure repeat
+T:and multi-measure rest
 M:2
 L:1/4
 K:C
 Z4|"C"CEGc|[K:A]"A"Acea|[K:B]"B"Bdfb|[K:A]"A"Acea|
-[K:Eb]"Eb"EGBe|/|[K:Cb]"Cb"CEGc|[K:C]"C"CEGc|
+[K:Eb]"Eb"EGBe|[K:Cb]"Cb"CEGc|[K:C]"C"CEGc|
 
 X:3
-T:All clefs with common key signatures
+T:All clefs with max signatures
 M:C
 L:1/4
-K:E bass
-C,E,G,C|[K:Ab]C,E,G,C|[K:E bass3]C,E,G,C|[K:Ab]C,E,G,C|
-[K:E alto4]G,CEG|[K:Ab]G,CEG|[K:C# alto]G,CEG|
-[K:Ab]G,CEG|[K:E alto2]CEGc|[K:Ab]CEGc|
-[K:E alto1]CEGc|[K:Ab]CEGc|[K:E treble]CEGc|[K:Ab]CEGc|
+K:C# bass
+C,E,G,C|[K:Cb]C,E,G,C|[K:C# bass3]C,E,G,C|
+[K:Cb]C,E,G,C|[K:C# alto4]G,CEG|[K:Cb]G,CEG|[K:C# alto]G,CEG|
+[K:Cb]G,CEG|[K:C# alto2]CEGc|[K:Cb]CEGc|
+[K:C# alto1]CEGc|[K:Cb]CEGc|[K:C# treble]CEGc|[K:Cb]CEGc|
 
 X:4
-T:Guitar chords
+T:Guitar chords - annotations
 M:none
 L:1/4
 K:C
 %%freegchord 1
 "no time""signature"CD"gchord""on bar"|EF\
-{B}"appogiattura"c {/B}"acciaccatura"c \
+"appogiattura"{B}c "acciaccatura"{/B}c \
 "three\nchord\nlines"G "and""four""chord""lines!"c| \
-"Fa\#"^F "Si\b"_B "Fa\="=F \
 %%freegchord 0
+"^Fa\#"^F "^Si\b"_B "^Fa\="=F \
 "F#"^F "Bb"_B||
 
 X:5
@@ -66,10 +66,8 @@ w:~0 ~1 ~2 ~3 ~4 ~5 ~+ accent
 w:breath crescendo( crescendo) D.C. diminuendo( diminuendo) ~f ffff
 !fine!C!invertedfermata!D !longphrase!E !mediumphrase!F !mf!G!open!A !p!B!pppp!c|
 w:fine invertedfermata longphrase mediumphrase mf open ~p pppp
-!pralltriller!C!repeatbar!D !repeatbar2!E!sfz!F !shortphrase!G !snap!A !thumb!B!turn!c|\
-w:pralltriller repeatbar repeatbar2 sfz shortphrase snap thumb turn
-!wedge!C!D.S.!D|
-w:wedge D.S.
+!pralltriller!C!sfz!D !shortphrase!E !snap!F !thumb!G!turn!A!wedge!B!D.S.!c|
+w:pralltriller sfz shortphrase snap thumb turn wedge D.S.
 
 X:7
 T:Non standard decorations
@@ -86,7 +84,7 @@ w:trill( trill)
 
 X:8
 T:Decorations on two voices
-T:(look also the 'd:' lines)
+T:(also in 'd:' lines)
 %%infoline 1
 C:Composer
 O:Origin

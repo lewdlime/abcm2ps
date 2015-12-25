@@ -12,10 +12,10 @@ Q:1/4=128
 K:C
 % most of piano tunes have only 2 voices ..
 V:RH
-[E8C8]|zE FG- GEC2|[E3B,3][DB,]- [D4B,4]|zD EF- FED2|D8|
+[C8E8]|zE FG- GEC2|[B,3E3][B,D]- [B,4D4]|zD EF- FED2|D8|
 V:LH
-[G,3C,3][G,C,]- [G,4C,4]|[G,3C,3][G,C,]- [G,4C,4]|[G,3B,,3][G,B,,]- [G,4B,,4]|\
-[G,3B,,3][G,B,,]- [G,4B,,4]|[F,3_B,,3][F,B,,]- [F,4B,,4]|
+[C,3G,3][C,G,]- [C,4G,4]|[C,3G,3][C,G,]- [C,4G,4]|[B,,3G,3][B,,G,]- [B,,4G,4]|\
+[B,,3G,3][B,,G,]- [B,,4G,4]|[_B,,3F,3][B,,F,]- [B,,4F,4]|
 
 X:2
 T:8th Sonata for piano
@@ -55,12 +55,12 @@ L:1/8
 Q:1/4=66
 %%staves {1 (2 3)}
 K:G
-(!p!B2AB G3)(A |Bcd[eG]) ([A3F3][B^G])|([c2A2][B^G][cA] AF=GA)|[B2G2][A2F2] {/G}G3B|
+(!p!B2AB G3)(A |Bcd[Ge]) ([F3A3][^GB])|([A2c2][^GB][Ac] AF=GA)|[G2B2][F2A2] {/G}G3B|
 V:2
 % this voice is not complete, but the measure must be respected
  G,2C2 xD3-    |D2x2	 x4	      | A,2D2		C2x2  |x8		   |
 V:3
-(G,DCD B,D2)(F,|G,A,B,C  (D2)CB,)     |(A,EDE		CDB,C)|D2[C2D,2]  [B,3G,3]D|
+(G,DCD B,D2)(F,|G,A,B,C  (D2)CB,)     |(A,EDE		CDB,C)|D2[D,2C2]  [G,3B,3]D|
 
 % --- vocal ---
 
@@ -75,10 +75,10 @@ K:A
 % Breton words on a Wales choral
 V:1
 EEE	  |C3E	   EEFF        |(D2F3)	  FFF	 |E3C   EEDD		 |C4   z:|
-V:2
-CCC	  |A,3A,   B,CA,A,     |(B,2A,3)  DDB,   |C3A,  B,A,A,G,	 |A,4  z:|
 w:Ka-na a |rin, ka-na a rin be-|pred,* rag an Ao-|trou en-eus va zan-tel-|let.
 w:Eñ eo va|nerz, eñ eo i-vez va|Zad,*    eñ eo va|han, ka-na a rin e     |hloar.
+V:2
+CCC	  |A,3A,   B,CA,A,     |(B,2A,3)  DDB,   |C3A,  B,A,A,G,	 |A,4  z:|
 V:3
 A,A,A,	  |E,3E,   G,A,F,F,    |(F,2F,3)  A,A,G, |A,3A, G,A,F,E,	 |E,4  z:|
 V:4
@@ -120,10 +120,10 @@ K:F
 %
 V:Pos1
 %%MIDI program 78
-"Positif"x3  |x3    |c'>ba|Pga/g/f|:g2a  |ba2    |g2c- |c2P=B  |c>de  |fga    |g2c/d/  |
+"Positif"x3  |x3    |c'>ba|Pga/g/f|:g2a  |ba2    |g2c- |c2P=B  |c>de  |fga    |
 V:Pos2
 %%MIDI program 78
-	Mf>ed|cd/c/B|PA2d |ef/e/d |:e2f  |ef2    |c>BA |GA/G/F |E>FG  |ABc-   |c>BA    |
+	Mf>ed|cd/c/B|PA2d |ef/e/d |:e2f  |ef2    |c>BA |GA/G/F |E>FG  |ABc-   |
 V:Trompette
-%%MIDI program 103
-"Trompette"z3|z3    |z3   |z3     |:Mc>BA|PGA/G/F|PE>EF|PEF/E/D|C>CPB,|A,G,F,-|F,PE,F,-|
+%%MIDI program 56
+"Trompette"z3|z3    |z3   |z3     |:Mc>BA|PGA/G/F|PE>EF|PEF/E/D|C>CPB,|A,G,F,-|

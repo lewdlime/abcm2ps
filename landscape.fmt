@@ -1,8 +1,6 @@
 
 % format for wide output in landscape mode
 
-   pageheight 21cm
-   staffwidth 25cm
    landscape 1
 
    titleleft  yes

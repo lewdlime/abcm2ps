@@ -1,0 +1,503 @@
+		Format parameters
+		=================
+
+The general layout of the printed scores may be changed in four ways:
+	1- at compilation time setting the values in abc2ps.h,
+	2- at running time in a 'format' file,
+	3- at startup time in the command line,
+	4- by pseudo-comments inside the tunes.
+
+For 1), see layout.txt, and for 3), see options.txt.
+
+A format file contains lines giving the parameters values, format:
+
+	parameter [parameter list]
+
+In a format file, empty lines and lines starting with '#' are ignored.
+
+The pseudo-comments used for formatting have the format:
+
+	%%parameter [parameter list]
+
+
+List of the parameters
+----------------------
+
+  barsperstaff <int>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -B<int>
+	Description:
+		Try to typeset with <int> bars on each line.
+
+  botmargin <unit>
+	Default: 1cm / 1cm / 1cm
+	Compilation: none
+	Command line: none
+	Description:
+		Set the bottom margin to <unit>.
+
+  composerfont <font> <size>
+	Default: Times-Italic 11 / Times-Italic 12 / Helvetica 10
+	Compilation: none
+	Command line: none
+	Description:
+		Set the composer font to <font> with a size <size>.
+
+  composerspace <unit>
+	Default: 0.2cm / 0.25cm / 0.3cm
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical space before the composer to <unit>.
+
+  continueall <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -c
+	Description:
+		Ignore the line breaks in tune if true.
+
+  deco <name> <c_func> <ps_func> <h> <wl> <wr> [<str>]
+	Default: none / none / none
+	Compilation: none
+	Command line: none
+	Description:
+		Define a decoration.
+		!! this is an experimental feature which is subject to change
+		   in next releases and asks for a good knowledge of the
+		   internals of abcm2ps - see deco.abc for examples !!
+		The actual arguments are:
+		<name>: name of the decoration. If it is the name of an
+			existing decoration, this one is redefined.
+		<c_func>: index of a C function (defined in deco.c).
+			The possible values are:
+			0, 1, 2: decoration near the note, inside the staff.
+				0: 'dot' and 'tenuto'
+				1: 'slide'
+				2: 'arpeggio'
+			3, 4, 5: decoration near the note, outside the staff.
+				3: general
+				4: actually same as 3
+				5: long 'trill' (with start and stop)
+			6, 7: decoration tied to the staff.
+				6: general
+				7: long dynamic
+		<ps_func>: postscript function name or '-' if start of a long
+			decoration.
+		<h>: decoration height.
+		<wl> and <wr>: left and right widths (not used actually).
+		<str>: text to display (for some postscript functions - see code).
+
+  encoding <int>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -L<int>
+	Description:
+		Set the language encoding to ISO-Latin<int>.
+		<int> may take values from '0' to '6'.
+		The value '0' is the same as '1', but the PostScript
+		encoding table is not output.
+
+  exprabove <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Draw the expression decorations above the staff.
+		If neither 'exprabove' nor 'exprbelow' are true, the
+		expression decorations are drawn above the staff if
+		there are lyrics on the staff, and below otherwise.
+		'exprabove' takes precedence over 'exprbelow'.
+
+  exprbelow <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Draw the expression decorations below the staff.
+		If neither 'exprabove' nor 'exprbelow' are true, the
+		expression decorations are drawn above the staff if
+		there are lyrics on the staff, and below otherwise.
+		'exprabove' takes precedence over 'exprbelow'.
+
+  flatbeams <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -f
+	Description:
+		Have flat beams in bagpipe tunes.
+
+  footer <text>
+	Default: (none) / (none) / (none)
+	Compilation: none
+	Command line: none
+	Description:
+		Set the text printed at the bottom of each page.
+
+  freegchord <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Prevent the characters '#' and 'b' to be converted to
+		sharp and flat in guitar chords.
+
+  gchordfont <font> <size>
+	Default: Helvetica 12 / Helvetica 12 / Helvetica 12
+	Compilation: none
+	Command line: none
+	Description:
+		Set the guitar chord font to <font> with a size <size>.
+
+  graceslurs <bool>
+	Default: 1 / 1 / 1
+	Compilation: none
+	Command line: -G
+	Description:
+		Draw slurs on grace notes.
+
+  indent <unit>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -I<unit>
+	Description:
+		Indent the first line of the tune by <unit>.
+
+  infofont <font> <size>
+	Default: Times-Italic 11 / Times-Italic 12 / Helvetica 10
+	Compilation: none
+	Command line: none
+	Description:
+		Set the infoline font to <font> with a size <size>.
+
+  infoline <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Display the rhythm and the origin on the same line.
+
+  infospace <unit>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical space before the infoline to <unit>.
+
+  landscape <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -l
+	Description:
+		Set the page orientation to landscape.
+
+  leftmargin <unit>
+	Default: 1.8cm / 1.8cm / 1.8cm
+	Compilation: none
+	Command line: -m<unit>
+	Description:
+		Set the left margin to <unit>.
+
+  lineskipfac <float>
+	Default: 1.1 / 1.1 / 1.1
+	Compilation: none
+	Command line: none
+	Description:
+		Set the factor for spacing between lines of text to <float>.
+
+  maxshrink <float>
+	Default: 0.65 / 0.55 / 0.55
+	Compilation: none
+	Command line: -a<float>
+	Description:
+		Set how much to compress horizontally when staff breaks
+		are chosen automatically.
+		<float> must be between 0 and 1.
+
+  measurebox <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: trailing 'b' at end of -j or -k - see measurenb.
+	Description:
+		Set a box around the measures numbers.
+
+  measurefirst <int>
+	Default: 1 / 1 / 1
+	Compilation: none
+	Command line: -b<int>
+	Description:
+		Start numbering the measures from <int>.
+
+  measurenb <int>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -j<int>[b] or -k<int>[b]
+	Description:
+		Draw the measure number each <int> bars.
+		If <int> = 0, the measure number appears only on the left
+		of each staff.
+		On the command line, if a trailing 'b' is present, a box
+		is drawn around the measure numbers.
+
+  musiconly <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -M
+	Description:
+		Don't output the lyrics if true.
+
+  musicspace <unit>
+	Default: 0.2cm / 0.25cm / 0.25cm
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical space before the first staff to <unit>.
+
+  oneperpage <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -1
+	Description:
+		Output one tune per page.
+
+  pageheight <unit>
+	Default: PAGEHEIGHT / PAGEHEIGHT / PAGEHEIGHT
+	Compilation: PAGEHEIGHT= (A4: 29.7cm - US: 11in)
+	Command line: none
+	Description:
+		Set the page height to <unit>.
+
+  pagewidth <unit>
+	Default: PAGEWIDTH / PAGEWIDTH / PAGEWIDTH
+	Compilation: PAGEWIDTH= (A4: 21.0cm - US: 8.5in)
+	Command line: none
+	Description:
+		Set the page width to <unit>.
+
+  parskipfac <float>
+	Default: 0.4 / 0.1 / 0.1
+	Compilation: none
+	Command line: none
+	Description:
+		Set the factor for spacing between parts to <float>.
+
+  partsfont <font> <size>
+	Default: Times-Roman 15 / Times-Roman 15 / Times-Roman 17
+	Compilation: none
+	Command line: none
+	Description:
+		Set the part font to <font> with a size <size>.
+
+  partsspace <unit>
+	Default: 0.3cm / 0.3cm / 0.2cm
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical space before a new part to <unit>.
+
+  postscript <text>
+	Default: none / none / none
+	Compilation: none
+	Command line: none
+	Description:
+		Define a postscript sequence to be included in the
+		header of the output file.
+		This format may be used to override any postscript function
+		or to define new functions for use in the 'deco' format.
+
+  rightmargin <unit>
+	Default: 1.8cm / 1.8cm / 1.8cm
+	Compilation: none
+	Command line: none
+	Description:
+		Set the right margin to <unit>.
+
+  scale <float>
+	Default: 0.7 / 0.8 / 0.7
+	Compilation: none
+	Command line: -s<float>
+	Description:
+		Set the music scale factor to <float>.
+
+  squarebreve <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Display the breve notes in square format.
+
+  staffsep <unit>
+	Default: 46pt / 50pt / 55pt
+	Compilation: none
+	Command line: -d<unit>
+	Description:
+		Set the vertical interstaff space to <unit>.
+
+  staffwidth <unit>
+	Default: none
+	Compilation: none
+	Command line: -w<unit>
+	Description:
+		Adjust the right margin so that the staff width is <unit>.
+
+  straightflags <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Have straight flags on stems in bagpipe tunes.
+
+  stretchlast <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Stretch the last staff of the tune when underfull.
+
+  stretchstaff <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Stretch underfull staves across page.
+
+  subtitlefont <font> <size>
+	Default: Times-Roman 12 / Times-Roman 15 / Helvetica-Bold 13
+	Compilation: none
+	Command line: none
+	Description:
+		Set the subtitle font to <font> with a size <size>.
+
+  subtitlespace <unit>
+	Default: 0.1cm / 0.1cm / 0.1cm
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical space before the subtitle to <unit>.
+
+  sysstaffsep <unit>
+	Default: 36pt / 40pt / 45pt
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical system interstaff space to <unit>.
+
+  tempofont <font> <size>
+	Default: Times-Bold 10 / Times-Bold 10 / Times-Bold 13
+	Compilation: none
+	Command line: none
+	Description:
+		Set the tempo font to <font> with a size <size>.
+
+  textfont <font> <size>
+	Default: Times-Roman 12 / Times-Roman 10 / Times-Roman 10
+	Compilation: none
+	Command line: none
+	Description:
+		Set the text font to <font> with a size <size>.
+
+  textspace <unit>
+	Default: 0.5cm / 0.5cm / 0.2cm
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical space before texts to <unit>.
+
+  titlecaps <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Output the title in uppercase letters.
+
+  titlefont <font> <size>
+	Default: Times-Roman 15 / Times-Roman 18 / Helvetica-Bold 16
+	Compilation: none
+	Command line: none
+	Description:
+		Set the title font to <font> with a size <size>.
+
+  titleleft <bool>
+	Default: 0 / 0 / 1
+	Compilation: none
+	Command line: none
+	Description:
+		Output the title on the left (instead of centered).
+
+  titlespace <unit>
+	Default: 0.2cm / 0.4cm / 0.4cm
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical space before the title to <unit>.
+
+  topmargin <unit>
+	Default: 1cm / 1cm / 1cm
+	Compilation: none
+	Command line: none
+	Description:
+		Set the top margin to <unit>.
+
+  topspace <unit>
+	Default: 0.8cm / 0.8cm / 0.8cm
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical space at the top of a tune to <unit>.
+
+  vocalabove <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vocals above the staff.
+
+  vocalfont <font> <size>
+	Default: Times-Bold 13 / Times-Bold 13 / Times-Bold 13
+	Compilation: none
+	Command line: none
+	Description:
+		Set the font of the lyrics under staves to <font>
+		with a size <size>.
+
+  vocalspace <unit>
+	Default: 23pt / 23pt / 23pt
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical space before the lyrics under staves
+		to <unit>.
+
+  withxrefs <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -x
+		Print the X: number in the title.
+
+  wordsfont <font> <size>
+	Default: Times-Roman 12 / Times-Roman 10 / Times-Roman 10
+	Compilation: none
+	Command line: none
+	Description:
+		Set the font of the lyrics at end of tune to <font>
+		with a size <size>.
+
+  wordsspace <unit>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: none
+	Description:
+		Set the vertical space before the lyrics at end of
+		tune to <unit>.
+
+  writehistory <bool>
+	Default: 0 / 0 / 0
+	Compilation: none
+	Command line: -n
+	Description:
+		Output notes, history, ...
+
+  Note:
+	There are 3 default values: one for each pretty option: 'standard',
+	'pretty' and 'pretty2'. See the command line options '-p' and 'P'.

@@ -1,11 +1,12 @@
 /*  
- *  This file is part of abc2ps, Copyright (C) 1996,1997 Michael Methfessel
- *  See file abc2ps.c for details.
+ * This file is part of abcm2ps.
+ * Copyright (C) 1998-2002 Jean-François Moine
+ * (adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel)
+ * See file abc2ps.c for details.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <time.h>
 #include <string.h>
 #include <ctype.h>
@@ -13,17 +14,20 @@
 #include "abcparse.h"
 #include "abc2ps.h" 
 
-#define MAXNTEXT	400	/* for text output */
-#define MAXWLEN		21
-
 static char outfnam[STRL1];	/* internal file name for open/close */
-static char txt[MAXNTEXT][MAXWLEN];	/* for output of text */
-int  ntxt;
+
+static float twidth;		/* text width for %%begintext..%%endtext */
+
+#ifndef DEBUG
+char newline[] = "\n";
+#else
+char newline[] = "\n+++ ";
+#endif
 
 /* width of characters according to the encoding */
 /* these are the widths for Times-Roman, extracted from the 'a2ps' package */
 static short ISOLatin1_w[256] = {
-	  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,  0,  0,  0,  0,  0,  0,  0, /* \002: hyphen in lyrics */
 	  0,  0,  0,  0,  0,  0,  0,  0,
 	  0,  0,  0,  0,  0,  0,  0,  0,
 	  0,  0,  0,  0,  0,  0,  0,  0,
@@ -39,7 +43,7 @@ static short ISOLatin1_w[256] = {
 	500,278,278,500,278,778,500,500,
 	500,500,333,389,278,500,500,722,
 	500,500,444,480,200,480,541,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,500,500,500,  0,  0,  0,  0, /* \201..\203: sharp, flat and natural signs */
 	  0,  0,  0,  0,  0,  0,  0,  0,
 	  0,  0,  0,  0,  0,  0,  0,  0,
 	  0,  0,  0,  0,  0,  0,  0,  0,
@@ -56,27 +60,7 @@ static short ISOLatin1_w[256] = {
 	500,500,500,500,500,500,500,564,
 	500,500,500,500,500,500,500,500,
 };
-static short ISOLatin2_w[256] = {
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	250,333,408,500,500,833,778,333,
-	333,333,500,564,250,564,250,278,
-	500,500,500,500,500,500,500,500,
-	500,500,278,278,564,564,564,444,
-	921,722,667,667,722,611,556,722,
-	722,333,389,722,611,889,722,722,
-	556,722,667,556,611,722,722,944,
-	722,722,611,333,278,333,469,500,
-	333,444,500,444,500,444,333,500,
-	500,278,278,500,278,778,500,500,
-	500,500,333,389,278,500,500,722,
-	500,500,444,480,200,480,541,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
+static short ISOLatin2_w[96] = {
 	250,500,333,611,500,500,500,500,
 	333,556,500,500,500,333,611,500,
 	400,500,333,278,333,500,500,333,
@@ -90,27 +74,7 @@ static short ISOLatin2_w[256] = {
 	500,500,500,500,500,500,500,564,
 	500,500,500,500,500,500,500,333,
 };
-static short ISOLatin3_w[256] = {
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	250,333,408,500,500,833,778,333,
-	333,333,500,564,250,564,250,278,
-	500,500,500,500,500,500,500,500,
-	500,500,278,278,564,564,564,444,
-	921,722,667,667,722,611,556,722,
-	722,333,389,722,611,889,722,722,
-	556,722,667,556,611,722,722,944,
-	722,722,611,333,278,333,469,500,
-	333,444,500,444,500,444,333,500,
-	500,278,278,500,278,778,500,500,
-	500,500,333,389,278,500,500,722,
-	500,500,444,480,200,480,541,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
+static short ISOLatin3_w[96] = {
 	250,500,333,500,500,500,500,500,
 	333,500,500,500,500,333,760,500,
 	400,500,300,300,333,500,500,350,
@@ -124,27 +88,7 @@ static short ISOLatin3_w[256] = {
 	500,500,500,500,500,500,500,564,
 	500,500,500,500,500,500,500,333,
 };
-static short ISOLatin4_w[256] = {
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	250,333,408,500,500,833,778,333,
-	333,333,500,564,250,564,250,278,
-	500,500,500,500,500,500,500,500,
-	500,500,278,278,564,564,564,444,
-	921,722,667,667,722,611,556,722,
-	722,333,389,722,611,889,722,722,
-	556,722,667,556,611,722,722,944,
-	722,722,611,333,278,333,469,500,
-	333,444,500,444,500,444,333,500,
-	500,278,278,500,278,778,500,500,
-	500,500,333,389,278,500,500,722,
-	500,500,444,480,200,480,541,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
+static short ISOLatin4_w[96] = {
 	250,500,500,500,500,500,500,500,
 	333,556,500,500,500,333,611,333,
 	400,500,333,500,333,500,500,333,
@@ -158,27 +102,7 @@ static short ISOLatin4_w[256] = {
 	500,500,500,500,500,500,500,564,
 	500,500,500,500,500,500,500,333,
 };
-static short ISOLatin5_w[256] = {
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	250,333,408,500,500,833,778,333,
-	333,333,500,564,250,564,250,278,
-	500,500,500,500,500,500,500,500,
-	500,500,278,278,564,564,564,444,
-	921,722,667,667,722,611,556,722,
-	722,333,389,722,611,889,722,722,
-	556,722,667,556,611,722,722,944,
-	722,722,611,333,278,333,469,500,
-	333,444,500,444,500,444,333,500,
-	500,278,278,500,278,778,500,500,
-	500,500,333,389,278,500,500,722,
-	500,500,444,480,200,480,541,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
+static short ISOLatin5_w[96] = {
 	250,333,500,500,500,500,200,500,
 	333,760,276,500,564,333,760,333,
 	400,564,300,300,333,500,453,350,
@@ -192,27 +116,7 @@ static short ISOLatin5_w[256] = {
 	500,500,500,500,500,500,500,564,
 	500,500,500,500,500,278,500,500,
 };
-static short ISOLatin6_w[256] = {
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	250,333,408,500,500,833,778,333,
-	333,333,500,564,250,564,250,278,
-	500,500,500,500,500,500,500,500,
-	500,500,278,278,564,564,564,444,
-	921,722,667,667,722,611,556,722,
-	722,333,389,722,611,889,722,722,
-	556,722,667,556,611,722,722,944,
-	722,722,611,333,278,333,469,500,
-	333,444,500,444,500,444,333,500,
-	500,278,278,500,278,778,500,500,
-	500,500,333,389,278,500,500,722,
-	500,500,444,480,200,480,541,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
-	  0,  0,  0,  0,  0,  0,  0,  0,
+static short ISOLatin6_w[96] = {
 	250,500,500,500,500,500,500,500,
 	333,500,556,500,611,333,500,500,
 	500,500,500,500,500,500,500,500,
@@ -230,36 +134,36 @@ static short ISOLatin6_w[256] = {
 static short *cw_tb[] = {
 	ISOLatin1_w,	/* 0 = ascii */
 	ISOLatin1_w,
-	ISOLatin2_w,
-	ISOLatin3_w,
-	ISOLatin4_w,
-	ISOLatin5_w,
-	ISOLatin6_w
+	ISOLatin2_w - 160,
+	ISOLatin3_w - 160,
+	ISOLatin4_w - 160,
+	ISOLatin5_w - 160,
+	ISOLatin6_w - 160
 };
 
 /* escaped character table */
 /* adapted from the 'recode' package - first index is 128 + 32 */
-static char ISOLatin1_c[] = 
-	"NS!ICtPdCuYeBBSE':Co-a<<NO--Rg'-DG+-2S3S''MyPI.M',1S-o>>141234?I"
+static char ISOLatin1_c[] =
+	"NS!!CtPdCuYeBBSE':Co-a<<NO--Rg'-DG+-2S3S''MyPI.M',1S-o>>141234?I"
 	"A!A'A>A?A:AAAEC,E!E'E>E:I!I'I>I:D-N?O!O'O>O?O:*XO/U!U'U>U:Y'THss"
 	"a!a'a>a?a:aaaec,e!e'e>e:i!i'i>i:d-n?o!o'o>o?o:-:o/u!u'u>u:y'thy:";
-static char ISOLatin2_c[] = 
+static char ISOLatin2_c[] =
 	"NSA;'(L/CuL<S'SE':S<S,T<Z'--Z<Z.DGa;';l/''l<s''<',s<s,t<z''\"z<z."
 	"R'A'A>A(A:L'C'C,C<E'E;E:E<I'I>D<D/N'N<O'O>O\"O:*XR<U0U'U\"U:Y'T,ss"
 	"r'a'a>a(a:l'c'c,c<e'e;e:e<i'i>d<d/n'n<o'o>o\"o:-:r<u0u'u\"u:y't,'.";
-static char ISOLatin3_c[] = 
+static char ISOLatin3_c[] =
 	"NSH/'(PdCu  H>SE':I.S,G(J>--  Z.DGh/2S3S''Myh>.M',i.s,g(j>12  z."
 	"A!A'A>  A:C.C>C,E!E'E>E:I!I'I>I:  N?O!O'O>G.O:*XG>U!U'U>U:U(S>ss"
 	"a!a'a>  a:c.c>c,e!e'e>e:i!i'i>i:  n?o!o'o>g.o:-:g>u!u'u>u:u(s>'.";
-static char ISOLatin4_c[] = 
+static char ISOLatin4_c[] =
 	"NSA;kkR,CuI?L,SE':S<E-G,T/--Z<'-DGa;';r,''i?l,'<',s<e-g,t/NGz<ng"
 	"A-A'A>A?A:AAAEI;C<E'E;E:E.I'I>I-D/N,O-K,O>O?O:*XO/U;U'U>U:U?U-ss"
 	"a-a'a>a?a:aaaei;c<e'e;e:e.i'i>i-d/n,o-k,o>o?o:-:o/u;u'u>u:u?u-'.";
-static char ISOLatin5_c[] = 
-	"NS!ICtPdCuYeBBSE':Co-a<<NO--Rg'-DG+-2S3S''MyPI.M',1S-o>>141234?I"
+static char ISOLatin5_c[] =
+	"NS!!CtPdCuYeBBSE':Co-a<<NO--Rg'-DG+-2S3S''MyPI.M',1S-o>>141234?I"
 	"A!A'A>A?A:AAAEC,E!E'E>E:I!I'I>I:G(N?O!O'O>O?O:*XO/U!U'U>U:I.S,ss"
 	"a!a'a>a?a:aaaec,e!e'e;e:e.i'i>i-g(n?o!o'o>o?o:-:o/u!u'u>u:i.s,y:";
-static char ISOLatin6_c[] = 
+static char ISOLatin6_c[] =
 	"NSA;E-G,I-I?K,L,N'R,S<T/Z<--kkNGd/a;e-g,i-i?k,l,n'r,s<t/z<SEssng"
 	"A-A'A>A?A:AAAEI;C<E'E;E:E.I'I>I:D/N,O-O'O>O?O:U?O/U;U'U>U:Y'THU-"
 	"a-a'a>a?a:aaaei;c<e'e;e:e.i'i>i:d-n,o-o'o>o?o:u?o/u;u'u>u:y'thu-";
@@ -273,26 +177,112 @@ static char *esc_tb[] = {
 	ISOLatin6_c
 };
 
-struct text {
+static struct text {
 	struct text *next;
 	float textw;
 	char text[2];
 } *text_tb[TEXT_MAX];
+
+/*  low-level utilities  */
+
+/* -- print message for internal error and maybe stop -- */
+void bug(char *msg,
+	 int fatal)
+{
+	ERROR(("This cannot happen!\n"
+	       "Internal error: %s.\n", msg));
+	if (fatal) {
+		printf("Emergency stop.\n\n");
+		exit(3);
+	}
+	printf("Trying to continue...\n\n");
+}
+
+#ifndef DEBUG
+/* -- print an error message -- */
+void error_head(void)
+{
+static char *t;
+
+	if (t != info.title[0]) {
+		t = info.title[0];
+		printf("%s:\n", t);
+	}
+	printf("  - ");
+}
+#endif
+
+/* -- return random float between x1 and x2 -- */
+float ranf(float x1,
+	   float x2)
+{
+static int first = 1;
+
+	if (first) {
+		srand(time(0));
+		first = 0;
+	}
+	return x1 + (x2 - x1) * (float) (rand() & 0x7fff) / 32768.;
+}
+
+/* -- read a number with a unit -- */
+float scan_u(char *str)
+{
+	float a;
+	int nch;
+
+	if (sscanf(str, "%f%n", &a, &nch) == 1) {
+		if (str[nch] == '\0' || str[nch] == ' ')
+			return a * PT;
+		if (!strncasecmp(str + nch, "cm", 2))
+			return a * CM;
+		if (!strncasecmp(str + nch, "in", 2))
+			return a * IN;
+		if (!strncasecmp(str + nch, "pt", 2))
+			return a * PT;
+	}
+	printf("\n++++ Unknown unit value \"%s\"\n", str);
+	return 20 * PT;
+}
+
+/* -- capitalize a string -- */
+void cap_str(char *p)
+{
+	while (*p != '\0') {
+#if 1
+/* pb with toupper */
+		unsigned char c;
+
+		c = *p;
+		if ((c >= 'a' && c <= 'z')
+		    || (c >= 0xe0 && c <= 0xfe))
+			*p = c & ~0x20;
+#else
+		*p = toupper((unsigned) *p);
+#endif
+		p++;
+	}
+}
 
 /*  miscellaneous subroutines  */
 
 /* -- return the character width -- */
 float cwid(char c)
 {
+	short *w;
 	int ix = c & 0x00ff;
-	return (float) cw_tb[cfmt.encoding][ix] / 1000.;
+
+	if (ix < 160)
+		w = ISOLatin1_w;
+	else	w = cw_tb[cfmt.encoding];
+	return (float) w[ix] / 1000.;
 }
 
-/* -- tex_str: change string taking care of some tex-style codes -- */
+/* -- change string taking care of some tex-style codes -- */
 /* Puts \ in front of ( and ) in case brackets are not balanced,
-   interprets all ISOLatin1..6 escape sequences as defined in rfc1345.
-   Returns the length of the string as finally given out on paper.
-   Also returns an estimate of the string width... */
+ * interprets all ISOLatin1..6 escape sequences as defined in rfc1345.
+ * Returns the length of the string as finally given out on paper.
+ * Also returns an estimate of the string width... */
 int tex_str(char *d,
 	    char *s,
 	    int maxlen,
@@ -308,21 +298,19 @@ int tex_str(char *d,
 	w = 0;
 	maxlen--;		/* have room for EOS */
 	p_enc = esc_tb[cfmt.encoding];
-	while (*s != '\0') {
-		switch (*s) {
+	while ((c1 = *s) != '\0') {
+		switch (c1) {
 		case '\\':			/* backslash sequences */
 			s++;
-			c1 = *s;
-			c2 = s[1];
-			if (c1 == '\0' || c2 == '\0')
+			if ((c1 = *s) == '\0')
 				break;
-			if (c1 == ' ') {
+			if (c1 == ' ')
+				goto addchar1;
+			if ((c2 = s[1]) == '\0') {
 				if (--maxlen <= 0)
 					break;
-				*d++ = c1;
-				n++;
-				w += cwid(c1);
-				break;
+				*d++ = '\\';
+				goto addchar1;
 			}
 			/* treat escape with octal value */
 			if ((unsigned) (c1 - '0') <= 3
@@ -374,12 +362,7 @@ int tex_str(char *d,
 					break;
 				*d++ = '\\';
 			}
-			if (--maxlen <= 0)
-				break;
-			*d++ = c1;
-			n++;
-			w += cwid(c1);
-			break;
+			goto addchar1;
 		case '{':
 		case '}':
 			break;
@@ -389,12 +372,13 @@ int tex_str(char *d,
 				break;
 			*d++ = '\\';
 			/* fall thru */
-		default:		/* other characters: pass though */
+		default:		/* other characters: pass through */
+		addchar1:
 			if (--maxlen <= 0)
 				break;
-			*d++ = *s;
+			*d++ = c1;
 			n++;
-			w += cwid(*s);
+			w += cwid(c1);
 		}
 		s++;
 	}
@@ -414,58 +398,32 @@ static void put_str(char *str)
 }
 
 /* -- output a string in postscript with head and tail -- */
-void put_str3(char *head,
-	      char *str,
-	      char *tail)
+static void put_str3(char *head,
+		     char *str,
+		     char *tail)
 {
 	PUT0(head);
 	put_str(str);
 	PUT0(tail);
 }
 
-/* -- set_font -- */
-void set_font(struct FONTSPEC *font)
-{
-	int fnum;
-
-	for (fnum = nfontnames; --fnum >= 0; ) {
-		if (!strcmp(font->name, fontnames[fnum]))
-			break;
-	}
-	if (fnum < 0) {
-		ERROR(("Font \"%s\" not predefined; using first in list",
-			font->name));
-		fnum = 0;
-	}
-	PUT2("%.1f F%d ", font->size, fnum);
-}
-
 /* -- set_font_str -- */
 static void set_font_str(char str[],
 			 struct FONTSPEC *font)
 {
-	int fnum;
-
-	for (fnum = nfontnames; --fnum >= 0; ) {
-		if (!strcmp(font->name, fontnames[fnum]))
-			break;
-	}
-	sprintf(str, "%.1f F%d ", font->size, fnum);
+	sprintf(str, "%.1f F%d ", font->size, font->fnum);
 }
 
 /* -- epsf_title -- */
-void epsf_title(char title[],
-		char fnm[])
+void epsf_title(char *p,
+		char *q)
 {
-	char *p,*q;
+	char c;
 
-	p = title;
-	q = fnm;
-	while (*p != '\0') {
-		if (*p == ' ')
-			*q++ = '_';
-		else	*q++ = *p;
-		p++;
+	while ((c = *p++) != '\0') {
+		if (c == ' ')
+			c = '_';
+		*q++ = c;
 	}
 	*q = '\0';
 }
@@ -479,7 +437,7 @@ void close_output_file()
 		return;
 
 	close_page(fout);
-	close_ps(fout);
+	close_ps();
 	m = ftell(fout);
 	fclose(fout);
 	if (tunenum == 0)
@@ -505,7 +463,7 @@ void open_output_file(char *fnam)
 	strcpy(outfnam, fnam);
 	if ((fout = fopen(outfnam, "w")) == 0) {
 		printf("Cannot open output file %s\n", outf);
-		exit(1);
+		exit(2);
 	}
 	pagenum = 0;
 	tunenum = 0;
@@ -513,162 +471,92 @@ void open_output_file(char *fnam)
 }
 
 /* -- add_to_text_block -- */
-void add_to_text_block(char *ln,
-		       int add_final_nl)
+void add_to_text_block(char *s,
+		       int job)
 {
-	char *c, *a;
-	char word[MAXWLEN];
-	int nt, nl, nc;
+	float lw;
+	char buf[256];
 
-	nt = ntxt;
-	c = ln;
+	tex_str(buf, s, sizeof buf, &lw);
 
-	for (;;) {
-		while (*c == ' ')
-			c++;
-		if (*c == '\0')
-			break;
-		a = word;
-		nl = 0;
-		nc = MAXWLEN;
-		while (*c != ' ' && *c != '\0' && *c != '\n') {
-			if (*c == '\\' && c[1] == '\\') {
-				nl = 1;
-				c += 2;
-				break;
-			}
-			if (--nc > 0)
-				*a++ = *c++;
-			else	c++;
-		}
-		*a = '\0';
-		if (nc <= 0) {
-			ERROR(("Insanely long word truncated to %d chars: %s",
-			       MAXWLEN-1, word));
-		}
-		if (nt >= MAXNTEXT) {
-			ERROR(("'%s'\n"
-			       "Text overflow; increase MAXNTEXT and recompile.",
-			       ln));
-			exit(1);
-		}
-		if (word[0] != '\0') {
-			strcpy(txt[nt], word);
-			nt++;
-		}
-		if (nl) {
-			strcpy(txt[nt], "$$NL$$");
-			nt++;
-		}
+	/* if first line, set the fonts */
+	if (twidth == 0) {
+		set_font(&cfmt.textfont);
+		set_font_str(page_init, &cfmt.textfont);
 	}
-	if (add_final_nl) {
-		strcpy(txt[nt], "$$NL$$");
-		nt++;
+
+	/* follow lines */
+	if (job == OBEYLINES || job == OBEYCENTER) {
+		bskip(cfmt.textfont.size * cfmt.lineskipfac);
+		if (job == OBEYLINES)
+			PUT1("0 0 M (%s) show\n", buf);
+		else	{
+			float lwidth;
+
+			lwidth = (cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
+				- cfmt.leftmargin - cfmt.rightmargin;
+			PUT2("%.1f 0 M (%s) cshow\n", lwidth * 0.5, buf);
+		}
+		buffer_eob();
+		twidth += lw;
+		return;
 	}
-	ntxt = nt;
+
+	/* fill or justify lines */
+	if (twidth == 0) {		/* if first line */
+		float baseskip;
+
+		baseskip = cfmt.textfont.size * cfmt.lineskipfac;
+		PUT1("/LF {0 %.1f rmoveto} bdef\n", -baseskip);
+		bskip(baseskip);
+		PUT0("0 0 M (");
+	}
+	PUT1("%s ", buf);
+	twidth += lw;
 }
 
 /* -- write_text_block -- */
-void write_text_block(FILE *fp,
-		      int  job,
+void write_text_block(int  job,
 		      int abc_state)
 {
-	int i, i1, i2, ntline, nc, mc, nbreak;
-	float textwidth, ftline, ftline0, swfac, baseskip, parskip;
-	float wwidth, wtot,spw;
-	char str[81];
-
-	if (ntxt <= 0)
+	if (twidth == 0)
 		return;
 
-	baseskip = cfmt.textfont.size * cfmt.lineskipfac;
-	parskip = cfmt.textfont.size * cfmt.parskipfac;
-	set_font_str(page_init, &cfmt.textfont);
+	if (job == T_FILL || job == T_JUSTIFY) {
+		int ntline, nbreak;
+		float textwidth, ftline, swfac, baseskip;
+		float lwidth;
 
-	/* estimate text widths.. ok for T-R, wild guess for other fonts */
-	swfac = cfmt.textfont.swfac;
-	spw = cwid(' ');
-	PUT1("/LF {0 %.1f rmoveto} bind def\n", -baseskip);
+		baseskip = cfmt.textfont.size * cfmt.lineskipfac;
+		lwidth = (cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
+			- cfmt.leftmargin - cfmt.rightmargin;
 
-	/* output by pieces, separate at newline token */
-	i1 = 0;
-	while (i1 < ntxt) {
-		i2 = -1;
-		for (i = i1; i < ntxt; i++)
-			if (!strcmp(txt[i], "$$NL$$")) {
-				i2 = i;
-				break;
-			}
-		if (i2 < 0)
-			i2 = ntxt;
-		bskip(baseskip);
+		/* estimate text widths.. ok for T-R, wild guess for other fonts */
+		swfac = cfmt.textfont.swfac;
 
-		if (job == OBEYLINES) {
-			PUT0("0 0 M (");
-			for (i = i1; i < i2; i++) {
-				tex_str(str, txt[i], sizeof str, &wwidth);
-				PUT1("%s ", str);
-			}
-			PUT0(") show\n");
-		} else if (job == OBEYCENTER) {
-			PUT1("%.1f 0 M (", cfmt.staffwidth/2);
-			for (i = i1; i < i2; i++) {
-				tex_str(str, txt[i], sizeof str, &wwidth);
-				PUT1("%s", str);
-				if (i < i2 - 1)
-					PUT0(" ");
-			}
-			PUT0(") cshow\n");
-		} else {
-			PUT0("0 0 M mark\n");
-			nc = 0;
-			mc = -1;
-			wtot = -spw;
-			for (i = i2 - 1; i >= i1; i--) {
-				mc += tex_str(str, txt[i], sizeof str, &wwidth)+1;
-				wtot += wwidth + spw;
-				nc += strlen(str) + 2;
-				if (nc >= 72) {
-					nc = 0;
-					PUT0("\n");
-				}
-				PUT1 ("(%s)", str);
-			}
-			PUT2(" %.1f P%d\n", cfmt.staffwidth,
-			     job == RAGGED ? 1 : 2);
-			/* first estimate: (total textwidth)/(available width) */
-			textwidth = wtot * swfac * cfmt.textfont.size;
-			if (strstr(cfmt.textfont.name, "Courier"))
-				textwidth = 0.60 * mc * cfmt.textfont.size;
-			ftline0 = textwidth / cfmt.staffwidth;
-			/* revised estimate: assume some chars lost at each line end */
-			nbreak = ftline0;
-			textwidth += 5 * nbreak * cwid('a') * swfac * cfmt.textfont.size;
-			ftline = textwidth / cfmt.staffwidth;
-			ntline = ftline + 1.0;
-#ifdef DEBUG
-			if (verbose >= 10) {
-				printf("first estimate %.2f, revised %.2f\n",
-				       ftline0, ftline);
-				printf("Output %d word%s, about %.2f lines (fac %.2f)\n",
-				       i2 - i1, i2 - i1 == 1 ? "" : "s",
-				       ftline, swfac);
-			}
-#endif
-			bskip((ntline - 1) * baseskip);
-		}
+		PUT2(") %.1f P%d\n",
+		     lwidth, job == T_FILL ? 1 : 2);
 
-		buffer_eob(fp);
-		/* next line to allow pagebreak after each text "line" */
-		/* if (!epsf && !within_tune) write_buffer(fp); */
-		i1 = i2 + 1;
+		/* estimate the skip:
+		 * 1- (total textwidth)/(available width) */
+		textwidth = twidth * swfac * cfmt.textfont.size;
+		ftline = textwidth / lwidth;
+		/* 2- assume some chars lost at each line end */
+		nbreak = ftline;
+		textwidth += 5 * nbreak * cwid('a') * swfac * cfmt.textfont.size;
+		ftline = textwidth / lwidth;
+		ntline = ftline + 1.0;
+		bskip((ntline - 1) * baseskip);
 	}
-	bskip(parskip);
-	buffer_eob(fp);
+	bskip(cfmt.textfont.size * cfmt.parskipfac);
+	buffer_eob();
+
 	/* next line to allow pagebreak after each paragraph */
 	if (!epsf && abc_state != ABC_S_TUNE)
-		write_buffer(fp);
+		write_buffer(fout);
 	page_init[0] = '\0';
+
+	twidth = 0;
 }
 
 /* -- clear_text -- */
@@ -676,8 +564,10 @@ void clear_text(void)
 {
 	int i;
 
-	for (i = TEXT_MAX; --i >= 0;)
-		text_tb[i] = 0;
+	for (i = TEXT_MAX; --i >= 0;) {
+		if (i != TEXT_PS)
+			text_tb[i] = 0;
+	}
 }
 
 /* -- add_text -- */
@@ -686,21 +576,10 @@ void add_text(char *s,
 {
 	struct text *t, *r;
 
-#if 1
 	t = (struct text *) getarena(sizeof (struct text) - 2
 				     + strlen(s) + 1);
 	strcpy(t->text, s);
 	t->textw = cwid('a') * strlen(s);
-#else
-	char b[256];
-	float w;
-
-	tex_str(b, s, sizeof b, &w);
-	t = (struct text *) getarena(sizeof (struct text) - 2
-				     + strlen(b) + 1);
-	strcpy(t->text, b);
-	t->textw = w;
-#endif
 	t->next = 0;
 	if ((r = text_tb[type]) == 0)
 		text_tb[type] = t;
@@ -712,12 +591,12 @@ void add_text(char *s,
 }
 
 /* -- put_words -- */
-void put_words(FILE *fp)
+void put_words(void)
 {
 	char str[81];
 	unsigned char *p, *q;
 	struct text *t, *u, *t_end;
-	int n;
+	int n, have_text;
 	float middle, max2col;
 
 	if ((u = text_tb[TEXT_W]) == 0)
@@ -727,16 +606,22 @@ void put_words(FILE *fp)
 	set_font_str(page_init, &cfmt.wordsfont);
 
 	/* see if we may have 2 columns */
-	middle = 0.5 * cfmt.staffwidth;
+	middle = 0.5 * ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
+		- cfmt.leftmargin - cfmt.rightmargin);
 	max2col = (middle - 45.) / (cfmt.wordsfont.swfac * cfmt.wordsfont.size);
 	n = 0;
+	have_text = 0;
 	for (t = u; t != 0; t = t->next) {
 		if (t->textw > max2col) {
 			n = 0;
 			break;
 		}
-		if (t->text[0] == '\0')
-			n++;
+		if (t->text[0] == '\0') {
+			if (have_text) {
+				n++;
+				have_text = 0;
+			}
+		} else	have_text = 1;
 	}
 	if (n > 0) {
 		int i;
@@ -744,10 +629,14 @@ void put_words(FILE *fp)
 		n++;
 		n /= 2;
 		i = n;
+		have_text = 0;
 		for (;;) {
-			if (u->text[0] == '\0'
-			    && --i <= 0)
-				break;
+			if (u->text[0] == '\0') {
+				if (have_text
+				    && --i <= 0)
+					break;
+				have_text = 0;
+			} else	have_text = 1;
 			u = u->next;
 		}
 		t_end = u;
@@ -779,7 +668,7 @@ void put_words(FILE *fp)
 
 			/* permit page break at empty lines or stanza start */
 			if (*p == '\0' || str[0] != '\0')
-				buffer_eob(fp);
+				buffer_eob();
 			if (str[0] != '\0')
 				put_str3("45 0 M (",
 					 str,
@@ -830,33 +719,35 @@ void put_words(FILE *fp)
 		}
 	}
 
-	buffer_eob(fp);
+	buffer_eob();
 	page_init[0] = '\0';
 }
 
 /* -- put_text -- */
-void put_text(FILE *fp,
-	      int type,
-	      char str[])
+static void put_text(int type,
+		     char *str)
 {
 	struct text *t;
+	float lw;
+	char buf[256];
 
 	if ((t = text_tb[type]) == 0)
 		return;
 
-	PUT0("0 0 M\n");
-	ntxt = 0;
-	add_to_text_block(str, 0);
-	while (t != 0) {
-		add_to_text_block(t->text, 1);
-		t = t->next;
+	tex_str(buf, t->text, sizeof buf, &lw);
+	bskip(cfmt.textfont.size * cfmt.lineskipfac);
+	PUT2("0 0 M (%s %s) show\n", str, buf);
+	while ((t = t->next) != 0) {
+		bskip(cfmt.textfont.size * cfmt.lineskipfac);
+		tex_str(buf, t->text, sizeof buf, &lw);
+		PUT1("20 0 M (%s) show\n", buf);
 	}
-	write_text_block(fp, RAGGED, ABC_S_HEAD);
-	buffer_eob(fp);
+	bskip(cfmt.textfont.size * cfmt.lineskipfac);
+	buffer_eob();
 }
 
 /* -- put_history -- */
-void put_history(FILE *fp)
+void put_history(void)
 {
 	struct text *t;
 	float baseskip,parskip;
@@ -868,7 +759,7 @@ void put_history(FILE *fp)
 
 	bskip(cfmt.textspace);
 
-	if (info.rhyth) {
+	if (info.rhyth && !cfmt.infoline) {
 		bskip(baseskip);
 		put_str3("0 0 M (Rhythm: ",
 			 info.rhyth,
@@ -892,9 +783,9 @@ void put_history(FILE *fp)
 		bskip(parskip);
 	}
 
-	put_text(fp, TEXT_D, "Discography: ");
-	put_text(fp, TEXT_N, "Notes: ");
-	put_text(fp, TEXT_Z, "Transcription: ");
+	put_text(TEXT_D, "Discography: ");
+	put_text(TEXT_N, "Notes: ");
+	put_text(TEXT_Z, "Transcription: ");
 
 	if ((t = text_tb[TEXT_H]) != 0) {
 		while (t != 0) {
@@ -906,7 +797,7 @@ void put_history(FILE *fp)
 		}
 		bskip(parskip);
 	}
-	buffer_eob(fp);
+	buffer_eob();
 	page_init[0] = '\0';
 }
 
@@ -930,7 +821,9 @@ void write_inside_title(void)
 	put_str(t);
 	if (cfmt.titleleft)
 		PUT0(") 0 0 M show\n");
-	else	PUT1(") %.1f 0 M cshow\n", cfmt.staffwidth / 2);
+	else	PUT1(") %.1f 0 M cshow\n",
+		     0.5 * ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
+		     - cfmt.leftmargin - cfmt.rightmargin));
 	bskip(cfmt.musicspace + 0.2 * CM);
 }
 
@@ -940,8 +833,10 @@ void write_heading(void)
 	float lwidth, down1, down2;
 	int i, ncl;
 	char t[201];
+	char *rhythm;
 
-	lwidth = cfmt.staffwidth;
+	lwidth = (cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
+		- cfmt.leftmargin - cfmt.rightmargin;
 
 	/* write the titles */
 	for (i = 0; i < info.ntitle; i++) {
@@ -954,22 +849,30 @@ void write_heading(void)
 		}
 		PUT0("(");
 		if (i == 0 && cfmt.withxrefs)
-			PUT1("%s. ", info.xref);
+			PUT1("%s.  ", info.xref);
 		strcpy(t, info.title[i]);
 		if (cfmt.titlecaps)
 			cap_str(t);
 		put_str(t);
 		if (cfmt.titleleft)
 			PUT0(") 0 0 M show\n");
-		else	PUT1(") %.1f 0 M cshow\n", lwidth / 2);
+		else	PUT1(") %.1f 0 M cshow\n", lwidth * 0.5);
 	}
 
-	/* write composer, origin */
-	if (info.ncomp > 0 || info.orig) {
+	/* write rhythm, composer, origin */
+	down1 = cfmt.composerspace + cfmt.composerfont.size;
+	rhythm = (first_voice->bagpipe && !cfmt.infoline) ? info.rhyth : 0;
+	if (rhythm) {
+		set_font(&cfmt.composerfont);
+		PUT2("0 -%.1f M (%s) show\n",
+		     cfmt.composerspace + cfmt.composerfont.size,
+		     info.rhyth);
+		down1 -= cfmt.composerfont.size;
+	}
+	if ((ncl = info.ncomp) > 0 || info.orig) {
 		set_font(&cfmt.composerfont);
 		bskip(cfmt.composerspace);
-		ncl = info.ncomp;
-		if (info.orig && ncl < 1)
+		if (ncl == 0)
 			ncl = 1;
 		for (i = 0; i < ncl; i++) {
 			bskip(cfmt.composerfont.size);
@@ -977,46 +880,61 @@ void write_heading(void)
 			if (info.comp[i])
 				put_str(info.comp[i]);
 			if (info.orig && i == ncl - 1)
-				put_str3(" (",
+				put_str3(" \\(",
 					 info.orig,
-					 ")");
+					 "\\)");
 			PUT0(") lshow\n");
 		}
-		down1 = cfmt.composerspace + cfmt.musicspace
-			+ ncl * cfmt.composerfont.size;
-	} else {
-		bskip(cfmt.composerfont.size + cfmt.composerspace);
-		down1 = cfmt.composerspace + cfmt.musicspace + cfmt.composerfont.size;
-	}
-	bskip(cfmt.musicspace);
+		down1 += cfmt.composerfont.size * (ncl - 1);
 
-	/* decide whether we need extra shift for parts */
-	down2 = cfmt.composerspace + cfmt.musicspace;
-	if (info.parts)
-		down2 += cfmt.partsspace + cfmt.partsfont.size;
-	if (down2 > down1)
-		bskip(down2 - down1);
+		rhythm = rhythm ? 0 : info.rhyth;
+		if ((rhythm || info.area) && cfmt.infoline) {
+
+			/* if only one of rhythm or area then do not use ()'s
+			 * otherwise set rythm (area) */
+			set_font(&cfmt.infofont);
+			bskip(cfmt.infofont.size + cfmt.infospace);
+			PUT1("%.1f 0 M (", lwidth);
+			if (rhythm) {
+				PUT1("%s", rhythm);
+				if (info.area)
+					PUT1(" \\(%s\\)", info.area);
+			} else	PUT1("%s", info.area);
+			PUT0(") lshow\n");
+			down1 += cfmt.infofont.size + cfmt.infospace;
+		}
+		down2 = 0;
+	} else {
+		down2 = cfmt.composerspace + cfmt.composerfont.size;
+	}
 
 	/* write parts */
 	if (info.parts) {
-		bskip(-cfmt.partsspace);
-		set_font(&cfmt.partsfont);
+		down1 = cfmt.partsspace + cfmt.partsfont.size * cfmt.scale - down1;
+		if (down1 > 0)
+			down2 += down1;
+		if (down2 > 0.01)
+			bskip(down2);
+		PUT2("%.1f F%d ",
+		     cfmt.partsfont.size * cfmt.scale,
+		     cfmt.partsfont.fnum);
 		put_str3("0 0 M (",
 			 info.parts,
 			 ") show\n");
-		bskip(cfmt.partsspace);
+		down2 = 0;
 	}
+	bskip(down2 + cfmt.musicspace);
 }
 
-/* -- write_parts -- */
-void write_parts(void)
+/* -- output the user defined postscript sequences -- */
+void write_user_ps(FILE *fp)
 {
-	if (!info.parts)
+	struct text *t;
+
+	if ((t = text_tb[TEXT_PS]) == 0)
 		return;
-	bskip(cfmt.partsfont.size);
-	set_font(&cfmt.partsfont);
-	PUT0("0 0 M (");
-	put_str(info.parts);
-	PUT1(") show%s\n", cfmt.partsbox ? "b" : "");
-	bskip(cfmt.partsspace);
+	while (t != 0) {
+		fprintf(fp, "%s\n", t->text);
+		t = t->next;
+	}
 }

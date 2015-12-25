@@ -1,7 +1,7 @@
 /*
  * abcm2ps: a program to typeset tunes written in abc format using PostScript
  *
- * Copyright (C) 1998-2000 Jean-François Moine
+ * Copyright (C) 1998-2002 Jean-François Moine
  *
  * Adapted from abc2ps-1.2.5:
  *  Copyright (C) 1996,1997  Michael Methfessel
@@ -19,8 +19,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- *  The author can be contacted as follows:
  *
  * Jean-François Moine
  *	mailto:moinejf@free.fr
@@ -42,7 +40,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <math.h>
 #include <time.h>
 #include <string.h>
 
@@ -52,18 +49,13 @@
 /* -- global variables -- */
 
 struct ISTRUCT info, default_info;
-unsigned char deco_glob[128], deco_tune[128];
+unsigned char deco_glob[256], deco_tune[256];
 struct SYMBOL *sym;		/* (points to the symbols of the current voice) */
-
-char fontnames[MAXFONTS][STRLFMT];	/* list of needed fonts */
-int  nfontnames;
 
 char page_init[201];		/* initialization string after page break */
 int tunenum;			/* number of current tune */
 int nsym;			/* number of symbols in line */
 int pagenum;			/* current page in output file */
-
-float posy;			/* vertical position on page */
 
 #ifdef DEBUG
 int verbose = VERBOSE0;		/* verbosity, global and within tune */
@@ -72,7 +64,6 @@ int verbose = VERBOSE0;		/* verbosity, global and within tune */
 int in_page;
 
 				/* switches modified by flags: */
-int gmode;			/* switch for glue treatment */
 int pagenumbers;		/* write page numbers ? */
 int epsf;			/* for EPSF postscript output */
 int choose_outname;		/* 1 names outfile w. title/fnam */
@@ -85,39 +76,42 @@ int nepsf;			/* counter for epsf output files */
 
 /* -- local variables -- */
 
-static struct FORMAT sfmt;	/* format after initialization */
-static int include_xrefs;	/* to include xref numbers in title */
-static int one_per_page;	/* new page for each tune ? */
-static int write_history;	/* write history and notes ? */
-static float alfa_c;		/* max compression allowed */
-static int bars_per_line;	/* bars for auto linebreaking */
-static int encoding;		/* latin encoding number */
-static int continue_lines;	/* flag to continue all lines */
+static int include_xrefs = -1;	/* to include xref numbers in title */
+static int one_per_page = -1;	/* new page for each tune ? */
+static int write_history = -1;	/* write history and notes ? */
+static float alfa_c = -1.0;	/* max compression allowed */
+static int bars_per_line = -1;	/* bars for auto linebreaking */
+static int encoding = -1;	/* latin encoding number */
+static int continue_lines = -1;	/* flag to continue all lines */
 static int deco_old;		/* abc2ps decorations */
-static int help_me;		/* need help ? */
-static int landscape;		/* flag for landscape output */
-static float lmargin;		/* left margin */
-static float indent;		/* 1st line indentation */
-static int music_only;		/* no vocals if 1 */
+static int landscape = -1;	/* flag for landscape output */
+static float lmargin = -1.0;	/* left margin */
+static float indent = -1.0;	/* 1st line indentation */
+static int music_only = -1;	/* no vocals if 1 */
+static int flatbeams = -1;	/* flat beams when bagpipe */
+static int graceslurs = -1;	/* slurs in grace notes */
 static int pretty;		/* for pretty but sprawling layout */
-static float scalefac; 		/* scale factor for symbol size */
-static float staffsep; 		/* staff separation */
-static char styf[STRL1];	/* layout style file name */
-static char *styd;		/* layout style directory */
-static float swidth;		/* staff width */
-static int measurenb;		/* measure numbering (-1: none, 0: on the left, or every n bars) */
-static int measurebox;		/* display measure numbers in a box */
-static int measurefirst;	/* first measure number */
+static float scalefac = -1.0;	/* scale factor for symbol size */
+static float staffsep = -1.0;	/* staff separation */
+static char *styf;		/* layout style file name */
+static char *styd = DEFAULT_FDIR; /* layout style directory */
+static float swidth = -1.0;	/* staff width */
+static int measurenb = -1;	/* measure numbering (-1: none, 0: on the left, or every n bars) */
+static int measurebox = -1;	/* display measure numbers in a box */
+static int measurefirst = -1;	/* first measure number */
 static char *sel;		/* current input file selector */
 char *in_fname;			/* current input file name */
 
-/* memory arena (for clrarena & getarena) */
+/* memory arena (for clrarena, lvlarena & getarena) */
+#define MAXAREAL 4		/* max area levels:
+				 * 0; global, 1: tune, 2: output, 3: output line */
+static int str_level;		/* current arena level */
 static struct str_a {
 	char	str[4096];	/* memory area */
 	char	*p;		/* pointer in area */
 	struct str_a *n;	/* next area */
 	int	r;		/* remaining space in area */
-} *str_r, *str_p;		/* root and current area pointers */
+} *str_r[MAXAREAL], *str_c[MAXAREAL];	/* root and current area pointers */
 
 /* -- local functions -- */
 
@@ -129,14 +123,13 @@ static void do_select(struct abctune *t,
 		      int last_tune);
 static void getext(char *fid,
 		   char *ext);
-static void init_ops(void);
 static void output_file(void);
 static char *read_file(void);
-static int set_page_format(void);
+static void set_page_format(void);
 static void usage(void);
 static void write_version(void);
-
-static void clrarena(void);
+static void strext(char *fid,
+		   char *ext);
 
 /* -- main program -- */
 int main(int argc,
@@ -146,6 +139,7 @@ int main(int argc,
 	int j;
 	char *p;
 	char c, *aaa;
+	int help_me;		/* need help ? */
 
 	/* -- set default options and parse arguments -- */
 	printf("abcm2ps-" VERSION " (" VDATE ")\n");
@@ -153,11 +147,14 @@ int main(int argc,
 		usage();
 
 	/* -- initialize -- */
-	init_ops();
-	page_init[0] = '\0';
-	nfontnames = 0;
-	abc_init((void *(*)(int sz)) getarena,	/* alloc */
-		 0,	/* free */
+	strcpy(outf, OUTPUTFILE);
+	clrarena(0);
+	clrarena(1);
+	clrarena(2);
+	clrarena(3);
+	abc_init((void *(*)(int size)) getarena, /* alloc */
+		 0,				/* free */
+		(void (*)(int level)) lvlarena, /* new level */
 		 sizeof(struct SYMBOL) - sizeof(struct abcsym),
 		 0);	/* don't keep comments */
 
@@ -173,7 +170,8 @@ int main(int argc,
 				case 'B': bars_per_line = 0; break;
 				case 'c': continue_lines = 0; break;
 				case 'E': epsf = 0; break;
-				case 'F': styf[0] = '\0'; break;
+				case 'F': styf = 0; break;
+				case 'G': graceslurs = 1; break;
 				case 'j':
 				case 'k': measurenb = -1; break;
 				case 'l': landscape = 0; break;
@@ -190,7 +188,8 @@ int main(int argc,
 				default:
 					printf("++++ Cannot switch off flag: +%c\n",
 					       *p);
-					return 1;
+					severity = 1;
+					break;
 				}
 			}
 			continue;
@@ -209,14 +208,17 @@ int main(int argc,
 					/* simple flags */
 				case 'c': continue_lines = 1; break;
 				case 'E': epsf = 1; break;
+				case 'f': flatbeams = 1; break;
+				case 'G': graceslurs = 0; break;
 				case 'H': help_me = 1; break;
 				case 'h': usage(); break;
 				case 'l': landscape = 1; break;
 				case 'M': music_only = 1; break;
 				case 'N': pagenumbers = 1; break;
 				case 'n': write_history = 1; break;
-				case 'b':
+/*				case 'b': */
 				case 'C':
+				case 'g':
 				case 'R':
 				case 'S':
 				case 'T':
@@ -229,20 +231,20 @@ int main(int argc,
 				case 'u': deco_old = 1; break;
 				case 'V':
 					write_version();
-					exit(0);
+					return 0;
 				case 'x': include_xrefs = 1; break;
 				case '1': one_per_page = 1; break;
 
 				case 'e':	/* filtering */
 					if (sel != 0) {
 						printf("++++Too many '-e'\n");
-						return 1;
+						return 2;
 					}
 					sel = p + 1;
 					if (sel[0] == '\0') {
 						if (--argc <= 0) {
 							printf("++++ No filter in '-e'\n");
-							return 1;
+							return 2;
 						}
 						argv++;
 						sel = *argv;
@@ -255,11 +257,10 @@ int main(int argc,
 					/* flags with parameter.. */
 				case 'a':
 				case 'B':
+				case 'b':
 				case 'D':
 				case 'd':
-				case 'f':
 				case 'F':
-				case 'g':
 				case 'I':
 				case 'j':
 				case 'k':
@@ -269,29 +270,21 @@ int main(int argc,
 				case 's':
 				case 'v':
 				case 'w':
-				case 'Y':
 					aaa = p + 1;
-					if (aaa[0] != '\0'
-					    && strchr("gO", c)) {	/* no sticky arg */
-						printf("++++ Incorrect usage of flag -%c\n",
-						       c);
-						return 1;
-					}
-
 					if (aaa[0] == '\0') {
 						argv++;
 						aaa = *argv;
 						if (--argc <= 0 || aaa[0] == '-') {
 							printf("++++ Missing parameter after flag -%c\n",
 							       c);
-							return 1;
+							return 2;
 						}
 					} else {
 						while (p[1] != '\0')	/* stop */
 							p++;
 					}
 
-					if (strchr("BbfjkLsvY", c)) {	    /* check num args */
+					if (strchr("BbfjkLsv", c)) {	    /* check num args */
 						for (j = 0; j < strlen(aaa); j++)
 							if (!strchr("0123456789.",
 								    aaa[j])) {
@@ -302,7 +295,7 @@ int main(int argc,
 									break;
 								printf("++++ Invalid parameter <%s> for flag -%c\n",
 								       aaa, c);
-								return 1;
+								return 2;
 							}
 					}
 
@@ -312,12 +305,15 @@ int main(int argc,
 						if (alfa_c > 1. || alfa_c < 0) {
 							printf("++++ Bad parameter for flag -a: %s\n",
 							       aaa);
-							return 1;
+							return 2;
 						}
 						break;
 					case 'B':
 						sscanf(aaa, "%d", &bars_per_line);
 						continue_lines = 0;
+						break;
+					case 'b':
+						sscanf(aaa, "%d", &measurefirst);
 						break;
 					case 'D':
 						styd = aaa;
@@ -325,26 +321,8 @@ int main(int argc,
 					case 'd':
 						staffsep = scan_u(aaa);
 						break;
-					case 'f':
-						sscanf(aaa, "%d", &measurefirst);
-						break;
 					case 'F':
-						strcpy(styf, aaa);
-						break;
-					case 'g':
-						if (abbrev(aaa, "shrink", 2))
-							gmode = G_SHRINK;
-						else if (abbrev(aaa, "stretch", 2))
-							gmode = G_STRETCH;
-						else if (abbrev(aaa, "space", 2))
-							gmode = G_SPACE;
-						else if (abbrev(aaa, "fill", 2))
-							gmode = G_FILL;
-						else {
-							printf("++++ Bad parameter for flag -g: %s\n",
-							       aaa);
-							return 1;
-						}
+						styf = aaa;
 						break;
 					case 'I':
 						indent = scan_u(aaa);
@@ -377,7 +355,7 @@ int main(int argc,
 							    && ext[0] != '\0') {
 								printf("Wrong extension for output file: %s\n",
 								       aaa);
-								return 1;
+								return 2;
 							}
 							strcpy(outf, aaa);
 							strext(outf, "ps");
@@ -397,21 +375,19 @@ int main(int argc,
 					case 'w':
 						swidth = scan_u(aaa);
 						break;
-					case 'Y':
-						/*fixme ??*/
-						break;
 					}
 					break;
 				default:
 					printf("++++ Unknown flag: -%c\n", c);
-					return 1;
+					severity = 1;
+					break;
 				}
 			}
 			continue;
 		}
 
 		if (strstr(p, ".fmt")) {	/* implicit -F */
-			strcpy(styf, p);
+			styf = p;
 			continue;
 		}
 
@@ -421,10 +397,10 @@ int main(int argc,
 	}
 
 	if (help_me) {
-		if (fout == 0 && set_page_format() != 0)
-			exit(3);
+		if (fout == 0)
+			set_page_format();
 		print_format();
-		exit(0);
+		return 0;
 	}
 
 	if (in_fname != 0)
@@ -432,12 +408,12 @@ int main(int argc,
 
 	if (!epsf && fout == 0) {
 		printf("No input file specified\n");
-		exit(1);
+		return 1;
 	}
 
 	close_output_file();
 
-	return 0;
+	return severity;
 }
 
 /* -- output the current ABC file -- */
@@ -457,14 +433,8 @@ static void output_file(void)
 	}
 
 	/* initialize if not already done */
-	if (fout == 0) {
-		if (set_page_format() != 0)
-			exit(3);
-		sfmt = cfmt;
-	} else {
-		cfmt = sfmt;
-		ops_into_fmt(&cfmt);
-	}
+	if (fout == 0)
+		set_page_format();
 	if (epsf)
 		cutext(outf);
 
@@ -484,7 +454,8 @@ static void output_file(void)
 	if (verbose >= 3)
 #endif
 		printf("\n");
-	clrarena();
+	clrarena(1);
+	lvlarena(0);
 	t = abc_parse(file);
 	free(file);
 
@@ -557,7 +528,8 @@ static void do_select(struct abctune *t,
 			}
 		}
 		if (print_tune
-		    || !t->client_data) {
+		    || !t->client_data) {	/* (parse the global symbols) */
+			clrarena(2);
 			do_tune(t, !print_tune);
 			t->client_data = 1;	/* treated */
 		}
@@ -578,37 +550,6 @@ static void getext(char *fid,
 	} else	ext[0] = '\0';
 }
 
-/* -- init_ops -- */
-static void init_ops(void)
-{
-	one_per_page	= -1;
-	landscape	= -1;
-	scalefac	= -1.0;
-	lmargin		= -1.0;
-	indent		= -1.0;
-	swidth		= -1.0;
-	write_history   = -1;
-	staffsep	= -1;
-	continue_lines  = -1;
-	include_xrefs   = -1;
-	music_only	= -1;
-	alfa_c		= -1.0;
-	encoding	= -1;
-	measurenb = -1;
-	measurebox = -1;
-	measurefirst = -1;
-
-	pagenumbers	= 0;
-	styf[0] = '\0';
-
-	styd = DEFAULT_FDIR;
-	strcpy(outf, OUTPUTFILE);
-	pretty		= 0;
-	epsf		= 0;
-	choose_outname	= 0;
-	gmode		= G_FILL;
-}
-
 /* -- ops_into_fmt -- */
 void ops_into_fmt(struct FORMAT *fmt)
 {
@@ -620,8 +561,11 @@ void ops_into_fmt(struct FORMAT *fmt)
 		fmt->leftmargin = lmargin;
 	if (indent >= 0)
 		fmt->indent = indent;
-	if (swidth >= 0)
-		fmt->staffwidth = swidth;
+	if (swidth >= 0) {
+		fmt->rightmargin = fmt->pagewidth - swidth - fmt->leftmargin;
+		if (fmt->rightmargin < 0)
+			printf("Warning: staffwidth too big\n");
+	}
 	if (continue_lines >= 0)
 		fmt->continueall = continue_lines;
 	if (write_history >= 0)
@@ -638,6 +582,10 @@ void ops_into_fmt(struct FORMAT *fmt)
 		fmt->oneperpage = one_per_page;
 	if (music_only >= 0)
 		fmt->musiconly = music_only;
+	if (graceslurs >= 0)
+		fmt->graceslurs = graceslurs;
+	if (flatbeams >= 0)
+		fmt->flatbeams = flatbeams;
 	if (measurenb >= 0)
 		fmt->measurenb = measurenb;
 	if (measurebox >= 0)
@@ -698,7 +646,7 @@ static char *read_file(void)
 }
 
 /* -- set_page_format --- */
-static int set_page_format(void)
+static void set_page_format(void)
 {
 	switch (pretty) {
 	default: set_standard_format(); break;
@@ -707,24 +655,26 @@ static int set_page_format(void)
 	}
 
 	read_fmt_file("fonts.fmt", styd);
-	if (styf[0] != '\0') {
-		strext(styf, "fmt");
-		if (read_fmt_file(styf, styd) < 0) {
+	if (styf != 0) {
+		char tmp[201];
+
+		strcpy(tmp, styf);
+		strext(tmp, "fmt");
+		if (read_fmt_file(tmp, styd) < 0) {
 			printf("++++ Cannot open file: %s\n",
 			       styf);
-			return -1;
+			exit(3);
 		}
-		strcpy(cfmt.name, styf);
+		cfmt.name = styf;
 	}
 	ops_into_fmt(&cfmt);
 
 	make_font_list();
-	return 0;
 }
 
 /* -- set extension on a file identifier -- */
-void strext(char *fid,
-	    char *ext)
+static void strext(char *fid,
+		   char *ext)
 {
 	char *p, *q;
 
@@ -742,7 +692,7 @@ static void usage(void)
 	printf("ABC to Postscript translator.\n"
 	       "Usage: abcm2ps [options] file [file_options] ..\n"
 	       "where:\n"
-	       " file   input files in abc format, or '-'\n"
+	       " file   input ABC file, or '-'\n"
 	       " options and file_options:\n"
 	       "  .output file options:\n"
 	       "     -E      produce EPSF output, one tune per file\n"
@@ -759,16 +709,19 @@ static void usage(void)
 	       "     -F foo  read format from \"foo.fmt\"\n"
 	       "     -D bar  look for format files in directory \"bar\"\n"
 	       "  .output options:\n"
+	       "     -l      landscape mode\n"
 	       "     -I xx   indent 1st line (cm/in/pt)\n"
 	       "     -x      include xref numbers in output\n"
+	       "     -M      don't ouput the lyrics\n"
 	       "     -n      include notes and history in output\n"
 	       "     -N      write page numbers\n"
 	       "     -1      write one tune per page\n"
-	       "     -l      landscape mode\n"
+	       "     -G      no slur in grace notes\n"
 	       "     -j n[b] number the measures every n bars (or on the left if n=0)\n"
 	       "             if 'b', display in a box\n"
 	       "     -k n[b] same as '-j' (abc2ps compatibility)\n"
-	       "     -f n    set the first measure number to n\n"
+	       "     -b n    set the first measure number to n\n"
+	       "     -f      have flat beams when bagpipe tunes\n"
 	       "  .line breaks:\n"
 	       "     -c      auto line break\n"
 	       "     -B bb   break every bb bars\n"
@@ -778,13 +731,12 @@ static void usage(void)
 	       "     -u      abc2ps implicit decorations\n"
 	       "     -L n    set char encoding to Latin number n\n"
 	       "  .help/configuration:\n"
-	       "     -V      show program version\n"
-	       "     -h      show this command summary\n"
-	       "     -H      show the format parameters\n"
 #ifdef DEBUG
 	       "     -v nn   set verbosity level to nn\n"
 #endif
-	       "     -g xx   set glue mode to shrink|space|stretch|fill\n");
+	       "     -V      show program version\n"
+	       "     -h      show this command summary\n"
+	       "     -H      show the format parameters\n");
 	exit(0);
 }
 
@@ -801,10 +753,10 @@ static void write_version(void)
 #ifdef DEBUG
 	printf(" DEBUG");
 #endif
-#ifdef US_LETTER
-	printf(" US_LETTER");
+#ifdef A4_FORMAT
+	printf(" A4_FORMAT");
 #endif
-#if !defined(DEBUG) && !defined(DEBUG) && !defined(US_LETTER)
+#if !defined(BSTEM_DOWN) && !defined(DEBUG) && !defined(A4_FORMAT)
 	printf(" NONE\n");
 #else
 	printf("\n");
@@ -815,9 +767,22 @@ static void write_version(void)
 }
 
 /* -- arena routines -- */
-static void clrarena(void)
+void clrarena(int level)
 {
-	str_p = 0;
+	struct str_a *a_p;
+
+	if ((a_p = str_r[level]) == 0) {
+		str_r[level] = a_p = malloc(sizeof *str_r[0]);
+		a_p->n = 0;
+	}
+	str_c[level] = a_p;
+	a_p->p = a_p->str;
+	a_p->r = sizeof a_p->str;
+}
+
+void lvlarena(int level)
+{
+	str_level = level;
 }
 
 /* The area is 8 bytes aligned to handle correctly int and pointers access
@@ -825,25 +790,21 @@ static void clrarena(void)
 char *getarena(int len)
 {
 	char *p;
+	struct str_a *a_p;
 
+	a_p = str_c[str_level];
 	len = (len + 7) & ~7;		/* align at 64 bits boundary */
-	if (str_p == 0
-	    || str_p->r < len) {
-		if (str_p == 0) {
-			if (str_r == 0) {
-				str_r = calloc(1, sizeof *str_r);
-				str_p = str_r;
-			} else	str_p = str_r;
-		} else {
-			if (str_p->n == 0)
-				str_p->n = calloc(1, sizeof *str_r);
-			str_p = str_p->n;
+	if (a_p->r < len) {
+		if (a_p->n == 0) {
+			a_p->n = malloc(sizeof *str_r[0]);
+			a_p->n->n = 0;
 		}
-		str_p->p = str_p->str;
-		str_p->r = sizeof str_p->str;
+		str_c[str_level] = a_p = a_p->n;
+		a_p->p = a_p->str;
+		a_p->r = sizeof a_p->str;
 	}
-	p = str_p->p;
-	str_p->p += len;
-	str_p->r -= len;
+	p = a_p->p;
+	a_p->p += len;
+	a_p->r -= len;
 	return p;
 }

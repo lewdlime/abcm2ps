@@ -1,0 +1,129 @@
+		Command line options
+		====================
+
+The list of the command line options may be know running
+	'abcm2ps -h'
+
+List of the options
+-------------------
+
+  -a<float>
+	See: format - maxshrink <float>
+
+  -B<int>, +B
+	See: format - barsperstaff <int>
+
+  -b<int>
+	See: format - measurefirst <int>
+
+  -c, +c
+	See: format - continueall <bool>
+
+  -D<dir>
+	Search the format files in the directory <dir>.
+
+  -d<unit>
+	See: format - staffsep <unit>
+
+  -E, +E
+	Produce EPSF output instead of simple PS.
+	In this mode, each tune goes to a different file. The
+	names are '<name>nnn.eps' (see '-O' for <name>) where
+	'nnn' is the tune sequence number.
+
+  -e<list>
+	Select the tunes inside an ABC file.
+	<list> is a comma separated list of items (tune numbers).
+	Each selector applies to the previous associated ABC file.
+	An item may be a single index value (as indicated in the 'X:'
+	field), or a range of such values. A range is indicated as
+	<first_index>-<last_index>. The last index may be omitted
+	meaning 'end of file'.
+	Example:
+		abcm2ps voices -e 5,2-4 newfeatures -e5-
+	Note: Filtering may raise problems, mainly on global definitions.
+
+  -F<file>, +F
+	Read format file <file>.fmt
+
+  -f
+	See: format - flatbeams <bool>
+
+  -G, +G
+	See: format - graceslurs <bool>
+
+  -H
+	Display the current format values.
+
+  -h
+	Quick help, equivalent to "abc2ps" without any arguments.
+	This also shows the default settings for some parameters.
+
+  -I<unit>
+	See: format - indent <unit>
+
+  -j<int>[b], +j
+	See: format - measurenb <int>
+
+  -k<int>[b], +k
+	See: format - measurenb <int>
+
+  -L<int>
+	See: format - encoding <int>
+
+  -l, +l
+	See: format - landscape <bool>
+
+  -M, +M
+	See: format - musiconly <bool>
+
+  -m<unit>
+	See: format - leftmargin <unit>
+
+  -N, +N
+	Number the pages.
+
+  -n, +n
+	See: format - writehistory <bool>
+
+  -O<name>, +O
+	Define the output file name.
+	By default, the output file name is 'Out.ps' for PS, and
+	'Outnnn.eps' for EPSF (see option '-E' for the Postscript
+	mode).
+	With this option, it will be <name>.ps or <name>nnn.eps.
+	If <name> is '=', the output file as the name of the ABC
+	source file with the extension '.ps' (or '.eps').
+
+  -p, +p
+	Select the secundary pretty output option. See '-p'.
+
+  -p
+	Generate pretty output, with more whitespace between tunes,
+	larger fonts for titles, and larger music symbols. By default, 
+	the layout squeezes the tunes to reduce the number of pages.
+
+  -s<float>
+	See: format - scale <float>
+
+  -u
+	Select the abc2ps implicit decorations.
+
+  -v<int>
+	Set the verbosity for output to the screen to <int>.
+	Hereby -v0 gives very little, -v1,v2,v3.. show successively 
+	more information. Verbosity >= 10 is for debugging.
+	This option works only when abcm2ps is compiled with the
+	-DDEBUG option.
+
+  -V
+	Show the version number.
+
+  -w<unit>
+	See: format - staffwidth <unit>
+
+  -x, +x
+	See: format - withxrefs <bool>
+
+  -1, +1
+	See: format - oneperpage <bool>

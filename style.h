@@ -1,4 +1,4 @@
-/*  
+/*
  *  This file is part of abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *  See file abc2ps.c for details.
  */
@@ -7,7 +7,7 @@
 
 /*   Parameters here are used to set spaces around notes.
      Names ending in p: prefered natural spacings
-     Names ending in x: expanded spacings  
+     Names ending in x: expanded spacings
      Units: everything is based on a staff which is 24 points high
      (ie. 6 pt between two staff lines). */
 
@@ -15,27 +15,27 @@
 #define STYLE "std"
 
 /* ----- Parameters for the note-note spacing ----- */
-/* That is: the internote spacing between two notes that follow 
-   each other without a bar in between.  
+/* That is: the internote spacing between two notes that follow
+   each other without a bar in between.
 
    -- lnn is an overall multiplier, i.e. the final note width in points
       is the return value of function nwidth times lnn.
    -- bnn determines how strongly the first note enters into the spacing.
       For bnn=1, the spacing is calculated using the first note.
-      For bnn=0, the spacing is the average for the two notes. 
-   -- fnn multiplies the spacing under a beam, to compress the notes a bit 
+      For bnn=0, the spacing is the average for the two notes.
+   -- fnn multiplies the spacing under a beam, to compress the notes a bit
    -- gnn multiplies the spacing a second time within an n-tuplet */
-   
-float lnnp=40;        
-float bnnp=0.9;
-float fnnp=0.9;
-float gnnp=0.8;
 
-float lnnx=90;     
+#define lnnp 40.0
+#define bnnp 0.9
+#define fnnp 0.9
+#define gnnp 0.8
+
+#if 0
+float lnnx=90;
 float bnnx=0.9;
 float fnnx=0.9;
 float gnnx=0.85;
-
 
 /* ---- Parameters for the bar-note spacing ----- */
 /* That is: the spacing between a bar and note at the measure start.
@@ -46,14 +46,13 @@ float gnnx=0.85;
       For bbn=1, the spacing is lbn times the return value of nwidth.
       For bbn=0, the spacing is lbn times the width of rbn times timesig. */
 
-float lbnp=30;   
+float lbnp=30;
 float bbnp=0.2;
 float rbnp=0.1;
 
-float lbnx=75;     
+float lbnx=75;
 float bbnx=0.2;
 float rbnx=0.08;
-
 
 /* ---- Parameters for the note-bar spacing ----- */
 /* That is: the spacing between a note at the measure end and the bar.
@@ -64,14 +63,13 @@ float rbnx=0.08;
       For bnb=1, the spacing is lnb times the return value of nwidth.
       For bnb=0, the spacing is lnb times the width of rbn times timesig. */
 
-float lnbp=30;    
+float lnbp=30;
 float bnbp=0.7;
 float rnbp=0.125;
 
-float lnbx=75;    
+float lnbx=75;
 float bnbx=0.6;
-float rnbx=0.125;  
-
+float rnbx=0.125;
 
 /* ---- Parameters for centered single note in a measure ----- */
 /* That is: the total length = bar-note + note-bar spacings
@@ -86,4 +84,4 @@ float bn0p=0;
 
 float ln0x=90;
 float bn0x=0;
-
+#endif

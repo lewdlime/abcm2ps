@@ -1,26 +1,43 @@
-# abcm2ps version 1.2.0
+# abcm2ps version 2.0.0
 
 ## Overview
 ---
 
-abcm2ps is a package which converts music tunes from ABC format to PostScript. Based on abc2ps version 1.2.5 (see Contacts below), it was developped mainly to print barock organ scores which have independant voices played on one or many keyboards and a pedal-board.
+abcm2ps is a program which converts music tunes from ABC format to PostScript.
+Based on abc2ps version 1.2.5 (see Contacts below), it was developped mainly to
+print barock organ scores which have independant voices played on one or many
+keyboards and a pedal-board.
 
 ## Features
 ---
 
 The main features of abcm2ps are quite the same as the abc2ps ones and the files '[`ReadMe.abc2ps`](./ReadMe.abc2ps)' and '[`New.Features`](./New.Features)' contain an updated description of these ones.
 
-## Installation
+## Installation and usage
 ---
 
-See [`ReadMe.abc2ps`](./ReadMe.abc2ps).
+The installation procedure is described in the file [`INSTALL`](./INSTALL).
+
+Basically, the program usage is:
+
+    abcm2ps [options] file1 [file1_options] file2 [file2_options] ...
+
+where `file1, file2, ..` are the ABC input files. This will generate a Postscript file (default name: '`Out.ps`'. Run '`abcm2ps -h`' to know the list of the command line options).
+
+## Documentation
+---
+
+- [`abc-draft.txt`](./abc-draft.txt) is the ABC draft on which abcm2ps is developped.
+- [`options.txt`](./options.txt) contains the list of the command line options.
+- [`format.txt`](./format.txt) contains the list of the format parameters.
+- [`layout.txt`](./layout.txt) explains some internal algorithms.
+- [`New.Features`](./New.Features) lists some differences from, and extensions to the ABC standard.
 
 ## Differences with abc2ps
 ---
 
-- abcm2ps follows more strictly the ABC syntax.
-- the algorithms relative to voice and staff handling are different and may give better or worse results depending on the tunes.
-- abcm2ps has no tune listing and has different filtering functions. On the command line:
+- The algorithms relative to voice and staff handling are different and may give better or worse results depending on the tunes.
+- abcm2ps does not print the list of tunes and has different filtering functions. On the command line:
     - '`-o`' is implicit
     - '`-e`' accepts only one parameter.
     - '`-C`', '`-R`', '`-S`', '`-T`' don't exist anymore. If you want such filtering, you should to use some external script or program instead.
@@ -29,7 +46,7 @@ See [`ReadMe.abc2ps`](./ReadMe.abc2ps).
 ## Limits
 ---
 
-Many limits may be changed at compilation time (number of voices, staves,..). The current version does not handle more than 2 voices per staff.
+Many limits may be changed at compilation time (number of voices, staves, ..). The current version does not handle correctly more than 2 voices per staff.
 
 ## Contacts
 ---
@@ -51,4 +68,4 @@ For any comment:
     moinejf (at) free (dot) fr (home)
 or
 
-    moinejf (at) free (dot) fr (job)
+    Jean-Francois (dot) Moine (at) bst (dot) bsf (dot) alcatel (dot) fr (work)

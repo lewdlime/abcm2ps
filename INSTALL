@@ -1,0 +1,45 @@
+		--- abcm2ps installation ---
+
+
+Unix(-like) systems.
+===================
+
+This version uses the GNU 'autoconf' package, so, after untarring the
+sources, run:
+
+	./configure
+	make
+
+and then, as root, do:
+
+	make install
+
+The 'abcm2ps' command should work if '/usr/local/bin' is in your path
+(try 'abcm2ps -h' for a list of the command line options).
+
+You may change many compile options at configure level. To know which,
+run:
+
+	configure --help
+
+
+Windows or MAC systems.
+======================
+
+Change the file 'config.h' according to your preferences, compile all
+the '.c' files using an ANSI C compiler, and link them together. The
+resulting binary file should run immediately from where it has been
+generated. You may then move at any place you want.
+
+
+Testing.
+=======
+
+To test the program, run it with one of the .abc files as the command
+line argument:
+
+	abcm2ps sample
+
+The resulting file, 'Out.ps', may be displayed using a PostScript
+previewer such as ghostview, or may be sent directly to a PostScript
+printer, or indirectly to a simple printer using a postscript filter.

@@ -1,0 +1,69 @@
+dnl Configure source for abcm2ps -*- sh -*-
+dnl Copyright (C) 2001-2002 JF Moine.
+
+AC_INIT(abc2ps.h)
+
+VERSION=2.11.3
+VDATE='May 5, 2002'
+
+AC_CANONICAL_SYSTEM
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_INSTALL
+dnl AC_PROG_MAKE_SET
+
+AC_CONFIG_HEADER(config.h)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(malloc.h)
+
+if test "X$GCC" = "Xyes" ; then
+	CFLAGS="$CFLAGS -Wall -pipe"
+fi
+
+dnl Check for options
+AC_ARG_ENABLE(a4,
+[  --enable-a4             Handle european A4 format instead of default US letter],
+[if test "$enableval" = "yes"; then
+  AC_DEFINE(A4_FORMAT)dnl
+fi])
+
+AC_ARG_ENABLE(b-stem-down,
+[  --enable-b-stem-down    Let the B note have always its stem down],
+[if test "$enableval" = "yes"; then
+  AC_DEFINE(BSTEM_DOWN)dnl
+fi])
+
+AC_ARG_ENABLE(deco-is-roll,
+[  --enable-deco-is-roll   Have ~ as roll instead of twiddle],
+[if test "$enableval" = "yes"; then
+  AC_DEFINE(DECO_IS_ROLL)dnl
+fi])
+
+AC_ARG_ENABLE(clef-transpose,
+[  --enable-clef-transpose Have clef changing the note pitch],
+[if test "$enableval" = "yes"; then
+  AC_DEFINE(CLEF_TRANSPOSE)dnl
+fi])
+
+AC_ARG_ENABLE(debug,
+[  --enable-debug          Have '-v' working],
+[if test "$enableval" = "yes"; then
+  AC_DEFINE(DEBUG)dnl
+fi])
+
+AC_ARG_ENABLE(ps-level,
+[  --enable-ps-level=N     Output PostScript level N instead of default 2],
+[AC_DEFINE_UNQUOTED(PS_LEVEL, $enableval)])
+
+dnl Build characteristics
+AC_SUBST(VERSION)
+
+AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
+AC_DEFINE_UNQUOTED(VDATE, "$VDATE")
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+AC_DEFINE_UNQUOTED(DEFAULT_FDIR, "$prefix/share/abcm2ps")
+
+AC_OUTPUT(Makefile)

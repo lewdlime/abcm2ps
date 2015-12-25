@@ -1,9 +1,15 @@
-New features in abcm2ps 1.6.6 (J.F. Moine, November 2000)
+New features in abcm2ps 2.10.4 (J.F. Moine, December 2001)
 =========================================================
+
+----- slurs in grace notes -----
+
+There is normally a slur on the grace notes. To remove it, either
+call abcm2ps with the option '-G', or have a format or pseudo-
+comment 'graceslurs no'.
 
 ----- measure numbering -----
 
-Mesasure numbering may be indicated:
+Measure numbering may be indicated:
 
     - on the command line with the options '-j' or '-k'.
       The starting measure number is set by '-f'.
@@ -13,31 +19,60 @@ Mesasure numbering may be indicated:
     - in tune by the pseudo-comments '%%measurenb', '%%measurebox' and
       '%%measurefirst'.
 
+In a tune, the measure number may set to an explicit value using:
+
+   %%setbarnb <value>
+
 
 ----- ABC syntax extensions -----
 
-Invisble bars are indicated by '[|]', and dashed bars by ':' alone.
+The decorations (dynamics, accents, ..) are either indicated by
+'!decoration_name!' (or a single letter - see 'U:') before the notes
+or in a separate decoration line starting with 'd:' (both may be
+mixed).
+In the decoration lines, as in the lyric lines ('w:'), '|' skips to
+the next bar and '*' skips one note. Note that, in such lines, you
+cannot set decorations on bars and rests.
 
-Invisible rests may be indicated as 'x' or 'y'.
+Measure repeat is indicated by a slash ('/' alone between 2 bars).
+
+Time signatures may have a single number (ex: 'M:2').
+
+Repeat bars may contain a string of digits, '-' (hyphen) or ',' (comma)
+instead of only '1' or '2'. Ex:
+	|: ... [1,3 ... :|2,4-6 ...
+Multiple repeat indications (|:: .. ::|) are acepted but ignored.
+
+Multimeasure rests are indicated by 'Z' followed by the number of
+measures.
+
+Sharps, flats and natural signs may be indicated in guitar chords
+using '\#', '\b' and '\='.
+
+Invisible bars are indicated by '[]' or '[|]', and dashed bars by ':'
+alone.
+
+Invisible rests are indicated by 'x'.
+
+'y' adds some space between symbols (BarFly extension).
 
 The Q field may contain a text that is written before the tempo
-definition. The tempo itself may also lack.
+definition. The tempo itself may be omitted.
 
 The following decorations are added: !slide!, !fp!, !cresc!, !decresc!,
-!dimin!.
+!mp!, !dimin!, !turnx!, !invertedturn!, !invertedturnx!, !arpeggio!,
+!trill(!, !trill)!.
 The !slide! decoration is assigned to the letter 'J'.
 
-Short appoggiatura are indicated by a '/' starting a grace note sequence
+Appoggiatura are indicated by a '/' starting a grace note sequence
 (one note only - ex: {/B}c).
 
-To have many guitar chord lines, the text may contain one or many '\n'
-(newline), or there may be many separate texts for the same note
-(ex: '"gch1\ngch2"A "gch3" "gch4"B').
-This feature is mainly used for 'figured bass' indications.
+Multiple guitar chord lines are indicated by separated quoted
+strings appearing before a same note (or rest or bar - ex: '"G3""4"G').
 
-A note length starting with '0' indicates a stemless black note.
+A note length starting with '0' (zero) indicates a stemless black note.
 
-'M:none' indicates no key signature.
+'M:none' says there is no key signature.
 
 The header field 'X:' may be ommited: a new tune may start directly on the
 first 'T:'.
@@ -47,38 +82,64 @@ The note length may be divided by many '/' ('A///' is the same as 'A/8').
 
 ----- Clef specification -----
 
-A clef may be defined in' K:' and 'V:' (see below). The 7 clefs are
-(in order):
+A clef may be provided in' K:' and 'V:'. The general syntax is:
 
-    'treble', 'alto1', 'alto2', 'alto', 'alto4', 'bass3' and 'bass'
+	[clef=]<clef type>[<line number>][+8 | -8]
 
-When a clef is specified, the note 'c' is the C closest to the middle
-of the staff.
-When no clef is specified, the notes are defined as if the clef were
-'treble'. As the notes height goes lower (or upper), clef changes are
-automatically inserted (to 'bass' or 'treble').
+- 'clef=' starts the clef definition. It may be omitted only in K: with a full
+  clef type name.
+
+- <clef type> defines the clef type (indeed :). It may be:
+
+  - a note pitch (same as a note in a tune).
+    The note may be only 'G' (trebble clef), 'C' (alto clef) or 'F'
+    (bass clef).
+    The pitch indicates what note is tied to the clef line number.
+
+  - a clef name.
+    This is a more user-friendly way to define the note pitch. The standard
+    equivalences are:
+		treble		G
+		alto / tenor	C
+		bass		F,
+
+    When abcm2ps is compiled with the option CLEF_TRANSPOSE, the definitions
+    are abc2ps compliant:
+		treble		G
+		alto / tenor	c
+		bass		f
+
+- <line number> indicates on which staff line the base clef is written.
+  Defaults values are:
+		G / treble	2
+		C / alto	3
+		tenor		4
+		F / bass	4
+
+- '+8' or '-8' draws '8' above or below the staff.
+
+When no clef is specified, clef changes are automatically inserted
+when needed (only 'bass' or 'treble').
 
 
 ----- Multi voice support -----
 
-Have a look at the files voices.abc and ricercar.abc for examples.
+Have a look at the file voices.abc for examples.
 
 The voices are defined in the header or in the tune by:
 
 	V:<name> <voice definitions>
 
 where <name> is a word with any letter or digit. When in the tune
-body, the next notes refer to this voice until a new 'V:'. The
-<voice definition> may contain:
-	- 'clef=<clef type>'
-	  where <cle type> may be any clef (see above - default is
-	  'treble').
+body, the next notes refer to this voice until a new 'V:' is found.
+The <voice definition> may contain:
+	- 'clef=..' (see above)
 	- 'name="voice name"' or 'nm="voice name"'
 	  The voice name is printed on the left of the first staff
 	  only.
 	- 'subname="voice subname"' or 'snm="voice subname"'
 	  The voice subname is printed on the left of all staves but
-	   the first one.
+	  the first one.
 	- the other definitions are ignored.
 
 Normally, each voice goes on a separate staff. A pseudo-comment may
@@ -107,6 +168,9 @@ This program is normally compatible with abc2ps except for automatic
 clef handling: when no clef is indicated, the program tries to set
 either treble or bass clef according to the notes height.
 
+New in abcm2ps-2.5.5: abcm2ps now accepts the BarFly voice definition
+in tune (V:x <notes>, i.e. voice + notes on the same line).
+
 
 ----- Indentation -----
 
@@ -117,7 +181,17 @@ given in cm, in or pt (see 'Output formatting' below).
 
 ----- Features removed from abc2ps-1.2.4 -----
 
-The parser has been rewritten and may follow more strictly the ABC syntax 1.6.
+The characters '\\' don't do a line break anymore.
+
+In landscape format, the values of 'pagewidth' and 'pageheight' are
+internally exchanged, so there is no need to set them explicitely.
+
+The format 'staffwidth' is now obsolete. Better use 'pagewidth'.
+
+Clef indications (in K: or V:) do not change the note pitches.
+
+The parser has been rewritten and follows more strictly the ABC draft
+(1.7.3 - date 23/06/99).
 
 Tune selection has been simplified (only '-e').
 
@@ -132,13 +206,10 @@ demonstrates many of these points.
 ----- Bass clef -----
 
 The bass clef is selected by appending the word "bass" to the
-key specification. eg. "K:G bass". Notes are then drawn so 
-"C" is below the staff and "c" is in the third space from the top,
-which is a downward shift by one line relative to the treble clef.
+key specification. eg. "K:G bass".
 
 For in-line clef changes, use an in-line specification such as
-[K:G bass] (was formerly \K:G bass\; this still supported). 
-If the key itself does not change, it is enough to write
+[K:G bass]. If the key itself does not change, it is enough to write
 [K:bass] and similarily [K:treble].
 
 Added: [K:alto] makes the alto (viola or C) clef.
@@ -166,11 +237,6 @@ to modify this behaviour:
 
 For more than one line of lyrics, just use several w: lines.
 To draw a '-' without breaking the word there, escape it as "\-".
-
-Note that \\ in the abc music line now defines a staff break. This is
-useful when typesetting vocals, because it is tedious to split
-the line explicitly when shifting a staff break about when there
-are lines with vocals.
 
 If a word starts with a digit, this is interpreted as numbering of a
 stanza and is pushed forward a bit. In other words, use something like 
@@ -203,11 +269,11 @@ Statement "%%begintext" can be  given a parameter to determine
 how the output is done, namely: 
 
 %%begintext obeylines      keeps lines as they are (default)
-%%begintext ragged         puts in own linebreaks to fill the line
-%%begintext align          puts in own breaks and aligns right margin
+%%begintext fill           puts in own linebreaks to fill the line
+%%begintext justify        puts in own breaks and aligns right margin
 %%begintext skip           skips the whole block, no output.
 
-For "ragged" and "align", the program has to estimate the number of
+For "fill" and "justify", the program has to estimate the number of
 lines needed in the current font, since the typesetting is done
 using the PostScript "widthshow" operator by the printer. 
 The estimate should be reasonably reliable for Times-Roman, but might 
@@ -216,9 +282,6 @@ can be quite different than the fonts used by the printer.
 Strangely, a 13pt font can be smaller than a 12pt font.
 
 An empty line in a block ends a paragraph (see parskipfac below).
-In any case, \\ can be used in a line of text to add line breaks.
-Thus, two centered lines results from this:
-%%center First line\\second line
 
 As with the other pseudocomments (described below), the text is
 associated with a specific tune if it is within that tune's block.
@@ -253,12 +316,12 @@ The user can now tailor the appearance of the output page.
 This is done by setting formating parameters, for example:
 
    pageheight 29cm             % height of page
-   staffwidth 5in              % width of staff
+   pagewidth 7in               % width of page
    leftmargin 1.8cm            % left margin
    titlefont Times-Roman 14    % the font for the title
    titlespace 1cm              % vertical space before the title
    scale 0.9                   % size of musical symbols
-   staffsep  60pt              % space between staves
+   staffsep 60pt               % space between staves
 
 Use abc2ps -H to see the current values of these parameters.
 
@@ -282,7 +345,7 @@ To specify the parameters, there are four levels:
       abc2ps scotland.abc -F landscape -o
       
 3. An abc file can contain pseudocomments (%%..) such as:
-      %%staffwidth 16cm
+      %%pagewidth 18cm
       %%titlespace 1.4cm
    Depending on the position, the changes to the style parameters
    are either global for the rest of the file, or local to a single
@@ -306,7 +369,7 @@ and a command-line flag overrides everything else.
 
 Some more details:
 
-1. Format files are searched in the current directory. In abc2ps.c,
+1. Format files are searched in the current directory. In config.h,
    the line "#define DEFAULT_FDIR .." can be used to set a default
    directory which is searched whenever a fmt file is not local.
    Flag -D can also be used to specify this default directory.
@@ -321,7 +384,7 @@ Some more details:
    have a prototype fmt file which specifies all the parameters.
 
 3. Dimensions can be specified either as pt, cm, or in. Default is pt.
-   So, "%%staffwidth 20" will lead to very short lines!
+   So, "%%pagewidth 30" will lead to very short lines!
 
 4. Pseudocomments which are not recognized are ignored silently.
    The idea is that other program can define their own. 
@@ -346,82 +409,16 @@ Some more details:
    "fonts.fmt" and loads it if it exists. So, the often-used fonts
    can be defined there once and for all.
    
-6. The default page dimensions are set by defines in abc2ps.c
-   and then used in format.h to intialize the predefined formats.
-   Change these if the standard paper will not be Din A4.
-   The relevant lines in abc2ps.c are these:
+6. The default page dimensions are set by defines in abc2ps.h
+   and then used in format.c to initialize the predefined formats.
+   Change these if the standard paper is not US_LETTER
+   The relevant lines in abc2ps.h are these:
 
-#define PAGEHEIGHT      29.7     /* basic page dimensions in cm..  */
-#define LEFTMARGIN       1.8     /* .. used in all default formats */
-#define STAFFWIDTH      17.4
+#define PAGEHEIGHT	(11.0 * IN)
+#define PAGEWIDTH	(8.5 * IN)
 
 7. A line consisting of the word "end" in a fmt file skips the
    rest of the file.
-
-
------ List of format parameters -----
-
-Parameters without explanation are deemed obvious.
-
-  pageheight     
-  staffwidth     
-  topmargin      
-  botmargin      
-  leftmargin     
-  topspace       vertical space at the top of a tune.
-  titlespace     space before the title. 
-
-      Note: Usually, one sees only the sum of these two.
-      However, if text is written preceeding a tune, it
-      will come after "topspace" and before "titlespace".
-
-  subtitlespace  space before the subtitle. 
-  composerspace  space before the composer.
-  musicspace     space between the composer and the music.
-  partsspace     space ("up") between the "parts" and the music.
-  vocalspace     space above a line of vocals.
-  wordsspace     space aboove the words at the end of a tune.
-  textspace      space above the text such as history (flag -n).
-       
-      Note: these spaces count to the top of a line of text.
-      That is, the relevant text size (eg. "12pt") is added.
-
-  staffsep       separation between staves. One-half of this 
-                 distance is added above and below each staff.
-  scale          symbol size; eg. 1.0 is used in the "pretty" output.
-  maxshrink      how much to compress horizontally when staff breaks
-                 are chosen automatically. Between 0 and 1.
-
-  titlefont      Font for title, ie: Times-Roman 14
-  subtitlefont    
-  composerfont   for composer and for bar numbering
-  partsfont      for parts. The keyword 'box' may appear after the font
-		 specification in which case the parts are display in a
-		 box.
-  vocalfont      for vocals under a staff (w: field)
-  gchordfont     for guitar chords
-  textfont       for text under the tune, or between tunes
-  wordsfont      for words under the tune (W: field)
-  lineskipfac    dimensionless factor for spacing between lines of text:
-                 1.0 gives single-space output, 2.0 double etc.
-  parskipfac     similar factor for space after a paragraph of text.
-  barsperstaff   same as flag -B
-  landscape      (logical) landscape orientation if true
-  titleleft      (logical) title flushed left if true.
-  titlecaps      (logical) title in capital letters
-  musiconly      (logical) no vocals if true (equivalent to flag -M)
-  stretchstaff   (logical) stretches underfull staves across page
-  stretchlast    (logical) stretches last staff if underfull.
-  writehistory   (logical) writes notes, history etc if true;
-  continueall    (logical) continue all lines if true (same as -c).
-  breakall       (logical) break at all line ends (same as -b).
-  oneperpage     (logical) each tune on separate page (same as -1)
-  withxrefs      (logical) print out X: xref number in title (same as -x).
-
-Logicals can be specified as follows;
-   One of: 1 yes true     gives true
-   One of: 0 no  false    gives false.
-If nothing is specified, this is equivalent to true.
 
 
 ----- Summary of tune layout -----
@@ -440,7 +437,6 @@ Starting from the current position on the page,
       For each staff:
          go down by staffsep/2;
          write the staff;
-         for vocals, go down by vocalspace and write them;
          go down another staffsep/2.
    Note that everything here (including the spaces and fonts)
    are scaled by "scale". 

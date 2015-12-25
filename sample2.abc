@@ -1,4 +1,5 @@
 % Sample file to test various features of abcm2ps
+%%footer abcm2ps - sample2
 
 U: N = !tenuto!
 
@@ -7,35 +8,42 @@ T:All clefs
 M:C
 L:1/4
 K:C bass
-"bass"CEGc|[K:bass3]"bass3"CEGc|[K:alto4]"alto4"CEGc|[K:alto]"alto"CEGc|
-[K:alto2]"alto2"CEGc|[K:alto1]"alto1"CEGc|[K:treble]"treble"CEGc|
+%%freegchord 1
+"bass"G,CEG|[K:bass3]"bass3"G,CEG|[K:alto4]"alto4"G,CEG|[K:alto]"alto"G,CEG|
+[K:alto2]"alto2"G,CEG|[K:alto1]"alto1"G,CEG|[K:treble]"treble"G,CEG|
+[K:treble1]"treble1"G,CEG|[K:treble-8]"treble-8"G,CEG|[K:treble+8]"treble+8"G,CEG|
 
 X:2
 T:Key signature change
-M:C
+T:multi rests and measure repeat
+M:2
 L:1/4
 K:C
-"C"CEGc|[K:A]"A"Acea|[K:B]"B"Bdfb|[K:A]"A"Acea|
-[K:Eb]"Eb"EGBe|[K:Cb]"Cb"CEGc|[K:C]"C"CEGc|
+Z4|"C"CEGc|[K:A]"A"Acea|[K:B]"B"Bdfb|[K:A]"A"Acea|
+[K:Eb]"Eb"EGBe|/|[K:Cb]"Cb"CEGc|[K:C]"C"CEGc|
 
 X:3
 T:All clefs with common key signatures
 M:C
 L:1/4
 K:E bass
-CEGc|[K:Ab]CEGc|[K:E bass3]CEGc|[K:Ab]CEGc|
-[K:E alto4]CEGc|[K:Ab]CEGc|[K:C# alto]CEGc|
-[K:Ab]CEGc|[K:E alto2]CEGc|[K:Ab]CEGc|
+C,E,G,C|[K:Ab]C,E,G,C|[K:E bass3]C,E,G,C|[K:Ab]C,E,G,C|
+[K:E alto4]G,CEG|[K:Ab]G,CEG|[K:C# alto]G,CEG|
+[K:Ab]G,CEG|[K:E alto2]CEGc|[K:Ab]CEGc|
 [K:E alto1]CEGc|[K:Ab]CEGc|[K:E treble]CEGc|[K:Ab]CEGc|
 
 X:4
-T:Miscellaneous
+T:Guitar chords
 M:none
 L:1/4
 K:C
-"no time signature"CD"gchord on bar"|EF\
-"grace note"{B}c "short\nappogiattura"{/B}c \
-"three\nchord\nlines"G "and""four""chord""lines!"c||
+%%freegchord 1
+"no time""signature"CD"gchord""on bar"|EF\
+"appogiattura"{B}c "acciaccatura"{/B}c \
+"three\nchord\nlines"G "and""four""chord""lines!"c| \
+"Fa\#"^F "Si\b"_B "Fa\="=F \
+%%freegchord 0
+"F#"^F "Bb"_B||
 
 X:5
 T:Standard decorations
@@ -44,51 +52,112 @@ L:1/8
 K:C
 ~C.D JENF HCRD TEuF vcLB MAPG ScOB|
 w: \~ . J N H R T u v L M P S O
-w: grace dot slide tenuto fermata roll trill upbow downbow emphasis lmordent umordent segno coda
+w: grace dot slide tenuto fermata roll trill upbow downbow \
+w: emphasis lmordent umordent segno coda
 
 X:6
 T:All decorations
 M:none
 L:1/8
 K:C
-!0!C!1!D !2!E!3!F !4!G!5!A !+!B!accent!c !breath!C!crescendo(!D !crescendo)!E!D.C.!F \
-w:~0 ~1 ~2 ~3 ~4 ~5 ~+ accent breath crescendo( crescedo) D.C.
-!diminuendo(!G!diminuendo)!A !f!B!ffff!c \
-w:diminuendo( diminuendo) ~f ffff
-!fine!C!invertedfermata!D
-w:fine invertedfermata
-!longphrase!E!mediumphrase!F !mf!G!open!A !p!B!pppp!c !pralltriller!C!repeatbar!D \
-w:longphrase mediumphrase mf open ~p pppp pralltriller repeatbar
-!repeatbar2!E!sfz!F !shortphrase!G!snap!A !thumb!B!turn!c !wedge!C!cresc!D
-w:repeatbar2 sfz shortphrase snap thumb turn wedge cresc
-!decresc!E!dimin!F !fp!G!D.S.!A
-w:decresc dimin fp D.S.
+!0!C!1!D !2!E!3!F !4!G!5!A !+!B!accent!c|\
+w:~0 ~1 ~2 ~3 ~4 ~5 ~+ accent
+!breath!C!crescendo(!D !crescendo)!E!D.C.!F !diminuendo(!G!diminuendo)!A !f!B!ffff!c|
+w:breath crescendo( crescendo) D.C. diminuendo( diminuendo) ~f ffff
+!fine!C!invertedfermata!D !longphrase!E !mediumphrase!F !mf!G!open!A !p!B!pppp!c|
+w:fine invertedfermata longphrase mediumphrase mf open ~p pppp
+!pralltriller!C!repeatbar!D !repeatbar2!E!sfz!F !shortphrase!G !snap!A !thumb!B!turn!c|\
+w:pralltriller repeatbar repeatbar2 sfz shortphrase snap thumb turn
+!wedge!C!D.S.!D|
+w:wedge D.S.
 
 X:7
+T:Non standard decorations
+C:Composer
+O:Origin
+R:Rhythm
+M:none
+L:1/8
+K:C
+!fp!C!cresc!D !decresc!E!dimin!F !turnx!G!invertedturn!A !invertedturnx!B !arpeggio![EGc]|\
+w:fp cresc decresc dimin turnx invertedturn invertedturnx arpeggio
+!trill(!c4-|!trill)!c3!mp!G|!(p)!A!(pp)!B !(f)!A!(ff)!B|
+w:trill( trill) mp (p) (pp) (f) (ff)
+
+X:8
 T:Decorations on two voices
+T:(look also the 'd:' lines)
+%%infoline 1
+C:Composer
+O:Origin
+R:Rhythm
 M:C
 %%staves (1 2)
 K:C
 V:1
-~c.dJeNf HcRdTeuf|!mf!aabc' gabc'|!coda!!sfz!cdef gfe!D.S.!c||
+  ~c.dJeNf cdef|aabc' gabc'|!coda!cdef gfec||
+d: * * * * HRTu|!mf!       |!sfz!  *** ***!D.S.!
 V:2
-~C.DJENF HCRDTEuF|~f.fJgNa HeRfTgua|!5!C!4!PDM!3!EF !5!!4![EG]MFEC||
+   CDEF    CDEF|ffga   efga|C  D  EF   [EG]FEC||
+d: ~.JN    HRTu|~.JN   HRTu|!5!!4!M*   !5! M
+d:             |           |*  P  !3!  !4!
 
-X:8
+X:9
 T:Beams
 L:1/16
-M:1/4
+M:4/4
 K:C
 (3CDE(3FGA B/c/d/e/d/c/B/A/ (3zDE(3FGz z/c/d/e/d/c/B/z/|(3CDz(3zGA B/c/d/z/z/c/B/A/ G8|
 
-X:1
+X:10
 T:Voice overlap
-T:Also invisible and dashed bars
+T:invisible and dashed bars
 M:2/4
 L:1/8
 %%staves (1 2)
 K:C
 V:1
-GGGG:GGGG|G2 G2[|]c4|
+GGGG:GGGG|G2 G2[|]c4 GABc|
 V:2
-cBAG:FEDC|GD G>D[|]cBAG|
+cBAG:FEDC|GD G>D[|]cBAG G4|
+V:1
+G3 GFE|A3 AGF|A3 AGF|B3 BAG|GAB G3|ABc A3|
+V:2
+GAB G3|ABc A3|GAB G3|ABc A3|A3 AGF|B3 BAG|
+V:1
+G6    |GFE D3|A6    |AGF E3|A6    |AGF E3|
+V:2
+GAB c3|G6    |ABc d3|A6    |GAB c3|G6    |
+V:1
+B6    |BAG G3|GAB c3|G6    |ABc c3|A6    ||
+V:2
+ABc c3|A6    |A6    |AGF E3|B6    |BAG G3||
+V:1
+A3 A3|A3 G3|G3 G3||^G3 ^GFE|_A3 _AGF|A3   AGF|
+V:2
+G3 A3|B3 F3|G3 A3||^GAB ^G3|_ABc _A3|^GAB ^G3|
+V:1
+FEDC F3/E/D|^C^D_E^F ^G^A_B^c|^C^D_E^F ^G^A_B^c|
+V:2
+GABc G3/A/B|^C^C^C^C ^C^C^C^C|^c^c^c^c ^c^c^c^c|
+
+X:11
+T:Clef transpositions
+M:C
+L:1/4
+K:C
+%%titleleft 1
+%%freegchord 1
+T:No transposition
+"clef=treble""A,"A,"B,"B,"C"C"D"D|\
+[K:alto]"alto""A,"A,"B,"B,"C"C"D"D|\
+[K:bass]"bass""A,"A,"B,"B,"C"C"D"D|
+T:Explicit clef transposition
+[K:clef=G]"clef=G""A,"A,"B,"B,"C"C"D"D|\
+[K:clef=c]"clef=c""A"A"B"B"c"c"d"d|\
+[K:clef=f]"clef=f""a"a"b"b"c'"c'"d'"d'|
+T:abc2ps compatible clef transposition
+[K:treble]"treble""A,"A,"B,"B,"C"C"D"D|\
+[K:alto]"alto""A"A"B"B"c"c"d"d|\
+[K:bass]"bass""a"a"b"b"c'"c'"d'"d'|
+%%titleleft 0

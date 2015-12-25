@@ -9,6 +9,7 @@ T:Third Title
 M:C
 %K:C		% abcm2ps: automatic clef processing gives a bass clef
 K:C treble
+%%freegchord 1	% abcm2ps: # and b in guitar chords are the music accidentals
 L: 1/4
  "C,"C,"D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,\
 | "C"C"D"D"E"E"F"F  "G"G"A"A"B"B| "c"c "d"d"e"e"f"f  "g"g"a"a"b"b"c'"c' |
@@ -97,7 +98,7 @@ K: G
 
 X:11
 T:Horizontal beams
-M:C
+M:9/8
 K:C
 L: 1/8
  c,d,c, d,e,d, e,f,e, b,cb,   | c,/d,/c,/ d,/e,/d,/ e,/f,/e,/  |\

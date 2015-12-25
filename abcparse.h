@@ -7,8 +7,7 @@
 
 #define MAXHD	8	/* max heads on one stem */
 #define MAXGR	30	/* max grace notes */
-#define MAXDC	8	/* max decorations */
-#define MAXLY	8	/* max number of lyrics */
+#define MAXDC	7	/* max decorations */
 
 #define BASE_LEN 1536	/* basic note length (semibreve or whole note - same as MIDI) */
 
@@ -24,7 +23,7 @@ enum accidentals {
 
 /* bar types */
 enum bar_type {			/* codes for different types of bars */
-	B_INVIS,		/* invisible; for endings without bars and [|] */
+	B_INVIS,		/* invisible; for endings without bars and [] */
 	B_SINGLE,		/* |	single bar */
 	B_DOUBLE,		/* ||	thin double bar */
 	B_THIN_THICK,		/* |]   thick at section end  */
@@ -33,78 +32,6 @@ enum bar_type {			/* codes for different types of bars */
 	B_RREP,			/* :|	right repeat bar */
 	B_DREP,			/* ::	double repeat bar */
 	B_DASH			/* :    dashed bar */
-};
-
-/* clefs */
-enum clef_type {
-	TREBLE,
-	ALTO1,
-	ALTO2,
-	ALTO,		/* 3 */
-	ALTO4,
-	BASS3,
-	BASS		/* 4 */
-};
-
-/* decorations = index the deco_tb table in abcparse.c */
-enum deco_type {
-	D_NIL,		/* no decoration */
-	D_dot = 128,	/* '.' - 0 */
-	D_0,
-	D_1,
-	D_2,
-	D_3,
-	D_4,
-	D_5,
-	D_plus,
-	D_accent,
-	D_breath,
-	D_crescendo_s,	/* 10 */
-	D_crescendo_e,
-	D_coda,
-	D_DC,
-	D_DS,
-	D_diminuendo_s,
-	D_diminuendo_e,
-	D_downbow,
-	D_emphasis,
-	D_f,
-	D_fermata,	/* 20 */
-	D_ff,
-	D_fff,
-	D_ffff,
-	D_fine,
-	D_invertedfermata,
-	D_longphrase,
-	D_lowermordent,
-	D_mediumphrase,
-	D_mf,
-	D_mordent,	/* 30 */
-	D_open,
-	D_p,
-	D_pp,
-	D_ppp,
-	D_pppp,
-	D_pralltriller,
-	D_repeatbar,
-	D_repeatbar2,
-	D_roll,
-	D_segno,	/* 40 */
-	D_sfz,
-	D_shortphrase,
-	D_snap,
-	D_tenuto,
-	D_thumb,
-	D_trill,
-	D_turn,
-	D_upbow,
-	D_uppermordent,
-	D_wedge,	/* 50 */
-	D_slide,
-	D_cresc,
-	D_decresc,
-	D_dimin,
-	D_fp
 };
 
 /* note structure */
@@ -118,12 +45,9 @@ struct deco {			/* describes decorations */
 	char n;			/* number of decorations */
 	unsigned char t[MAXDC];	/* type of deco */
 };
-struct lyrics {
-	unsigned char *w[MAXLY];	/* ptr to words */
-};
 
 struct note {		/* note or rest */
-	short pits[MAXHD];	/* pitches for notes */
+	signed char pits[MAXHD]; /* pitches for notes */
 	short lens[MAXHD];	/* note lengths as multiple of BASE */
 	char accs[MAXHD];	/* code for accidentals */
 	char sl1[MAXHD];	/* which slur starts on this head */
@@ -132,14 +56,14 @@ struct note {		/* note or rest */
 	char ti2[MAXHD];	/* flag to end tie here */
 	unsigned invis:1;	/* invisible rest */
 	unsigned word_end:1;	/* 1 if word ends here */
-	unsigned stemless:1;	/* note with no stem (black note) */
+	unsigned stemless:1;	/* note with no stem */
+	unsigned lyric_start:1;	/* may start a lyric here */
 	char nhd;		/* number of notes in chord - 1 */
 	char p_plet, q_plet, r_plet; /* data for n-plets */
 	char slur_st; 		/* how many slurs start here */
 	char slur_end;		/* how many slurs end here */
 	struct grace *gr;	/* grace notes */
 	struct deco dc;		/* decorations */
-	struct lyrics *ly;	/* lyrics */
 };
 
 /* symbol definition */
@@ -158,6 +82,8 @@ struct abcsym {
 #define ABC_T_BAR 6
 #define ABC_T_EOLN 7
 #define ABC_T_INFO2 8		/* (info without header - H:) */
+#define ABC_T_MREST 9		/* multi-measure rest */
+#define ABC_T_MREP 10		/* measure repeat */
 	char state;		/* symbol state in file/tune */
 #define ABC_S_GLOBAL 0			/* global definition */
 #define ABC_S_HEAD 1			/* header definition (after X:) */
@@ -170,18 +96,17 @@ struct abcsym {
 	union {			/* type dependent part */
 		struct {		/* K: info */
 			signed char sf;		/* sharp (> 0) flats (< 0) */
-			signed char old_sf;	/* previous value */
 			char bagpipe;
 			char minor;		/* major (0) / minor (1) */
-			char empty;		/* no clef if 1 */
+			char empty;		/* clef alone if 1 */
 		} key;
 		struct {		/* L: info */
 			int base_length;	/* basic note length */
 		} length;
-		struct {		/* M: info */
-			int m1;			/* upper value (0: no meter) */
-			int m2;			/* lower value */
-			int flag;		/* flag: 1->C, 2->C| */
+		struct meter_s {	/* M: info */
+			char m1;		/* upper value (0: no meter) */
+			char m2;		/* lower value (0: no lower value) */
+			short flag;		/* flag: 1->C, 2->C| */
 			char *top;		/* upper value in string */
 		} meter;
 		struct {		/* Q: info */
@@ -199,11 +124,16 @@ struct abcsym {
 			struct deco dc;		/* decorations */
 			enum bar_type type;
 		} bar;
-		struct {		/* clef */
-			char clef;
-			char forced;
+		struct clef_s {		/* clef */
+			char type;
+#define TREBLE 0
+#define ALTO 1
+#define BASS 2
+			char line;
+			signed char octave;
+			signed char transpose;
 		} clef;
-		struct note note;	/* note or rest */
+		struct note note;	/* note, rest, mrest or mrep */
 		struct {		/* user defined accent */
 			unsigned char symbol;
 			unsigned char value;
@@ -232,14 +162,21 @@ struct abctune {
 	int client_data;	/* client data */
 };
 
+#ifdef WIN32
+#define strcasecmp stricmp
+#define strncasecmp strnicmp
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 extern char *deco_tb[];
+extern int severity;
 void abc_delete(struct abcsym *as);
 void abc_free(struct abctune *first_tune);
 void abc_init(void *alloc_f_api(int size),
 	      void free_f_api(void *ptr),
+	      void level_f_api(int level),
 	      int client_sz_api,
 	      int keep_comment_api);
 void abc_insert(char *file_api,
@@ -252,6 +189,8 @@ char *get_str(unsigned char *d,
 	      unsigned char *s,
 	      int maxlen);
 void note_sort(struct abcsym *s);
+unsigned char *parse_deco(unsigned char *p,
+			  struct deco *deco);
 #if defined(__cplusplus)
 }
 #endif

@@ -7,7 +7,8 @@
 X:1
 T:Scale with Treble Clef
 M:C
-K:C treble	% must be forced because too low at the beginning
+%%freegchord 1	% abcm2ps: don't print 'b' as a flat sign
+K:C treble	% abcm2ps: must be forced because too low at the beginning
 L: 1/4
  "C,"C,"D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,\
 | "C"C"D"D"E"E"F"F  "G"G"A"A"B"B| "c"c "d"d"e"e"f"f  "g"g"a"a"b"b"c'"c' |
@@ -15,34 +16,34 @@ L: 1/4
 X:2
 T:Scale with Bass and Alto Clef
 M:C
-K:C bass
+K:C bass	% abcm2ps: no transposition
 L: 1/4
 P:Bass
- "C,"C,"D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,\
-| "C"C"D"D"E"E"F"F  "G"G"A"A"B"B| "c"c "d"d"e"e"f"f  "g"g"a"a"b"b"c'"c' |
+ "C,,,"C,,,"D,,,"D,,,"E,,,"E,,,"F,,,"F,,,  "G,,,"G,,,"A,,,"A,,,"B,,,"B,,,|\
+ "C,,"C,,"D,,"D,,"E,,"E,,"F,,"F,,  "G,,"G,,"A,,"A,,"B,,"B,,|\
+ "C,"C, "D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,"C"C |
 P:Alto
 K:C alto
- "C,"C,"D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,\
-| "C"C"D"D"E"E"F"F  "G"G"A"A"B"B| "c"c "d"d"e"e"f"f  "g"g"a"a"b"b"c'"c' |
+ "C,,"C,,"D,,"D,,"E,,"E,,"F,,"F,,  "G,,"G,,"A,,"A,,"B,,"B,,\
+| "C,"C,"D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,| "C"C "D"D"E"E"F"F  "G"G"A"A"B"B"c"c |
 
 X:3
 T:Clef Changes Within Tune
 T:In-Line Info Fields by [..]
 %%begintext align
-Here is an example for a block of text which is associated with a specific 
+Here is an example for a block of text which is associated with a specific
 tune. It will only be printed if this tune (number 3) is selected.
 The text should be placed after the "T:" field and before the
 block is terminated by a blank line.
-Text which is outside a block is 
+Text which is outside a block is
 always printed; for example, the title at the top of the page.
 %%endtext
 M:C
 L: 1/8
 K:C
-cdef gabc' [K:bass] | cdef gabc' [K:D treble] | cdef gabc' |  
+cdef gabc' [K:bass] | C,D,E,F, G,A,B,C [K:D treble] | cdef gabc' |  
 %%sep
 %%text Note: this line and the separator above are also associated with this tune. 
- 
 
 X:4
 T:Vocals
@@ -56,15 +57,12 @@ e>e ez || edTc2 | ed(c2 | e2 c2- | Hc4) |]
 w: *** 1.~~Three blind mice, three blind mice.___
 w: *** 2.~~See how~they run, see how~they ru-uuu-un._
 
-
 X:6
 T:Invisible Rests Using X
 M:C
 K:C
 L: 1/4
-"F"z4|"F"z4|"F"z4|"F"z4|"Bb"z4|"Bb"z4|"F"z4|"F"z4|"C"z4|"Bb"z4|"F"z4|"F"z4||
-"F"x4|"F"x4|"F"x4|"F"x4|"Bb"x4|"Bb"x4|"F"x4|"F"x4|"C"x4|"Bb"x4|"F"x4|"F"x4||
-
+"F"z4|"F"x4|"F"z4|"F"x4|"Bb"z4|"Bb"x4|"F"z4|"F"x4|"C"z4|"Bb"x4|"F"z4|"F"x4||
 
 %%leftmargin 3cm
 
@@ -90,8 +88,6 @@ e|{g}A2 {GdGe}A>B {gcd}c{e}A {gcd}ce| {ag}a2{g}a2 {GdG}ae {gcd}c{e}A|
 {g}A2 {GdGe}A>B {gcd}c{e}A {gcd}ce| {ag}a2{g}a2 {GdG}ae {gcd}c{e}A|
    {Gdc}d2 {g}f>d {gcd}ce {gcd}c{e}A|{GdG}B2{g}A>B {G}A2 {gcd}ce||
 
-
-
 %%vskip 1cm
 %%textfont Times-Roman 12
 %%begintext
@@ -99,7 +95,6 @@ Summary of changes:
 
 - Bass and alto clefs.
 - Vocals.
-- Double-backslash in music makes staff break.
 - In-line info fields can be coded using [...].
 - Subtitles now printed without "or:".
 - Can be more than one composer field.
@@ -108,14 +103,6 @@ Summary of changes:
 - Format page layout by %%-pseudocomments in abc file.
 - Other pseudocomments: %%sep, %%vskip, %%newpage.
 - Text output using %%text, %%center, and %%begintext .. %%endtext.
-- "X" functions like a rest but is invisible on the page.
+- "x" functions like a rest but is invisible on the page.
 - Bagpipe mode for K:HP.
-
-
 %%endtext
-
-
-
-
-
-

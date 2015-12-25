@@ -1,8 +1,8 @@
-%%textfont Helvetica-Bold 16
+%%textfont Helvetica-Bold 21
 %%center Examples for new features in abc2ps-1.2.5
-%%textfont * 12
+%%textfont * 16
 %%center Oct. 5 1997
-%%textfont Times-Roman 12
+%%textfont Times-Roman 16
 
 X:1
 T:Scale with Treble Clef
@@ -70,10 +70,10 @@ X:5
 T:Scotland The Brave
 T:Demonstrating the Bagpipe Mode and Output Formatting
 %%titleleft
-%%titlefont Helvetica-Bold 18
-%%subtitlefont Helvetica-Bold 12
+%%titlefont Helvetica-Bold 24
+%%subtitlefont Helvetica-Bold 16
 %%composerspace 0.4cm
-%%composerfont Helvetica 10
+%%composerfont Helvetica 13
 %%staffwidth 5.5in
 %%scale 0.75
 %%staffsep 55
@@ -89,7 +89,7 @@ e|{g}A2 {GdGe}A>B {gcd}c{e}A {gcd}ce| {ag}a2{g}a2 {GdG}ae {gcd}c{e}A|
    {Gdc}d2 {g}f>d {gcd}ce {gcd}c{e}A|{GdG}B2{g}A>B {G}A2 {gcd}ce||
 
 %%vskip 1cm
-%%textfont Times-Roman 12
+%%textfont Times-Roman 16
 %%begintext
 Summary of changes:
 

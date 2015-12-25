@@ -1,10 +1,10 @@
 dnl Configure source for abcm2ps -*- sh -*-
-dnl Copyright (C) 2001-2002 JF Moine.
+dnl Copyright (C) 2001-2004 JF Moine.
 
 AC_INIT(abc2ps.h)
 
-VERSION=2.11.3
-VDATE='May 5, 2002'
+VERSION=3.7.21
+VDATE='December 16, 2004'
 
 AC_CANONICAL_SYSTEM
 
@@ -46,12 +46,6 @@ AC_ARG_ENABLE(clef-transpose,
 [  --enable-clef-transpose Have clef changing the note pitch],
 [if test "$enableval" = "yes"; then
   AC_DEFINE(CLEF_TRANSPOSE)dnl
-fi])
-
-AC_ARG_ENABLE(debug,
-[  --enable-debug          Have '-v' working],
-[if test "$enableval" = "yes"; then
-  AC_DEFINE(DEBUG)dnl
 fi])
 
 AC_ARG_ENABLE(ps-level,

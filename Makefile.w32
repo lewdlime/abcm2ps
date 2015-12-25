@@ -3,7 +3,7 @@
 # This Makefile will compile abcm2ps using djgpp or mingw out of the box.
 # If you use cygwin but want to make a mingw binary, change CFLAGS below.
 
-VERSION = 2.9.0
+VERSION = 3.3.0
 ABCM2PS = abcm2ps.exe
 CC      = gcc
 # settings for djgpp or mingw32
@@ -20,8 +20,6 @@ $(ABCM2PS): $(OBJECTS)
 
 $(OBJECTS): abcparse.h abc2ps.h config.h
 
-music.o: style.h
-
 zip: $(ABCM2PS)
 	strip $(ABCM2PS); \
 	cd ..; zip -r abcm2ps-$(VERSION).zip \
@@ -29,6 +27,7 @@ zip: $(ABCM2PS)
 	abcm2ps-$(VERSION)/License \
 	abcm2ps-$(VERSION)/Changes \
 	abcm2ps-$(VERSION)/INSTALL \
+        abcm2ps-$(VERSION)/sample3.eps \
 	abcm2ps-$(VERSION)/*.abc \
 	abcm2ps-$(VERSION)/*.fmt \
 	abcm2ps-$(VERSION)/*.txt ; cd -

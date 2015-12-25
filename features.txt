@@ -1,11 +1,78 @@
-New features in abcm2ps 2.10.4 (J.F. Moine, December 2001)
-=========================================================
+Features in abcm2ps 3.6.2 (J.F. Moine, June 2003)
+=================================================
+
+----- EPS inclusion -----
+
+EPS files may be included inside tunes by the pseudo-comment:
+
+	%%EPS <eps_file>
+
+
+----- drum extensions -----
+
+The drum clef is named 'P' or 'perc' in K: or V: (see below).
+In such tunes/voices, the 'x' note heads are indicated as sharps.
+See sample3.abc for example.
+
+
+----- voice overlay -----
+
+Sometimes, some extra notes need to appear at the same time on a staff.
+The Taral's proposal is to use the character '&' (ampersand) for this
+purpose. Here is the original mail:
+
+	& and && operators:
+	    The & operator will be used for splits into 2 voices in a single
+	    measure, thus:
+		|F2A2Bc&F2c2bc|
+	    The && operator will support direct overlay of two lines of music,
+	    similar to the & operator, but without forcing stem direction.
+
+	(&...&...) and (&&...&&...) operators:
+	    These are similar to the & and && operators, but operate on multiple
+	    measures of music, thus:
+		|!f!(&GG<G|GG F=E| E2  E(_D/E)|_D D  C      D |C4- |C
+		     &DC<C|CC_D C|=B,2_B,B,   |_A,A,(G,/A,/)B,|F,4-|F,)zzD=E|
+	    (For &&, this can be extended to N lines, e.g.
+	    (&&...&&...&&...&&...))
+
+Note 1: As the last syntax raises a problem with slurs, abcm2ps does not
+	handle slurs inside a '(&...&...)' construct.
+Note 2: The difference between '&' and '&&' does not work yet.
+
+
+----- staff break -----
+
+For purpose of original clef indication (on the left side), or for
+a coda, a staff break may be inserted as the pseudo comment:
+	%%staffbreak <unit>
+The <unit> gives the width of the break (in points, inches or cm).
+As a side effect, when the width is bigger than 0.5 cm, the
+left side of the staff system is redrawn.
+When used in a multi-voice tune, a staff break must be inserted
+in each voice.
+
+
+----- multi-column -----
+
+Music or text may be drawn on different part of the sheet.
+The pseudo-comment '%%multicol start' saves the current vertical
+position and the left and right margins. Then, these margins may
+be changed to print music or text.
+The pseudo '%%multicol new' resets the vertical offset at the
+place of the previous '%%multicol start', and restores the left and
+right margins.
+To restart normal drawing, the pseudo '%%multicol end' restores
+the left and right margins, and skips down to a safe place.
+An example of this feature may be found in 'sample3.abc'.
+
 
 ----- slurs in grace notes -----
 
 There is normally a slur on the grace notes. To remove it, either
 call abcm2ps with the option '-G', or have a format or pseudo-
 comment 'graceslurs no'.
+
 
 ----- measure numbering -----
 
@@ -19,12 +86,20 @@ Measure numbering may be indicated:
     - in tune by the pseudo-comments '%%measurenb', '%%measurebox' and
       '%%measurefirst'.
 
-In a tune, the measure number may set to an explicit value using:
+In a tune, the measure number may be set to an explicit value using:
 
    %%setbarnb <value>
 
 
 ----- ABC syntax extensions -----
+
+Grace notes may appear before any symbol and may contain chords.
+Their note lengths are handled. The unit note length is not tied
+to L: (or M:). Instead, for compatibility, it is:
+	- a semi-quaver for a single note and a demi-semi-quaver for
+	  many notes in standard tunes,
+	- a hemi-demi-semi-quaver in bagpipe tunes.
+Grace notes greater than crotchets are drawn as crotchets.
 
 The decorations (dynamics, accents, ..) are either indicated by
 '!decoration_name!' (or a single letter - see 'U:') before the notes
@@ -34,65 +109,77 @@ In the decoration lines, as in the lyric lines ('w:'), '|' skips to
 the next bar and '*' skips one note. Note that, in such lines, you
 cannot set decorations on bars and rests.
 
-Measure repeat is indicated by a slash ('/' alone between 2 bars).
+Measure repeat is indicated by a slash or two ('/' or '//' between 2 bars).
 
 Time signatures may have a single number (ex: 'M:2').
 
-Repeat bars may contain a string of digits, '-' (hyphen) or ',' (comma)
-instead of only '1' or '2'. Ex:
-	|: ... [1,3 ... :|2,4-6 ...
-Multiple repeat indications (|:: .. ::|) are acepted but ignored.
+Repeat bars may contain a string of digits, '-' (hyphen), ',' (comma)
+or '.' (dot), or even a free string, instead of only '1' or '2'. Ex:
+	|: ... [1,3 ... :|2,4-6 :|["last time" ...
+(note that a '[' is needed before the string - this one may be empty)
+
+Measure bars may have any shape, using a sequence of '|' (thin bar),
+'[' or ']' (thick bar), and ':' (dots). Ex: '|[|', '[|:::'.
+
+Invisible bars are indicated by '[]' or '[|]', and dashed bars by
+a single ':' or '.|'.
+
+The repeat indication may be explicitly stopped with a ']'.
 
 Multimeasure rests are indicated by 'Z' followed by the number of
 measures.
 
-Sharps, flats and natural signs may be indicated in guitar chords
-using '\#', '\b' and '\='.
-
-Invisible bars are indicated by '[]' or '[|]', and dashed bars by ':'
-alone.
+In guitar chords, the characters '#', 'b' and '=' are displayed as
+sharps, flats and natural signs. To inhibit this feature, either set
+the format parameter 'freegchord' to 1, or use a position flag
+(^, _, <, > or @).
 
 Invisible rests are indicated by 'x'.
 
 'y' adds some space between symbols (BarFly extension).
 
-The Q field may contain a text that is written before the tempo
-definition. The tempo itself may be omitted.
+The Q field may contain text that is written before and/or after the
+tempo definition. The beat and tempo may be omitted. There may be
+up to 4 beats. Ex:
+	Q: "string before" 1/4 3/8 1/4 3/8=40 "string after"
 
 The following decorations are added: !slide!, !fp!, !cresc!, !decresc!,
 !mp!, !dimin!, !turnx!, !invertedturn!, !invertedturnx!, !arpeggio!,
 !trill(!, !trill)!.
 The !slide! decoration is assigned to the letter 'J'.
 
-Appoggiatura are indicated by a '/' starting a grace note sequence
-(one note only - ex: {/B}c).
+Acciaccatura (short appogiattura) are indicated by a '/' starting a
+grace note sequence (ex: {/B}c).
 
-Multiple guitar chord lines are indicated by separated quoted
-strings appearing before a same note (or rest or bar - ex: '"G3""4"G').
+Multiple lines of guitar chord are normally indicated by separate
+quoted strings appearing before a same note (or rest or bar). They may
+also be indicated by '\n', ';' or a new line inside the quoted string.
+Ex:
+	"G3""4"G "G3\n4"G "G3;4"G "G3
+	4"G
 
-A note length starting with '0' (zero) indicates a stemless black note.
+A note length starting with '0' (zero) indicates a stemless black note
+(the note length must be a crotchet).
 
-'M:none' says there is no key signature.
+'M:none' indicates there is no key signature.
 
-The header field 'X:' may be ommited: a new tune may start directly on the
-first 'T:'.
-
-The note length may be divided by many '/' ('A///' is the same as 'A/8').
+The header field 'X:' may be ommited: a new tune may start directly on
+the first 'T:'.
 
 
 ----- Clef specification -----
 
 A clef may be provided in' K:' and 'V:'. The general syntax is:
 
-	[clef=]<clef type>[<line number>][+8 | -8]
+	[clef=]<clef type>[<line number>][+8 | -8] [middle=<pitch>]
 
-- 'clef=' starts the clef definition. It may be omitted only in K: with a full
-  clef type name.
+- 'clef=' starts the clef definition. It may be omitted in K: or V: when
+  the clef type is a clef name.
 
 - <clef type> defines the clef type (indeed :). It may be:
 
   - a note pitch (same as a note in a tune).
-    The note may be only 'G' (trebble clef), 'C' (alto clef) or 'F'
+    The note may be only 'G' (treble clef), 'C' (alto clef) or 'F'
     (bass clef).
     The pitch indicates what note is tied to the clef line number.
 
@@ -109,6 +196,8 @@ A clef may be provided in' K:' and 'V:'. The general syntax is:
 		alto / tenor	c
 		bass		f
 
+  - 'none' in which case no clef is displayed.
+
 - <line number> indicates on which staff line the base clef is written.
   Defaults values are:
 		G / treble	2
@@ -117,6 +206,10 @@ A clef may be provided in' K:' and 'V:'. The general syntax is:
 		F / bass	4
 
 - '+8' or '-8' draws '8' above or below the staff.
+
+- 'middle=<pitch>' is an alternate way to define the line number of
+  the clef. The pitch indicates what note is displayed on the 3rd
+  (middle) line of the staff.
 
 When no clef is specified, clef changes are automatically inserted
 when needed (only 'bass' or 'treble').
@@ -136,10 +229,14 @@ The <voice definition> may contain:
 	- 'clef=..' (see above)
 	- 'name="voice name"' or 'nm="voice name"'
 	  The voice name is printed on the left of the first staff
-	  only.
+	  only. It may contain one or many '\n'.
 	- 'subname="voice subname"' or 'snm="voice subname"'
 	  The voice subname is printed on the left of all staves but
-	  the first one.
+	  the first one. It may contain one or many '\n'.
+	- 'merge'
+	  The voice goes in the same staff as the previous voice.
+	- 'up' or 'down'
+	  Force the stem direction for the voice.
 	- the other definitions are ignored.
 
 Normally, each voice goes on a separate staff. A pseudo-comment may
@@ -161,15 +258,19 @@ pair of '[]', '{}' and '()':
 The character '|' (bar) may appear between the voice names in which case
 measure bars are not drawn between the associated staves.
 
-When this pseudo-comment appears inside a tune, the postscript generation
-is restarted as if there was a new tune.
+After this pseudo-comment is found, the voices which are not declared
+in it are ignored. This feature may be used as a voice filter.
+
+In the current version, when this pseudo-comment appears inside a tune,
+the postscript generation is restarted as if there was a new tune, thus
+forcing a line break.
 
 This program is normally compatible with abc2ps except for automatic
 clef handling: when no clef is indicated, the program tries to set
 either treble or bass clef according to the notes height.
 
-New in abcm2ps-2.5.5: abcm2ps now accepts the BarFly voice definition
-in tune (V:x <notes>, i.e. voice + notes on the same line).
+The BarFly voice switch in tune (V:x <notes>, i.e. voice + notes on
+the same line) may work.
 
 
 ----- Indentation -----
@@ -181,17 +282,20 @@ given in cm, in or pt (see 'Output formatting' below).
 
 ----- Features removed from abc2ps-1.2.4 -----
 
+The scale is global (it was restricted to the music part in abc2ps
+- this is compatible with 'yaps', and surely with other ABC packages).
+
 The characters '\\' don't do a line break anymore.
 
 In landscape format, the values of 'pagewidth' and 'pageheight' are
 internally exchanged, so there is no need to set them explicitely.
 
-The format 'staffwidth' is now obsolete. Better use 'pagewidth'.
+The format 'staffwidth' is obsolete. Use 'pagewidth' instead.
 
 Clef indications (in K: or V:) do not change the note pitches.
 
 The parser has been rewritten and follows more strictly the ABC draft
-(1.7.3 - date 23/06/99).
+(1.7.3 - date 1999/06/23).
 
 Tune selection has been simplified (only '-e').
 
@@ -199,8 +303,8 @@ Tune selection has been simplified (only '-e').
 New features in abc2ps 1.2.4 (M. Methfessel, Feb. 1997)
 =======================================================
 
-Please also have a look at file newfeatures.abc, which 
-demonstrates many of these points. 
+Please also have a look at file newfeatures.abc, which demonstrates
+many of these points.
 
 
 ----- Bass clef -----
@@ -220,7 +324,7 @@ Added: [K:alto] makes the alto (viola or C) clef.
 Aligned lyrics under the staff are specified using a line directly
 below the staff, starting with "w:". For example:
 
-   edc2 edc2 | 
+   edc2 edc2 |
    w: Three blind mice, three blind mice
 
 Each blank-delimited word in the "w:" line is associated with
@@ -239,8 +343,8 @@ For more than one line of lyrics, just use several w: lines.
 To draw a '-' without breaking the word there, escape it as "\-".
 
 If a word starts with a digit, this is interpreted as numbering of a
-stanza and is pushed forward a bit. In other words, use something like 
-   w: 1.~~Three blind mice 
+stanza and is pushed forward a bit. In other words, use something like
+   w: 1.~~Three blind mice
 to put a number before "Three".
 
 
@@ -250,7 +354,7 @@ This can be done using pseudocomments in three ways. First:
 
 %%text This is a line of text.
 
-writes one line into the output. Second, 
+writes one line into the output. Second,
 
 %%center This is another line of text.
 
@@ -265,8 +369,8 @@ again writes one line, but centers it. Finally,
 will write a block of several lines. To avoid conflict with other
 programs, the text lines themselves are (optionally) prefaced with %%.
 
-Statement "%%begintext" can be  given a parameter to determine 
-how the output is done, namely: 
+Statement "%%begintext" can be  given a parameter to determine how the
+output is done, namely:
 
 %%begintext obeylines      keeps lines as they are (default)
 %%begintext fill           puts in own linebreaks to fill the line
@@ -275,9 +379,9 @@ how the output is done, namely:
 
 For "fill" and "justify", the program has to estimate the number of
 lines needed in the current font, since the typesetting is done
-using the PostScript "widthshow" operator by the printer. 
-The estimate should be reasonably reliable for Times-Roman, but might 
-be more dodgy for some other fonts. Also, note that the Ghostview fonts 
+using the PostScript "widthshow" operator by the printer.
+The estimate should be reasonably reliable for Times-Roman, but might
+be more dodgy for some other fonts. Also, note that the Ghostview fonts
 can be quite different than the fonts used by the printer.
 Strangely, a 13pt font can be smaller than a 12pt font.
 
@@ -285,9 +389,9 @@ An empty line in a block ends a paragraph (see parskipfac below).
 
 As with the other pseudocomments (described below), the text is
 associated with a specific tune if it is within that tune's block.
-In that case, it will only be printed if that tune is selected. 
+In that case, it will only be printed if that tune is selected.
 If the text is outside all tune blocks, it will always be printed.
-The exception is if -E is used to to make a separate EPS file for 
+The exception is if -E is used to to make a separate EPS file for
 each tune. In this case all text outside the blocks is ignored.
 
 The font for text output is determined as described below.
@@ -295,16 +399,15 @@ The font for text output is determined as described below.
 
 ----- Other pseudocomments which do something -----
 
-%%sep              - draws a short centered line as a separator
+%%sep		- draws a short centered line as a separator
 
-%%sep h1 h2 len    - draws a separator of length len with space 
-                     h1 above, space h2 below. 
+%%sep h1 h2 len	- draws a separator of length len with space
+		  h1 above, space h2 below.
 
-%%vskip h          - adds vertical space of height h
+%%vskip h	- adds vertical space of height h
 
-
-%%newpage          - writes a page break
-
+%%newpage [n]	- writes a page break and eventually restarts
+		  page numbering at n.
 
 Dimensions can be given in cm, in, or pt, where pt is the default.
 Examples:  "%%sep 1cm 1cm 4cm"  or  "vskip 1.5cm".
@@ -320,65 +423,56 @@ This is done by setting formating parameters, for example:
    leftmargin 1.8cm            % left margin
    titlefont Times-Roman 14    % the font for the title
    titlespace 1cm              % vertical space before the title
-   scale 0.9                   % size of musical symbols
+   scale 0.9                   % global scale
    staffsep 60pt               % space between staves
 
 Use abc2ps -H to see the current values of these parameters.
 
-To specify the parameters, there are four levels:
+To specify the parameters, there are three levels:
 
-1. By default, a predefined set called "standard" is used.
-   With flag -p, an alternative "pretty" set is taken.
-   With flag -P, a third set "pretty2" is used.
-   Users are encouraged to make their own choices for these styles
-   and change the program accordingly (see routines
-   set_standard_format, set_pretty_format, set_pretty2_format
-   in file format.h).
-
-2. Commands to set the parameters can be grouped into a file
+1. Commands to set the parameters can be grouped into a file
    with extension "fmt", which can then be selected by flag -F.
    For example: there should be a file landscape.fmt in the
    distribution. This changes the page orientation to landscape
    and sets the page height and width accordingly, and also changes
    the title style a bit. To output file scotland.abc in landscape,
-   the command is 
+   the command is
       abc2ps scotland.abc -F landscape -o
-      
-3. An abc file can contain pseudocomments (%%..) such as:
+
+2. An abc file can contain pseudocomments (%%..) such as:
       %%pagewidth 18cm
       %%titlespace 1.4cm
    Depending on the position, the changes to the style parameters
    are either global for the rest of the file, or local to a single
    tune. The change is global if the line is outside any tune block
    (where a tune block starts with "X:" and ends with a blank line).
-   If the pseudocomment is within such a block, the parameter change 
-   is only applied for this tune. 
+   If the pseudocomment is within such a block, the parameter change
+   is only applied for this tune.
    Note that the program cannot determine if a tune is selected
    before it knows the title, so such a local pseudocomment should
    come after the "T:" line.
-   
-4. Some of the command-line flags change the style parameters, eg:
-      -s 0.9      (sets symbol scale)
+
+3. Some of the command-line flags change the style parameters, eg:
+      -s 0.9      (sets the scale)
       -m 2cm      (sets left margin) etc.
    Type "abc2ps -h" for a list of flags.
 
-The priorities are in the sequence given above. That is, the ".fmt" 
-file overrides the predefined format, pseudocomments overide that,
+The priorities are in the sequence given above. That is, the ".fmt"
+file overrides the predefined format, pseudocomments override that,
 and a command-line flag overrides everything else.
 
 
 Some more details:
 
-1. Format files are searched in the current directory. In config.h,
-   the line "#define DEFAULT_FDIR .." can be used to set a default
-   directory which is searched whenever a fmt file is not local.
-   Flag -D can also be used to specify this default directory.
-   (The idea is, even if a PC user only has the executable available,
-   he could make something like an alias to get his standard
-   fmt directory into the path.)
+1. Format files ('-F') are searched in the current directory.
+   In config.h, the line "#define DEFAULT_FDIR .." can be used to set a
+   default directory which is searched whenever a fmt file is not local.
+   The flag -D can also be used to specify this default directory.
+   When no '+F' is present at the beginning of the command line,
+   abcm2ps reads the format file 'default.fmt' (as if '-F default').
 
 2. To see the settings for all the parameters, use flag -H.
-   When used in conjunction with other flags such as -p, -P, or -F,
+   When used in conjunction with other flags such as -F,
    the corresponding parameters are shown. If you redirect the
    output to a file and edit out the header line, you immediately
    have a prototype fmt file which specifies all the parameters.
@@ -387,7 +481,7 @@ Some more details:
    So, "%%pagewidth 30" will lead to very short lines!
 
 4. Pseudocomments which are not recognized are ignored silently.
-   The idea is that other program can define their own. 
+   The idea is that other program can define their own.
    It also means that when things frustratingly don't seem to work,
    the reason might be a spelling mistake.
 
@@ -395,7 +489,7 @@ Some more details:
    accents, all fonts must be known when the header of the PS file
    is written. The program tries to be as clever as it can
    about this, but a font might be undefined if it is invoked
-   for the first time further down in a file. For this reason, 
+   for the first time further down in a file. For this reason,
    a line like this can be put into the fmt file:
 
       font Palatino-Bold
@@ -405,10 +499,7 @@ Some more details:
       %%font Palatino-Bold
 
    Either of these will define the corresponding ISO font in the header.
-   To make things even easier, the program always looks for a file
-   "fonts.fmt" and loads it if it exists. So, the often-used fonts
-   can be defined there once and for all.
-   
+
 6. The default page dimensions are set by defines in abc2ps.h
    and then used in format.c to initialize the predefined formats.
    Change these if the standard paper is not US_LETTER
@@ -419,29 +510,3 @@ Some more details:
 
 7. A line consisting of the word "end" in a fmt file skips the
    rest of the file.
-
-
------ Summary of tune layout -----
-
-To summarize: the layout of a tune is done as follows. 
-Starting from the current position on the page, 
-
-   First write the header:
-      go down by topspace, write text if any is specified;
-      go down by titlespace, write the main title;
-      for each subtitle, go down subtitlespace and write it;
-      go down composerspace, write the composer lines;
-      go down musicspace and go up by partsspace, write the parts.
-
-   Next, starting from musicspace below the composer:
-      For each staff:
-         go down by staffsep/2;
-         write the staff;
-         go down another staffsep/2.
-   Note that everything here (including the spaces and fonts)
-   are scaled by "scale". 
-
-   Finally:
-      if words are included, go down wordsspace and write them;
-      if history/notes are included, go down textspace and write them.
-   Hereby lineskip and parskip given by "lineskipfac" and "parskipfac".

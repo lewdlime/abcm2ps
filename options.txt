@@ -1,35 +1,53 @@
 		Command line options
 		====================
 
-The list of the command line options may be know running
+The list of the command line options may be known running:
 	'abcm2ps -h'
+
+When an option starts with '+', this one is disabled.
 
 List of the options
 -------------------
 
+  -
+	Read the abc file from stdin.
+
+  --<format> <value>
+	Set the format parameter to <value>. See format.txt.
+
   -a<float>
-	See: format - maxshrink <float>
+	See: format.txt - maxshrink <float>
 
   -B<int>, +B
-	See: format - barsperstaff <int>
+	See: format.txt - barsperstaff <int>
 
   -b<int>
-	See: format - measurefirst <int>
+	See: format.txt - measurefirst <int>
 
   -c, +c
-	See: format - continueall <bool>
+	See: format.txt - continueall <bool>
 
   -D<dir>
 	Search the format files in the directory <dir>.
 
   -d<unit>
-	See: format - staffsep <unit>
+	See: format.txt - staffsep <unit>
 
   -E, +E
-	Produce EPSF output instead of simple PS.
-	In this mode, each tune goes to a different file. The
-	names are '<name>nnn.eps' (see '-O' for <name>) where
-	'nnn' is the tune sequence number.
+	Produce EPS output instead of simple PS.
+	In this mode, each tune goes to a different file which
+	name is '<name>nnn.eps' (see '-O' for <name> - 	'nnn' is
+	the tune sequence number.
+	EPS files are normally embedded into Postscript documents,
+	but they may be a way to generate graphical images. For
+	example, using GhostScript:
+		abcm2ps voices -E -e7
+		gs -sDEVICE=pngmono -r80 -g590x174 \
+			-dBATCH -dNOPAUSE \
+			-sOutputFile=quitolis.png Out001.eps
+	(the values for -g are the values of the bounding box in
+	 the .eps, multiplied by (80 / 72), where 80 is the value
+	 for -r, and 72 is the default resolution)
 
   -e<list>
 	Select the tunes inside an ABC file.
@@ -44,86 +62,92 @@ List of the options
 	Note: Filtering may raise problems, mainly on global definitions.
 
   -F<file>, +F
-	Read format file <file>.fmt
+	Read the format file <file>.fmt. In the form '+F', the default
+	format file ('default.fmt') is not read.
 
   -f
-	See: format - flatbeams <bool>
+	See: format.txt - flatbeams <bool>
 
   -G, +G
-	See: format - graceslurs <bool>
+	See: format.txt - graceslurs <bool>
 
   -H
 	Display the current format values.
 
   -h
-	Quick help, equivalent to "abc2ps" without any arguments.
+	Quick help, equivalent to "abcm2ps" without any arguments.
 	This also shows the default settings for some parameters.
 
   -I<unit>
-	See: format - indent <unit>
+	See: format.txt - indent <unit>
 
   -j<int>[b], +j
-	See: format - measurenb <int>
+	See: format.txt - measurenb <int>
 
   -k<int>[b], +k
-	See: format - measurenb <int>
+	See: format.txt - measurenb <int>
 
   -L<int>
-	See: format - encoding <int>
+	See: format.txt - encoding <int>
 
   -l, +l
-	See: format - landscape <bool>
+	See: format.txt - landscape <bool>
 
   -M, +M
-	See: format - musiconly <bool>
+	See: format.txt - musiconly <bool>
 
   -m<unit>
-	See: format - leftmargin <unit>
+	See: format.txt - leftmargin <unit>
 
-  -N, +N
+  -N<int>, +N
 	Number the pages.
+	<int> indicates the mode:
+		0  no page numbers
+		1  at top left
+		2  at top right
+		3  at top left on even pages, top right on odd pages
+		4  at top right on even pages, top left on odd pages
+	For compatibility with previous versions, '+N' is the same as
+	'-N0', and '-N' is the same as '-N2'.
+	If a header is defined ('%%header'), this option is ignored.
 
   -n, +n
-	See: format - writehistory <bool>
+	See: format.txt - writehistory <bool>
 
   -O<name>, +O
 	Define the output file name.
 	By default, the output file name is 'Out.ps' for PS, and
 	'Outnnn.eps' for EPSF (see option '-E' for the Postscript
 	mode).
-	With this option, it will be <name>.ps or <name>nnn.eps.
-	If <name> is '=', the output file as the name of the ABC
-	source file with the extension '.ps' (or '.eps').
-
-  -p, +p
-	Select the secundary pretty output option. See '-p'.
-
-  -p
-	Generate pretty output, with more whitespace between tunes,
-	larger fonts for titles, and larger music symbols. By default, 
-	the layout squeezes the tunes to reduce the number of pages.
+	With this option, it will be <name> or <name>nnn.eps.
+	If <name> is '=', the output file has the name of the ABC
+	source file with the extension '.ps' or '.eps'.
+	If <name> is '-', the result is written on stdout.
 
   -s<float>
-	See: format - scale <float>
+	See: format.txt - scale <float>
 
   -u
 	Select the abc2ps implicit decorations.
-
-  -v<int>
-	Set the verbosity for output to the screen to <int>.
-	Hereby -v0 gives very little, -v1,v2,v3.. show successively 
-	more information. Verbosity >= 10 is for debugging.
-	This option works only when abcm2ps is compiled with the
-	-DDEBUG option.
 
   -V
 	Show the version number.
 
   -w<unit>
-	See: format - staffwidth <unit>
+	See: format.txt - staffwidth <unit>
+
+  -W<voice><keypitch>, +W
+	Display a tin whistle tablature for the voice number <voice>.
+	This number (range '1' to '9' only) is the number internally
+	incremented as new voices are encountered; it is not the voice
+	name. Up to 4 tablatures may be defined.
+	Ex: '-W1c -W2Bb,'.
 
   -x, +x
-	See: format - withxrefs <bool>
+	See: format.txt - withxrefs <bool>
+
+  -0, +0
+	See: format.txt - splittune <bool>
 
   -1, +1
-	See: format - oneperpage <bool>
+	See: format.txt - oneperpage <bool>

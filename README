@@ -1,22 +1,19 @@
-# abcm2ps version 2.0.0
+# abcm2ps version 3.1.x
 
 ## Overview
 ---
 
-abcm2ps is a program which converts music tunes from ABC format to PostScript.
-Based on abc2ps version 1.2.5 (see Contacts below), it was developped mainly to
-print barock organ scores which have independant voices played on one or many
-keyboards and a pedal-board.
+abcm2ps is a program which converts music tunes from ABC format to PostScript. Based on abc2ps version 1.2.5 (see [Contacts](#contacts) below), it was developped mainly to print barock organ scores which have independant voices played on one or many keyboards and a pedal-board.
 
 ## Features
 ---
 
-The main features of abcm2ps are quite the same as the abc2ps ones and the files '[`ReadMe.abc2ps`](./ReadMe.abc2ps)' and '[`New.Features`](./New.Features)' contain an updated description of these ones.
+The main features of abcm2ps are quite the same as the abc2ps ones and the file '[`features.txt`](features.txt)' contains an updated description of these ones.
 
 ## Installation and usage
 ---
 
-The installation procedure is described in the file [`INSTALL`](./INSTALL).
+The installation procedure is described in the file [`INSTALL`](INSTALL).
 
 Basically, the program usage is:
 
@@ -27,11 +24,10 @@ where `file1, file2, ..` are the ABC input files. This will generate a Postscrip
 ## Documentation
 ---
 
-- [`abc-draft.txt`](./abc-draft.txt) is the ABC draft on which abcm2ps is developped.
-- [`options.txt`](./options.txt) contains the list of the command line options.
-- [`format.txt`](./format.txt) contains the list of the format parameters.
-- [`layout.txt`](./layout.txt) explains some internal algorithms.
-- [`New.Features`](./New.Features) lists some differences from, and extensions to the ABC standard.
+- [`abc-draft.txt`](abc-draft.txt) is the ABC draft on which abcm2ps is developped.
+- [`options.txt`](options.txt) contains the list of the command line options.
+- [`format.txt`](format.txt) contains the list of the format parameters.
+- [`features.txt`](features.txt) lists some differences from, and extensions to the ABC standard.
 
 ## Differences with abc2ps
 ---
@@ -51,21 +47,24 @@ Many limits may be changed at compilation time (number of voices, staves, ..). T
 ## Contacts
 ---
 
-The primary abcm2ps site is: <http://moinejf.free.fr/>
+The primary abcm2ps site is:
 
-Don't forget: abc2ps is still alive and is developed by Michael Methfessel:
+[moinejf.free.fr](http://moinejf.free.fr/)
 
-[http://www.ihp-ffo.de/~msm/](http://www.ihp-ffo.de/~msm/)
+My friend Guido Gonzatto maintains Win32 and RedHat binaries at:
 
-msm (at) ihp-ffo (dot) de
+[abcplus.sourceforge.net](http://abcplus.sourceforge.net/)
+
+abc2ps was developped by Michael Methfessel:
+
+[www.ihp-ffo.de/~msm/](http://www.ihp-ffo.de/~msm/)
+
+    msm (at) ihp-ffo (dot) de
 
 To know more about the ABC notation, have a look at:
 
-[http://www.gre.ac.uk/~c.walshaw/abc/](http://www.gre.ac.uk/~c.walshaw/abc/)
+[www.gre.ac.uk/~c.walshaw/abc](http://www.gre.ac.uk/~c.walshaw/abc/)
 
 For any comment:
 
-    moinejf (at) free (dot) fr (home)
-or
-
-    Jean-Francois (dot) Moine (at) bst (dot) bsf (dot) alcatel (dot) fr (work)
+    moinejf (at) free (dot) fr

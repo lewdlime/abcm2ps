@@ -6,7 +6,6 @@
 #define MAXVOICE 32	/* max number of voices */
 
 #define MAXHD	8	/* max heads on one stem */
-#define MAXGR	30	/* max grace notes */
 #define MAXDC	7	/* max decorations */
 
 #define BASE_LEN 1536	/* basic note length (semibreve or whole note - same as MIDI) */
@@ -21,48 +20,38 @@ enum accidentals {
 	A_DF		/* double flat */
 };
 
-/* bar types */
-enum bar_type {			/* codes for different types of bars */
-	B_INVIS,		/* invisible; for endings without bars and [] */
-	B_SINGLE,		/* |	single bar */
-	B_DOUBLE,		/* ||	thin double bar */
-	B_THIN_THICK,		/* |]   thick at section end  */
-	B_THICK_THIN,		/* [|   thick at section start */
-	B_LREP,			/* |:	left repeat bar */
-	B_RREP,			/* :|	right repeat bar */
-	B_DREP,			/* ::	double repeat bar */
-	B_DASH			/* :    dashed bar */
-};
+/* bar types - 4 bits per symbol */
+#define B_BAR 1		/* | */
+#define B_OBRA 2	/* [ */
+#define B_CBRA 3	/* ] */
+#define B_COL 4		/* : */
 
 /* note structure */
-struct grace {			/* describes grace notes */
-	char n;			/* number of grace notes */
-	char sappo;		/* short appoggiatura */
-	char p[MAXGR];		/* pitches */
-	char a[MAXGR];		/* accidentals */
-};
 struct deco {			/* describes decorations */
 	char n;			/* number of decorations */
-	unsigned char t[MAXDC];	/* type of deco */
+	unsigned char t[MAXDC];	/* decoration type */
 };
 
 struct note {		/* note or rest */
 	signed char pits[MAXHD]; /* pitches for notes */
 	short lens[MAXHD];	/* note lengths as multiple of BASE */
-	char accs[MAXHD];	/* code for accidentals */
+	unsigned char accs[MAXHD]; /* code for accidentals */
 	char sl1[MAXHD];	/* which slur starts on this head */
 	char sl2[MAXHD];	/* which slur ends on this head */
 	char ti1[MAXHD];	/* flag to start tie here */
 	char ti2[MAXHD];	/* flag to end tie here */
+	short len;		/* note length (shortest in chords) */
 	unsigned invis:1;	/* invisible rest */
 	unsigned word_end:1;	/* 1 if word ends here */
 	unsigned stemless:1;	/* note with no stem */
 	unsigned lyric_start:1;	/* may start a lyric here */
+	unsigned grace:1;	/* grace note */
+	unsigned sappo:1;	/* short appoggiatura */
 	char nhd;		/* number of notes in chord - 1 */
 	char p_plet, q_plet, r_plet; /* data for n-plets */
 	char slur_st; 		/* how many slurs start here */
 	char slur_end;		/* how many slurs end here */
-	struct grace *gr;	/* grace notes */
+	signed char brhythm;	/* broken rhythm */
 	struct deco dc;		/* decorations */
 };
 
@@ -84,62 +73,79 @@ struct abcsym {
 #define ABC_T_INFO2 8		/* (info without header - H:) */
 #define ABC_T_MREST 9		/* multi-measure rest */
 #define ABC_T_MREP 10		/* measure repeat */
+#define ABC_T_V_OVER 11		/* voice overlay */
 	char state;		/* symbol state in file/tune */
-#define ABC_S_GLOBAL 0			/* global definition */
-#define ABC_S_HEAD 1			/* header definition (after X:) */
-#define ABC_S_TUNE 2			/* in tune definition (after K:) */
+#define ABC_S_GLOBAL 0			/* global */
+#define ABC_S_HEAD 1			/* in header (after X:) */
+#define ABC_S_TUNE 2			/* in tune (after K:) */
 #define ABC_S_EMBED 3			/* embedded header (between [..]) */
 	short linenum;		/* line number / ABC file */
 	char *text;		/* main text (INFO, PSCOM),
 				 * guitar chord (NOTE, REST, BAR) */
 	char *comment;		/* comment part (when keep_comment) */
 	union {			/* type dependent part */
-		struct {		/* K: info */
+		struct key_s {		/* K: info */
 			signed char sf;		/* sharp (> 0) flats (< 0) */
-			char bagpipe;
+			char bagpipe;		/* HP or Hp */
 			char minor;		/* major (0) / minor (1) */
 			char empty;		/* clef alone if 1 */
+			char nacc;		/* explicit accidentals */
+			char pits[8];
+			char accs[8];
 		} key;
 		struct {		/* L: info */
 			int base_length;	/* basic note length */
 		} length;
 		struct meter_s {	/* M: info */
-			char m1;		/* upper value (0: no meter) */
-			char m2;		/* lower value (0: no lower value) */
-			short flag;		/* flag: 1->C, 2->C| */
-			char *top;		/* upper value in string */
+			short wmeasure;		/* duration of a measure */
+			short nmeter;		/* number of meter elements */
+#define MAX_MEASURE 6
+			struct {
+				char top[8];	/* top value */
+				char bot[2];	/* bottom value */
+			} meter[MAX_MEASURE];
 		} meter;
 		struct {		/* Q: info */
-			char *str;
-			int length;
-			int value;		/* (0: no tempo) */
+			char *str1;		/* string before */
+			short length[4];	/* up to 4 note lengths */
+			short value;		/* tempo value */
+			char *str2;		/* string after */
 		} tempo;
 		struct {		/* V: info */
 			char *name;		/* name */
 			char *fname;		/* full name */
 			char *nname;		/* nick name */
-			char voice;		/* voice number */
+			unsigned char voice;	/* voice number */
+			char merge;		/* merge with previous voice */
+			signed char stem;	/* have all stems up or down */
 		} voice;
-		struct {		/* bar */
+		struct {		/* bar, mrest or mrep */
 			struct deco dc;		/* decorations */
-			enum bar_type type;
+			int type;
+			char repeat_bar;
+			char len;		/* len if mrest or mrep */
 		} bar;
 		struct clef_s {		/* clef */
 			char type;
 #define TREBLE 0
 #define ALTO 1
 #define BASS 2
+#define PERC 3
 			char line;
 			signed char octave;
 			signed char transpose;
+			char invis;
+#ifndef CLEF_TRANSPOSE
+			char check_pitch;	/* check if old abc2ps transposition */
+#endif
 		} clef;
-		struct note note;	/* note, rest, mrest or mrep */
+		struct note note;	/* note, rest */
 		struct {		/* user defined accent */
 			unsigned char symbol;
 			unsigned char value;
 		} user;
 		struct staff_s {	/* %%staves */
-			char voice;
+			unsigned char voice;
 			char flags;
 #define OPEN_BRACE 0x01
 #define CLOSE_BRACE 0x02
@@ -150,6 +156,15 @@ struct abcsym {
 #define STOP_BAR 0x40
 			char *name;
 		} staves[MAXVOICE];
+		struct {		/* voice overlay */
+			char type;
+#define V_OVER_S 0				/* single & */
+#define V_OVER_D 1				/* && */
+#define V_OVER_SS 2				/* (& */
+#define V_OVER_SD 3				/* (&& */
+#define V_OVER_E 4				/* )& */
+			unsigned char voice;
+		} v_over;
 	} u;
 };
 

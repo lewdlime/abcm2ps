@@ -1,7 +1,7 @@
 /*
  * Super Light Regular Expression library
  *
- * Copyright (c) 2012 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (c) 2012-2015 Jean-François Moine (http://moinejf.free.fr)
  * Copyright (c) 2004-2005 Sergey Lyubka <valenok@gmail.com>
  * All rights reserved
  *
@@ -515,19 +515,19 @@ match(const struct slre *r, int pc, const char *s, int len,
 			pc += 3;
 			break;
 		case QUEST:
-			res = 1;
+//			res = 1;
 			saved_offset = *ofs;
 			if (!match(r, pc + 2, s, len, ofs, caps))
 				*ofs = saved_offset;
 			pc += r->code[pc + 1];
 			break;
 		case STAR:
-			res = 1;
+//			res = 1;
 			loop_greedy(r, pc, s, len, ofs);
 			pc += r->code[pc + 1];
 			break;
 		case STARQ:
-			res = 1;
+//			res = 1;
 			loop_non_greedy(r, pc, s, len, ofs);
 			pc += r->code[pc + 1];
 			break;
@@ -594,11 +594,16 @@ match(const struct slre *r, int pc, const char *s, int len,
 			pc += 3;
 			break;
 		case BOL:
-			res = *ofs == 0 ? 1 : 0;
+			res = *ofs == 0 || s[*ofs - 1] == '\n';
 			pc++;
 			break;
 		case EOL:
-			res = *ofs == len ? 1 : 0;
+			if (*ofs != len) {
+				if (s[*ofs] == '\n')
+					(*ofs)++;
+				else
+					res = 0;
+			}
 			pc++;
 			break;
 		case OPEN:

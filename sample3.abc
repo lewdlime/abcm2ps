@@ -13,7 +13,7 @@ C2D2 E2F2G2{FG}|G4-G6|1.2[M:5/4 (2/4 3/4)]G4{AB}z6:|["last time"A2B2 c6||
 %%multicol new
 %%leftmargin 11.5cm
 %%begintext
-
+%%
 Multi column text on the right after a blank line.
 %%endtext
 %%multicol end

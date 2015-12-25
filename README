@@ -1,4 +1,4 @@
-# abcm2ps version 7.x.x
+# abcm2ps version 8.x.x
 
 ## Overview
 ---
@@ -8,9 +8,9 @@ abcm2ps is a program which converts music tunes from ABC format to PostScript or
 ## Features
 ---
 
-The main features of abcm2ps are quite the same as the abc2ps ones, but they are closer to the ABC standard 2.0 (draft IV - 14/8/2003):
+The main features of abcm2ps are quite the same as the abc2ps ones, but they are closer to the ABC standard 2.2 (February 2013):
 
-[abc.sourceforge.net/standard/abc2-draft.html](http://abc.sourceforge.net/standard/abc2-draft.html)
+[abcnotation.com/wiki/abc:standard:v2.2](http://abcnotation.com/wiki/abc:standard:v2.2)
 
 ## Installation and usage
 ---
@@ -27,8 +27,8 @@ where `file1, file2, ..` are the ABC input files. This will generate a Postscrip
 ---
 
 - [`options.txt`](./options.txt) contains the list of the command line options.
-- [`format.txt`](./format.txt) contains the list of the format parameters.
-- [`features.txt`](./features.txt) lists the differences from the current ABC standard.
+- The format parameters are described in: [moinejf.free.fr/abcm2ps-doc/index.html](http://moinejf.free.fr/abcm2ps-doc/index.html)
+- The differences from the current ABC standard are described in: [moinejf.free.fr/abcm2ps-doc/index.html](http://moinejf.free.fr/abcm2ps-doc/index.html)
 
 ## Differences with abc2ps
 ---

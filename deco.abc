@@ -6,34 +6,19 @@
 %
 % == postscript definitions - must be before any tune ==
 %
+%%setfont-1 Times-Italic 14		% dynamics
+%%setfont-2 Times-BoldItalic 16
+%%setfont-3 Times-Roman 11		% optional notes
+%%setfont-4 Times-Roman 16		% 'al Coda'
+
+%%beginsvg
+<defs>
+<path id="sfa" class="stroke" stroke-width="1.2"
+	d="m-2.4 -4.8l2.4 -8 2.4 7.4 -1 0 -1.8 -6.4"/>
+</defs>
+%%endsvg
+
 %%beginps
-% -- cresc / decresc / dimin
-/crdc{		% usage: str x y crdc - cresc, decresc, ..
-	/Times-Italic 14 selectfont
-	M -6 4 RM show}!
-%
-% -- alternate piano/forte indication between parenthesis
-/apf{		% usage: str x y apf
-	M -6 5 RM
-	/Times-Italic 16 selectfont(\()show
-	/Times-BoldItalic 16 selectfont show
-	/Times-Italic 16 selectfont(\))show}!
-%
-% -- draw parenthesis around a note
-/opnot{		% usage: x y opnot
-	M -5.5 -3 RM /Times-Roman 15 selectfont(\(   \))show}!
-% -- same, but inside a chord (x is not the same)
-/opchnot{	% usage: x y opchnot
-	M -10.5 -3 RM /Times-Roman 15 selectfont(\(   \))show}!
-%
-% -- sforzando accent
-/sfa{		% usage: x y sfa	
-	1.2 SLW M -2.4 4.8 RM
-	2.4 8.0 RL
-	2.4 -7.4 RL
-	-1.0 0.0 RL
-	-1.8 6.4 RL
-	stroke}!
 %
 % -- draw octava indication
 /octava{	% usage: w x y octava
@@ -171,7 +156,7 @@
 	1 SLW stroke grestore}!
 %
 % -- note decorations
-% (sorry for I don't know the name of these: there so many ones)
+% (sorry for I don't know the name of these: there are so many ones)
 % The convention I use here is:
 %	- t2 or t3: mordent with 2 or 3 peeks
 %	- ta or tb: turn from above or from below
@@ -205,23 +190,13 @@
 /t3b{		% usage: x y t3b - upper + lower mordent
 	2 copy exch -7.5 add exch 4 add tr3 0.6 SLW
 	M 2.5 0 RM 0 8 RL stroke}!
-/sharp{		% usage: x y sharp - sharp above note
-	4 add gsave T 0.6 dup scale 0 0 sh0 grestore}!
-/flat{		% usage: x y flat - flat above note
-	4 add gsave T 0.6 dup scale 0 0 ft0 grestore}!
-/natural{	% usage: x y natural - natural sign above note
-	4 add gsave T 0.6 dup scale 0 0 nt0 grestore}!
-%
-% -- 'treble-8' customization
-/octl{
-	/Times-BoldItalic 16 selectfont M 5.5 -14 RM(8vb)show}!
 %
 % -- latin guitar chords
 % note: 'Ré' cannot be used
 /gcshow{
 	dup 0 get
 	dup dup 65 ge exch 71 le and{
-		65 sub[(La)(Si)(Do)(Re)(Mi)(Fa)(Sol )]exch get show
+		65 sub[(La)(Si)(Do)(Re)(Mi)(Fa)(Sol)]exch get show
 		dup length 1 sub 1 exch getinterval
 	}if show}!
 %
@@ -278,13 +253,13 @@
 	3 -1 roll pop		% discard 'h'
 	exch dup x gt {pop x} if exch	% have room for accidentals
 	y 1 index sub 3 1 roll	% new height
-	arp}!
+	arp}def
 %
 % -- optional breath
 /brth{6 add /xbr 2 index def /ybr 1 index def
-	/Times-BoldItalic 30 selectfont M (,) show}!
+	/Times-BoldItalic 30 selectfont M (,) show}def
 /opbrth{pop pop xbr 10 sub ybr 5 sub
-	/Times-Roman 20 selectfont M (\(  \)) show}!
+	/Times-Roman 20 selectfont M (\(  \)) show}def
 %
 % -- head decorations / replacement
 % lower mordent
@@ -297,12 +272,12 @@
 	1 -2.5 6.5 0 5.5 2.5 RC fill}!
 % -- measure bar between two staves (1 and 2)
 /hbar{		% usage: x y hbar
-	dlw pop dup 0 y0 M 24 y1 lineto stroke}!
+	dlw pop dup 0 y0 M 24 y1 lineto stroke}def
 %%endps
 %
 % == decoration definitions ==
 %
-% actual syntax (see format.txt):
+% actual syntax (see http://moinejf.free.fr/abcm2ps-doc/index.html):
 %	%%deco <name> <c_func> <ps_func> <h> <wl> <wr> [<str>]
 %
 % -- accent near the note / sforzando
@@ -311,26 +286,27 @@
 %
 % -- dynamic indication below the staff
 %%deco fp 6 pf 18 5 11 fp
-%%deco cresc 6 crdc 20 4 28 Cresc.
-%%deco decresc 6 crdc 20 4 32 Decresc.
-%%deco dimin 6 crdc 20 4 28 Dimin.
-%%deco riten 6 crdc 20 8 40 Poco riten.
+%%deco cresc 6 @ 20 10 22 "@-8,4$1Cresc."
+%%deco decresc 6 @ 20 10 26 "@-8,4$1Decresc."
+%%deco dimin 6 @ 20 10 22 "@-8,4$1Dimin."
+%%deco riten 6 @ 20 12 34 "@-8,4$1Poco riten."
 %
 % -- dynamic indication below the staff between parenthesis
-%%deco (p) 6 apf 20 8 16 p
-%%deco (pp) 6 apf 20 8 24 pp
-%%deco (f) 6 apf 20 8 16 f
-%%deco (ff) 6 apf 20 8 24 ff
+%%deco (p) 6 @ 20 8 16 "@-8,4$1($2p$1)"
+%%deco (pp) 6 @ 20 8 24 "@-8,4$1($2pp$1)"
+%%deco (f) 6 @ 20 8 16 "@-8,4$1($2f$1)"
+%%deco (ff) 6 @ 20 8 24 "@-8,4$1($2ff$1)"
 %
 % -- repeat indication above the staff
-%%deco alcoda 3 dacs 20 0 0 al Coda
+%%deco alcoda 3 @ 20 0 0 "@0,5$4al Coda"
 %
 % -- who asked for a Pedal indication ?
 %%deco ped 6 ped 20 0 0
 %%deco ped-end 6 pedoff 20 0 0
 %
 % -- optional note
-%%deco () 1 opnot 0 0 0
+%%deco () 0 @ 0 0 0 "@-8,-3$3(   )"
+%%deco ()l 0 @ 0 0 0 "@-16,-3$3(      )"
 %
 % -- start / stop of octava indication
 %%deco 8( 5 - 24 0 0
@@ -355,9 +331,9 @@
 %%deco tbt3 3 tbt3 14 14 18
 %%deco t2ta 3 t2ta 12 5 15
 %%deco t3b 3 t3b 12 5 15
-%%deco # 3 sharp 8 0 0
-%%deco b 3 flat 8 0 0
-%%deco = 3 natural 8 0 0
+%%deco # 3 @ 8 0 0 "@0,0&#x266f;"
+%%deco b 3 @ 8 0 0 "@0,0&#x266d;"
+%%deco = 3 @ 8 0 0 "@0,0&#x266e;"
 %
 % -- 'tr' + long trill
 %%deco tr( 5 - 11 0 0
@@ -378,7 +354,6 @@
 %%deco opbrth 3 opbrth 0 0 0
 %
 % -- head decorations
-%%deco op 1 opchnot 0 0 0	% optional head
 %%deco m 0 hlmrd 0 0 0		% lower mordent on the left
 %%deco head-x 0 dsh0 0 0 0	% X head
 %%deco head-shd 0 shd 0 0 0	% small head
@@ -391,24 +366,24 @@ T:Customized decorations
 M:C
 L:1/8
 K:C treble-8
-!biga!y!fp!"C"C!t2ub!C !cresc!"D"D!t3tab!D !decresc!"E"E!ubt3ta!E !dimin!"F"F!tbt3!F|\
+!biga!y20!fp!"C"C!t2ub!C !cresc!"D"D!t3tab!D !decresc!"E"E!ubt3ta!E !dimin!"F"F!tbt3!F|\
 !mp!"G"G!t2ta!G !(p)!A!t3b!c T!b!!(pp)!A2 P!#!!(f)!B2|M!=!!(ff)!c8|
 %
 K: clef=treble
-!8(!!riten!EF !-!G2 !ped!GA!ped-end!B!8)!c|!8b(!!bigb!C2!()!E2 !tr(!G3!tr)!!8b)!c!alcoda!|\
+!8(!!riten!EF !-!G2 !ped!GA!ped-end!B!8)!c|!8b(!!bigb!C2[!()l!_E2] !tr(!G3!tr)!!8b)!c!alcoda!|\
 CE!-(!G2!-)!C2c2|
 %
 "Dm"!Dm!e3/d/ d6 | "Bb"!Bb!z2 d/d3/ "C7"!C7!cB/A/- AG |\
 F!accent!G!accn!AB !sfa!c4||
 
-X:3
+X:2
 T:Decorations with abcm2ps 4.x.x
 M:C
 L:1/4
 %%staves {1 2}
 K:C
 V:1
-!arpu![!op!C!op!Gc]4 !hbar![] !breath!!opbrth!!arpd![CGc]4 |\
+!arpu![!()!C!()!Gc]4 !hbar![] !breath!!opbrth!!arpd![CGc]4 |\
 	!arps![CGc]4 | z3/[!head-x!B]/ [c!m!eg]2 | c4 ||
 V:2
 !arpeggio![C,,G,,C,]4 [] [C,,G,,C,]4 |\

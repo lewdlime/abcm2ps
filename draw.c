@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2010 Jean-François Moine
+ * Copyright (C) 1998-2012 Jean-FranÃ§ois Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,16 +18,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA  02110-1335  USA
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <ctype.h>
 
-#include "abcparse.h"
 #include "abc2ps.h"
 
 struct BEAM {			/* packages info on one beam */
@@ -39,14 +36,24 @@ struct BEAM {			/* packages info on one beam */
 static char *acc_tb[] = { "", "sh", "nt", "ft", "dsh", "dft" };
 
 /* scaling stuff */
+static int scale_voice;		/* staff (0) or voice(1) scaling */
 static float cur_scale = 1;	/* voice or staff scale */
 static float cur_trans = 0;	/* != 0 when scaled staff */
 
 static void draw_note(float x,
 		      struct SYMBOL *s,
 		      int fl);
-static void set_sscale(int staff);
 static void set_tie_room(void);
+
+/* output debug annotations */
+static void anno_out(struct SYMBOL *s, char type)
+{
+	if (mbf[-1] != '\n')
+		*mbf++ = '\n';
+	a2b("%%A %c %d %d ", type, s->as.linenum, s->as.colnum);
+	putxy(s->x - s->wl - 2, staff_tb[s->staff].y + s->ymn - 2);
+	a2b("%.1f %d\n", s->wl + s->wr + 4, s->ymx - s->ymn + 4);
+}
 
 /* -- up/down shift needed to get k*6 -- */
 static float rnd6(float y)
@@ -87,6 +94,22 @@ static float b_pos(int grace,
 	return d1;
 }
 
+/* duplicate a note for beaming continuation */
+static struct SYMBOL *sym_dup(struct SYMBOL *s_orig)
+{
+	struct SYMBOL *s;
+
+	s = (struct SYMBOL *) getarena(sizeof *s);
+	memcpy(s, s_orig, sizeof *s);
+	s->as.flags |= ABC_F_INVIS;
+	s->as.text = 0;
+	memset(s->as.u.note.sl1, 0, sizeof s->as.u.note.sl1);
+	memset(s->as.u.note.decs, 0, sizeof s->as.u.note.decs);
+	memset(&s->as.u.note.dc, 0, sizeof s->as.u.note.dc);
+	s->ly = 0;
+	return s;
+}
+
 /* -- calculate a beam -- */
 /* (the staves may be defined or not) */
 static int calculate_beam(struct BEAM *bm,
@@ -104,27 +127,73 @@ static int calculate_beam(struct BEAM *bm,
 	};
 
 	/* must have one printed note head */
-	if (s1->as.flags & s1->next->as.flags & ABC_F_INVIS)
-		return 0;
+	if (s1->as.flags & ABC_F_INVIS) {
+		if (s1->next == 0
+		 || (s1->next->as.flags & ABC_F_INVIS))
+			return 0;
+	}
 
-	/* find first and last note in beam */
+	if (!(s1->sflags & S_BEAM_ST)) {	/* beam on two lines */
+		s = sym_dup(s1);
+		s1->prev->next = s;
+		s->prev = s1->prev;
+		s1->prev = s;
+		s->next = s1;
+		s1->ts_prev->ts_next = s;
+		s->ts_prev = s1->ts_prev;
+		s1->ts_prev = s;
+		s->ts_next = s1;
+		s->x -= 12;
+		if (s->x > s1->prev->x + 12)
+			s->x = s1->prev->x + 12;
+		s->sflags &= ~S_BEAM_END;
+		s->sflags |= S_BEAM_ST;
+		s1 = s;
+	}
+
+	/* search last note in beam */
 	notes = nflags = 0;	/* set x positions, count notes and flags */
 	two_staves = two_dir = 0;
 	staff = s1->staff;
 	voice = s1->voice;
 	stem_xoff = (s1->as.flags & ABC_F_GRACE) ? GSTEM_XOFF : STEM_XOFF;
 	for (s2 = s1; ; s2 = s2->next) {
-		if (s2->as.type != ABC_T_NOTE)
-			continue;
-		if (s2->nflags > nflags)
-			nflags = s2->nflags;
-		notes++;
-		if (s2->staff != staff)
-			two_staves = 1;
-		if (s2->stem != s1->stem)
-			two_dir = 1;
-		if (s2->sflags & S_BEAM_END)
+		if (s2->as.type == ABC_T_NOTE) {
+			if (s2->nflags > nflags)
+				nflags = s2->nflags;
+			notes++;
+			if (s2->staff != staff)
+				two_staves = 1;
+			if (s2->stem != s1->stem)
+				two_dir = 1;
+			if (s2->sflags & S_BEAM_END)
+				break;
+		}
+		if (s2->next == 0) {		/* beam on two lines */
+			for (; ; s2 = s2->prev) {
+				if (s2->as.type == ABC_T_NOTE)
+					break;
+			}
+			s = sym_dup(s2);
+			s->next = s2->next;
+			if (s->next != 0)
+				s->next->prev = s;;
+			s2->next = s;
+			s->prev = s2;
+			s->ts_next = s2->ts_next;
+			if (s->ts_next != 0)
+				s->ts_next->ts_prev = s;
+			s2->ts_next = s;
+			s->ts_prev = s2;
+			s->sflags &= ~S_BEAM_ST;
+			s->sflags |= S_BEAM_END;
+			s->x += 12;
+			if (s->x < realwidth - 12)
+				s->x = realwidth - 12;
+			s2 = s;
+			notes++;
 			break;
+		}
 	}
 	bm->s2 = s2;			/* (don't display the flags) */
 	if (staff_tb[staff].y == 0) {	/* staves not defined */
@@ -149,7 +218,8 @@ static int calculate_beam(struct BEAM *bm,
 			scale = staff_tb[s->staff].clef.staffscale;
 		if (s->stem >= 0)
 			x = stem_xoff + s->shhd[0];
-		else	x = -stem_xoff + s->shhd[s->nhd];
+		else
+			x = -stem_xoff + s->shhd[s->nhd];
 		x *= scale;
 		x += s->x;
 		s->xs = x;
@@ -171,12 +241,13 @@ static int calculate_beam(struct BEAM *bm,
 
 			hh = syy - a * sxy - b * sy;	/* flatten if notes not in line */
 			if (hh > 0
-			    && hh / (notes - 2) > .5)
+			 && hh / (notes - 2) > .5)
 				a *= BEAM_FLATFAC;
 		}
 		if (a >= 0)
 			a = BEAM_SLOPE * a / (BEAM_SLOPE + a);	/* max steepness for beam */
-		else	a = BEAM_SLOPE * a / (BEAM_SLOPE - a);
+		else
+			a = BEAM_SLOPE * a / (BEAM_SLOPE - a);
 	} else {
 		if (a > BEAM_SLOPE)
 			a = BEAM_SLOPE;
@@ -198,7 +269,8 @@ static int calculate_beam(struct BEAM *bm,
 	if (cfmt.flatbeams) {
 		if (!(s1->as.flags & ABC_F_GRACE))
 			b = -11 + staff_tb[staff].y;
-		else	b = 35 + staff_tb[staff].y;
+		else
+			b = 35 + staff_tb[staff].y;
 		a = 0;
 	}
 
@@ -210,40 +282,42 @@ static int calculate_beam(struct BEAM *bm,
 /*fixme: more to do*/
 		if (!(s1->as.flags & ABC_F_GRACE))
 			ys = BEAM_SHIFT;
-		else	ys = 3;
+		else
+			ys = 3;
 		ys *= (nflags - 1);
 		ys += BEAM_DEPTH;
 		ys *= .5;
 		if (s1->stem != s2->stem && s1->nflags < s2->nflags)
 			ys *= s2->stem;
-		else	ys *= s1->stem;
+		else
+			ys *= s1->stem;
 		b += ys;
 	} else if (!(s1->as.flags & ABC_F_GRACE)) {	/* normal notes */
 		float stem_err, beam_h;
 
 		beam_h = BEAM_DEPTH + BEAM_SHIFT * (nflags - 1);
 		while (s->ts_prev->as.type == ABC_T_NOTE
-		       && s->ts_prev->time == s->time)
+		    && s->ts_prev->time == s->time)
 			s = s->ts_prev;
 		for (; s != 0 && s->time <= s2->time; s = s->ts_next) {
 			if (s->as.type != ABC_T_NOTE
-			    || (s->as.flags & ABC_F_INVIS)
-			    || (s->staff != staff
+			 || (s->as.flags & ABC_F_INVIS)
+			 || (s->staff != staff
 				&& s->voice != voice)) {
 				continue;
 			}
-			ys = a * s->x + b - staff_tb[s->staff].y;
+			x = s->voice == voice ? s->xs : s->x;
+			ys = a * x + b - staff_tb[s->staff].y;
 			if (s->voice == voice) {
 				if (s->nhd == 0)
 					stem_err = min_tb[0][(unsigned) s->nflags];
-				else	stem_err = min_tb[1][(unsigned) s->nflags];
+				else
+					stem_err = min_tb[1][(unsigned) s->nflags];
 				if (s->stem > 0) {
 					if (s->pits[s->nhd] > 26) {
 						stem_err -= 2;
 						if (s->pits[s->nhd] > 28)
 							stem_err -= 2;
-						if (stem_err < 5)
-							stem_err = 5;
 					}
 					stem_err -= ys - (float) (3 * (s->pits[s->nhd] - 18));
 				} else {
@@ -251,8 +325,6 @@ static int calculate_beam(struct BEAM *bm,
 						stem_err -= 2;
 						if (s->pits[0] < 16)
 							stem_err -= 2;
-						if (stem_err < 5)
-							stem_err = 5;
 					}
 					stem_err -= (float) (3 * (s->pits[0] - 18)) - ys;
 				}
@@ -263,21 +335,27 @@ static int calculate_beam(struct BEAM *bm,
 					if (s->stem > 0) {
 /*fixme: KO when the voice numbers are inverted*/
 						if (s->ymn > ys + 4
-						    || s->ymx < ys - beam_h - 2)
+						 || s->ymx < ys - beam_h - 2)
 							continue;
 						if (s->voice > voice)
 							stem_err = s->ymx - ys;
-						else	stem_err = s->ymn + 8 - ys;
-					} else	stem_err = s->ymx - ys;
+						else
+							stem_err = s->ymn + 8 - ys;
+					} else {
+						stem_err = s->ymx - ys;
+					}
 				} else {
 					if (s->stem < 0) {
 						if (s->ymx < ys - 4
-						    || s->ymn > ys - beam_h - 2)
+						 || s->ymn > ys - beam_h - 2)
 							continue;
 						if (s->voice < voice)
 							stem_err = ys - s->ymn;
-						else	stem_err = ys - s->ymx + 8;
-					} else	stem_err = ys - s->ymn;
+						else
+							stem_err = ys - s->ymx + 8;
+					} else {
+						stem_err = ys - s->ymn;
+					}
 				}
 				stem_err += 2 + beam_h;
 			}
@@ -292,7 +370,8 @@ static int calculate_beam(struct BEAM *bm,
 			stem_err = GSTEM - 2;
 			if (s->stem > 0)
 				stem_err -= ys - (float) (3 * (s->pits[s->nhd] - 18));
-			else	stem_err += ys - (float) (3 * (s->pits[0] - 18));
+			else
+				stem_err += ys - (float) (3 * (s->pits[0] - 18));
 			stem_err += 3 * (s->nflags - 1);
 			if (stem_err > max_stem_err)
 				max_stem_err = stem_err;
@@ -311,8 +390,23 @@ static int calculate_beam(struct BEAM *bm,
 		struct SYMBOL *g;
 
 		switch (s->type) {
+		case NOTEREST:		/* cannot move rests in multi-voices */
+			if (s->as.type != ABC_T_REST)
+				break;
+			g = s->ts_next;
+			if (g->staff != staff
+			 || g->type != NOTEREST)
+				break;
+//fixme:too much vertical shift if some space above the note
+//fixme:this does not fix rest under beam in second voice (ts_prev)
+			/*fall thru*/
 		case BAR:
+#if 1
+			if (s->as.flags & ABC_F_INVIS)
+#else
+//??
 			if (!(s->as.flags & ABC_F_INVIS))
+#endif
 				break;
 			/*fall thru*/
 		case CLEF:
@@ -334,6 +428,8 @@ static int calculate_beam(struct BEAM *bm,
 		case GRACE:
 			g = s->extra;
 			for ( ; g != 0; g = g->next) {
+				if (g->type != NOTEREST)
+					continue;
 				y = a * g->x + b;
 				if (s1->stem > 0) {
 					y = g->ys - y
@@ -360,25 +456,28 @@ static int calculate_beam(struct BEAM *bm,
 
 	/* adjust final stems and rests under beam */
 	for (s = s1; ; s = s->next) {
+		float dy;
+
 		switch (s->as.type) {
 		case ABC_T_NOTE:
 			s->ys = a * s->xs + b - staff_tb[s->staff].y;
 			if (s->stem > 0)
 				s->ymx = s->ys + 2.5;
-			else	s->ymn = s->ys - 2.5;
+			else
+				s->ymn = s->ys - 2.5;
 			break;
 		case ABC_T_REST:
 			y = a * s->x + b - staff_tb[s->staff].y;
+			dy = BEAM_DEPTH + BEAM_SHIFT * (nflags - 1)
+				+ (s->head != H_FULL ? 4 : 9);
 			if (s1->stem > 0) {
-				y -= BEAM_DEPTH + BEAM_SHIFT * (nflags - 1);
-				y -= s->head != H_FULL ? 4 : 9;
+				y -= dy;
 				if (s1->multi == 0 && y > 12)
 					y = 12;
 				if (s->y <= y)
 					break;
 			} else {
-				y += BEAM_DEPTH + BEAM_SHIFT * (nflags - 1);
-				y += s->head != H_FULL ? 4 : 11;
+				y += dy;
 				if (s1->multi == 0 && y < 12)
 					y = 12;
 				if (s->y >= y)
@@ -387,7 +486,7 @@ static int calculate_beam(struct BEAM *bm,
 			if (s->head != H_FULL) {
 				int iy;
 
-				iy = ((int) (y + 3) + 12) / 6 * 6 - 12;
+				iy = ((int) y + 3 + 12) / 6 * 6 - 12;
 				y = iy;
 			}
 			s->y = y;
@@ -421,7 +520,7 @@ static void draw_beam(float x1,
 
 	s = bm->s1;
 	if (n > s->nflags - s->u
-	    && (s->sflags & S_TREM2) && s->head != H_EMPTY) {
+	 && (s->sflags & S_TREM2) && s->head != H_EMPTY) {
 		if (s->head >= H_OVAL) {
 			x1 = s->x + 6;
 			x2 = bm->s2->x - 6;
@@ -452,7 +551,7 @@ static void draw_beams(struct BEAM *bm)
 
 	s1 = bm->s1;
 /*fixme: KO if many staves with different scales*/
-	set_scale(s1->voice);
+	set_scale(s1);
 	s2 = bm->s2;
 	if (!(s1->as.flags & ABC_F_GRACE)) {
 		bshift = BEAM_SHIFT;
@@ -469,7 +568,7 @@ static void draw_beams(struct BEAM *bm)
 /*fixme: quick hack for stubs at end of beam and different stem directions*/
 	beam_dir = s1->stem;
 	if (s1->stem != s2->stem
-	    && s1->nflags < s2->nflags)
+	 && s1->nflags < s2->nflags)
 		beam_dir = s2->stem;
 	if (beam_dir < 0)
 		bh = -bh;
@@ -484,7 +583,7 @@ static void draw_beams(struct BEAM *bm)
 	draw_beam(s1->xs - shift, s2->xs + shift, 0., bh, bm, 1);
 	for (s = s1; ; s = s->next) {
 		if (s->as.type == ABC_T_NOTE
-		    && s->stem != beam_dir) {
+		 && s->stem != beam_dir) {
 			s->ys = bm->a * s->xs + bm->b
 				- staff_tb[s->staff].y
 				+ bshift * (s->nflags - 1) * s->stem
@@ -503,13 +602,13 @@ static void draw_beams(struct BEAM *bm)
 			float x1;
 
 			if (s->as.type != ABC_T_NOTE
-			    || s->nflags < i) {
+			 || s->nflags < i) {
 				if (s == s2)
 					break;
 				continue;
 			}
 			if ((s->sflags & S_TREM1)
-			    && i > s->nflags - s->u) {
+			 && i > s->nflags - s->u) {
 				if (s->head >= H_OVAL)
 					x1 = s->x;
 				else
@@ -526,9 +625,9 @@ static void draw_beams(struct BEAM *bm)
 				if (s == s2)
 					break;
 				if ((s->next->type == NOTEREST
-				     && s->next->nflags < i)
-				    || (s->next->sflags & S_BEAM_BR1)
-				    || ((s->next->sflags & S_BEAM_BR2)
+				 && s->next->nflags < i)
+				  || (s->next->sflags & S_BEAM_BR1)
+				  || ((s->next->sflags & S_BEAM_BR2)
 					 && i > 2))
 					break;
 				s = s->next;
@@ -539,31 +638,32 @@ static void draw_beams(struct BEAM *bm)
 			x1 = k1->xs;
 			if (k1 == k2) {
 				if (k1 == s1
-				    || (k1->sflags & S_BEAM_BR1)
-				    || ((k1->sflags & S_BEAM_BR2)
+				 || (k1->sflags & S_BEAM_BR1)
+				 || ((k1->sflags & S_BEAM_BR2)
 					&& i > 2)) {
 					x1 += bstub;
-				} else if (k1 == s2)
+				} else if (k1 == s2) {
 					x1 -= bstub;
-				else {
+				} else {
 					struct SYMBOL *k;
 
 					k = k1->next;
 					while (k->as.type != ABC_T_NOTE)
 						k = k->next;
 					if ((k->sflags & S_BEAM_BR1)
-					    || ((k->sflags & S_BEAM_BR2)
-						&& i > 2))
+					 || ((k->sflags & S_BEAM_BR2)
+						&& i > 2)) {
 						x1 -= bstub;
-					else {
+					} else {
 						k1 = k1->prev;
 						while (k1->as.type != ABC_T_NOTE)
 							k1 = k1->prev;
 						if (k1->nflags < k->nflags
-						    || (k1->nflags == k->nflags
+						 || (k1->nflags == k->nflags
 							&& k1->dots < k->dots))
 							x1 += bstub;
-						else	x1 -= bstub;
+						else
+						x1 -= bstub;
 					}
 				}
 			}
@@ -587,7 +687,7 @@ static void draw_sysbra(float x, int staff, int flag)
 	float yt, yb;
 
 	while (cursys->staff[staff].empty
-	       || staff_tb[staff].clef.stafflines == 0) {
+	    || staff_tb[staff].clef.stafflines == 0) {
 		if (cursys->staff[staff].flags & flag)
 			return;
 		staff++;
@@ -595,7 +695,7 @@ static void draw_sysbra(float x, int staff, int flag)
 	i = end = staff;
 	for (;;) {
 		if (!cursys->staff[i].empty
-		    && staff_tb[i].clef.stafflines != 0)
+		 && staff_tb[i].clef.stafflines != 0)
 			end = i;
 		if (cursys->staff[i].flags & flag)
 			break;
@@ -624,19 +724,19 @@ static void draw_lstaff(float x)
 		if (cursys->staff[i].flags & (OPEN_BRACE | OPEN_BRACKET))
 			l++;
 		if (!cursys->staff[i].empty
-		    && staff_tb[i].clef.stafflines != 0)
+		 && staff_tb[i].clef.stafflines != 0)
 			break;
 		if (cursys->staff[i].flags & (CLOSE_BRACE | CLOSE_BRACKET))
 			l--;
 	}
 	for (j = nst; j > i; j--) {
 		if (!cursys->staff[j].empty
-		    && staff_tb[j].clef.stafflines != 0)
+		 && staff_tb[j].clef.stafflines != 0)
 			break;
 	}
 	if (i == j && l == 0)
 		return;
-	set_scale(-1);
+	set_scale(0);
 	yb = staff_tb[j].y + staff_tb[j].botbar
 				* staff_tb[j].clef.staffscale;
 	PUT3("%.1f %.1f %.1f bar\n",
@@ -688,7 +788,7 @@ static void draw_staff(int staff,
 static void draw_timesig(float x,
 			 struct SYMBOL *s)
 {
-	int i, staff, l;
+	unsigned i, staff, l, l2;
 	char *f, meter[64];
 	float dx;
 
@@ -701,8 +801,6 @@ static void draw_timesig(float x,
 		if (l > sizeof s->as.u.meter.meter[i].top)
 			l = sizeof s->as.u.meter.meter[i].top;
 		if (s->as.u.meter.meter[i].bot[0] != '\0') {
-			int l2;
-
 			sprintf(meter, "(%.8s)(%.2s)",
 				s->as.u.meter.meter[i].top,
 				s->as.u.meter.meter[i].bot);
@@ -770,14 +868,14 @@ static void draw_keysig(struct VOICE_S *p_voice,
 	int staff = p_voice->staff;
 	float staffb = staff_tb[staff].y;
 	int i, clef_ix, shift;
-	signed char *p_seq;
+	const signed char *p_seq;
 
-	static char sharp_cl[7] = {24, 9, 15, 21, 6, 12, 18};
-	static char flat_cl[7] = {12, 18, 24, 9, 15, 21, 6};
-	static signed char sharp1[6] = {-9, 12, -9, -9, 12, -9};
-	static signed char sharp2[6] = {12, -9, 12, -9, 12, -9};
-	static signed char flat1[6] = {9, -12, 9, -12, 9, -12};
-	static signed char flat2[6] = {-12, 9, -12, 9, -12, 9};
+	static const char sharp_cl[7] = {24, 9, 15, 21, 6, 12, 18};
+	static const char flat_cl[7] = {12, 18, 24, 9, 15, 21, 6};
+	static const signed char sharp1[6] = {-9, 12, -9, -9, 12, -9};
+	static const signed char sharp2[6] = {12, -9, 12, -9, 12, -9};
+	static const signed char flat1[6] = {9, -12, 9, -12, 9, -12};
+	static const signed char flat2[6] = {-12, 9, -12, 9, -12, 9};
 
 	clef_ix = s->pits[0] / 2;
 	if (clef_ix < 0)
@@ -790,7 +888,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 
 		/* if flats to sharps, or sharps to flats, put neutrals */
 		if (s->as.u.key.sf == 0
-		    || old_sf * s->as.u.key.sf < 0) {
+		 || old_sf * s->as.u.key.sf < 0) {
 
 			/* old sharps */
 			shift = sharp_cl[clef_ix];
@@ -799,7 +897,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 				putxy(x, staffb + shift);
 				PUT0("nt0 ");
 				shift += *p_seq++;
-				x += 5;
+				x += 5.5;
 			}
 
 			/* old flats */
@@ -809,7 +907,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 				putxy(x, staffb + shift);
 				PUT0("nt0 ");
 				shift += *p_seq++;
-				x += 5;
+				x += 5.5;
 			}
 			if (s->as.u.key.sf != 0)
 				x += 3;		/* extra space */
@@ -826,7 +924,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 					putxy(x, staffb + shift);
 					PUT0("nt0 ");
 					shift += *p_seq++;
-					x += 5;
+					x += 5.5;
 				}
 				x += 3;		/* extra space */
 			}
@@ -841,7 +939,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 					putxy(x, staffb + shift);
 					PUT0("nt0 ");
 					shift += *p_seq++;
-					x += 5;
+					x += 5.5;
 				}
 				x += 3;		/* extra space */
 			}
@@ -854,7 +952,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 			putxy(x, staffb + shift);
 			PUT0("sh0 ");
 			shift += *p_seq++;
-			x += 5;
+			x += 5.5;
 		}
 
 		/* new flats */
@@ -864,7 +962,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 			putxy(x, staffb + shift);
 			PUT0("ft0 ");
 			shift += *p_seq++;
-			x += 5;
+			x += 5.5;
 		}
 	} else {
 		int last_acc, last_shift;
@@ -884,13 +982,13 @@ static void draw_keysig(struct VOICE_S *p_voice,
 			while (shift > 24 + 3)
 				shift -= 21;
 			if (shift == last_shift + 21
-			    || shift == last_shift - 21)
+			 || shift == last_shift - 21)
 				x -= 5;		/* same note */
 			last_shift = shift;
 			putxy(x, staffb + shift);
 			PUT2("%s%d ",
 			     acc_tb[last_acc & 0x07], micro_tb[last_acc >> 3]);
-			x += 5;
+			x += 5.5;
 		}
 	}
 	if (old_sf != 0 || s->as.u.key.sf != 0 || s->as.u.key.nacc >= 0)
@@ -949,7 +1047,7 @@ static void draw_bar(struct SYMBOL *s)
 	if (s->as.u.bar.len != 0) {
 		struct SYMBOL *s2;
 
-		set_scale(s->voice);
+		set_scale(s);
 		if (s->as.u.bar.len == 1) {
 			for (s2 = s->prev; s2->as.type != ABC_T_REST; s2 = s2->prev)
 				;
@@ -989,7 +1087,7 @@ static void draw_bar(struct SYMBOL *s)
 		}
 		switch (bar_type & 0x07) {
 		default:
-			set_scale(-1);
+			set_scale(0);
 			PUT4("%.1f %.1f %.1f %s ", h, x, yb, psf);
 			break;
 		case B_COL:
@@ -1026,7 +1124,8 @@ static char *rest_tb[NFLAGS_SZ] = {
 
 		if (s->next != 0)
 			x = s->next->x;
-		else	x = realwidth;
+		else
+			x = realwidth;
 		prev = s->prev;
 		if (prev == 0)
 			prev = s;
@@ -1053,7 +1152,7 @@ static char *rest_tb[NFLAGS_SZ] = {
 		s->x = x;
 	}
 	if ((s->as.flags & ABC_F_INVIS)
-	    && !(s->sflags & S_OTHER_HEAD))
+	 && !(s->sflags & S_OTHER_HEAD))
 		return;
 
 	staffb = staff_tb[s->staff].y;		/* bottom of staff */
@@ -1065,7 +1164,7 @@ static char *rest_tb[NFLAGS_SZ] = {
 		else {
 			PUT0("mrep\n");
 			if (s->doty > 2
-			    && s->voice == cursys->top_voice) {
+			 && s->voice == cursys->top_voice) {
 /*fixme				set_font(s->gcf); */
 				set_font(cfmt.anf);
 				putxy(x, staffb + 24 + 4);
@@ -1084,7 +1183,7 @@ static char *rest_tb[NFLAGS_SZ] = {
 
 	i = C_XFLAGS - s->nflags;		/* rest_tb index */
 	if (i == 7 && y == 12
-	    && staff_tb[s->staff].clef.stafflines <= 2)
+	 && staff_tb[s->staff].clef.stafflines <= 2)
 		y -= 6;				/* semibreve a bit lower */
 
 	putxy(x, y + staffb);				/* rest */
@@ -1167,13 +1266,14 @@ static void draw_gracenotes(struct SYMBOL *s)
 	for (g = s->extra; ; g = g->next) {
 		if (g->type != NOTEREST)
 			continue;
-		if (s->extra->next != 0) {	/* if many notes */
-			if ((g->sflags & S_BEAM_ST)
-			    && !(g->sflags & S_BEAM_END)) {
-				if (calculate_beam(&bm, g))
-					draw_beams(&bm);
-			}
+		if ((g->sflags & (S_BEAM_ST | S_BEAM_END)) == S_BEAM_ST) {
+			if (annotate)
+				anno_out(g, 'b');
+			if (calculate_beam(&bm, g))
+				draw_beams(&bm);
 		}
+		if (annotate)
+			anno_out(s, 'g');
 		draw_note(g->x, g, bm.s2 == 0);
 		if (g == bm.s2)
 			bm.s2 = 0;		/* (draw flags again) */
@@ -1187,21 +1287,25 @@ static void draw_gracenotes(struct SYMBOL *s)
 				y1 = (g->ys + g->next->ys) * .5 - g->y;
 				if (g->stem > 0)
 					y1 -= 1;
-				else	y1 += 1;
+				else
+					y1 += 1;
 			}
 			putxy(x1, y1);
 			PUT1("g%ca\n", g->stem > 0 ? 'u' : 'd');
 		}
+		if (annotate
+		 && (g->sflags & (S_BEAM_ST | S_BEAM_END)) == S_BEAM_END)
+			anno_out(g, 'e');
 		if (g->next == 0)
 			break;
 	}
 
 	/* slur */
-	if (voice_tb[s->voice].key.bagpipe	/* no slur when bagpipe */
-	    || !cfmt.graceslurs
-	    || s->as.u.note.slur_st		/* explicit slur */
-	    || s->next == 0
-	    || s->next->as.type != ABC_T_NOTE)
+	if (voice_tb[s->voice].key.mode >= BAGPIPE /* no slur when bagpipe */
+	 || !cfmt.graceslurs
+	 || s->as.u.note.slur_st		/* explicit slur */
+	 || s->next == 0
+	 || s->next->as.type != ABC_T_NOTE)
 		return;
 	last = g;
 	yy = 127;
@@ -1250,9 +1354,10 @@ static void draw_gracenotes(struct SYMBOL *s)
 	y2 = bet2 * y3 + (1 - bet2) * y0 - dy2;
 
 	staffb = staff_tb[s->staff].y;		/* bottom of staff */
-	putxy(x1, y1 + staffb);
-	putxy(x2, y2 + staffb);
-	putxy(x3, y3 + staffb);
+	a2b("%.2f %.2f %.2f %.2f %.2f %.2f ",
+		x1 - x0, y1 - y0,
+		x2 - x0, y2 - y0,
+		x3 - x0, y3 - y0);
 	putxy(x0, y0 + staffb);
 	PUT0("gsl\n");
 }
@@ -1270,7 +1375,8 @@ static void setdoty(struct SYMBOL *s,
 		if ((y % 6) == 0) {
 			if (doty != 0)
 				y -= 3;
-			else	y += 3;
+			else
+				y += 3;
 		}
 		y_tb[m] = y;
 	}
@@ -1289,7 +1395,9 @@ static void setdoty(struct SYMBOL *s,
 				< y_tb[m + 1] - 3 * (s->pits[m + 1] - 18)) {
 			while (m1 <= m)
 				y_tb[m1++] -= 6;
-		} else	y_tb[m + 1] = y_tb[m] + 6;
+		} else {
+			y_tb[m + 1] = y_tb[m] + 6;
+		}
 	}
 }
 
@@ -1330,7 +1438,7 @@ static void draw_basic_note(float x,
 	/* special case when no head */
 	if (s->nohdix >= 0) {
 		if ((s->stem > 0 && m <= s->nohdix)
-		    || (s->stem < 0 && m >= s->nohdix)) {
+		 || (s->stem < 0 && m >= s->nohdix)) {
 			PUT0("/x ");			/* set x y */
 			putx(x + shhd);
 			PUT0("def/y ");
@@ -1346,7 +1454,7 @@ static void draw_basic_note(float x,
 	/* output a ledger line if horizontal shift / chord
 	 * and note on a line */
 	if (y % 6 == 0
-	    && shhd != (s->stem > 0 ? s->shhd[0] : s->shhd[s->nhd])) {
+	 && shhd != (s->stem > 0 ? s->shhd[0] : s->shhd[s->nhd])) {
 		int yy;
 
 		yy = 0;
@@ -1371,7 +1479,7 @@ static void draw_basic_note(float x,
 		p = "/y exch def/x exch def";
 	else if (s->as.flags & ABC_F_GRACE)
 		p = "ghd";
-	else if (cursys->staff[s->staff].clef.type == PERC
+	else if ((s->sflags & S_PERC)
 		 && (i = s->as.u.note.accs[m]) != 0) {
 		i &= 0x07;
 		sprintf(perc_hd, "p%shd", acc_tb[i]);
@@ -1391,7 +1499,13 @@ static void draw_basic_note(float x,
 		case H_SQUARE:
 			if (s->as.u.note.lens[m] < BREVE * 2)
 				p = "breve";
-			else	p = "longa";
+			else
+				p = "longa";
+
+			/* don't display dots on last note of the tune */
+			if (tsnext == 0 && s->next != 0
+			 && s->next->type == BAR && s->next->next == 0)
+				dots = 0;
 			break;
 		case H_EMPTY:
 			p = "Hd"; break;
@@ -1417,7 +1531,7 @@ static void draw_basic_note(float x,
 
 	/* draw the accidental */
 	if ((i = s->as.u.note.accs[m]) != 0
-	    && cursys->staff[s->staff].clef.type != PERC) {
+	 && !(s->sflags & S_PERC)) {
 		x -= s->shac[m] * cur_scale;
 		PUT0(" ");
 		putx(x);
@@ -1507,7 +1621,8 @@ static void draw_note(float x,
 			if (s->nflags > 0) {	/* (fix for PS low resolution) */
 				if (s->stem >= 0)
 					slen -= 1;
-				else	slen += 1;
+				else
+					slen += 1;
 			}
 			PUT3(" %.1f %c%c", slen, c2, c);
 		} else {				/* stem and flags */
@@ -1532,8 +1647,8 @@ static void draw_note(float x,
 
 	/* draw the tremolo bars */
 	if (!(s->as.flags & ABC_F_INVIS)
-	    && fl
-	    && (s->sflags & S_TREM1)) {
+	 && fl
+	 && (s->sflags & S_TREM1)) {
 		float x1;
 
 		x1 = x;
@@ -1579,12 +1694,12 @@ static struct SYMBOL *next_scut(struct SYMBOL *s)
 	prev = s;
 	for (s = s->next; s != 0; s = s->next) {
 		if (s->type == BAR
-		    && ((s->sflags & S_RRBAR)
+		 && ((s->sflags & S_RRBAR)
 			|| s->as.u.bar.type == B_THIN_THICK
 			|| s->as.u.bar.type == B_THICK_THIN
 			|| (s->as.u.bar.repeat_bar
-			    && s->as.text != 0
-			    && s->as.text[0] != '1')))
+			 && s->as.text != 0
+			 && s->as.text[0] != '1')))
 			return s;
 		prev = s;
 	}
@@ -1601,12 +1716,12 @@ static struct SYMBOL *prev_scut(struct SYMBOL *s)
 	voice = s->voice;
 	for (s = s->prev ; s != 0; s = s->prev) {
 		if (s->type == BAR
-		    && ((s->sflags & S_RRBAR)
+		 && ((s->sflags & S_RRBAR)
 			|| s->as.u.bar.type == B_THIN_THICK
 			|| s->as.u.bar.type == B_THICK_THIN
 			|| (s->as.u.bar.repeat_bar
-			    && s->as.text != 0
-			    && s->as.text[0] != '1')))
+			 && s->as.text != 0
+			 && s->as.text[0] != '1')))
 			return s;
 	}
 
@@ -1713,31 +1828,22 @@ static void slur_out(float x1,
 		dz = .6;
 	dz *= s;
 
-	if (staff < 0) {
-		putxy(xx2 - dx, yy2 + dy);
-		putxy(xx1 + dx, yy1 + dy);
-		putxy(x1, y1 + dz);
-		PUT1("0 %.1f ", dz);
-		putxy(xx1, yy1);
-		putxy(xx2, yy2);
-		putxy(x2, y2);
-		putxy(x1, y1);
-	} else {
-		putxy(xx2 - dx, yy2 + dy);
-		PUT1("y%d ", staff);
-		putxy(xx1 + dx, yy1 + dy);
-		PUT1("y%d ", staff);
-		putxy(x1, y1 + dz);
-		PUT2("y%d 0 %.1f ", staff, dz);
-		putxy(xx1, yy1);
-		PUT1("y%d ", staff);
-		putxy(xx2, yy2);
-		PUT1("y%d ", staff);
-		putxy(x2, y2);
-		PUT1("y%d ", staff);
-		putxy(x1, y1);
-		PUT1("y%d ", staff);
-	}
+	if (!dotted)
+		a2b("%.2f %.2f %.2f %.2f %.2f %.2f 0 %.2f ",
+			(xx2 - dx - x2) / cur_scale,
+				(yy2 + dy - y2 - dz) / cur_scale,
+			(xx1 + dx - x2) / cur_scale,
+				(yy1 + dy - y2 - dz) / cur_scale,
+			(x1 - x2) / cur_scale,
+				(y1 - y2 - dz) / cur_scale,
+				dz);
+	a2b("%.2f %.2f %.2f %.2f %.2f %.2f ",
+		(xx1 - x1) / cur_scale, (yy1 - y1) / cur_scale,
+		(xx2 - x1) / cur_scale, (yy2 - y1) / cur_scale,
+		(x2 - x1) / cur_scale, (y2 - y1) / cur_scale);
+	putxy(x1, y1);
+	if (staff >= 0)
+		a2b("y%d ", staff);
 	PUT0(dotted ? "dSL\n" : "SL\n");
 }
 
@@ -1801,15 +1907,16 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 
 	/* fix endpoints */
 	x1 = k1->x + k1->xmx;		/* take the max right side */
-	if (k1 != k2)
+	if (k1 != k2) {
 		x2 = k2->x;
-	else {			/* (the slur starts on last note of the line) */
+	} else {		/* (the slur starts on last note of the line) */
 		for (k = k2->ts_next; k != 0; k = k->ts_next)
 			if (k->type == STAVES)
 				break;
 		if (k == 0)
 			x2 = realwidth;
-		else	x2 = k->x;
+		else
+			x2 = k->x;
 	}
 	y1 = (float) (s > 0 ? k1->ymx + 2 : k1->ymn - 2);
 	y2 = (float) (s > 0 ? k2->ymx + 2 : k2->ymn - 2);
@@ -1819,26 +1926,30 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 			if (k1->stem > 0) {
 				x1 += 5;
 				if ((k1->sflags & S_BEAM_END)
-				    && k1->nflags >= -1	/* if with a stem */
-				    && (!(k1->sflags & S_IN_TUPLET)
-					|| k1->ys > y1 - 3)) {
+				 && k1->nflags >= -1	/* if with a stem */
+				 && (!(k1->sflags & S_IN_TUPLET)
+				  || k1->ys > y1 - 3)) {
 					if (k1->nflags > 0) {
 						x1 += 2;
 						y1 = k1->ys - 3;
-					} else	y1 = k1->ys - 6;
+					} else {
+						y1 = k1->ys - 6;
+					}
 				}
 			}
 		} else {
 			if (k1->stem < 0) {
 				x1 -= 1;
 				if ((k1->sflags & S_BEAM_END)
-				    && k1->nflags >= -1
-				    && (!(k1->sflags & S_IN_TUPLET)
-					|| k1->ys < y1 + 3)) {
+				 && k1->nflags >= -1
+				 && (!(k1->sflags & S_IN_TUPLET)
+				  || k1->ys < y1 + 3)) {
 					if (k1->nflags > 0) {
 						x1 += 2;
 						y1 = k1->ys + 3;
-					} else	y1 = k1->ys + 6;
+					} else {
+						y1 = k1->ys + 6;
+					}
 				}
 			}
 		}
@@ -1849,8 +1960,8 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 			if (k2->stem > 0) {
 				x2 += 1;
 				if ((k2->sflags & S_BEAM_ST)
-				    && k2->nflags >= -1
-				    && (!(k2->sflags & S_IN_TUPLET)
+				 && k2->nflags >= -1
+				 && (!(k2->sflags & S_IN_TUPLET)
 					|| k2->ys > y2 - 3))
 					y2 = k2->ys - 6;
 			}
@@ -1858,8 +1969,8 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 			if (k2->stem < 0) {
 				x2 -= 5;
 				if ((k2->sflags & S_BEAM_ST)
-				    && k2->nflags >= -1
-				    && (!(k2->sflags & S_IN_TUPLET)
+				 && k2->nflags >= -1
+				 && (!(k2->sflags & S_IN_TUPLET)
 					|| k2->ys < y2 + 3))
 					y2 = k2->ys + 6;
 			}
@@ -1918,20 +2029,24 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 /*fixme: to simplify*/
 	if (k1->staff == upstaff)
 		y1 += s * addy;
-	else	y1 = -6;
+	else
+		y1 = -6;
 	if (k2->staff == upstaff)
 		y2 += s * addy;
-	else	y2 = -6;
+	else
+		y2 = -6;
 #endif
 
 	a = (y2 - y1) / (x2 - x1);		/* slur steepness */
 	if (a > SLUR_SLOPE || a < -SLUR_SLOPE) {
 		if (a > SLUR_SLOPE)
 			a = SLUR_SLOPE;
-		else	a = -SLUR_SLOPE;
+		else
+			a = -SLUR_SLOPE;
 		if (a * s > 0)
 			y1 = y2 - a * (x2 - x1);
-		else	y2 = y1 + a * (x2 - x1);
+		else
+			y2 = y1 + a * (x2 - x1);
 	}
 
 	/* for big vertical jump, shift endpoints */
@@ -2010,7 +2125,8 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 
 	if (nn > 3)
 		height = (.08 * (x2 - x1) + 12) * s;
-	else	height = (.03 * (x2 - x1) + 8) * s;
+	else
+		height = (.03 * (x2 - x1) + 8) * s;
 	if (s > 0) {
 		if (height < 3 * h)
 			height = 3 * h;
@@ -2059,7 +2175,8 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated");
 				k->ymn = y;
 			if (k->next == k2)
 				dx = x2;
-			else	dx = k->next->x;
+			else
+				dx = k->next->x;
 			if (k != k1)
 				x1 = k->x;
 			dx -= x1;
@@ -2152,16 +2269,16 @@ static void draw_slurs(struct SYMBOL *first,
 				if (gr2 != 0
 				 && gr2->next != 0) {
 					gr2->next->prev->next = 0;
-					gr2->next->prev = gr1;
+					gr2->next->prev = gr2;
 				}
 			}
 			if (s1 == last)
 				break;
 			s1 = s1->next;
 		}
-		if (s1 == 0)
+		if (s1 == 0) {
 			k = next_scut(s);
-		else if (k == 0) {
+		} else if (k == 0) {
 			s = s1;
 			if (s == last)
 				break;
@@ -2301,14 +2418,14 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 					if (g->type != NOTEREST)
 						continue;
 					if (g->as.u.note.slur_st
-					    || (g->sflags & S_SL1))
+					 || (g->sflags & S_SL1))
 						some_slur = 1;
 				}
 			}
 			continue;
 		}
 		if (s2->as.u.note.slur_st
-		    || (s2->sflags & S_SL1))
+		 || (s2->sflags & S_SL1))
 			some_slur = 1;
 		if (s2->staff < upstaff)
 			upstaff = s2->staff;
@@ -2325,7 +2442,9 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	/* draw the slurs when inside the tuplet */
 	if (some_slur)
 		draw_slurs(s1, s2);
-	if ((t->u & 0x0f0) == 0x10) {	/* 'what' == slur */
+	if (s1 == s2) {				/* if tuplet with 1 note */
+		nb_only = 1;
+	} else if ((t->u & 0x0f0) == 0x10) {	/* 'what' == slur */
 		nb_only = 1;
 		draw_slur(s1, s2, -1, -1, 
 			  s1->stem > 0 ? SL_ABOVE : SL_BELOW);
@@ -2333,14 +2452,14 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 
 		/* search if a bracket is needed */
 		if ((t->u & 0x0f00) == 0x200	/* if 'when' == always */
-		    || s1->as.type != ABC_T_NOTE || s2->as.type != ABC_T_NOTE)
+		 || s1->as.type != ABC_T_NOTE || s2->as.type != ABC_T_NOTE)
 			nb_only = 0;
 		else {
 			nb_only = 1;
 			for (sy = s1; ; sy = sy->next) {
 				if (sy->type != NOTEREST) {
 					if (sy->type == GRACE
-					    || sy->type == SPACE)
+					 || sy->type == SPACE)
 						continue;
 					nb_only = 0;
 					break;
@@ -2353,7 +2472,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 				}
 			}
 			if (nb_only
-			    && !(s1->sflags & (S_BEAM_ST | S_BEAM_BR1 | S_BEAM_BR2))) {
+			 && !(s1->sflags & (S_BEAM_ST | S_BEAM_BR1 | S_BEAM_BR2))) {
 				for (sy = s1->prev; sy != 0; sy = sy->prev) {
 					if (sy->type == NOTEREST) {
 						if (sy->nflags >= s1->nflags)
@@ -2366,7 +2485,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 				for (sy = s2->next; sy != 0; sy = sy->next) {
 					if (sy->type == NOTEREST) {
 						if (!(sy->sflags & (S_BEAM_BR1 | S_BEAM_BR2))
-						    && sy->nflags >= s2->nflags)
+						 && sy->nflags >= s2->nflags)
 							nb_only = 0;
 						break;
 					}
@@ -2382,15 +2501,11 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		if ((t->u & 0x0f) == 1)		/* if 'value' == none */
 			return next;
 		xm = (s2->x + s1->x) * .5;
-		a = (s2->ys - s1->ys) / (s2->x - s1->x);
+		if (s1 == s2)			/* if tuplet with 1 note */
+			a = 0;
+		else
+			a = (s2->ys - s1->ys) / (s2->x - s1->x);
 		b = s1->ys - a * s1->x;
-#if 1
-#if 0
-		for (sy = s1; ; sy = sy->next) {
-			if (sy->x >= xm)
-				break;
-		}
-#endif
 		yy = a * xm + b;
 		if (s1->stem > 0) {
 			ym = y_get(s1, 1, xm - 3, 6, 0);
@@ -2403,38 +2518,17 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 				b += ym - yy;
 			b -= 12;
 		}
-#else
-		if (s1->stem > 0) {
-			for (sy = s1; ; sy = sy->next) {
-				yy = a * sy->x + b;
-				ym = sy->ymx;
-				if (ym > yy)
-					b += ym - yy;
-				if (sy == s2)
-					break;
-			}
-			b += 4;
-		} else {
-			for (sy = s1; ; sy = sy->next) {
-				yy = a * sy->x + b;
-				ym = sy->ymn;
-				if (ym < yy)
-					b += ym - yy;
-				if (sy == s2)
-					break;
-			}
-			b -= 12;
-		}
-#endif
 		if (s1->stem * s2->stem > 0) {
 			if (s1->stem > 0)
 				xm += GSTEM_XOFF;
-			else	xm -= GSTEM_XOFF;
+			else
+				xm -= GSTEM_XOFF;
 		}
 		ym = a * xm + b;
 		if ((t->u & 0x0f) == 0)		/* if 'value' == number */
 			PUT1("(%d)", t->as.u.tuplet.p_plet);
-		else	PUT2("(%d:%d)", t->as.u.tuplet.p_plet,
+		else
+			PUT2("(%d:%d)", t->as.u.tuplet.p_plet,
 			     t->as.u.tuplet.q_plet);
 		putxy(xm, ym);
 		PUT1("y%d bnum\n", s1->staff);
@@ -2498,7 +2592,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			x2 += 3;
 	}
 	if (s2->as.type == ABC_T_NOTE && s2->prev->as.type == ABC_T_NOTE
-	    && s2->dur > s2->prev->dur)
+	 && s2->dur > s2->prev->dur)
 		x2 += 5;
 
 	xm = .5 * (x1 + x2);
@@ -2524,7 +2618,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	dy = 0;
 	for (sy = s1; ; sy = sy->next) {
 		if (sy->dur == 0	/* not a note or a rest */
-		    || sy->staff != upstaff) {
+		 || sy->staff != upstaff) {
 			if (sy == s2)
 				break;
 			continue;
@@ -2565,7 +2659,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	if (s2->shhd[s2->nhd] > 0)
 		x2 += s2->shhd[s2->nhd];
 	if (s2->as.type == ABC_T_NOTE && s2->prev->as.type == ABC_T_NOTE
-	    && s2->dur > s2->prev->dur)
+	 && s2->dur > s2->prev->dur)
 		x2 += 5;
 	if (s1->staff == upstaff) {
 		sy = s1;
@@ -2575,7 +2669,9 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 					break;
 		}
 		y1 = y_get(sy, 0, sy->x, 0, 0);
-	} else	y1 = 0;
+	} else {
+		y1 = 0;
+	}
 	if (s2->staff == upstaff) {
 		sy = s2;
 		if (sy->as.type != ABC_T_NOTE) {
@@ -2584,7 +2680,9 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 					break;
 		}
 		y2 = y_get(sy, 0, sy->x, 0, 0);
-	} else	y2 = 0;
+	} else {
+		y2 = 0;
+	}
 
 	xm = .5 * (x1 + x2);
 	ym = .5 * (y1 + y2);
@@ -2609,7 +2707,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	dy = 0;
 	for (sy = s1; ; sy = sy->next) {
 		if (sy->dur == 0	/* not a note nor a rest */
-		    || sy->staff != upstaff) {
+		 || sy->staff != upstaff) {
 			if (sy == s2)
 				break;
 			continue;
@@ -2652,7 +2750,8 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	yy = .5 * (y1 + y2);
 	if ((t->u & 0x0f) == 0)		/* if 'value' == number */
 		PUT1("(%d)", t->as.u.tuplet.p_plet);
-	else	PUT2("(%d:%d)", t->as.u.tuplet.p_plet,
+	else
+		PUT2("(%d:%d)", t->as.u.tuplet.p_plet,
 		     t->as.u.tuplet.q_plet);
 	putxy(xm, yy);
 	PUT1("y%d bnumb\n", upstaff);
@@ -2677,7 +2776,8 @@ static void draw_note_ties(struct SYMBOL *k1,
 		p2 = k2->pits[m2];
 		if ((k1->as.u.note.ti1[m1] & 0x03) == SL_ABOVE)
 			s = 1;
-		else	s = -1;
+		else
+			s = -1;
 		x1 = k1->x;
 		h = k1->shhd[m1];		/* head shift */
 		if (s > 0) {
@@ -2705,9 +2805,9 @@ static void draw_note_ties(struct SYMBOL *k1,
 		if (h < 0)
 			x2 += h;
 		if (job == 2) {		/* half tie from last note in line */
-			if (k1 != k2)
+			if (k1 != k2) {
 				x2 -= k2->wl;
-			else {
+			} else {
 				struct SYMBOL *k;
 
 				for (k = k2->ts_next; k != 0; k = k->ts_next)
@@ -2715,7 +2815,8 @@ static void draw_note_ties(struct SYMBOL *k1,
 						break;
 				if (k == 0)
 					x2 = realwidth;
-				else	x2 = k->x;
+				else
+					x2 = k->x;
 			}
 			if (x2 < x1 + 16)
 				x2 = x1 + 16;
@@ -2733,10 +2834,11 @@ static void draw_note_ties(struct SYMBOL *k1,
 		if (job != 1) {
 			if (k1->nhd != 0)
 				x1 += 4.5;
-			else	y1 += ((p1 % 2) ? 3 : 2) * s;
+			else
+				y1 += ((p1 % 2) ? 3 : 2) * s;
 			if (s > 0) {
 				if (k1->nflags > -2 && k1->stem > 0
-				    && k1->nhd == 0)
+				 && k1->nhd == 0)
 					x1 += 4.5;
 				if (!(p1 % 2) && k1->dots > 0)
 					y1 = 3 * (p1 - 18) + 6;
@@ -2745,10 +2847,11 @@ static void draw_note_ties(struct SYMBOL *k1,
 		if (job != 2) {
 			if (k2->nhd != 0)
 				x2 -= 4.5;
-			else	y2 += ((p2 % 2) ? 3 : 2) * s;
+			else
+				y2 += ((p2 % 2) ? 3 : 2) * s;
 			if (s < 0) {
 				if (k2->nflags > -2 && k2->stem < 0
-				    && k2->nhd == 0)
+				 && k2->nhd == 0)
 					x2 -= 4.5;
 			}
 			if (job != 0)
@@ -2792,7 +2895,8 @@ static void draw_ties(struct SYMBOL *k1,
 					 * 1: at start of line
 					 * 2: at end of line */
 {
-	int i, m1, nh1, pit, ntie, ntie3, time;
+	struct SYMBOL *k3;
+	int i, m1, nh1, pit, ntie, tie2, ntie3, time;
 	int mhead1[MAXHD], mhead2[MAXHD], mhead3[MAXHD];
 
 	ntie = ntie3 = 0;
@@ -2802,18 +2906,30 @@ static void draw_ties(struct SYMBOL *k1,
 	/* 2-note case: set up list of ties to draw */
 	if (job != 2 && k2->time == time) {
 		for (i = 0; i <= nh1; i++) {
-			if (k1->as.u.note.ti1[i] != 0) {
-				pit = k1->as.u.note.pits[i];
-				for (m1 = k2->nhd; m1 >= 0; m1--) {
-					if (k2->as.u.note.pits[m1] == pit) {
-						mhead1[ntie] = i;
-						mhead2[ntie++] = m1;
-						break;
-					}
+			if (k1->as.u.note.ti1[i] == 0)
+				continue;
+			tie2 = -1;
+			pit = k1->as.u.note.pits[i];
+			for (m1 = k2->nhd; m1 >= 0; m1--) {
+				switch (k2->as.u.note.pits[m1] - pit) {
+				case 1:		/* maybe ^c - _d */
+				case -1:
+					tie2 = m1;
+					break;
+				case 0:
+					mhead1[ntie] = i;
+					mhead2[ntie++] = m1;
+					goto found;
 				}
-				if (m1 < 0)
-					mhead3[ntie3++] = i;
 			}
+			if (tie2 >= 0) {	/* second choice */
+				mhead1[ntie] = i;
+				mhead2[ntie++] = tie2;
+				break;
+			}
+			mhead3[ntie3++] = i;	/* no match */
+found:
+			;
 		}
 		draw_note_ties(k1, k2,
 				ntie, mhead1, mhead2, job);
@@ -2826,30 +2942,25 @@ static void draw_ties(struct SYMBOL *k1,
 			if (k1->as.u.note.ti1[i])
 				mhead3[ntie3++] = i;
 		}
-#if 0
-		if (job == 2) {
-			draw_note_ties(k1, k2 ? k2 : k1,
-					ntie3, mhead3, mhead3, job);
-			return;
-		}
-#endif
 	}
 
-	/* try an other voice */
-	k2 = k1->ts_next;
-	while (k2 != 0 && k2->time < time)
-		k2 = k2->ts_next;
-	while (k2 != 0 && k2->time == time) {
-		if (k2->as.type != ABC_T_NOTE
-		    || k2->staff != k1->staff) {
-			k2 = k2->ts_next;
+    if (job != 2) {
+
+	/* try an other voice of the same staff */
+	k3 = k1->ts_next;
+	while (k3 != 0 && k3->time < time)
+		k3 = k3->ts_next;
+	while (k3 != 0 && k3->time == time) {
+		if (k3->as.type != ABC_T_NOTE
+		 || k3->staff != k1->staff) {
+			k3 = k3->ts_next;
 			continue;
 		}
 		ntie = 0;
 		for (i = ntie3; --i >= 0; ) {
 			pit = k1->as.u.note.pits[mhead3[i]];
-			for (m1 = k2->nhd; m1 >= 0; m1--) {
-				if (k2->as.u.note.pits[m1] == pit) {
+			for (m1 = k3->nhd; m1 >= 0; m1--) {
+				if (k3->as.u.note.pits[m1] == pit) {
 					mhead1[ntie] = mhead3[i];
 					mhead2[ntie++] = m1;
 					ntie3--;
@@ -2859,14 +2970,15 @@ static void draw_ties(struct SYMBOL *k1,
 			}
 		}
 		if (ntie > 0) {
-			draw_note_ties(k1, k2,
+			draw_note_ties(k1, k3,
 					ntie, mhead1, mhead2,
 					job == 1 ? 1 : 0);
 			if (ntie3 == 0)
 				return;
 		}
-		k2 = k2->ts_next;
+		k3 = k3->ts_next;
 	}
+    }
 	if (ntie3 != 0) {
 		if (job == 2)
 			draw_note_ties(k1, k2 ? k2 : k1,
@@ -2890,12 +3002,13 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 		if (s2->as.type == ABC_T_NOTE)
 			break;
 		if (s2->type != BAR
-		    || !s2->as.u.bar.repeat_bar
-		    || s2->as.text == 0)
+		 || !s2->as.u.bar.repeat_bar
+		 || s2->as.text == 0)
 			continue;
 		if (s2->as.text[0] == '1')	/* 1st repeat bar */
 			rtie = p_voice->tie;
-		else	p_voice->tie = rtie;
+		else
+			p_voice->tie = rtie;
 	}
 	if (s2 == 0)
 		return;
@@ -2916,8 +3029,8 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			if (rtie == 0)
 				continue;
 			if (s1->type != BAR
-			    || !s1->as.u.bar.repeat_bar
-			    || s1->as.text == 0)
+			 || !s1->as.u.bar.repeat_bar
+			 || s1->as.text == 0)
 				continue;
 			if (s1->as.text[0] == '1') {	/* 1st repeat bar */
 				rtie = 0;
@@ -2944,11 +3057,11 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 				break;
 			if (s2->type == BAR) {
 				if ((s2->sflags & S_RRBAR)
-				    || s2->as.u.bar.type == B_THIN_THICK
-				    || s2->as.u.bar.type == B_THICK_THIN)
+				 || s2->as.u.bar.type == B_THIN_THICK
+				 || s2->as.u.bar.type == B_THICK_THIN)
 					break;
 				if (!s2->as.u.bar.repeat_bar
-				    || s2->as.text == 0)
+				 || s2->as.text == 0)
 					continue;
 				if (s2->as.text[0] != '1')
 					break;
@@ -2994,7 +3107,7 @@ static void draw_all_slurs(struct VOICE_S *p_voice)
 		if (s->type != NOTEREST && s->type != SPACE)
 			continue;
 		while (s->as.u.note.slur_end
-		       || (s->sflags & S_SL2)) {
+		    || (s->sflags & S_SL2)) {
 			if (s->as.u.note.slur_end) {
 				s->as.u.note.slur_end--;
 				m2 = -1;
@@ -3015,12 +3128,12 @@ static void draw_all_slurs(struct VOICE_S *p_voice)
 			k = prev_scut(s);
 			draw_slur(k, s, -1, m2, slur_type);
 			if (k->type != BAR
-			    || (!(k->sflags & S_RRBAR)
-				&& k->as.u.bar.type != B_THIN_THICK
-				&& k->as.u.bar.type != B_THICK_THIN
-				&& (!k->as.u.bar.repeat_bar
-				    || k->as.text == 0
-				    || k->as.text[0] == '1')))
+			 || (!(k->sflags & S_RRBAR)
+			  && k->as.u.bar.type != B_THIN_THICK
+			  && k->as.u.bar.type != B_THICK_THIN
+			  && (!k->as.u.bar.repeat_bar
+			   || k->as.text == 0
+			   || k->as.text[0] == '1')))
 				slur_st >>= 3;
 		}
 	}
@@ -3031,12 +3144,12 @@ static void draw_all_slurs(struct VOICE_S *p_voice)
 		k = next_scut(s);
 		draw_slur(s, k, -1, -1, slur_type);
 		if (k->type != BAR
-		    || (!(k->sflags & S_RRBAR)
-			&& k->as.u.bar.type != B_THIN_THICK
-			&& k->as.u.bar.type != B_THICK_THIN
-			&& (!k->as.u.bar.repeat_bar
-			    || k->as.text == 0
-			    || k->as.text[0] == '1'))) {
+		 || (!(k->sflags & S_RRBAR)
+		  && k->as.u.bar.type != B_THIN_THICK
+		  && k->as.u.bar.type != B_THICK_THIN
+		  && (!k->as.u.bar.repeat_bar
+		    || k->as.text == 0
+		    || k->as.text[0] == '1'))) {
 /*fixme: the slur types are inverted again*/
 			p_voice->slur_st <<= 3;
 			p_voice->slur_st += slur_type;
@@ -3072,6 +3185,28 @@ static void setmap(int sf,	/* number of sharps/flats in key sig (-7 to +7) */
 	}
 }
 
+/* output a tablature string escaping the parenthesis */
+static void tbl_out(char *s, float x, int j, char *f)
+{
+	char *p;
+
+	a2b("(");
+	p = s;
+	for (;;) {
+		while (*p != '\0' && *p != '(' && *p != ')' )
+			p++;
+		if (p != s) {
+			a2b("%.*s", (int) (p - s), s);
+			s = p;
+		}
+		if (*p == '\0')
+			break;
+		a2b("\\");
+		p++;
+	}
+	a2b(")%.1f y %d %s ", x, j, f);
+}
+
 /* -- draw the tablature with w: -- */
 static void draw_tblt_w(struct VOICE_S *p_voice,
 			int nly,
@@ -3090,7 +3225,7 @@ static void draw_tblt_w(struct VOICE_S *p_voice,
 	for (j = 0; j < nly ; j++) {
 		for (s = p_voice->sym->next; s != 0; s = s->next) {
 			if ((ly = s->ly) == 0
-			    || (lyl = ly->lyl[j]) == 0) {
+			 || (lyl = ly->lyl[j]) == 0) {
 				if (s->type == BAR) {
 					if (tblt->bar == 0)
 						continue;
@@ -3102,14 +3237,11 @@ static void draw_tblt_w(struct VOICE_S *p_voice,
 						l >>= 4;
 					}
 					p++;
-					PUT4("(%s)%.1f y %d %s ",
-						p, s->x, j,
-						tblt->bar);
+					tbl_out(p, s->x, j, tblt->bar);
 				}
 				continue;
 			}
-			PUT4("(%s)%.1f y %d %s ",
-				lyl->t, s->x, j, tblt->note);
+			tbl_out(lyl->t, s->x, j, tblt->note);
 		}
 		PUT0("\n");
 	}
@@ -3121,7 +3253,7 @@ static void draw_tblt_p(struct VOICE_S *p_voice,
 			struct tblt_s *tblt)
 {
 	struct SYMBOL *s;
-	int j, pitch, octave, sf, tied;
+	int j, pitch, octave, sf, tied, acc;
 	unsigned char workmap[70];	/* sharps/flats - base: lowest 'C' */
 	unsigned char basemap[7];
 	static int scale[7] = {0, 2, 4, 5, 7, 9, 11};	/* index = natural note */
@@ -3161,10 +3293,11 @@ static void draw_tblt_p(struct VOICE_S *p_voice,
 			continue;
 		}
 		pitch = s->as.u.note.pits[0] + 19;
-		if (s->as.u.note.accs[0] != 0) {
-			workmap[pitch] = s->as.u.note.accs[0] == A_NT
+		acc = s->as.u.note.accs[0];
+		if (acc != 0) {
+			workmap[pitch] = acc == A_NT
 				? A_NULL
-				: (s->as.u.note.accs[0] % 0x07);
+				: (acc & 0x07);
 		}
 		pitch = scale[pitch % 7]
 			+ acc_pitch[workmap[pitch]]
@@ -3179,7 +3312,24 @@ static void draw_tblt_p(struct VOICE_S *p_voice,
 			pitch -= 12;
 			octave++;
 		}
-		PUT4("%d %d %.2f %s\n", octave, pitch, s->x, tblt->note);
+		if ((acc & 0xf8) == 0) {
+			a2b("%d %d %.2f %s\n", octave, pitch, s->x, tblt->note);
+		} else {
+			int n, d;
+			float micro_p;
+
+			n = micro_tb[acc >> 3];
+			d = (n & 0xff) + 1;
+			n = (n >> 8) + 1;
+			switch (acc & 0x07) {
+			case A_FT:
+			case A_DF:
+				n = -n;
+				break;
+			}
+			micro_p = (float) pitch + (float) n / d;
+			a2b("%d %.3f %.2f %s\n", octave, micro_p, s->x, tblt->note);
+		}
 		tied = s->as.u.note.ti1[0];
 	}
 	PUT0("grestore\n");
@@ -3205,7 +3355,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 		if (p_voice->tblts[0]->pitch == 0)
 			return y;		/* yes */
 		if (p_voice->tblts[1] != 0
-		    && p_voice->tblts[1]->pitch == 0)
+		 && p_voice->tblts[1]->pitch == 0)
 			return y;		/* yes */
 	}
 
@@ -3229,7 +3379,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 	for (; j != nly ; j += incr) {
 		float x0, shift;
 
-		PUT2("/y{%.1f y%d}def ", y + desc, p_voice->staff);
+		PUT2("/y{%.1f y%d}! ", y + desc, p_voice->staff);
 		hyflag = lflag = 0;
 		if (p_voice->hy_st & (1 << j)) {
 			hyflag = 1;
@@ -3237,7 +3387,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 		}
 		for (s = p_voice->sym; /*s != 0*/; s = s->next)
 			if (s->type != CLEF
-			    && s->type != KEYSIG && s->type != TIMESIG)
+			 && s->type != KEYSIG && s->type != TIMESIG)
 				break;
 		if (s->prev != 0)
 			lastx = s->prev->x;
@@ -3248,7 +3398,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 			lskip = f->size * 1.1;
 		for ( ; s != 0; s = s->next) {
 			if ((ly = s->ly) == 0
-			    || (lyl = ly->lyl[j]) == 0) {
+			 || (lyl = ly->lyl[j]) == 0) {
 				switch (s->type) {
 				case NOTEREST:
 					if (s->as.type == ABC_T_NOTE)
@@ -3266,7 +3416,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 			}
 			if (lyl->f != f) {		/* font change */
 				f = lyl->f;
-				set_font(f - cfmt.font_tb);
+				str_font(f - cfmt.font_tb);
 				if (lskip < f->size * 1.1)
 					lskip = f->size * 1.1;
 			}
@@ -3274,9 +3424,9 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 			w = lyl->w;
 			shift = lyl->s;
 			if (hyflag) {
-				if (*p == '\x03')		/* '_' */
-					*p = '\x02';
-				else if (*p != '\x02') {	/* not '-' */
+				if (*p == LY_UNDER)		/* '_' */
+					*p = LY_HYPH;
+				else if (*p != LY_HYPH) {	/* not '-' */
 					PUT2("%.1f %.1f y hyph ",
 					     s->x - shift - lastx, lastx);
 					hyflag = 0;
@@ -3284,29 +3434,31 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 				}
 			}
 			if (lflag
-			    && *p != '\x03') {		/* not '_' */
+			 && *p != LY_UNDER) {		/* not '_' */
 				PUT2("%.1f %.1f y wln ",
 				     x0 - lastx + 3, lastx + 3);
 				lflag = 0;
 				lastx = s->x + s->wr;
 			}
-			if (*p == '\x02'		/* '-' */
-			    || *p == '\x03') {		/* '_' */
+			if (*p == LY_HYPH			/* '-' */
+			 || *p == LY_UNDER) {		/* '_' */
 				if (x0 == 0 && lastx > s->x - 18)
 					lastx = s->x - 18;
-				if (*p == '\x02')
+				if (*p == LY_HYPH)
 					hyflag = 1;
-				else	lflag = 1;
+				else
+					lflag = 1;
 				x0 = s->x - shift;
 				continue;
 			}
 			x0 = s->x - shift;
 			l = strlen(p) - 1;
-			if (p[l] == '\x02') {		/* '-' at end */
+			if (p[l] == LY_HYPH) {		/* '-' at end */
 				p[l] = '\0';
 				hyflag = 1;
 			}
-			PUT2("%.1f y M(%s)lyshow ", x0, p);
+			a2b("%.1f y M ", x0);
+			put_str(p, A_LYRIC);
 			lastx = x0 + w;
 		}
 		if (hyflag) {
@@ -3326,7 +3478,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 		for ( ; s != 0; s = s->next) {
 			if (s->as.type == ABC_T_NOTE) {
 				if (s->ly != 0 && s->ly->lyl[j] != 0
-				    && s->ly->lyl[j]->t[0] == '\x03') {
+				 && s->ly->lyl[j]->t[0] == LY_UNDER) {
 					lflag = 1;
 					x0 = realwidth - 15;
 					if (x0 < lastx + 12)
@@ -3341,7 +3493,8 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 		PUT0("\n");
 		if (incr > 0)
 			y -= lskip;
-		else	y += lskip;
+		else
+			y += lskip;
 	}
 	if (incr > 0)
 		y += lskip;
@@ -3367,7 +3520,7 @@ static void draw_all_lyrics(void)
 	/* check if any lyric */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		if (p_voice->have_ly
-		    || p_voice->tblts[0] != 0)
+		 || p_voice->tblts[0] != 0)
 			break;
 	}
 	if (p_voice == 0)
@@ -3402,7 +3555,9 @@ static void draw_all_lyrics(void)
 				if (ly->lyl[0] != 0) {
 					x -= ly->lyl[0]->s;
 					w = ly->lyl[0]->w;
-				} else	w = 10;
+				} else {
+					w = 10;
+				}
 				y = y_get(s, 1, x, w, 0);
 				if (top < y)
 					top = y;
@@ -3429,17 +3584,17 @@ static void draw_all_lyrics(void)
 		if (nly == 0)
 			continue;
 		nly_tb[voice] = nly;
-		if (p_voice->ly_pos != 0)
-			above_tb[voice] = p_voice->ly_pos > 0;
-		else if (cfmt.vocalabove
-/*fixme:%%staves:KO - find an other way*/
-			 || (p_voice->next != 0
-			     && p_voice->next->staff == staff
-			     && p_voice->next->have_ly))
+		if (((p_voice->posit >> POS_VOC) & 3) != 0)
+			above_tb[voice] = ((p_voice->posit >> POS_VOC) & 3) == SL_ABOVE;
+		else if (p_voice->next != 0
+/*fixme:%%staves:KO - find an other way..*/
+		      && p_voice->next->staff == staff
+		      && p_voice->next->have_ly)
 			above_tb[voice] = 1;
 		if (above_tb[voice])
 			lyst_tb[staff].a = 1;
-		else	lyst_tb[staff].b = 1;
+		else
+			lyst_tb[staff].b = 1;
 	}
 
 	/* draw the lyrics under the staves */
@@ -3450,7 +3605,7 @@ static void draw_all_lyrics(void)
 		if (p_voice->sym == 0)
 			continue;
 		if (!p_voice->have_ly
-		    && p_voice->tblts[0] == 0)
+		 && p_voice->tblts[0] == 0)
 			continue;
 		voice = p_voice - voice_tb;
 		if (above_tb[voice]) {
@@ -3458,6 +3613,7 @@ static void draw_all_lyrics(void)
 			continue;
 		}
 		staff = p_voice->staff;
+		set_sscale(staff);
 		if (nly_tb[voice] > 0)
 			lyst_tb[staff].bot = draw_lyrics(p_voice, nly_tb[voice],
 							 lyst_tb[staff].bot, 1);
@@ -3471,7 +3627,8 @@ static void draw_all_lyrics(void)
 			if (tblt->pitch == 0)
 				draw_tblt_w(p_voice, nly_tb[voice],
 					lyst_tb[staff].bot, tblt);
-			else	draw_tblt_p(p_voice, lyst_tb[staff].bot,
+			else
+				draw_tblt_p(p_voice, lyst_tb[staff].bot,
 					tblt);
 			if (tblt->ha != 0) {
 				lyst_tb[staff].top += tblt->ha;
@@ -3485,6 +3642,7 @@ static void draw_all_lyrics(void)
 		voice = rv_tb[i];
 		p_voice = &voice_tb[voice];
 		staff = p_voice->staff;
+		set_sscale(staff);
 		lyst_tb[staff].top = draw_lyrics(p_voice, nly_tb[voice],
 						 lyst_tb[staff].top, -1);
 	}
@@ -3494,6 +3652,7 @@ static void draw_all_lyrics(void)
 		if (p_voice->sym == 0)
 			continue;
 		staff = p_voice->staff;
+		set_sscale(staff);
 		if (lyst_tb[staff].a) {
 			top = lyst_tb[staff].top + 2;
 			for (s = p_voice->sym->next; s != 0; s = s->next) {
@@ -3540,12 +3699,17 @@ void draw_sym_near(void)
 	/* calculate the beams but don't draw them (the staves are undefined) */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		struct BEAM bm;
+		int first_note = 1;
 
 		for (s = p_voice->sym; s != 0; s = s->next) {
-			if (s->as.type == ABC_T_NOTE
-			    && (s->sflags & S_BEAM_ST)
-			    && !(s->sflags & S_BEAM_END))
+			if (s->as.type != ABC_T_NOTE)
+				continue;
+			if (((s->sflags & S_BEAM_ST)
+			  && !(s->sflags & S_BEAM_END))
+			 || (first_note && !(s->sflags & S_BEAM_ST))) {
+				first_note = 0;
 				calculate_beam(&bm, s);
+			}
 		}
 	}
 
@@ -3600,9 +3764,10 @@ void draw_sym_near(void)
 		if (s->as.u.note.accs[0]) {
 			y = s->y;
 			if ((s->as.u.note.accs[0] & 0x07) == A_SH
-			    || s->as.u.note.accs[0] == A_NT)
+			 || s->as.u.note.accs[0] == A_NT)
 				y -= 7;
-			else	y -= 5;
+			else
+				y -= 5;
 			if (s->ymn > y)
 				s->ymn = y;
 			y_set(s, 0, s->x, 0., y);
@@ -3617,11 +3782,12 @@ void draw_sym_near(void)
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		if ((s = p_voice->sym) == 0)
 			continue;
+		set_sscale(s->staff);
 		for (s = s->next; s != 0; s = s->next) {
 			struct SYMBOL *g;
 
 			if ((s->sflags & S_IN_TUPLET)
-			    && (g = s->extra) != 0) {
+			 && (g = s->extra) != 0) {
 				for ( ; g != 0; g = g->next) {
 					if (g->type == TUPLET) {
 						s = draw_tuplet(g, s);
@@ -3652,6 +3818,9 @@ void draw_sym_near(void)
 	draw_all_lyrics();
 	outft = -1;				/* force font output */
 	draw_deco_staff();
+
+	/* restore the scale parameters */
+	set_sscale(-1);
 }
 
 /* -- draw the name/subname of the voices -- */
@@ -3684,7 +3853,9 @@ static void draw_vname(float indent)
 		if (p_voice->new_name) {
 			p_voice->new_name = 0;
 			p = p_voice->nm;
-		} else	p = p_voice->snm;
+		} else {
+			p = p_voice->snm;
+		}
 		if (p == 0)
 			continue;
 		if (cursys->staff[staff].flags & CLOSE_BRACE2) {
@@ -3698,7 +3869,7 @@ static void draw_vname(float indent)
 		for (;;) {
 			staff_p->v[staff_p->nl++] = p;
 			if ((p = strstr(p, "\\n")) == 0
-			    || staff_p->nl >= MAXSTAFF)
+			 || staff_p->nl >= MAXSTAFF)
 				break;
 			p += 2;
 		}
@@ -3815,7 +3986,8 @@ static float set_staff(void)
 		while (staff <= nstaff) {
 			if (delta_tb[staff].not_empty)
 				empty_fl |= 1;
-			else	empty_fl |= 2;
+			else
+				empty_fl |= 2;
 			if (cursys->staff[staff].flags & (CLOSE_BRACE | CLOSE_BRACE2))
 				break;
 			staff++;
@@ -3875,7 +4047,7 @@ static float set_staff(void)
 
 		for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 			if (p_voice->scale != 1)
-				PUT2("/scvo%d{gsave %.2f dup scale}def\n",
+				PUT2("/scvo%d{gsave %.2f dup scale}!\n",
 				     (int) (p_voice - voice_tb),
 				     p_voice->scale);
 			staff = p_voice->staff;
@@ -3884,7 +4056,7 @@ static float set_staff(void)
 			ha = hu = 0;
 			for (i = 0; i < 2; i++) {
 				if (p_voice->tblts[i] != 0
-				    && p_voice->tblts[i]->pitch == 0) {
+				 && p_voice->tblts[i]->pitch == 0) {
 					ha += p_voice->tblts[i]->ha
 						* staff_tb[staff].clef.staffscale;
 					hu += p_voice->tblts[i]->hu
@@ -3898,7 +4070,8 @@ static float set_staff(void)
 			delta_tb[staff].mtop += ha;
 			if (staff < nstaff)
 				delta_tb[staff + 1].mtop += hu;
-			else	mbot -= hu;
+			else
+				mbot -= hu;
 			delta_tb[staff].not_empty = 1;
 		}
 	}
@@ -3928,7 +4101,9 @@ static float set_staff(void)
 		if (dy == 0)		/* first staff not displayed */
 			dy = 24 + 14;
 		dy = draw_partempo(dy, any_part, any_tempo);
-	} else	dy = 0;
+	} else {
+		dy = 0;
+	}
 
 	/* set the staff offsets */
 	staffsep = cfmt.staffsep * 0.5;
@@ -3949,18 +4124,22 @@ static float set_staff(void)
 		y += dy;
 		staff_tb[staff].y = -y;
 /*fixme: handle tablature?*/
-		PUT2("/y%d{%.1f add}def\n", staff, -y);
 		if (staff_tb[staff].clef.staffscale != 1
 		 && staff_tb[staff].clef.staffscale != 0) {
-			PUT3("/scst%d{gsave 0 %.2f translate %.2f dup scale}def\n",
+			a2b("/scst%d{gsave 0 %.2f translate %.2f dup scale}!\n",
 			     staff, -y, staff_tb[staff].clef.staffscale);
+			a2b("/y%d{}!\n", staff);
+		} else {
+			a2b("/y%d{%.1f add}!\n", staff, -y);
 		}
 		if (sy->staff[staff].sep != 0)
 			staffsep = sy->staff[staff].sep;
-		else	staffsep = cfmt.sysstaffsep;
+		else
+			staffsep = cfmt.sysstaffsep;
 		if (sy->staff[staff].maxsep != 0)
 			maxsep = sy->staff[staff].maxsep;
-		else	maxsep = cfmt.maxsysstaffsep;
+		else
+			maxsep = cfmt.maxsysstaffsep;
 		dy = 0;
 	}
 	if (mbot == 0) {
@@ -3982,7 +4161,7 @@ static float set_staff(void)
 	if (y > cfmt.maxstaffsep)
 		y = cfmt.maxstaffsep;
 
-	/* return the whole height */
+	/* return the whole staff system height */
 	return y;
 }
 
@@ -4008,7 +4187,8 @@ static void bar_set(float *bar_height)
 		}
 		if (cursys->staff[staff].flags & STOP_BAR)
 			dy = 0;
-		else	dy = staff_tb[staff].y + staff_tb[staff].botbar
+		else
+			dy = staff_tb[staff].y + staff_tb[staff].botbar
 				* staff_tb[staff].clef.staffscale;
 	}
 }
@@ -4052,7 +4232,8 @@ float draw_systems(float indent)
 #if 1
 						if (s->ts_prev->type == BAR)
 							x2 = s->ts_prev->x;
-						else	x2 = s->x;
+						else
+							x2 = s->x;
 #else
 						x2 = s->ts_prev->x;
 						if (s->ts_prev->type != BAR)
@@ -4065,7 +4246,8 @@ float draw_systems(float indent)
 #if 1
 					if (s->ts_next->type != BAR)
 						xstaff[staff] = s->x;
-					else	xstaff[staff] = s->ts_next->x;
+					else
+						xstaff[staff] = s->ts_next->x;
 #else
 					xstaff[staff] = s->ts_next->x
 						- s->ts_next->wl; /* (clef) */
@@ -4078,9 +4260,10 @@ float draw_systems(float indent)
 			if (s->as.flags & ABC_F_INVIS)
 				break;
 			if ((s->sflags & S_SECOND)
-			    || cursys->staff[staff].empty)
+			 || cursys->staff[staff].empty)
 				s->as.flags |= ABC_F_INVIS;
-			else	s->ys = bar_height[staff];
+			else
+				s->ys = bar_height[staff];
 			break;
 		case STBRK:
 			if (s->prev == 0 || (x = xstaff[staff]) < 0)
@@ -4100,7 +4283,9 @@ float draw_systems(float indent)
 				xstaff[staff] = s->x;
 				if (s->ts_next != 0 && s->ts_next->type == STAVES)
 						s->ts_next->x = s->x;
-			} else	xstaff[staff] = x2;
+			} else {
+				xstaff[staff] = x2;
+			}
 			break;
 		default:
 			if (cursys->staff[staff].empty)
@@ -4110,7 +4295,7 @@ float draw_systems(float indent)
 	}
 	for (staff = 0; staff <= nstaff; staff++) {
 		if ((x = xstaff[staff]) < 0
-		    || x >= realwidth - 8)
+		 || x >= realwidth - 8)
 			continue;
 		draw_staff(staff, x, realwidth);
 		if (staff_st) {
@@ -4118,7 +4303,7 @@ float draw_systems(float indent)
 			staff_st = 0;
 		}
 	}
-	set_scale(-1);
+	set_scale(0);
 	return line_height;
 }
 
@@ -4131,13 +4316,19 @@ void output_ps(struct SYMBOL *s, int state)
 	g2 = 0;
 	for (;;) {
 		if (g->type == FMTCHG
-		    && g->u == PSSEQ
-		    && g->as.state <= state) {
-			PUT1("%s\n", g->as.text);
+		 && (g->u == PSSEQ || g->u == SVGSEQ)
+		 && g->as.state <= state) {
+			if (g->u == SVGSEQ)
+				a2b("%%svg %s\n", g->as.text);
+			else
+				a2b("%s\n", g->as.text);
 			if (g2 == 0)
 				s->extra = g->next;
-			else	g2->next = g->next;
-		} else	g2 = g;
+			else
+				g2->next = g->next;
+		} else {
+			g2 = g;
+		}
 		if ((g = g->next) == 0)
 			break;
 	}
@@ -4149,7 +4340,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 	struct BEAM bm;
 	struct SYMBOL *s;
 	float x, y;
-	int staff;
+	int staff, first_note;
 
 	/* output the PostScript code at start of line */
 	for (s = p_voice->sym; s != 0; s = s->next) {
@@ -4166,42 +4357,58 @@ static void draw_symbols(struct VOICE_S *p_voice)
 	}
 
 	bm.s2 = 0;
+	first_note = 1;
 	for (s = p_voice->sym; s != 0; s = s->next) {
 		if (s->extra != 0)
 			output_ps(s, 127);
 		if ((s->as.flags & ABC_F_INVIS)
-		    && s->type != NOTEREST)
+		 && s->type != NOTEREST && s->type != GRACE)
 			continue;
 		x = s->x;
 		switch (s->type) {
 		case NOTEREST:
-			set_scale(s->voice);
+			set_scale(s);
 			if (s->as.type == ABC_T_NOTE) {
-				if ((s->sflags & S_BEAM_ST)
-				    && !(s->sflags & S_BEAM_END)) {
-					if (calculate_beam(&bm, s))
+				if ((s->sflags & (S_BEAM_ST | S_BEAM_END)) == S_BEAM_ST
+				 || (first_note && !(s->sflags & S_BEAM_ST))) {
+					first_note = 0;
+					if (calculate_beam(&bm, s)) {
+						if (annotate)
+							anno_out(s, 'b');
 						draw_beams(&bm);
+					}
 				}
+				if (annotate)
+					anno_out(s, 'N');
 				draw_note(x, s, bm.s2 == 0);
 				if (s == bm.s2)
 					bm.s2 = 0;
+				if (annotate
+				 && (s->sflags & (S_BEAM_ST | S_BEAM_END))
+							== S_BEAM_END)
+					anno_out(s, 'e');
 				break;
 			}
+			if (annotate)
+				anno_out(s, 'R');
 			draw_rest(s);
 			break;
 		case BAR:
+			if (annotate)
+				anno_out(s, 'B');
 			draw_bar(s);
 			break;
 		case CLEF:
 			staff = s->staff;
 			if (s->sflags & S_SECOND)
-/*			    || p_voice->staff != staff)	*/
+/*			 || p_voice->staff != staff)	*/
 				break;		/* only one clef per staff */
 			if ((s->as.flags & ABC_F_INVIS)
-			    || staff_tb[staff].empty)
+			 || staff_tb[staff].empty)
 				break;
 			set_sscale(staff);
 			y = staff_tb[staff].y;
+			x -= 10;	/* clef shift - see set_width() */
 			putxy(x, y + s->y);
 			if (s->as.u.clef.name != 0)
 				PUT1("%s\n", s->as.u.clef.name);
@@ -4213,8 +4420,9 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				break;
 /*fixme:break the compatibility and avoid strange numbers*/
 			if (s->as.u.clef.octave > 0)
-				y += s->ymx - 36 - 12;
-			else	y += s->ymn + 19 + 5;
+				y += s->ymx - 12;
+			else
+				y += s->ymn + 2;
 			putxy(x, y);
 			PUT1("oct%c\n",
 			     s->as.u.clef.octave > 0 ? 'u' : 'l');
@@ -4223,7 +4431,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 			memcpy(&p_voice->meter, &s->as.u.meter,
 			       sizeof p_voice->meter);
 			if ((s->sflags & S_SECOND)
-			    || staff_tb[s->staff].empty)
+			 || staff_tb[s->staff].empty)
 				break;
 			if (cfmt.alignbars && s->staff != 0)
 				break;
@@ -4234,19 +4442,19 @@ static void draw_symbols(struct VOICE_S *p_voice)
 			memcpy(&p_voice->key, &s->as.u.key,
 			       sizeof p_voice->key);
 			if ((s->sflags & S_SECOND)
-			    || staff_tb[s->staff].empty)
+			 || staff_tb[s->staff].empty)
 				break;
 			set_sscale(s->staff);
 			draw_keysig(p_voice, x, s);
 			break;
 		case MREST:
-			set_scale(s->voice);
-			PUT1("(%d)\n", s->as.u.bar.len);
+			set_scale(s);
+			PUT1("(%d)", s->as.u.bar.len);
 			putxy(x, staff_tb[s->staff].y);
 			PUT0("mrest\n");
 			break;
 		case GRACE:
-			set_scale(s->voice);
+			set_scale(s);
 			draw_gracenotes(s);
 			break;
 		case SPACE:
@@ -4258,7 +4466,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 			bug("Symbol not drawn", 1);
 		}
 	}
-	set_scale(p_voice - voice_tb);
+	set_scale(p_voice->sym);
 	draw_all_ties(p_voice);
 }
 
@@ -4291,40 +4499,45 @@ void putx(float x)
 
 void puty(float y)
 {
-	putf(cur_trans == 0 ?
+	putf(scale_voice ?
 		y / cur_scale :		/* scaled voice */
 		y - cur_trans);		/* scaled staff */
 }
 
 void putxy(float x, float y)
 {
-	if (cur_trans == 0)
+	if (scale_voice)
 		PUT2("%.1f %.1f ",
 		     x / cur_scale, y / cur_scale);	/* scaled voice */
-	else	PUT2("%.1f %.1f ",
+	else
+		PUT2("%.1f %.1f ",
 		     x / cur_scale, y - cur_trans);	/* scaled staff */
 }
 
 /* -- set the staff or voice scale -- */
-void set_scale(int voice)
+void set_scale(struct SYMBOL *s)
 {
-	struct VOICE_S *p_voice;
 	int staff;
 	float scale, trans;
 
 	staff = -1;
-	if (voice >= 0) {
-		p_voice = &voice_tb[voice];
-		scale = p_voice->scale;
+	if (s != 0) {
+		scale = voice_tb[s->voice].scale;
 		if (scale == 1) {
-			staff = p_voice->staff;
+			staff = s->staff;
 			scale = staff_tb[staff].clef.staffscale;
 		}
 /*fixme: KO when scale of staff != 1*/
-	} else	scale = 1;
-	if (staff >= 0 && scale != 1)
+	} else {
+		scale = 1;
+	}
+	if (staff >= 0 && scale != 1) {
 		trans = staff_tb[staff].y;
-	else	trans = 0;
+		scale_voice = 0;
+	} else {
+		trans = 0;
+		scale_voice = 1;
+	}
 	if (scale == cur_scale && trans == cur_trans)
 		return;
 	if (cur_scale != 1)
@@ -4332,23 +4545,27 @@ void set_scale(int voice)
 	cur_scale = scale;
 	cur_trans = trans;
 	if (scale != 1) {
-		if (staff < 0)
-			PUT1("scvo%d ", voice);
-		else	PUT1("scst%d ", staff);
+		if (scale_voice)
+			PUT1("scvo%d ", s->voice);
+		else
+			PUT1("scst%d ", staff);
 	}
 }
 
 /* -- set the staff scale (only) -- */
-static void set_sscale(int staff)
+void set_sscale(int staff)
 {
 	float scale, trans;
 
+	scale_voice = 0;
 	if (staff >= 0)
 		scale = staff_tb[staff].clef.staffscale;
-	else	scale = 1;
+	else
+		scale = 1;
 	if (staff >= 0 && scale != 1)
 		trans = staff_tb[staff].y;
-	else	trans = 0;
+	else
+		trans = 0;
 	if (scale == cur_scale && trans == cur_trans)
 		return;
 	if (cur_scale != 1)
@@ -4393,7 +4610,7 @@ static void set_tie_dir(struct SYMBOL *sym)
 			if (s->as.u.note.ti1[i]) {
 				ntie++;
 				if (pit < 128
-				    && s->as.u.note.pits[i] <= pit + 1)
+				 && s->as.u.note.pits[i] <= pit + 1)
 					sec++;
 				pit = s->as.u.note.pits[i];
 			}
@@ -4458,7 +4675,7 @@ static void set_tie_dir(struct SYMBOL *sym)
 			for (i = 0; i <= s->nhd; i++) {
 				if (s->as.u.note.ti1[i]) {
 					if (pit < 128
-					    && s->as.u.note.pits[i] <= pit + 1) {
+					 && s->as.u.note.pits[i] <= pit + 1) {
 						ntie = i;
 						break;
 					}
@@ -4467,12 +4684,14 @@ static void set_tie_dir(struct SYMBOL *sym)
 			}
 			dir = SL_BELOW;
 			for (i = 0; i <= s->nhd; i++) {
-				if (s->as.u.note.ti1[i]) {
-					if (ntie == i)
-						dir = SL_ABOVE;
-					if (s->as.u.note.ti1[i] == SL_AUTO)
-						s->as.u.note.ti1[i] = dir;
-				}
+				ti = s->as.u.note.ti1[i];
+				if (ti == 0)
+					continue;
+				if (ntie == i)
+					dir = SL_ABOVE;
+				if ((ti & 0x03) == SL_AUTO)
+					s->as.u.note.ti1[i] =
+							(ti & SL_DOTTED) | dir;
 			}
 /*fixme..
 			continue;
@@ -4491,7 +4710,7 @@ static void set_tie_room(void)
 
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		if ((s = p_voice->sym) == 0
-		    || (s = s->next) == 0)
+		 || (s = s->next) == 0)
 			continue;
 		set_tie_dir(s);
 		for ( ; s != 0; s = s->next) {
@@ -4504,7 +4723,8 @@ static void set_tie_room(void)
 			else if (s->pits[s->nhd] > 24
 				 && s->as.u.note.ti1[s->nhd] == SL_ABOVE)
 				;
-			else	continue;
+			else
+				continue;
 			s2 = s->next;
 			while (s2 != 0 && s2->as.type != ABC_T_NOTE)
 				s2 = s2->next;
@@ -4512,12 +4732,15 @@ static void set_tie_room(void)
 				if (s2->staff != s->staff)
 					continue;
 				dx = s2->x - s->x - 10;
-			} else	dx = realwidth - s->x - 10;
+			} else {
+				dx = realwidth - s->x - 10;
+			}
 			if (dx < 100)
 				dy = 9;
 			else if (dx < 300)
 				dy = 12;
-			else	dy = 16;
+			else
+				dy = 16;
 			if (s->pits[s->nhd] > 24) {
 				y = 3 * (s->pits[s->nhd] - 18) + dy;
 				if (s->ymx < y)

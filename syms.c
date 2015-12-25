@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2009 Jean-François Moine
+ * Copyright (C) 1998-2012 Jean-FranÃ§ois Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,14 +18,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA  02110-1335  USA
  */
 
-#include <stdio.h>
-#include <time.h>
 #include <string.h>
 
-#include "abcparse.h"
 #include "abc2ps.h"
 
 static char ps_head[] =
@@ -41,7 +38,13 @@ static char ps_head[] =
 	"/showb{	dup currentpoint 3 -1 roll show\n"
 	"	.6 SLW\n"
 	"	exch 2 sub exch 3 sub 3 -1 roll\n"
+#if 1
+	"	stringwidth pop 4 add\n"
+	"	currentfont /ScaleMatrix get 0 get .8 mul\n"
+	"	4 add rectstroke}!\n"
+#else
 	"	stringwidth pop 4 add fh 4 add rectstroke}!\n"
+#endif
 
 #if 0
 	"/showcb{ % usage: str showcb - show centered in box\n"
@@ -52,68 +55,87 @@ static char ps_head[] =
 #endif
 
 	/* x y tclef - treble clef */
-	"/tclef{	M\n"
-	"	-1.9 3.7 RM\n"
-	"	-3.3 1.9 -3.1 6.8 2.4 8.6 RC\n"
-	"	7 0 9.8 -8 4.1 -11.7 RC\n"
-	"	-5.2 -2.4 -12.5 0 -13.3 6.2 RC\n"
-	"	-0.7 6.4 4.15 10.5 10 15.3 RC\n"
-	"	4 4 3.6 6.1 2.8 9.6 RC\n"
-	"	-2.3 -1.5 -4.7 -4.8 -4.5 -8.5 RC\n"
-	"	0.8 -12.2 3.4 -17.3 3.5 -26.3 RC\n"
-	"	0.3 -4.4 -1.2 -6.2 -3.8 -6.2 RC\n"
-	"	-3.7 -0.1 -5.8 4.3 -2.8 6.1 RC\n"
-	"	3.9 1.9 6.1 -4.6 1.4 -4.8 RC\n"
-	"	0.7 -1.2 4.6 -0.8 4.2 4.2 RC\n"
-	"	-0.2 10.3 -3 15.7 -3.5 28.3 RC\n"
-	"	0 4.1 0.6 7.4 5 10.6 RC\n"
-	"	2.3 -3.2 2.9 -10 1 -12.7 RC\n"
-	"	-2.4 -4.3 -11.5 -10.3 -11.8 -15 RC\n"
-	"	0.4 -7 6.9 -8.5 11.7 -6.1 RC\n"
-	"	3.9 3 1.3 8.8 -3.7 8.1 RC\n"
-	"	-4 -0.2 -4.8 -3.1 -2.7 -5.7 RC\n"
-	"	fill}!\n"
-
-	"/stclef{gsave T .85 dup scale 0 0 tclef grestore}!\n"
+	"/utclef{<95200072\n"
+	"	0000ff2e01c2030c\n"
+	"	00ac0056\n"
+	"	0064007f006400f400e00112\n"
+	"	0176011c01bc0056013a0012\n"
+	"	00c8ffde002700120015009a\n"
+	"	0006014f0072017f00f101e8\n"
+	"	0149023f0140026d012f02ba\n"
+	"	00fc029900d1025100d60200\n"
+	"	00e700f500fa008a0107ffc2\n"
+	"	010dff6200f4ff3c00baff3b\n"
+	"	006aff3a003cff98007dffc0\n"
+	"	00d2ffe90102ff5b009cff57\n"
+	"	00b3ff4600f8ff3200f6ffb3\n"
+	"	00ec009200cf010900c4021c\n"
+	"	00c4027600c402be01240304\n"
+	"	015c02bc0163021e013a01e3\n"
+	"	00f001790039013b003b00a7\n"
+	"	0044000e00cfffee01370022\n"
+	"	018d0063015400e200e700d2\n"
+	"	00a000c6007e008f00ac0056\n"
+	"	><0b000132050a>}cvlit def\n"
+	"/tclef{gsave T -10 0 T .045 dup scale utclef ufill grestore}!\n"
+	"/stclef{gsave T -10 0 T .037 dup scale utclef ufill grestore}!\n"
 
 	/* x y octu - upper '8' */
-	"/octu{/Times-Roman 12 selectfont M -1.5 36 RM(8)show}!\n"
+	"/octu{/Times-Roman 12 selectfont M -2.5 0 RM(8)show}!\n"
 	/* x y octl - lower '8' */
-	"/octl{/Times-Roman 12 selectfont M -3.5 -19 RM(8)show}!\n"
+	"/octl{/Times-Roman 12 selectfont M -3.5 0 RM(8)show}!\n"
 
 	/* x y bclef - bass clef */
-	"/bclef{	M\n"
-	"	-8.8 3.5 RM\n"
-	"	6.3 1.9 10.2 5.6 10.5 10.8 RC\n"
-	"	0.3 4.9 -0.5 8.1 -2.6 8.8 RC\n"
-	"	-2.5 1.2 -5.8 -0.7 -5.9 -4.1 RC\n"
-	"	1.8 3.1 6.1 -0.6 3.1 -3 RC\n"
-	"	-3 -1.4 -5.7 2.3 -1.9 7 RC\n"
-	"	2.6 2.3 11.4 0.6 10.1 -8 RC\n"
-	"	-0.1 -4.6 -5 -10.2 -13.3 -11.5 RC\n"
-	"	16 17.5 RM currentpoint 1.1 0 360 arc\n"
-	"	-1.1 -6 RM currentpoint 1.1 0 360 arc\n"
-	"	fill}!\n"
-
-	"/sbclef{gsave T .85 dup scale 0 3 bclef grestore}!\n"
-
-	"/cchalf{0 12 M\n"
-	"	2.6 5 RL\n"
-	"	2.3 -5.8 5.2 -2.4 4.7 1.6 RC\n"
-	"	0.4 3.9 -3 6.7 -5.1 4 RC\n"
-	"	4.1 0.5 0.9 -5.3 -0.9 -1.4 RC\n"
-	"	-0.5 3.4 6.5 4.3 7.8 -0.8 RC\n"
-	"	1.9 -5.6 -4.1 -9.8 -6 -5.4 RC\n"
-	"	-1.6 -3 RL\n"
-	"	fill}!\n"
+	"/ubclef{<95200046\n"
+	"	00000050019a0244\n"
+	"	00010057\n"
+	"	007d007a00df00a500ff0143\n"
+	"	012a022700580239003f01aa\n"
+	"	007a01fa00dc0194009b015c\n"
+	"	005d012d00280172003101b4\n"
+	"	00460241013f023c01430180\n"
+	"	014200d100d9007800010057\n"
+	"	01660151\n"
+	"	016601750199017301990151\n"
+	"	0199012c0166012d01660151\n"
+	"	016401d2\n"
+	"	016401f6019701f4019701d2\n"
+	"	019701ac016401ad016401d2\n"
+	"	><0b000126050a0122050a0122050a>}cvlit def\n"
+	"/bclef{gsave T -10 0 T .045 dup scale ubclef ufill grestore}!\n"
+	"/sbclef{gsave T -10 3 T .037 dup scale ubclef ufill grestore}!\n"
 
 	/* x y cclef */
-	"/cclef{	gsave T\n"
-	"	cchalf 0 24 T 1 -1 scale cchalf\n"
-	"	-5.5 0 3 24 rectfill\n"
-	"	-0.5 0 M 0 24 RL 0.7 SLW stroke grestore}!\n"
-
-	"/scclef{gsave T .85 dup scale 0 2 cclef grestore}!\n"
+	"/ucclef{<95200066\n"
+	"	006effbe01e70256\n"
+	"	00d10108\n"
+	"	00d10002\n"
+	"	00c40002\n"
+	"	00c40213\n"
+	"	00d10213\n"
+	"	00d10113\n"
+	"	00ea012700fa013701100180\n"
+	"	011e0161011d014d0148013a\n"
+	"	01a2011801a80244011f01f3\n"
+	"	015301e0013a01a3011401a6\n"
+	"	00ba01cc01350256019f01eb\n"
+	"	01e7019c01a000fa01190131\n"
+	"	0109010a\n"
+	"	011900e4\n"
+	"	01a0011b01e70079019f002a\n"
+	"	0135ffbe00ba00490114006f\n"
+	"	013a007201530035011f0022\n"
+	"	01a8ffd101a200fd014800db\n"
+	"	011d00c8011b00bd0110009b\n"
+	"	00fa00e400ea00f400d10108\n"
+	"	006e0213\n"
+	"	00a70213\n"
+	"	00a70002\n"
+	"	006e0002\n"
+	"	006e0213\n"
+	"	><0b000125032605220326050a0124030a>}cvlit def\n"
+	"/cclef{gsave T -12 0 T .045 dup scale ucclef ufill grestore}!\n"
+	"/scclef{gsave T -12 2 T .037 dup scale ucclef ufill grestore}!\n"
 
 	/* x y pclef */
 	"/pclef{	exch 2.7 sub exch 2 add 5.4 20\n"
@@ -274,8 +296,8 @@ static char ps_head[] =
 	"	2.2 2.2 RL 2.1 -2.9 RL 0.7 0.7 RL fill}!\n"
 
 	/* x y lmrd - lower mordent */
-	"/lmrd{	2 copy umrd 8 add M\n"
-	"	.6 SLW 0 -8 RL stroke}!\n"
+	"/lmrd{	2 copy umrd M\n"
+	"	.6 SLW 0 8 RL stroke}!\n"
 
 	/* str x y fng - finger (0-5) */
 	"/fng{/Bookman-Demi 8 selectfont M -3 1 RM show}!\n"
@@ -368,14 +390,14 @@ static char ps_head[] =
 	"/ltr{	gsave 4 add T\n"
 	"	0 6 3 -1 roll{\n"
 	/*		% first loop draws left half of squiggle; second draws right\n*/
-	"		0 1 1{\n"
+	"		2{\n"
 	"			0 0.4 M\n"
-	"			2 1.9 3.4 2.3 3.9 0 curveto\n"
-	"			2.1 0 lineto\n"
-	"			1.9 0.8 1.4 0.7 0 -0.4 curveto\n"
+	"			2 1.9 3.4 2.3 3.9 0 C\n"
+	"			2.1 0 L\n"
+	"			1.9 0.8 1.4 0.7 0 -0.4 C\n"
 	"			fill\n"
-	"			pop 180 rotate -6 0 T\n"
-	"		}for\n"
+	"			180 rotate -6 0 T\n"
+	"		}repeat\n"
 	/*		% shift axes right one squiggle*/
 	"		pop 6 0 T\n"
 	"	}for\n"
@@ -417,49 +439,111 @@ static char ps_head[] =
 	"/hl2{	.7 SLW M -9 0 RM 18 0 RL stroke}!\n"
 
 	/* -- accidentals -- */
+	/* glyphs 1000 */
+	"/usharp{<95200024\n"		/* width 460 */
+	"	003cff42019a02ee\n"
+	"	008802be\n"
+	"	0088ff44\n"
+	"	00a8ff44\n"
+	"	00a802be\n"
+	"	0128ff76\n"
+	"	0148ff76\n"
+	"	014802ee\n"
+	"	012802ee\n"
+	"	004001d0\n"
+	"	0040015c\n"
+	"	019201bc\n"
+	"	01920230\n"
+	"	00400076\n"
+	"	00400002\n"
+	"	01920064\n"
+	"	019200d6\n"
+	"	><0b000123030a0123030a0123030a0123030a>}cvlit def\n"
+	"/uflat{<95200028\n"		/* width 400 */
+	"	0064000001b802ee\n"
+	"	006402ea\n"
+	"	008402ea\n"
+	"	0084000c\n"
+	"	00640008\n"
+	"	00840154\n"
+	"	00b2019c011c01ae01540168\n"
+	"	01b800fa00dc00220084000c\n"
+	"	00840028\n"
+	"	00ba0028014c00f60106014a\n"
+	"	00d401860084014e00840128\n"
+	"	><0b00010303030a0105050105050a>}cvlit def\n"
+	"/unat{<95200022\n"		/* width 380 */
+	"	003cff42013602ee\n"
+	"	006002ee\n"
+	"	004002ee\n"
+	"	00400022\n"
+	"	0060002a\n"
+	"	01160060\n"
+	"	0116ff46\n"
+	"	0136ff46\n"
+	"	01360208\n"
+	"	011401fe\n"
+	"	006001cc\n"
+	"	006002ee\n"
+	"	0060009e\n"
+	"	0060015c\n"
+	"	01160190\n"
+	"	011600d4\n"
+	"	><0b00012a030a0123030a>}cvlit def\n"
+	"/udblesharp{<95200046\n"	/* width 460 */
+	"	003c006e019001c2\n"
+	"	00f0011a\n"
+	"	01180140013a015e018e015e\n"
+	"	018e01be\n"
+	"	012e01be\n"
+	"	012e016a0110014800ea0122\n"
+	"	00c2014800a4016a00a401be\n"
+	"	004401be\n"
+	"	0044015e\n"
+	"	009a015e00bc014000e2011a\n"
+	"	00bc00f4009a00d6004400d6\n"
+	"	00440076\n"
+	"	00a40076\n"
+	"	00a400ca00c200ec00ea0112\n"
+	"	011000ec012e00ca012e0076\n"
+	"	018e0076\n"
+	"	018e00d6\n"
+	"	013a00d6011800f400f0011a\n"
+	"	><0b0001050303050503030505030305050303050a>}cvlit def\n"
+	"/udbleflat{<9520004c\n"	/* width 500 */
+	"	00140000022602ee\n"
+	"	001402ea\n"
+	"	002c02ea\n"
+	"	002c000c\n"
+	"	00140008\n"
+	"	002c0154\n"
+	"	004e019c009e01ae00c80168\n"
+	"	011300fa00660022002c000c\n"
+	"	002c0028\n"
+	"	0054002800c200f6008d014a\n"
+	"	00680186002c014e002c0128\n"
+	"	010e02ea\n"
+	"	012602ea\n"
+	"	0126000c\n"
+	"	010e0008\n"
+	"	01260154\n"
+	"	0148019c019801ae01c20168\n"
+	"	020d00fa016000220126000c\n"
+	"	01260028\n"
+	"	014e002801bc00f60187014a\n"
+	"	016201860126014e01260128\n"
+	"	><0b000123030a0105050105050a0123030a0105050105050a>}cvlit def\n"
+
 	/* x y sh0 - sharp sign */
-	"/sh0{	gsave T .9 SLW\n"
-	"	-1.2 -8.4 M 0 15.4 RL\n"
-	"	1.4 -7.2 M 0 15.4 RL stroke\n"
-	"	-2.6 -3 M 5.4 1.6 RL 0 -2.2 RL -5.4 -1.6 RL 0 2.2 RL fill\n"
-	"	-2.6 3.4 M 5.4 1.6 RL 0 -2.2 RL -5.4 -1.6 RL 0 2.2 RL fill\n"
-	"	grestore}!\n"
+	"/sh0{	gsave T -4 -5 T .018 dup scale usharp ufill grestore}!\n"
 	/* x y ft0 - flat sign */
-	"/ft0{	gsave T .8 SLW\n"
-	"	-1.8 2.5 M\n"
-	"	6.4 3.3 6.5 -3.6 0 -6.6 RC\n"
-	"	4.6 3.9 4.5 7.6 0 5.7 RC\n"
-	"	currentpoint fill M\n"
-	"	0 7.1 RM 0 -12.6 RL stroke\n"
-	"	grestore}!\n"
+	"/ft0{	gsave T -3.5 -3.5 T .018 dup scale uflat ufill grestore}!\n"
 	/* x y nt0 - natural sign */
-	"/nt0{	gsave T .5 SLW\n"
-	"	-2 -4.3 M 0 12.2 RL\n"
-	"	1.3 -7.8 M 0 12.2 RL stroke\n"
-	"	2.1 SLW\n"
-	"	-2 -2.9 M 3.3 0.6 RL\n"
-	"	-2 2.4 M 3.3 0.6 RL stroke\n"
-	"	grestore}!\n"
+	"/nt0{	gsave T -3 -5 T .018 dup scale unat ufill grestore}!\n"
 	/* x y dsh0 - double sharp */
-	"/dsh0{	2 copy M .7 SLW\n"
-	"	-2 -2 RM 4 4 RL\n"
-	"	-4 0 RM 4 -4 RL stroke\n"
-	"	.5 SLW 2 copy M 1.3 -1.3 RM\n"
-	"	2 -0.2 RL 0.2 -2 RL -2 0.2 RL -0.2 2 RL fill\n"
-	"	2 copy M 1.3 1.3 RM\n"
-	"	2 0.2 RL 0.2 2 RL -2 -0.2 RL -0.2 -2 RL fill\n"
-	"	2 copy M -1.3 1.3 RM\n"
-	"	-2 0.2 RL -0.2 2 RL 2 -0.2 RL 0.2 -2 RL fill\n"
-	"	M -1.3 -1.3 RM\n"
-	"	-2 -0.2 RL -0.2 -2 RL 2 0.2 RL 0.2 2 RL fill}!\n"
-	/* x y ftx - narrow flat sign */
-	"/ftx{	-1.4 2.7 RM\n"
-	"	5.7 3.1 5.7 -3.6 0 -6.7 RC\n"
-	"	3.9 4 4 7.6 0 5.8 RC\n"
-	"	currentpoint fill M\n"
-	"	dlw 0 7.1 RM 0 -12.4 RL stroke}!\n"
+	"/dsh0{	gsave T -4 -5 T .018 dup scale udblesharp ufill grestore}!\n"
 	/* x y dft0 - double flat sign */
-	"/dft0{2 copy M -2.5 0 RM ftx M 1.5 0 RM ftx}!\n"
+	"/dft0{	gsave T -4 -3.5 T .018 dup scale udbleflat ufill grestore}!\n"
 	/* ancillary function for grace note accidentals */
 	"/gsc{gsave y T .7 dup scale 0 0}!\n"
 
@@ -480,85 +564,46 @@ static char ps_head[] =
 	"	grestore}!\n"
 	/* 1/4 ton flat */
 	"/ft1{gsave -1 1 scale exch neg exch ft0 grestore}!\n"
+	/* x y ftx - narrow flat sign */
+	"/ftx{	-1.4 2.7 RM\n"
+	"	5.7 3.1 5.7 -3.6 0 -6.7 RC\n"
+	"	3.9 4 4 7.6 0 5.8 RC\n"
+	"	currentpoint fill M\n"
+	"	dlw 0 7.1 RM 0 -12.4 RL stroke}!\n"
 	/* 3/4 ton flat */
 	"/ft513{2 copy gsave -1 1 scale exch neg 3 add exch M ftx grestore\n"
 	"	M 1.5 0 RM ftx}!\n"
-
-	/* accidentals in strings */
-	"/accfont{\n"
-	"	/CharStrings CharStrings dup length 3 add dict copy def\n"
-	"	FontMatrix 0 get 1 eq{\n"
-	"	 CharStrings/sharpchar{pop\n"
-	"		.60 0 0 -.10 .60 .75 setcachedevice\n"
-	"		.056 dup scale 5.8 6 sh0}bind put\n"
-	"	 CharStrings/flatchar{pop\n"
-	"		.60 0 0 0 .60 .78 setcachedevice\n"
-	"		.056 dup scale 5.8 5 ft0}bind put\n"
-	"	 CharStrings/natchar{pop\n"
-	"		.60 0 0 -.10 .60 .75 setcachedevice\n"
-	"		.056 dup scale 5.8 6 nt0}bind put\n"
-	"	 CharStrings/dsharpchar{pop\n"
-	"		.60 0 0 -.10 .60 .75 setcachedevice\n"
-	"		.056 dup scale 5.8 6 dsh0}bind put\n"
-	"	 CharStrings/dflatchar{pop\n"
-	"		.60 0 0 0 .60 .78 setcachedevice\n"
-	"		.056 dup scale 5.8 5 dft0}bind put\n"
-	"	}{\n"
-	"	 CharStrings/sharpchar{pop\n"
-	"		600 0 0 -100 600 750 setcachedevice\n"
-	"		56 dup scale 5.8 6 sh0}bind put\n"
-	"	 CharStrings/flatchar{pop\n"
-	"		600 0 0 0 600 780 setcachedevice\n"
-	"		56 dup scale 5.8 5 ft0}bind put\n"
-	"	 CharStrings/natchar{pop\n"
-	"		600 0 0 -100 600 750 setcachedevice\n"
-	"		56 dup scale 5.8 6 nt0}bind put\n"
-	"	 CharStrings/dsharpchar{pop\n"
-	"		600 0 0 -100 600 750 setcachedevice\n"
-	"		56 dup scale 5.8 6 dsh0}bind put\n"
-	"	 CharStrings/dflatchar{pop\n"
-	"		600 0 0 0 600 780 setcachedevice\n"
-	"		56 dup scale 5.8 5 dft0}bind put\n"
-	"	 }ifelse\n"
-	/*if RoPS and Font Type 3, change BuildChar*/
-	"	product(RoPS)eq FontType 3 eq and{\n"
-	"		/TTBuildChar/BuildChar load def\n"
-	"		/BuildChar{1 index begin\n"
-	"			dup Encoding exch get\n"
-	"			CharStrings exch get\n"
-	"			end\n"
-	"			dup type/integertype eq{\n"
-	"				pop 1 index/TTBuildChar get exec\n"
-	"			}{\n"
-	"				exec pop\n"
-	"			}ifelse\n"
-	"		}bind def\n"
-	"	}if\n"
-	"	}!\n"
 
 	/* str gcshow - guitar chord */
 	"/gcshow{show}!\n"
 	/* x y w h box - draw a box */
 	"/box{.6 SLW rectstroke}!\n"
-	/* str w gxshow - expand a guitar chord */
-	"/find{search{pop 3 -1 roll 1 add 3 1 roll}{pop exit}ifelse}!\n"
-	"/gxshow{1 index stringwidth pop\n"
-	"	sub 0 2 index(	){find}loop div\n"
-	"	0 9 4 -1 roll widthshow}!\n"
+	/* set the start of a guitar chord in a box */
+	"/boxstart{currentpoint pop/x exch def}!\n"
+	/* mark the end of a guitar chord in a box */
+	"/boxmark{currentpoint pop dup x gt\n"
+	"	{/x exch def}{pop}ifelse}!\n"
+	/* x y dy boxdraw - draw a box around a guitar chord */
+	"/boxdraw{x 3 index sub 2 add exch box}!\n"
+	/* w str gxshow - expand a guitar chord */
+	"/gxshow{0 9 3 -1 roll widthshow}!\n"
 
 	/* str anshow - annotation */
 	"/anshow{show}!\n"
 
 	/* -- lyrics under notes -- */
-	/* l x y wln - underscore line */
+	/* w x y wln - underscore line */
 	"/wln{M .8 SLW 0 RL stroke}!\n"
-	/* l x y hyph - hyphen */
+	/* w x y hyph - hyphen */
 	"/hyph{	.8 SLW 3 add M\n"
-	"	dup cvi 40 idiv 1 add 1 index exch div\n"	/* l dx */
-	"	dup 3 sub 3 1 roll\n"		/* (dx-3) l dx */
-	"	dup .5 mul dup 1.5 sub 0 RM\n"	/* (dx-3) l dx (dx/2) */
-	"	exch 3 -1 roll\n"		/* (dx-3) (dx/2) dx l */
-	"	{pop 3 0 RL dup 0 RM}for stroke pop}!\n"
+	"	dup cvi 20 idiv 3 mul 25 add\n"	/* w d */
+	"	1 index cvi exch idiv 1 add "	/* w n */
+		"exch "				/* n w */
+		"1 index div\n"			/* n dx */
+	"	dup 4 sub "			/* n dx (dx-4) */
+		"3 1 roll "			/* (dx-4) n dx */
+		".5 mul 2 sub 0 RM\n"		/* (dx / 2 - 4) rmoveto */
+	"	{4 0 RL dup 0 RM}repeat stroke pop}!\n"
 	/* str lyshow - lyrics */
 	"/lyshow{show}!\n"
 
@@ -621,12 +666,12 @@ static char ps_head[] =
 	"	0 -100 M 1 -1 scale hbrce grestore}!\n"
 
 	/* h x y bracket */
-	"/bracket{M dlw -5 2 RM currentpoint\n"
+	"/bracket{M -5 2 RM currentpoint\n"
 	"	-1.7 2 RM 10.5 -1 12 4.5 12 3.5 RC\n"
 	"	0 -1 -3.5 -5.5 -8.5 -5.5 RC fill\n"
 	"	3 SLW M 0 2 RM\n"
 	"	0 exch neg 8 sub RL currentpoint stroke\n"
-	"	dlw M -1.7 0 RM\n"
+	"	M -1.7 0 RM\n"
 	"	10.5 1 12 -4.5 12 -3.5 RC\n"
 	"	0 1 -3.5 5.5 -8.5 5.5 RC fill}!\n"
 
@@ -661,12 +706,11 @@ static char ps_head[] =
 	"	4 exch M show grestore}!\n"
 
 	/* pp2x pp1x p1 pp1 pp2 p2 p1 SL - slur / tie */
-	"/SL{M curveto RL curveto closepath fill}!\n"
+	"/SL{M RC RL RC closepath fill}!\n"
 
 	/* pp2x pp1x p1 pp1 pp2 p2 p1 dSL - dotted slur / tie */
 	"/dSL{	M [4] 0 setdash .8 SLW\n"
-	"	curveto stroke [] 0 setdash\n"
-	"	pop pop pop pop pop pop pop pop}!\n"
+	"	RC stroke [] 0 setdash}!\n"
 
 	/* -- text -- */
 	"/strw{stringwidth pop w add/w exch def}!\n"
@@ -674,10 +718,13 @@ static char ps_head[] =
 
 	/* -- note heads -- */
 	/* x y hd - full head */
-	"/hd{	xymove\n"
-	"	3.5 2 RM\n"
-	"	-2 3.5 -9 -0.5 -7 -4 RC\n"
-	"	2 -3.5 9 0.5 7 4 RC fill}!\n"
+	"/uhd{{	100 -270 640 280\n"
+	"	560 82\n"
+	"	474 267 105 105 186 -80\n"
+	"	267 -265 636 -102 555 82\n"
+	"	}<0b000122050a>}cvlit def\n"
+	"/hd{	/x 2 index def/y 1 index def\n"
+	"	gsave T -7.4 0 T .02 dup scale uhd ufill grestore}!\n"
 	/* x y Hd - open head for half */
 	"/Hd{	xymove\n"
 	"	3 1.6 RM\n"
@@ -739,170 +786,231 @@ static char ps_head[] =
 	"/ghl{	.6 SLW M -3 0 RM 6 0 RL stroke}!\n"
 
 	/* x1 y2 x2 y2 x3 y3 x0 y0 gsl - grace note slur */
-	"/gsl{dlw M curveto stroke}!\n"
+	"/gsl{dlw M RC stroke}!\n"
+
+	/* extra characters (accidentals) range c280 .. c29f */
+	"/c280_c29f[\n"
+	"	/.notdef	/sharp		/flat		/natural\n"
+	"	/dsharp		/dflat]def\n"
+
+	"/extra-draw{\n"
+	"	/sharp{460 0 setcharwidth usharp ufill}bind def\n"
+	"	/flat{460 0 setcharwidth uflat ufill}bind def\n"
+	"	/natural{400 0 setcharwidth unat ufill}bind def\n"
+	"	/dsharp{460 0 setcharwidth udblesharp ufill}bind def\n"
+	"	/dflat{500 0 setcharwidth udbleflat ufill}bind def\n"
+	" }def\n"
+
+	/* latin characters range c2a0 .. c5bf */
+	"/c2a0_c5bf[\n"
+	/*% c2a0..c2bf */
+	"/LA140000	/exclamdown	/cent		/sterling\n"
+	"/currency	/yen		/brokenbar	/section\n"
+	"/dieresis	/copyright	/ordfeminine	/guillemotleft\n"
+	"/logicalnot	/LI120000	/registered	/LI180000\n"
+	"/degree	/plusminus	/twosuperior	/threesuperior\n"
+	"/acute		/LO200000	/paragraph	/SA070000\n"
+	"/cedilla	/onesuperior	/ordmasculine	/guillemotright\n"
+	"/onequarter	/onehalf	/threequarters	/questiondown\n"
+	/* c380..c3bf */
+	"/Agrave	/Aacute		/Acircumflex	/Atilde\n"
+	"/Adieresis	/Aring		/AE		/Ccedilla\n"
+	"/Egrave	/Eacute		/Ecircumflex	/Edieresis\n"
+	"/Igrave	/Iacute		/Icircumflex	/Idieresis\n"
+	"/Eth		/Ntilde		/Ograve		/Oacute\n"
+	"/Ocircumflex	/Otilde		/Odieresis	/multiply\n"
+	"/Oslash	/Ugrave		/Uacute		/Ucircumflex\n"
+	"/Udieresis	/Yacute		/Thorn		/germandbls\n"
+	"/agrave	/aacute		/acircumflex	/atilde\n"
+	"/adieresis	/aring		/ae		/ccedilla\n"
+	"/egrave	/eacute		/ecircumflex	/edieresis\n"
+	"/igrave	/iacute		/icircumflex	/idieresis\n"
+	"/eth		/ntilde		/ograve		/oacute\n"
+	"/ocircumflex	/otilde		/odieresis	/divide\n"
+	"/oslash	/ugrave		/uacute		/ucircumflex\n"
+	"/udieresis	/yacute		/thorn		/ydieresis\n"
+	/* c480..c4bf */
+	"/Amacron	/amacron	/Abreve		/abreve\n"
+	"/Aogonek	/aogonek	/Cacute		/cacute\n"
+	"/Ccircumflex	/ccircumflex	/Cdotaccent	/cdotaccent\n"
+	"/Ccaron	/ccaron		/Dcaron		/dcaron\n"
+	"/Dcroat	/dcroat		/Emacron	/emacron\n"
+	"/Ebreve	/ebreve		/Edotaccent	/edotaccent\n"
+	"/Eogonek	/eogonek	/Ecaron		/ecaron\n"
+	"/Gcircumflex	/gcircumflex	/Gbreve		/gbreve\n"
+	"/Gdotaccent	/gdotaccent	/Gcommaaccent	/gcommaaccent\n"
+	"/Hcircumflex	/hcircumflex	/Hbar		/hbar\n"
+	"/Itilde	/itilde		/Imacron	/imacron\n"
+	"/Ibreve	/ibreve		/Iogonek	/iogonek\n"
+	"/Idotaccent	/dotlessi	/IJ		/ij\n"
+	"/Jcircumflex	/jcircumflex	/Kcedilla	/kcedilla\n"
+	"/kgreenlandic	/Lacute		/lacute		/Lcedilla\n"
+	"/lcedilla	/Lcaron		/lcaron		/Ldot\n"
+	/* c580..c5bf */
+	"/ldot		/Lslash		/lslash		/Nacute\n"
+	"/nacute	/Ncedilla	/ncedilla	/tmacron\n"
+	"/ncaron	/napostrophe	/Eng		/eng\n"
+	"/Omacron	/omacron	/Obreve		/obreve\n"
+	"/Ohungarumlaut	/ohungarumlaut	/OE		/oe\n"
+	"/Racute	/racute		/Rcommaaccent	/rcommaaccent\n"
+	"/Rcaron	/rcaron		/Sacute		/sacute\n"
+	"/Scircumflex	/scircumflex	/Scedilla	/scedilla\n"
+	"/Scaron	/scaron		/Tcedilla	/tcedilla\n"
+	"/Tcaron	/tcaron		/Tbar		/tbar\n"
+	"/Utilde	/utilde		/Umacron	/umacron\n"
+	"/Ubreve	/ubreve		/Uring		/uring\n"
+	"/Uhungarumlaut	/uhungarumlaut	/Uogonek	/uogonek\n"
+	"/Wcircumflex	/wcircumflex	/Ycircumflex	/ycircumflex\n"
+	"/Ydieresis	/Zacute		/zacute		/Zdotaccent\n"
+	"/zdotaccent	/Zcaron		/zcaron		/longs\n"
+
+	"/.notdef	/.notdef	/.notdef	/.notdef\n"
+	"/.notdef	/.notdef	/.notdef	/.notdef\n"
+	"/.notdef	/.notdef	/.notdef	/.notdef\n"
+	"/.notdef	/.notdef	/.notdef	/.notdef\n"
+	"/.notdef	/.notdef	/.notdef	/.notdef\n"
+	"/.notdef	/.notdef	/.notdef	/.notdef\n"
+	"/.notdef	/.notdef	/.notdef	/.notdef\n"
+	"/.notdef	/.notdef	/.notdef	/.notdef\n"
+	"]def\n"
+
+	/* font for c2a0..c5bf encoding */
+	"/latinfontdef{\n"
+	"  /latinfont curfont findfont dup length\n"
+	"	dict begin\n"
+	"		{1 index/FID ne{def}{pop pop}ifelse}forall\n"
+	"		/Encoding c2a0_c5bf def\n"
+	"		currentdict\n"
+	"	end\n"
+	"  definefont}def\n"
+
+	/* error font */
+	"/Error<<\n"
+	"	/FontType 3\n"
+	"	/FontMatrix[.001 0 0 .001 0 0]\n"
+	"	/Encoding[256{/.notdef}repeat]\n"
+	"	/FontBBox[0 0 500 500]\n"
+	"	/BuildChar{\n"
+	"		500 0 setcharwidth 50 setlinewidth\n"
+	"		100 500 moveto 300 0 rlineto stroke\n"
+//	"		(char: )print = pop\n"
+	"		pop pop\n"
+	"	}\n"
+	"  >>definefont pop\n"
+
+	/* stub for utf-8 with 3 bytes */
+	"/compdef{\n"
+	"	/FontType 0\n"
+	"	/FontMatrix[1 0 0 1 0 0]\n"
+	"	/FMapType 6\n"
+	"	/SubsVector<01 8080>\n"
+	"	/Encoding[0 0]\n"
+	"	/FDepVector[/Error findfont]\n"
+	"  }def\n"
+	"/compe000def{/compe000<<compdef>>definefont}def\n"
+	"/compe100def{/compe100<<compdef>>definefont}def\n"
+	"/compe200def{/compe200<<compdef>>definefont}def\n"
+#ifdef HAVE_PANGO
+	"/glypharray{{glyphshow}forall}!\n"
+#endif
 
 	/* x y showerror */
-	"/showerror{	gsave 1 0.7 0.7 setrgbcolor 2.5 SLW 2 copy newpath\n"
+	"/showerror{	gsave 1 0.7 0.7 setrgbcolor 2.5 SLW newpath\n"
 	"	30 0 360 arc stroke grestore}!\n"
+
+	"/pdfmark where{pop}{userdict/pdfmark/cleartomark load put}ifelse\n"
 
 	"0 setlinecap 0 setlinejoin\n";
 
-static char *enc_tb[MAXENC] = {
-	/* 1 */
-	"/space/exclamdown/cent/sterling/currency/yen/brokenbar/section\n"
-	"/dieresis/copyright/ordfeminine/guillemotleft/logicalnot/hyphen/registered/macron\n"
-/*	"/degree/plusminus/twosuperior/threesuperior/acute/mu/paragraph/bullet\n" */
-	"/degree/plusminus/twosuperior/threesuperior/acute/mu/paragraph/periodcentered\n"
-/*	"/cedilla/dotlessi/ordmasculine/guillemotright/onequarter/onehalf/threequarters/questiondown\n" */
-	"/cedilla/onesuperior/ordmasculine/guillemotright/onequarter/onehalf/threequarters/questiondown\n"
-	/* (300) */
-	"/Agrave/Aacute/Acircumflex/Atilde/Adieresis/Aring/AE/Ccedilla\n"
-	"/Egrave/Eacute/Ecircumflex/Edieresis/Igrave/Iacute/Icircumflex/Idieresis\n"
-	"/Eth/Ntilde/Ograve/Oacute/Ocircumflex/Otilde/Odieresis/multiply\n"
-	"/Oslash/Ugrave/Uacute/Ucircumflex/Udieresis/Yacute/Thorn/germandbls\n"
-	"/agrave/aacute/acircumflex/atilde/adieresis/aring/ae/ccedilla\n"
-	"/egrave/eacute/ecircumflex/edieresis/igrave/iacute/icircumflex/idieresis\n"
-	"/eth/ntilde/ograve/oacute/ocircumflex/otilde/odieresis/divide\n"
-	"/oslash/ugrave/uacute/ucircumflex/udieresis/yacute/thorn/ydieresis",
-	/* 2 */
-	"/space/Aogonek/breve/Lslash/currency/Lcaron/Sacute/section\n"
-	"/dieresis/Scaron/Scedilla/Tcaron/Zacute/hyphen/Zcaron/Zdotaccent\n"
-	"/degree/aogonek/ogonek/lslash/acute/lcaron/sacute/caron\n"
-	"/cedilla/scaron/scedilla/tcaron/zacute/hungarumlaut/zcaron/zdotaccent\n"
-	/* (300) */
-	"/Racute/Aacute/Acircumflex/Abreve/Adieresis/Lacute/Cacute/Ccedilla\n"
-	"/Ccaron/Eacute/Eogonek/Edieresis/Ecaron/Iacute/Icircumflex/Dcaron\n"
-	"/Dcroat/Nacute/Ncaron/Oacute/Ocircumflex/Ohungarumlaut/Odieresis/multiply\n"
-	"/Rcaron/Uring/Uacute/Uhungarumlaut/Udieresis/Yacute/Tcommaaccent/germandbls\n"
-	"/racute/aacute/acircumflex/abreve/adieresis/lacute/cacute/ccedilla\n"
-	"/ccaron/eacute/eogonek/edieresis/ecaron/iacute/icircumflex/dcaron\n"
-	"/dcroat/nacute/ncaron/oacute/ocircumflex/ohungarumlaut/odieresis/divide\n"
-	"/rcaron/uring/uacute/uhungarumlaut/udieresis/yacute/tcommaaccent/dotaccent",
-	/* 3 */
-	"/space/Hstroke/breve/sterling/currency/yen/Hcircumflex/section\n"
-	"/dieresis/Idotaccent/Scedilla/Gbreve/Jcircumflex/hyphen/registered/Zdotaccent\n"
-	"/degree/hstroke/twosuperior/threesuperior/acute/mu/hcircumflex/bullet\n"
-	"/cedilla/dotlessi/scedilla/gbreve/jcircumflex/onehalf/threequarters/zdotaccent\n"
-	/* (300) */
-	"/Agrave/Aacute/Acircumflex/Atilde/Adieresis/Cdotaccent/Ccircumflex/Ccedilla\n"
-	"/Egrave/Eacute/Ecircumflex/Edieresis/Igrave/Iacute/Icircumflex/Idieresis\n"
-	"/Eth/Ntilde/Ograve/Oacute/Ocircumflex/Gdotaccent/Odieresis/multiply\n"
-	"/Gcircumflex/Ugrave/Uacute/Ucircumflex/Udieresis/Ubreve/Scircumflex/germandbls\n"
-	"/agrave/aacute/acircumflex/atilde/adieresis/cdotaccent/ccircumflex/ccedilla\n"
-	"/egrave/eacute/ecircumflex/edieresis/igrave/iacute/icircumflex/idieresis\n"
-	"/eth/ntilde/ograve/oacute/ocircumflex/gdotaccent/odieresis/divide\n"
-	"/gcircumflex/ugrave/uacute/ucircumflex/udieresis/ubreve/scircumflex/dotaccent",
-	/* 4 */
-	"/space/Aogonek/kra/Rcedilla/currency/Itilde/Lcedilla/section\n"
-	"/dieresis/Scaron/Emacron/Gcedilla/Tbar/hyphen/Zcaron/macron\n"
-	"/degree/aogonek/ogonek/rcedilla/acute/itilde/lcedilla/caron\n"
-	"/cedilla/scaron/emacron/gcedilla/tbar/Eng/zcaron/eng\n"
-	/* (300) */
-	"/Amacron/Aacute/Acircumflex/Atilde/Adieresis/Aring/AE/Iogonek\n"
-	"/Ccaron/Eacute/Eogonek/Edieresis/Edotaccent/Iacute/Icircumflex/Imacron\n"
-	"/Eth/Ncedilla/Omacron/Kcedilla/Ocircumflex/Otilde/Odieresis/multiply\n"
-	"/Oslash/Uogonek/Uacute/Ucircumflex/Udieresis/Utilde/Umacron/germandbls\n"
-	"/amacron/aacute/acircumflex/atilde/adieresis/aring/ae/iogonek\n"
-	"/ccaron/eacute/eogonek/edieresis/edotaccent/iacute/icircumflex/imacron\n"
-	"/dcroat/ncedilla/omacron/kcedilla/ocircumflex/otilde/odieresis/divide\n"
-	"/oslash/uogonek/uacute/ucircumflex/udieresis/utilde/umacron/dotaccent",
-	/* 5 */
-	"/space/exclamdown/cent/sterling/currency/yen/brokenbar/section\n"
-	"/dieresis/copyright/ordfeminine/guillemotleft/logicalnot/hyphen/registered/macron\n"
-	"/degree/plusminus/twosuperior/threesuperior/acute/mu/paragraph/bullet\n"
-	"/cedilla/dotlessi/ordmasculine/guillemotright/onequarter/onehalf/threequarters/questiondown\n"
-	/* (300) */
-	"/Agrave/Aacute/Acircumflex/Atilde/Adieresis/Aring/AE/Ccedilla\n"
-	"/Egrave/Eacute/Ecircumflex/Edieresis/Igrave/Iacute/Icircumflex/Idieresis\n"
-	"/Gbreve/Ntilde/Ograve/Oacute/Ocircumflex/Otilde/Odieresis/multiply\n"
-	"/Oslash/Ugrave/Uacute/Ucircumflex/Udieresis/Idotaccent/Scedilla/germandbls\n"
-	"/agrave/aacute/acircumflex/atilde/adieresis/aring/ae/ccedilla\n"
-	"/egrave/eacute/ecircumflex/edieresis/igrave/iacute/icircumflex/idieresis\n"
-	"/gbreve/ntilde/ograve/oacute/ocircumflex/otilde/odieresis/divide\n"
-	"/oslash/ugrave/uacute/ucircumflex/udieresis/dotlessi/scedilla/ydieresis",
-	/* 6 */
-	"/space/Aogonek/Emacron/Gcedilla/Imacron/Itilde/Kcedilla/Lcedilla\n"
-	"/acute/Rcedilla/Scaron/Tbar/Zcaron/hyphen/kra/Eng\n"
-	"/dcroat/aogonek/emacron/gcedilla/imacron/itilde/kcedilla/lcedilla\n"
-	"/nacute/rcedilla/scaron/tbar/zcaron/section/germandbls/eng\n"
-	/* (300) */
-	"/Amacron/Aacute/Acircumflex/Atilde/Adieresis/Aring/AE/Iogonek\n"
-	"/Ccaron/Eacute/Eogonek/Edieresis/Edotaccent/Iacute/Icircumflex/Idieresis\n"
-	"/Dcroat/Ncedilla/Omacron/Oacute/Ocircumflex/Otilde/Odieresis/Utilde\n"
-	"/Oslash/Uogonek/Uacute/Ucircumflex/Udieresis/Yacute/Thorn/Umacron\n"
-	"/amacron/aacute/acircumflex/atilde/adieresis/aring/ae/iogonek\n"
-	"/ccaron/eacute/eogonek/edieresis/edotaccent/iacute/icircumflex/idieresis\n"
-	"/eth/ncedilla/omacron/oacute/ocircumflex/otilde/odieresis/utilde\n"
-	"/oslash/uogonek/uacute/ucircumflex/udieresis/yacute/thorn/umacron"
-};
-
-/* -- define an encoding -- */
-void define_encoding(int enc,		/* index */
-		     char *ename)	/* name */
+/* -- output the common CMAP -- */
+/* This output must occurs after user PostScript definitions because
+ * these ones may change the default behaviour */
+void define_cmap(void)
 {
-	char enc_txt[30];
+	static char mkfont[] =
 
-	if (enc == ENC_NATIVE)
-		return;
-	if (enc < ENC_NATIVE) {
-		sprintf(enc_txt, "ISOLatin%dEncoding", enc);
-		ename = enc_txt;
-		if (enc > 0)
-		    fprintf(fout, "/%s [\n"
-			"StandardEncoding 0 45 getinterval aload pop\n"
-			"/minus\n"
-			"StandardEncoding 46 82 getinterval aload pop\n"
-			/* (200) */
-			"/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef\n"
-			"/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef\n"
-			"/dotlessi/grave/acute/circumflex/tilde/macron/breve/dotaccent\n"
-			"/dieresis/.notdef/ring/cedilla/.notdef/hungarumlaut/ogonek/caron\n"
-			"%s\n"
-			"] def\n",
-			ename, enc_tb[enc - 1]);
-		else fprintf(fout,
-			"/%s ISOLatin1Encoding dup length array copy def\n",
-			ename);
-		fprintf(fout,
-			"%s dup 8#201/sharpchar put\n"
-			"dup 8#202/flatchar put\n"
-			"dup 8#203/natchar put\n"
-			"dup 8#204/dsharpchar put\n"
-			"8#205/dflatchar put\n",
-			ename);
-	}
-	fprintf(fout, "/mkfontext%d{\n"
-		"	findfont dup length\n"
-		"	product(RoPS)eq{1 add}if\n"
-		"	dict begin\n"
-		"		{1 index/FID ne{def}{pop pop}ifelse}forall\n",
-		enc);
-	fprintf(fout,
-		"		/Encoding %s def\n",
-		ename);
-	if (enc < ENC_NATIVE)
-		fprintf(fout,
-			"		accfont\n");
-	fprintf(fout,
-		"		currentdict\n"
-		"	end\n"
-		"	definefont pop}!\n");
+	/* extra characters (accidentals) range c280 .. c29f */
+	"/ExtraFont 10 dict begin\n"
+	"	/FontType 3 def\n"
+	"	/FontMatrix[.001 0 0 .001 0 0]def\n"
+	"	/Encoding[256{/.notdef}repeat]def\n"
+	"	Encoding 0 c280_c29f putinterval\n"
+	"	/FontBBox[0 0 1000 1000]def\n"
+	"	/BuildChar{\n"
+	"		1 index/Encoding get exch get\n"
+	"		1 index/BuildGlyph get exec\n"
+	"	}bind def\n"
+	"	/CharProcs 3 dict def\n"
+	"		CharProcs begin\n"
+	"			/.notdef{}def\n"
+	"			extra-draw\n"
+	"		end\n"
+	"	/BuildGlyph{\n"
+	"		exch /CharProcs get exch\n"
+	"		2 copy known not{pop /.notdef}if\n"
+	"		get exec\n"
+	"	}bind def\n"
+	"	currentdict\n"
+	"    end\n"
+	" definefont pop\n"
+
+	/* newfont basefont mkfont-utf8 */
+	"/mkfont-utf8{\n"
+	"	/curfont exch def\n"
+	/* composite font first level */
+	"	<<\n"
+	"	/FontType 0\n"
+	"	/FontMatrix[1 0 0 1 0 0]\n"
+	"	/FMapType 4\n"			/* 1/7 mapping*/
+	"	/Encoding[0 1]\n"
+	"	/FDepVector[\n"
+	"		curfont findfont\n"
+	/* composite font second level */
+	"		/compfont2<<\n"
+	"			/FontType 0\n"
+	"			/FontMatrix[1 0 0 1 0 0]\n"
+	"			/FMapType 6\n"	/* SubsVector mapping */
+	/*	/SubsVector
+	 *		4280	% 8000
+	 *		0020	% c280 ->	c280..c29f -> 0..1f
+	 *		00c0	% c2a0 ->	c2a0..c2bf -> 0..1f
+	 *		00c0	% c360 ->	c380..c3bf -> 20..5f
+	 *		00c0	% c420 ->	c480..c4bf -> 60..9f
+	 *		00e0	% c4e0 ->	c580..c5bf -> a0..df
+	 *		1a40	% c5c0		c680..dfbf -> error
+	 *		0100	% e000		compe000
+	 *		0100	% e100		compe100
+	 *		0100	% e200		compe200
+	 *			% e300		e30000..   -> error */
+	"	/SubsVector<01 4280 0020 00c0 00c0 00c0 00e0 1a40 0100 0100 0100>\n"
+	"			/Encoding[0 1 2 2 2 2 0 3 4 5 0]\n"
+	"			/FDepVector[\n"
+	"				/Error findfont\n"
+	"				/ExtraFont findfont\n"
+	"				latinfontdef\n"
+	"				compe000def\n"
+	"				compe100def\n"
+	"				compe200def\n"
+	"			]\n"
+	"		>>definefont\n"
+	"	]\n"
+	"	>>definefont pop}bind def\n";
+
+	fputs(mkfont, fout);
 }
 
-/* -- define_font -- */
+/* -- define a font -- */
 void define_font(char name[],
 		 int num,
 		 int enc)
 {
-	if (enc == ENC_NATIVE || strcmp(name, "Symbol") == 0) {
-		fprintf(fout, "/F%d{dup .8 mul/fh exch def"
-			"/%s exch selectfont}!\n",
+	if (enc == 0)		/* utf-8 */
+		fprintf(fout, "/%s-utf8/%s mkfont-utf8\n"
+			"/F%d{/%s-utf8 exch selectfont}!\n",
+			name, name, num, name);
+	else			/* native encoding */
+		fprintf(fout, "/F%d{/%s exch selectfont}!\n",
 			num, name);
-		return;
-	}
-	fprintf(fout, "/%s%d/%s mkfontext%d\n"
-		"/F%d{dup .8 mul/fh exch def/%s%d exch selectfont}!\n",
-		name, enc, name, enc, num, name, enc);
 }
 
 /* -- output the symbol definitions -- */

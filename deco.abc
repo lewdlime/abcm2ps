@@ -158,7 +158,7 @@
 		2 -1.15 2.30 150 30 arcn 4 0 T
 		2 1.15 2.30 -150 -30 arc 4 0 T pop
 	}for
-	stroke grestore}!
+	1 SLW stroke grestore}!
 %
 % -- upper glissendo
 /glissup{	% usage: x y glissup
@@ -168,7 +168,7 @@
 		2 -1.15 2.30 150 30 arcn 4 0 T
 		2 1.15 2.30 -150 -30 arc 4 0 T pop
 	}for
-	stroke grestore}!
+	1 SLW stroke grestore}!
 %
 % -- note decorations
 % (sorry for I don't know the name of these: there so many ones)
@@ -219,24 +219,10 @@
 % -- latin guitar chords
 /gcshow{
 	dup 0 get
-	dup 65 eq {pop(La)show}
-	  {dup 66 eq {pop(Si)show}
-	    {dup 67 eq {pop(Do)show}
-	      {dup 68 eq {pop(Re)show}
-		{dup 69 eq {pop(Mi)show}
-		  {dup 70 eq {pop(Fa)show}
-		    {dup 71 eq {pop(Sol)show}
-		      {currentfont/Encoding get exch get glyphshow
-		      }ifelse
-		    }ifelse
-		  }ifelse
-		}ifelse
-	      }ifelse
-	    }ifelse
-	  }ifelse
-	dup dup length 1 sub 1 exch getinterval
-	show
-	pop}!
+	dup dup 65 ge exch 71 le and{
+		65 sub[(La)(Si)(Do)(Ré)(Mi)(Fa)(Sol)]exch get
+	}if show
+	dup length 1 sub 1 exch getinterval show}!
 %
 % -- 'tr' + long trill
 /trtrill{	% usage: w x y trtrill
@@ -410,7 +396,7 @@ K:C treble-8
 %
 K: clef=treble
 !8(!!riten!EF !-!G2 !ped!GA!ped-end!B!8)!c|!8b(!!bigb!C2!()!E2 !tr(!G3!tr)!!8b)!c!alcoda!|\
-CE!-(!G2!-)!C2"free text"c2|
+CE!-(!G2!-)!C2c2|
 %
 "Dm"!Dm!e3/d/ d6 | "Bb"!Bb!z2 d/d3/ "C7"!C7!cB/A/- AG |\
 F!accent!G!accn!AB !sfa!c4||

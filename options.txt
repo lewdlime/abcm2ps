@@ -4,11 +4,20 @@
 The list of the command line options may be known running:
 	'abcm2ps -h'
 
-The options may be grouped when they have no argument, except the
+The options may be grouped when they have no argument, but the
 last one (ex: "-lnGI20").
 
 The options may be disabled when starting with '+' or ending with '-'
 (ex: "+MT1" is the same as "-MT1-"
+
+The general output format is the last found in the command line.
+It may be
+	"-E" for Encapsulated PostScript one file per tune
+	"-g" for XHTML/SVG one file per tune
+	"-v" for XHTML/SVG one file per page
+	"-X" for XHTML/SVG
+	(none) for PostScript
+(see below for more information)
 
 List of the options
 -------------------
@@ -21,6 +30,11 @@ List of the options
 
   -a<float>
 	See: format.txt - maxshrink <float>
+
+  -A
+	Annotate.
+	This option inserts reference elements in the PostScript
+	or SVG output.
 
   -B<int>, +B
 	See: format.txt - barsperstaff <int>
@@ -37,15 +51,16 @@ List of the options
   -d<unit>
 	See: format.txt - staffsep <unit>
 
-  -E, +E
+  -E
 	Produce EPS output instead of simple PS.
 	In this mode, each tune goes to a different file which
 	name is '<name>nnn.eps' or <title>.eps (see option '-O'
-	- 'nnn' is a sequence number incremented at each tune).
+	- 'nnn' is a sequence number incremented at each tune
+	- output to stdout is forbidden).
 	EPS files are normally embedded into Postscript documents,
 	but they may be a way to generate graphical images. For
 	example, using GhostScript:
-		abcm2ps voices -E -e7
+		abcm2ps voices -Ee7
 		gs -sDEVICE=pngmono -r80 -g590x174 \
 			-dBATCH -dNOPAUSE \
 			-sOutputFile=quitolis.png Out001.eps
@@ -77,6 +92,13 @@ List of the options
   -G, +G
 	See: format.txt - graceslurs <bool>
 
+  -g
+	Produce SVG output instead of EPS.
+	In this mode each tune goes to a different file which name
+	is 'Outnnn.svg' (see option '-O').
+	If the output is stdout (option '-O-'), all the SVG images
+	are output without XML header.
+
   -H
 	Display the current format values.
 
@@ -93,17 +115,11 @@ List of the options
   -j<int>[b], +j
 	See: format.txt - measurenb <int>
 
-  -k<int>[b], +k
-	See: format.txt - measurenb <int>
-
-  -L<int>
-	See: format.txt - encoding <int>
-
   -l, +l
 	See: format.txt - landscape <bool>
 
   -M, +M
-	See: format.txt - musiconly <bool>
+	See: format.txt - writefields w <bool>
 
   -m<unit>
 	See: format.txt - leftmargin <unit>
@@ -126,14 +142,19 @@ List of the options
   -O[<directory>][<name>], +O
 	Define the output file directory and/or name.
 	By default, the output file goes to the current directory
-	with a name 'Out.ps' for PS, and 'Outnnn.eps' for EPS (see
-	option '-E').
-	With this option, the file name may be <name> or <name>nnn.eps.
-	If <name> is '=', the output file is the name of the ABC
-	source file with the extension '.ps' for PS, or the title
-	of the tune for EPS.
-	If <name> is '-', the result is output on stdout (PS only).
+	with a name 'Out.ps' for PS, 'Outnnn.eps' for EPS (see
+	option '-E'), 'Outnnn.svg' for SVG (see options '-g' and '-v')
+	or 'Out.xhtml' for XHTML + SVG (see option '-X').
+	When <name> is present, it replaces 'Out' in the file name.
+	If <name> is '=', it is replaced by the name of the ABC
+	source file.
+	If <name> is '-', the result is output to stdout (standard PS and
+	embeddable SVG - '-g' - only).
 	'+O' resets the output file directory and name to their defaults.
+
+  -q
+	Quiet mode.
+	When present, only the errors are shown.
 
   -s<float>
 	See: format.txt - scale <float>
@@ -159,11 +180,20 @@ List of the options
   -V
 	Show the version number.
 
+  -v
+	Produce SVG output instead of simple PS.
+	In this mode each page goes to a different file which name
+	is 'Outnnn.svg' (see option '-O' - output to stdout is forbidden).
+
   -w<unit>
 	See: format.txt - staffwidth <unit>
 
+  -X
+	Produce XML + SVG output instead of simple PS.
+	The default file name is 'Out.xhtml' (see option '-O').
+
   -x, +x
-	See: format.txt - withxrefs <bool>
+	See: format.txt - writefields X <bool>
 
   -0, +0
 	See: format.txt - splittune <bool>

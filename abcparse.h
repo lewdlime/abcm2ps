@@ -11,6 +11,8 @@
 
 #define BASE_LEN 1536	/* basic note length (semibreve or whole note - same as MIDI) */
 
+#define VOICE_ID_SZ 16	/* max size of the voice identifiers */
+
 /* accidentals */
 enum accidentals {
 	A_NULL,		/* none */
@@ -71,11 +73,10 @@ struct abcsym {
 #define ABC_T_REST	5
 #define ABC_T_BAR	6
 #define ABC_T_EOLN	7
-#define ABC_T_INFO2	8		/* (info without header - H:) */
-#define ABC_T_MREST	9		/* multi-measure rest */
-#define ABC_T_MREP	10		/* measure repeat */
-#define ABC_T_V_OVER	11		/* voice overlay */
-#define ABC_T_TUPLET	12
+#define ABC_T_MREST	8		/* multi-measure rest */
+#define ABC_T_MREP	9		/* measure repeat */
+#define ABC_T_V_OVER	10		/* voice overlay */
+#define ABC_T_TUPLET	11
 	char state;		/* symbol state in file/tune */
 #define ABC_S_GLOBAL 0			/* global */
 #define ABC_S_HEAD 1			/* in header (after X:) */
@@ -91,7 +92,6 @@ struct abcsym {
 #define ABC_F_GRACE	0x0020		/* grace note */
 #define ABC_F_GR_END	0x0040		/* end of grace note sequence */
 #define ABC_F_SAPPO	0x0080		/* short appoggiatura */
-	unsigned short free;
 	int linenum;		/* ABC source line number */
 	char *text;		/* main text (INFO, PSCOM),
 				 * guitar chord (NOTE, REST, BAR) */
@@ -99,20 +99,25 @@ struct abcsym {
 	union {			/* type dependent part */
 		struct key_s {		/* K: info */
 			signed char sf;		/* sharp (> 0) flats (< 0) */
-			char bagpipe;		/* HP or Hp */
-			char minor;		/* major (0) / minor (1) */
 			char empty;		/* clef alone if 1, 'none' if 2 */
 			char exp;		/* exp (1) or mod (0) */
-			signed char nacc;	/* explicit accidentals */
-			char pits[8];
-			char accs[8];
+			char mode;		/* mode */
+/* 0: Ionian, 1: Dorian, 2: Phrygian, 3: Lydian, 4: Mixolydian
+ * 5: Aeolian, 6: Locrian, 7: major, 8:minor, 9: HP, 10: Hp */
+#define MAJOR 7
+#define MINOR 8
+#define BAGPIPE 9				/* bagpipe when >= 8 */
+			signed char nacc;	/* number  of explicit accidentals */
+						/* (-1) if no accidental */
+			signed char pits[8];
+			unsigned char accs[8];
 		} key;
 		struct {		/* L: info */
 			int base_length;	/* basic note length */
 		} length;
 		struct meter_s {	/* M: info */
 			short wmeasure;		/* duration of a measure */
-			char nmeter;		/* number of meter elements */
+			unsigned char nmeter;	/* number of meter elements */
 			char expdur;		/* explicit measure duration */
 #define MAX_MEASURE 6
 			struct {
@@ -127,7 +132,7 @@ struct abcsym {
 			char *str2;		/* string after */
 		} tempo;
 		struct {		/* V: info */
-			char *name;		/* name */
+			char id[VOICE_ID_SZ];	/* voice ID */
 			char *fname;		/* full name */
 			char *nname;		/* nick name */
 			float scale;		/* != 0 when change */
@@ -170,22 +175,6 @@ struct abcsym {
 					 * 1: continuation ('\')
 					 * 2: line break ('!') */
 		} eoln;
-		struct staff_s {	/* %%staves */
-			short voice;
-			short flags;
-#define OPEN_BRACE 0x01
-#define CLOSE_BRACE 0x02
-#define OPEN_BRACKET 0x04
-#define CLOSE_BRACKET 0x08
-#define OPEN_PARENTH 0x10
-#define CLOSE_PARENTH 0x20
-#define STOP_BAR 0x40
-#define FL_VOICE 0x80
-#define OPEN_BRACE2 0x0100
-#define CLOSE_BRACE2 0x0200
-#define OPEN_BRACKET2 0x0400
-#define CLOSE_BRACKET2 0x0800
-		} staves[MAXVOICE];
 		struct {		/* voice overlay */
 			char type;
 #define V_OVER_V 0				/* & */
@@ -205,7 +194,7 @@ struct abctune {
 	struct abctune *prev;	/* previous tune */
 	struct abcsym *first_sym; /* first symbol */
 	struct abcsym *last_sym; /* last symbol */
-	int abc_vers;		/* ABC version */
+	int abc_vers;		/* ABC version = (H << 16) + (M << 8) + L */
 	void *client_data;	/* client data */
 	unsigned short micro_tb[MAXMICRO]; /* microtone values [ (n-1) | (d-1) ] */
 };

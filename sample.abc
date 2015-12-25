@@ -2,6 +2,35 @@
 
 U: M = !tenuto!		% abcm2ps: default M is lowermordent
 
+% abcm2ps >= 6.2.2 - definition of '...' (ellipsis) for PostScript
+%%beginps nosvg
+/morechar[
+/ellipsis
+]def
+/morefontdef{
+    /morefont curfont findfont dup length
+	dict begin
+		{1 index/FID ne{def}{pop pop}ifelse}forall
+		/Encoding 256 array def
+		Encoding 0 morechar putinterval
+		currentdict
+	end
+    definefont}def
+/compe200def{
+    /compe200<<
+	/FontType 0
+	/FontMatrix[1 0 0 1 0 0]
+	/FMapType 6
+% ellipsis - UTF-8: E2 80 A6 - unicode \u2026
+	/SubsVector<01 80a6 0001>
+	/Encoding[0 1 0]
+	/FDepVector[
+		/Error findfont
+		morefontdef
+	]
+    >>definefont}def
+%%endps
+
 X:1
 T:Scale
 T:Second Title
@@ -9,7 +38,6 @@ T:Third Title
 M:C
 %K:C		% abcm2ps: automatic clef processing gives a bass clef
 K:C treble
-%%freegchord 1	% abcm2ps: # and b in guitar chords are the music accidentals
 L: 1/4
  "C,"C,"D,"D,"E,"E,"F,"F,  "G,"G,"A,"A,"B,"B,\
 | "C"C"D"D"E"E"F"F  "G"G"A"A"B"B| "c"c "d"d"e"e"f"f  "g"g"a"a"b"b"c'"c' |
@@ -27,7 +55,7 @@ T:Key signature, Accidentals and Decorations
 M:C
 K:A
 L: 1/4
- ^C=C_C ^G=G_G | .F/.G/.A/ Ma/Mg/Mf/ Jc J^c  J[c^f] J[c^g]  |\
+ ^C=C_C ^G=G_G | .F/.G/.A/ Ma/Mg/Mf/ Jc J^c J[c^f] J[c^g]  |\
  {f}e {C}D {cd}c {E^c}a2 {dedc}d|    
  uc vc'-c'/Mb/Mc'/Ma/ | (b4 | b/).a/.b/.c'/ | ~A ~g \
 % RA Rg MA Mg | .A .g vf/-g/ (u.a/.b/)  | uR~M.c2  Hg4 || % abcm2ps: '-' is not a slur
@@ -38,7 +66,7 @@ T:Bars and Rests
 M:6/8
 L: 1/4
 K:D
-[| z4  |] z2 |: z z/z// :| z2> :: z2 z>z |  f>z g>z  ||
+[| z4 |] z2 |: z z/z// :| z2> :: z2 z>z | f>z g>z ||
 
 X:6
 T:Chords, Unions, First and Second Endings
@@ -52,7 +80,7 @@ L: 1/4
 
 X:7
 T:Slurs and Ties
-T: Title with funny chars like \cC\'e\~n\^o \`A\cc\"a\ss\"o \251
+T: Title with funny chars like \005 Çéñô Àçäßö © …
 M:C|
 K:Ebm
 [| (CDEF) ((3efg) ((3gag)| (C2 EF) (ef(ga)) | ((c2 (3(d)ef) e2)\
@@ -82,7 +110,7 @@ L: 1/8
  (3cde c(3d/e/f/ |(3zcd (3z/c/d/ (3czc c(4d/e/f/z/ d2-(3def | \
    (3::2 c4d2  (3::4 cde/f/ (3gfe |
  (3z2G,2A,2 (3C2E2G2 |e-(5e//f//g//f//g// de- (5e//f//g//f//g// |\
-  (6z/c/e/g/e/c/ (6z/c/e/g/e/c/  | (3d/e/f/g-(3g/f/e/d || 
+  (6z/c/e/g/e/c/ (6z/c/e/g/e/c/ | (3d/e/f/g-(3g/f/e/d || 
 
 X:10
 T:Chords with many accidentals
@@ -101,8 +129,8 @@ T:Horizontal beams
 M:9/8
 K:C
 L: 1/8
- c,d,c, d,e,d, e,f,e, b,cb,   | c,/d,/c,/ d,/e,/d,/ e,/f,/e,/  |\
-   c,//d,//c,// d,//e,//d,// e,//f,//e,//  |
+ c,d,c, d,e,d, e,f,e, b,cb,  | c,/d,/c,/ d,/e,/d,/ e,/f,/e,/ |\
+   c,//d,//c,// d,//e,//d,// e,//f,//e,// |
  cdc ded efe b,a,b,| c/d/c/ d/e/d/ e/f/e/ | c//d//c// d//e//d// e//f//e// |
  c'd'c' d'e'd' e'f'e' f'g'f' | c'/d'/c'/ d'/e'/d'/ e'/f'/e'/ |\ 
    c'//d'//c'// d'//e'//d'// e'//f'//e'// |
@@ -114,8 +142,8 @@ M:C
 K:D
 FA{c}AF DF{^dc}A f{A}df f{AGA}df |{B}D2 {A}D2 {G}D2 {F}D2 {E}D2 |\
  {E}c2 {F}c2 {G}c2 {A}c2 {B}c2 | 
-   {A}^c2 {gcd}c2 {gAGAG}A2{g}c<{GdG}e  {Gdc}d>c {gBd}B<{e}G |\ 
-  {G}[G4e4] {FGAB}[^c4A4] {ef}[e4c4]  {d'c'bagfedcB_AcBFGC}D4| 
+   {A}^c2 {gcd}c2 {gAGAG}A2{g}c<{GdG}e {Gdc}d>c {gBd}B<{e}G |\ 
+  {G}[G4e4] {FGAB}[^c4A4] {ef}[e4c4] {d'c'bagfedcB_AcBFGC}D4| 
 
 X: 13
 T: Vocals

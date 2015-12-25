@@ -80,7 +80,7 @@ K:A
 V:S
 EEE	  |C3E	   EEFF        |(D2F3)	  FFF	 |E3C   EEDD		 |C4   z:|
 w:Ka-na a |rin, ka-na a rin be-|pred,* rag an Ao-|trou en-eus va zan-tel-|let.
-w:Eñ eo va|nerz, eñ eo i-vez va|Zad,*    eñ eo va|han, ka-na a rin e     |hloar.
+w:EÃ± eo va|nerz, eÃ± eo i-vez va|Zad,*    eÃ± eo va|han, ka-na a rin e     |hloar.
 V:A
 CCC	  |A,3A,   B,CA,A,     |(B,2A,3)  DDB,   |C3A,  B,A,A,G,	 |A,4  z:|
 V:T
@@ -91,13 +91,13 @@ A,,A,,A,, |A,,3C,  B,,A,,D,D,  |(B,,2D,3) D,D,B,,|E,3F, E,C,B,,E,,	 |A,,4 z:|
 % --- organ ---
 
 X:6
-T:Wär Gott nicht mit uns diese Zeit
+T:WÃ¤r Gott nicht mit uns diese Zeit
 C:Johann Nicolaus Hanff
 M:C
 L:1/8
 Q:1/4=66
 %%staves [1 (2 3) 4]
-V:1 nm="Rückpos"
+V:1 nm="RÃ¼ckpos"
 V:2 nm="Organo"
 K:C
 V:1
@@ -115,7 +115,7 @@ z2A,2- A,G,F,E,|D,2^C,2 D,2A,,2      |D,,8  |z4	    z2A,2 |
 
 X:7
 T:Qui Tolis (Trio)
-C:André Raison
+C:AndrÃ© Raison
 M:3/4
 L:1/4
 Q:1/4=92

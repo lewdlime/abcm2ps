@@ -1,22 +1,590 @@
----- Version 5.9.25 - 11/11/02 ----
+---- Version 6.6.22 - 12/11/28 ----
 
+Fix left width of heads in flute.fmt.
+Fix the documentation about flute.fmt.
+Fix bad parsing of the command line ("-OE.ps" gives a EPS file)
+	(reported by Colin Hume).
+Fix bad parsing of the "%abc-<version>" at start of file.
+
+---- Version 6.6.21 - 12/10/03 ----
+
+Fix crash when %%continueall and music line cut on a bar with !beamon!
+	(also when %%breakoneoln 0) and handle beams on two music lines
+	(reported by Guido Gonzato).
+Fix bad handling of /symbol for "cvx" in the mini PS interpreter.
+
+---- Version 6.6.20 - 12/09/02 ----
+
+Fix abnormal new music line when Q: or P: followed by [V:x] and grace notes.
+Fix loss of tempo when second voice starting with grace notes
+	(reported by Wim Rotty).
+Fix crash with floating point sensitive machines as ARM.
+
+---- Version 6.6.19 - 12/07/19 ----
+
+Fix bad file date in header/footer ('$d') when %%format in the ABC file
+	(reported by D. Glenn Arthur Jr.).
+
+---- Version 6.6.18 - 12/06/17 ----
+
+Fix array overflow on %%writefields Q.
+Fix bad note heads when both normal and percussion voices in a same staff
+	(reported by Frédéric Boulanger).
+Don't transpose the percussion voices.
+
+---- Version 6.6.17 - 12/06/10 ----
+
+Fix bad tie when at end of repeat and start of new repeat ("c- :|2 c")
+	(reported by Nils Liberg).
+Fix abnormal line with one note when line cut should be on a clef change
+	(reported by Alex Scheutzow - was forgotten in 6.6.16).
+Fix presence of meter at start of line when empty voice
+	(was forgotten in 6.6.16).
+
+---- Version 6.6.16 - 12/06/02 ----
+
+Better hyphen in lyrics lines when great space between notes
+	(reported by Nils Liberg).
+Fix presence of tempo when "%%writefields Q 0" before first K:
+	(reported by Nils Liberg).
+Don't remove '%%' in %%beginps/%%endps sequences.
+Fix array overflow and possible crash with empty %%beginxxx/%endxxx
+	(reported by Nils Liberg).
+
+---- Version 6.6.15 - 12/05/28 ----
+
+Fix crash when K: without more symbol at end of tune
+	(reported by Nils Liberg).
+Fix clash of '8' in clef with octave +/-8
+	(reported by David Lacroix).
+
+---- Version 6.6.14 - 12/05/23 ----
+
+Fix program loop when width of measure bigger than staff width.
+Fix bad last measure bar position again
+	(reported by many people).
+Fix loss of music line break when line ending with grace note(s),
+		note and no bar
+	(reported by John Chambers).
+
+---- Version 6.6.13 - 12/05/21 ----
+
+Fix loss of paragraph break on empty lines.
+Fix crash in %%begintext with fill/justify and pango on an empty line.
+Fix bad offset of lyrics after tune when new page
+	(reported by Christian Schnarr).
+Fix lack of tempo at start of tune when "%%writefields Q 0" later.
+
+---- Version 6.6.12 - 12/05/16 ----
+
+Fix bad line numbers in errors and svg annotations
+	(reported by Nils Liberg).
+
+---- Version 6.6.11 - 12/05/13 ----
+
+Fix lack of key signature when K: + clef inside music line.
+Fix placement errors when scaled voice or staff
+	(reported by: Glenn Arthur Jr).
+Don't put a measure bar at end of line when the measure is incomplete
+	(reported by Christian Schnarr).
+Fix ps2pdf error when unknown UTF-8 characters
+	(reported by Nils Liberg).
+
+---- Version 6.6.10 - 12/04/30 ----
+
+Bad offset of %%EPS since version 5.x.x
+	(reported-by: Glenn Arthur Jr)
+Handle more lowercase to uppercase letters when %%titlecaps
+	(reported by Christian Schnarr).
+
+---- Version 6.6.9 - 12/03/31 ----
+
+Fix loss of music after abc 2.0 continuation ('\').
+Fix misplaced part (P:) when followed by K:, or M:
+	(reported by Richard Walker).
+Crash when misplaced dble repeat bar in second voice at end of tune
+	(reported by Simon Wascher).
+
+---- Version 6.6.8 - 12/03/09 ----
+
+Don't print the X: value in title when ', The' at end of T:
+	(reported by Paul Hardy).
+Don't print the tempo in tune when '%%writefields Q 0'
+	(reported by Martin Tarenskeen).
+
+---- Version 6.6.7 - 12/02/21 ----
+
+Don't add the %%transpose values
+	(reported by Alex Scheutzow).
+Fix lack of key signature change when exp accidental list of the same size.
+Fix lack of history information since previous version
+	(reported by Jon Freeman).
+Fix bad slur on grace notes when staffscale != 1
+	(reported by Pete Showman).
+Ignore %%sep and %%vskip when global and -E or -g.
+Fix crash when some output needed in format files by ignoring %%text...
+Fix %%abc2pscompat again.
+Fix some errors "??? buffer not empty:".
+
+---- Version 6.6.6 - 12/02/11 ----
+
+Fix vertical offset problems on page breaks with %%multicol.
+Fix bad page header when %%multicol outside and inside tunes.
+Ignore %%writefields when outputting %%titleformat
+	(reported by Pete S).
+Reset the default standard title format when %%titleformat is empty.
+
+---- Version 6.6.5 - 12/02/06 ----
+
+Fix loss of music when voices disappear and reappear by %%score
+	(reported by John Collins).
+Fix some cases of error "Line too much shrunk".
+Bad computation of the page height letting to much space in (portrait)
+	or going out of (landscape) the bottom of the page when
+	using %%multicol.
+Permit the clefs to go under or above the notes/rests.
+
+---- Version 6.6.4 - 12/01/31 ----
+
+Fix bad bar numbers when time signature change before a measure bar
+	(reported by Jean-Luc ZINS).
+Fix bad horizontal offset when notes shifted in an other voice.
+Do TABs in guitar chords work with PS + pango and SVG.
+Do %%abc2pscompat work again.
+
+---- Version 6.6.3 - 12/01/13 ----
+
+Fix bad guitar chord display when ending with accidental and no pango
+	(reported by Jean-Luc ZINS).
+Fix bad natural spacement on clef change.
+Fix too much right shift of second voices when first voice is dotted.
+Fix bad stem length in beams when notes shifted to avoid voice overlap.
+Fix bad horizontal offset of voices going from a staff to an other one.
+Handle the decorations of notes in invisible grace note chords.
+Fix bad SVG output when nested gsave/grestore and rotation.
+Fix the horizontal placement of the starting clefs.
+Fix bad error when music line continuation in a tuplet.
+Add 'stringwidth' in the PS to SVG interpreter.
+Fix lack of ties when many ones in chords.
+Fix bad errors when ties inside and outside chords
+	(reported by Daniel Branning).
+Fix bad errors when more values after floating values in format parameters
+	(reported by David Lacroix).
+
+---- Version 6.6.2 - 12/01/07 ----
+
+Fix bad PS output when '(' or ')' in T: and %%pdfmark
+	(reported by Jon Freeman).
+Don't try a new extension when some already in input file names
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix bad horizontal offset of 1st clefs of secundary staves when no clef
+	at start of the 1st staff (reported by Steve Merrony).
+Fix bad key signatures when %%transpose inside tune
+	(reported by Alex Scheutzow).
+Fix lack of tune title when %%titleformat T + T and only one T:.
+
+---- Version 6.6.1 - 12/01/02 ----
+
+Bad tie when at end of repeat sequence
+	(reported by Nils Liberg in july 2010).
+Fix bad line numbers after insertion of missing X:, T: or K:.
+Fix compilation errors of abcmfe.
+Add more checks of some formatting floating values
+	(reported by Reinier Maliepaard).
+Fix the loss of the first line of included files.
+Bad output file name when -O= and a .abc file included in a ABC file
+	(reported by Steve Merrony).
+Bad offset of PS/SVG annotations (-A) when scaled staff or voice.
+Fix program crash when '+' in %%titleformat
+	(reported by Richard Robinson).
+
+---- Version 6.6.0 - 11/12/28 ----
+
+Fix bad SVG when '&' in text of a repeat bar.
+Permit ties between enharmonic notes.
+Fix bad transposition when negative value and '#' or 'b'.
+Fix bad transposition of K:none.
+Don't skip the invisible bars when dispatching the lyrics under staff
+	(reported by Hudson Flávio Meneses Lacerda).
+Don't raise an error when iso-8859-x in %%font/%%xxxfont.
+Fix program crash when slur ending in next music line and
+	slur from grace note to normal note in current music line.
+Fix bad handling of P: in secundary voices.
+Handle key signature with changes in the accidental list.
+Fix program crash with -v and many pages
+	(reported by Richard Robinson).
+Fix program crash when -E/-X/-g/-v after a second input file
+	in the command line.
+Update documentation.
+
+---- Version 6.5.16 - 11/12/21 ----
+
+Fix loss of previous U: definitions on new abc files.
+Better handling of the source line numbers in error messages.
+Handle %%abc-insert.
+Change the treatment of %%format.
+Fix bad end of PostScript sequence when %%format with a PS file.
+Fix crash when %%combinevoices and rest under beam
+	(reported by Atte André Jensen).
+Fix bad vertical offset of SVG annotations.
+Fix some string escape sequences and add more ligatures
+	(reported by Janus Meuris).
+
+---- Version 6.5.15 - 11/11/28 ----
+
+Add lacking elements relative to ABC state (empty lines, X:, K:
+	- reported by Hudson Flávio Meneses Lacerda).
+Do '-i' work when ABC parse errors only.
+Set only EXIT_SUCCESS or EXIT_FAILURE as program exit level.
+Set the exit severity level in more error cases.
+Accept (back) %%encoding/%%abc-charset with a single digit.
+
+---- Version 6.5.14 - 11/11/26 ----
+
+Fix bad use of pango in SVG output since previous version
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix program loop when no %%endxx after %%beginxx.
+Fix erroneous errors on comment lines starting with spaces/tabs
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix compilation error of abcmfe.
+
+---- Version 6.5.13 - 11/11/23 ----
+
+Treat only one output type (PS, EPS or SVG..) per run
+	(this fixes conditional sequences in format files).
+Fix the 'end's in musicfont.fmt.
+Add an option in 'configure' to not use pango.
+
+---- Version 6.5.12 - 11/11/17 ----
+
+Fix erroneous detection of latin encoding when accidentals as \20x
+	at start of file.
+Don't handle %%postscript (and %%beginps/%%endps) as global when
+	appearing after text formatting commands.
+Treat 'utf-8' and 'native' in %%abc-charset.
+Do %%abc-charset work.
+Fix alteration of user PS definitions in SVG output
+	(bad SVG generation of 2nd and next files
+	- reported by Jon Freeman).
+May set back the SVG transparency by no value after %%bgcolor.
+
+---- Version 6.5.11 - 11/11/16 ----
+
+Add '%%linewarn'
+	(asked by Hudson Flávio Meneses Lacerda).
+Add '%%bgcolor' for pure SVG output
+	(asked by Jon Freeman).
+Remove '%%' inside %%beginxx/%%endxx
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix bad detection of latin encodings.
+
+---- Version 6.5.10 - 11/11/10 ----
+
+Crash when %%text in tune and EPS or -g output
+	(reported by Atte André Jensen).
+
+---- Version 6.5.9 - 11/11/07 ----
+
+Check again the '%%end' suffix.
+Set the max size of %%beginxx/%%endxx sequences to 128Kb.
+Accept more values to 'copy' in the PS to SVG interpreter.
+Fix bad handling of %%format since 6.5.6.
+Don't raise error when font not predefined and SVG/XHTML output.
+Treat %%writefields as it appears.
+Fix bad treatment of the file names since 6.5.6
+	(reported by Hudson Flávio Meneses Lacerda).
+
+---- Version 6.5.8 - 11/11/05 ----
+
+Fix bad horizontal offset of %%begintext center
+	(reported by Hudson Flávio Meneses Lacerda).
+Add 'lock' in formatting commands.
+Update the examples in the Makefile.
+Remove the warning about 'line overfull'.
+
+---- Version 6.5.7 - 11/11/03 ----
+
+Fix bad beam vertical offset when grace notes in n-plet.
+Fill the background to white when pure SVG generation.
+Remove warnings when music lines too shrunk or too stretched.
+Fix bad handling of comments (%xx) and '\'s at end of line.
+
+---- Version 6.5.6 - 11/11/02 ----
+
+Bad global values when generation of many files.
 Fix clash of lyrics when more staves added later
 	(reported by Atte André Jensen).
+Simplify internal treatments.
+
+---- Version 6.5.5 - 11/10/28 ----
+
+Fix bug in %%beginps with PS outout since last release.
+
+---- Version 6.5.4 - 11/10/27 ----
+
+Remove/add some ABC examples.
+More functions in the PS to SVG interpreter.
+Fix overload of internal functions in the PS to SVG interpreter.
+Fix bad header/footer horizontal offset with "\t"
+	(reported by Atte André Jensen).
+Fix bad UTF-16 to UTF-8 translation for surrogates.
+Add 'svg' / 'nosvg' parameter to %%beginps.
+Add %%beginsvg.
+Handle %%beginxx / %%end.
+Handle better the abc2.0 continuation lines.
+
+---- Version 6.5.3 - 11/10/24 ----
+
+Add 'svg' for test in the PostScript code.
+Add 'where' in the PS to SVG interpreter.
+Fix bad scanning of embedded information fields when space after ':'.
 Limit the number of simultaneous format files.
+Extend %%transpose with suffix "#" or "b".
+Fix the transposition of some guitar chords.
+Set '!' the decoration character when %%linebreak with no '!'.
+
+---- Version 6.5.2 - 11/10/17 ----
+
+Don't ignore some global information fields.
+Don't display Q: in tune when defined in %%titleformat.
+Don't apply M: to all voices when found in tune body as the
+	first information.
+Add 'octave=' in K: and V:.
+Fix bad transposition when %%transpose inside tune
+	(reported by many people).
+
+---- Version 6.5.1 - 11/10/16 ----
+
+Fix double '\'s in strings.
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix bad date since previous version.
+!! There should not be anymore couples of '\'s in %%dateformat !!
+Fix bad SVG when "%%scale 1" and some rotation
+	(reported by Jon Freeman).
+Add %%transpose.
+Add dummy 'composefont' in the PS to SVG interpreter.
+Update the documentation about <encoding> and %%encoding.
+
+---- Version 6.5.0 - 11/10/10 ----
+
+Add simple PS font functions in the PS to SVG interpreter.
+May overload the standard decorations.
+Accept a quoted string as decoration string.
+Don't handle 'end' anymore in format files.
+Accept latin1..latin6, thanks to %%encoding or %%abc-charset.
+!! The escape sequences are now limited to those in abc 2.1 !!
+!! There cannot be implicit utf-8 and latin1 encodings in a same file !!
+!! There should not be \\ in w: lines before escape sequences !!
+Fix bad great integer values in the PS to SVG interpreter
+	(reported by Jon Freeman).
+Fix bad SVG display of 'arc' after '(r)lineto'.
+	(reported by Jon Freeman).
+
+---- Version 6.4.7 - 11/10/03 ----
+
+Add %%decoration.
+Remove the pseudo-decorations 'linebreak' and 'decosep'.
+Fix the lack of tablature of the first tune after %%tablature.
+Ignore empty 'newpath' in the PS to SVG interpreter
+	(for galoubet in flute.fmt - reported by Jon Freeman).
+Do '-x' work again
+	(reported by Daniel Branning).
 Fix bad tremolo on crotchet after beamed notes without space
 	(reported by Jean-Luc Zins).
-Don't count the upbeat measure when %%measurenb.
 
----- Version 5.9.24 - 11/07/31 ----
+---- Version 6.4.6 - 11/09/27 ----
+
+Do %%linebreak work.
+Fix again compilation errors when pango is not available
+	(reported by Guido Gonzato).
+
+---- Version 6.4.5 - 11/09/24 ----
+
+Fix a ms-win file access problem raised by a previous change
+	(reported by Marc Philippe).
+Fix compilation errors when pango is not available
+	(reported by Guido Gonzato).
+Add %%linebreak (not fully compliant yet).
+Add the function 'repeat' in the PS to SVG interpreter.
+Fix bad PS when parenthesis in tablatures with w:.
+
+---- Version 6.4.4 - 11/09/19 ----
+
+Simplify the PS function rendering latin note names in deco.abc.
+Do string array indexing and character as string work
+	in the PS to SVG interpreter.
+Fix display offset after rotation in the PS to SVG interpreter.
+Fix inversion of condition code in the PS to SVG interpreter.
+Bad page header/footer when empty or blank %%header/%%footer
+	(reported by Marc Philippe).
+Do '%%pango 2' work again.
+
+---- Version 6.4.3 - 11/08/26 ----
+
+Add more functions and fix some bugs in the PS to SVG interpreter.
+Remove the command options '-n' (%%writehistory), '-k' (same as '-j')
+	and '-Q' (%%writefields Q).
+Remove %%freechord.
+Set %%exprabove, %%exprbelow, %%vovalabove, %%printparts, %%printtempo
+	%%musiconly, %%withxrefs and %%writehistory as obsolete.
+Add %%dynamic, %%gchord, %%ornament, %%vocal, %%volume and %%writefields
+	(from requests by Nils Liberg)
+	(%%ornament does not work yet).
+Add "%%pdfmark" as pdfmarks output condition.
+	(asked by Nils Liberg).
+Convert some latin1 octal escape sequences to utf-8.
+Delay PS code generation when staves not defined.
+Crash when %%staves/%%score error and complex staff system.
+Ignore the spaces after the ':' of information fields and after '%%'.
+	(asked by Nils Liberg).
+
+---- Version 6.4.2 - 11/08/11 ----
+
+Crash when many voices ending at different times without bars
+	(reported by Nils Liberg).
+Change the default extension of the '-X' output files to '.xhtml'.
+Fix the encoding of the titles in pdf marks
+	(reported by Nils Liberg).
+Check if the title in eps/svg files is correct UTF-8
+	(reported by Nils Liberg).
+Fix the display of the tuplet numbers with SVG output.
+
+---- Version 6.4.1 - 11/07/31 ----
 
 Check the sequences or measures to repeat in I:repeat.
 Crash or bad generation of repeat sequences
 	(reported by David Lacroix).
+Don't ignore leading spaces in ABC lines.
+Fix some problems about the pdf marks:
+    - trim the titles
+    - accept more than 3 title/subtitles
+	(reported by Chuck Boody).
+
+---- Version 6.4.0 - 11/07/28 ----
+
+Skip correctly %%begintext/%%endtext outside tunes when -E or -g.
+Fix bad width of -E and -g bounding boxes.
+Accept output to stdout with '-g'.
+Accept '-O-' for output to stdout  file.
+Output the pdfmark later in the PS output for Adobe Distiller
+	(reported by Chuck Boody).
+
+---- Version 6.3.9 - 11/07/22 ----
+
+SVG output:
+	- fix 'rotate' behaviour.
+	- fix bad scale when 'gsave' / 'scale' / 'grestore' between
+		'show's in PS sequences.
+	- add 'le', 'lt', 'and' and 'or' in the PS interpreter.
+	- accept PS 'stroke' or 'fill' with no path.
+Bad output file extension when '-O=' and many dots in filename
+	(reported by Hudson Flávio Meneses Lacerda).
+Accept 'middle=' to a high pitch (as "d'")
+	(reported by Hudson Flávio Meneses Lacerda).
+Bad title when %%withxrefs and X: absent or empty
+	(reported by Hudson Flávio Meneses Lacerda).
+Handle absence of the PS pdfmark function.
+Simplify the latin chord name translation in deco.abc.
+Change the output annotations of '-A'.
+	(asked by Nils Liberg).
+
+---- Version 6.3.8 - 11/06/26 ----
+
+Fix a possible problem with the memory allocator.
+Display tunes without X:.
+Set the PS level to 2.0.
+Add PDF marks for table of content
+	(proposed by Nils Liberg).
+
+---- Version 6.3.7 - 11/06/17 ----
+
+%%multicol did not work when at start of tune.
+Bad %%partbox when SVG output.
+	(reported by Nils Liberg and Chuck Boody).
+Better handling of some SVG attributes (colors, line width..).
+More decimals in scale change.
+Bad treatment of %%postscript at start of new tune in SVG output.
+Add the PS function 'bdef' for SVG output
+	(reported by Nils Liberg).
+Loop when line too much shrunk on beamed notes.
 Don't apply K: to all voices when it does not end the tune header
 	(reported by Seymour Shlien).
-Ignore the normal newlines when '!' found as newline and abc-version < 2.0.
+Update sample3.abc for double ^F in K:.
+The %%font directive is not useful when SVG output.
+Don't use pango when '-g' or '-X'.
 
----- Version 5.9.23 - 11/04/18 ----
+---- Version 6.3.6 - 11/05/30 ----
+
+Lack of page footer in SVG output.
+Add the '-X' command flag (XML + SVG output).
+Crash when PS 'dup' and stack empty in SVG generation
+	(fixed by Nils Liberg).
+Bad hyphen and line of lyrics in SVG output.
+Fix and add PS operators for SVG output.
+
+---- Version 6.3.5 - 11/05/14 ----
+
+Fix and add PS operators.
+Bad SVG output when PS 'moveto'
+	(reported by Nils Liberg).
+Bad SVG definition of the white and whole notes (no "oddeven")
+	(reported by Jon Freeman).
+Bad SVG output when %%scale 1.
+
+---- Version 6.3.4 - 11/05/11 ----
+
+Pseudo-decorations 'linebreak' and 'decosep' added
+	(proof of concept - not documented).
+Error when escape sequences in guitar chord or annotations.
+Bad tempo since previous release.
+Remove the 'tex' sequences '\o', \O', '\cc' and '\cC'.
+
+---- Version 6.3.3 - 11/05/10 ----
+
+Ignore the normal newlines when '!' found as newline and abc-version < 2.0.
+Add some compose sequences from X11 (including \O:, \U:, \O" and \U")
+	(reported by Nils Liberg).
+Change/add some rfc1345 escape sequences.
+Bad / no output of the '=' of the tempo by lack of font.
+	This did the program to crash when no title and SVG output
+	(reported by Nils Liberg).
+Cleanly close a tune when no blank line before next tune
+	(reported by Nils Liberg).
+Crash when X: in tune followed by %%text.
+Bad page header/footer in SVG output file.
+Fix standard C library problem (in isupper) with some systems/compilers
+	(reported by Nils Liberg).
+Bad treatment in %%titlecaps.
+Optimize the size of the SVG output file.
+Support for line width in SVG output.
+
+---- Version 6.3.2 - 11/05/03 ----
+
+Accept %%EPS when SVG output.
+Add the '-v' command flag (SVG output per page).
+More PS symbols in the svg PS interpreter.
+Bug fixes in the svg PS interpreter.
+
+---- Version 6.3.1 - 11/04/29 ----
+
+Handle microtonality in tablatures.
+Compilation problem when no pango
+	(reported by Guido Gonzato).
+Add more output annotations.
+Add more PS symbols in the svg PS interpreter.
+Fix bad SVG output.
+Fix the help for SVG output.
+
+---- Version 6.3.0 - 11/04/24 ----
+
+Crash when global texts and '-e' != first tune with '-E' or '-g'.
+Crash when PS buffer overflow with '-E' or '-g'.
+Crash when %%oneperpage or %%splittune with '-E' or '-g'.
+Fix lanscape mode for EPS.
+Fix EPS bounding box when %%scale in tune.
+Add the '-g' command flag (SVG output).
+
+---- Version 6.2.13 - 11/04/18 ----
 
 Add the '-S' command flag (secure mode)
 	(asked by Bart Humphries).
@@ -25,21 +593,73 @@ Don't ignore the normal newlines when '!' found as newline
 Add more information for tune index creation (second and third titles)
 	(asked by Paul Hardy).
 
----- Version 5.9.22 - 11/02/08 ----
+---- Version 6.2.12 - 11/04/04 ----
+
+Fix some compilation errors.
+Crash due to memory allocation bug.
+
+---- Version 6.2.11 - 11/04/03 ----
+
+Bad text justification without pango
+	(reported by Hudson Flávio Meneses Lacerda).
+Bad PostScript output when empty line at end of justified text
+	(reported by Hudson Flávio Meneses Lacerda).
+Bad note length when bad tuplet at end of line and multi voices.
+May have tuplet with one note.
+Crash when new voice starting with a key signature.
+Optimize the memory allocation.
+
+---- Version 6.2.10 - 11/03/06 ----
+
+Remove test '%%fmt ...'.
+Do pango output for filled and justified text.
+Better pango output.
+Remove %%pangoembedded.
+Bad horizontal offset of centered or right aligned texts.
+Bad stem direction in some cases since 6.2.8
+	(reported by Hudson Flávio Meneses Lacerda).
+Bad font after new page when text with '$n".
+Bad (latin1) UTF-8 character width.
+Fix loss of space in justified text
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix link error with last versions of pango.
+
+---- Version 6.2.9 - 11/02/08 ----
 
 Don't display negative bar numbers
 	(reported by Janus Meuris).
 Fix bad clef change again with K: or V: when stafflines or staffscale present.
+Fix voice clashes raised by previous version.
+Don't count the upbeat measure when %%measurenb
+	(reported by Hudson Flávio Meneses Lacerda).
+Less note shift when voices inverted in a staff.
+Add the width scale factor in %%font.
 
----- Version 5.9.21 - 11/01/31 ----
+---- Version 6.2.8 - 11/01/31 ----
 
 Bad tempo note duration of Q:Cxx or Q:Lxx
 	(reported by Paul Rosen).
 Crash when note length divisor = 0.
+Fix bad PostScript when %%font defined (and used) in the middle of a tune.
+Bad horizontal offset of notes when music line too much shrunk
+	(reported by Paul Rosen).
+Handle "+++" as a valid decoration
+	(reported by Guido Gonzato).
+Bad measure bars when "|" in %%score and many voices per staff
+	(reported by Marc Sabatella).
+Set the rests of multi-voices staves closer to the middle of the staff
+	(reported by Marc Sabatella).
+Fix the loss of gchord/annot when defined in a lower voice and
+	%%combinevoices (reported by Atte André Jensen).
+Don't display the second slash of "\\" with pango
+	(reported by Hudson Flávio Meneses Lacerda).
+Add "\Uxxxxxxxx" for unicode 32 bits characters.
+Limit the number of hexadecimal characters to 4 for unicode
+	16 bits characters "\uxxxx".
 Build and install abcm2ps from outside the source tree
 	(fixed by Matthias Rustler).
 
----- Version 5.9.20 - 10/12/26 ----
+---- Version 6.2.7 - 10/12/26 ----
 
 Bad clef when voice going to a different staff after %%score.
 Bad generation after %%score when the previous %%score did not contain
@@ -48,541 +668,197 @@ Output the lyrics (W:) in the last page when %%newpage's in the tune.
 Bad scale when %%newpage in tune (reported by Paul Rosen).
 Avoid bad PostScript when "$n" used before definition of %%setfont-n
 	(reported by Paul Rosen).
+Treat "\uxxxx" in text as a hexadecimal Unicode character.
+Bad font when texts with both standard fonts and pango
+	(reported by Hudson Flávio Meneses Lacerda).
+Fix some warnings.
 Crash when a nested slur started on a grace note
 	(reported by Paul Rosen).
 
----- Version 5.9.19 - 10/11/30 ----
+---- Version 6.2.6 - 10/11/30 ----
 
-Part display missing when P: defined before a clef change at start of line.
+Part display missing when P: defined before a clef change at start of line
+	(reported by Paul Rosen).
+Bad horizontal offset of text between %%begintext and %%endtext when
+	empty line and new PostScript page.
 Lack of %%postscript output when defined just after K:.
-Bad clef change with K: or V: when stafflines or staffscale present.
+Bad clef change with K: or V: when stafflines or staffscale present
+	(reported by Paul Rosen).
+Adjust the K: / V: 'middle=' value when the defined clef is not on a line.
+Handle "middle=" without 'clef=' in K: or V:.
 
----- Version 5.9.18 - 10/11/26 ----
+---- Version 6.2.5 - 10/11/26 ----
 
 Bad clef changes when many voices per staff.
 Bad key signatures on all staff systems but the first one when clef
 	different from treble.
+Bad measure numbers after measure repeat (Zn) and many voices.
 
----- Version 5.9.17 - 10/11/20 ----
+---- Version 6.2.4 - 10/11/20 ----
 
 Bad memory allocation mechanism making random crashes.
+Bad staff scale when change inside a tune.
+Bad staff clef when the music line starts with a clef change.
+Don't cut beamed notes when %%continueall.
+Bad horizontal offset of notes far outside the staff after a clef or
+	a key or time signature.
+Bad horizontal offset of long decorations when many at the same time.
+Use pango in header/footer as required.
+PostScript error when parenthesis alone in a header/footer.
+
+---- Version 6.2.3 - 10/11/01 ----
+
+Move the accidentals to a separate font.
+Use standard rendering when '%%pangoembedded 0'.
+'%%pangoembedded' added.
+Change pango output mechanism.
+
+---- Version 6.2.2 - 10/10/29 ----
+
+Better text center and right align with pango.
+Do pango generation when character >= c6xx.
+May force pango with '%%pango 2'.
+Define the character '...' (ellipsis) in sample.abc for show without pango.
+Define UTF-8 characters e008080..e2cfdf stubs for show without pango.
+Add characters 'ldot' to 'longs' (UTF-8 c580..c5bf) for show without pango.
+Better rendering with pango (scale changes).
+Do pango work when not in a graphic context (use cairo instead of gdk).
+Remove a useless malloc().
+
+---- Version 6.2.1 - 10/10/16 ----
+
 Bad vertical offset of key signature when clef change.
+Bad horizontal offset of lyrics starting with parenthesis.
+Change some PS definitions (treble and bass clefs, full head).
+Use encoded number strings in user paths.
+Convert some standard drawing to user paths.
+Bad box around guitar chord when not all ASCII characters.
 
----- Version 5.9.16 - 10/09/17 ----
+---- Version 6.2.0 - 10/10/06 ----
 
+Fix combination of rests (when %%combinevoices).
+May combine 3 or 4 voices (when %%combinevoices).
+Add quiet mode (-q in command line).
+Extend the U: syntax (see features.txt).
+
+---- Version 6.1.1 - 10/09/17 ----
+
+Bad scale when a voice moves to a staff with an other scale.
 Loop when '%%staves' inside the tune with a cloned voice.
 Loop when '%%staves' without any parameter (reported by Reinier Maliepaard).
+Expand the special characters of %%infoname texts.
+Use standard values for exit codes and max length of file names.
+The '*' (star) is no more allowed (it was ignored as the '`' - back quote).
+Check the character in U: definition.
 
----- Version 5.9.15 - 10/08/02 ----
+---- Version 6.1.0 - 10/08/02 ----
 
 Don't forget the %%infoname at start of file.
 Crash on '%%infoname R' (reported by Chuck Boody).
 Crash when clef in V: and no note in the tune (reported by Reinier Maliepaard).
-Bad tie direction when dotted.
 
----- Version 5.9.14 - 10/06/22 ----
+---- Version 6.0.11 - 10/07/20 ----
+
+Clash of rest under beam when multi-voices.
+Clash of notes/clefs/grace notes/dots when multi-voices and strunk lines.
+Don't display dots on the last square note of the tune.
+Bad stem direction of grace notes in secundary voices.
+Reduce the natural spacing when only long notes in a tune.
+Define the user decorations when needed.
+Erroneous bar error and bad placement when grace note before measure
+	bar and multi-voices.
+Bad tie direction when dotted (reported by Hudson Lacerda).
+Bad PS output when parenthesis in P: (reported by Hudson Lacerda).
+
+---- Version 6.0.10 - 10/06/22 ----
 
 Bad tune selection when <last_index> absent in "-e".
 Bad title when title trim.
+More horizontal space for flat accidental in texts.
 Change the directory separator for MAC systems.
+Fix a crash when unknown glyph with pango.
+Fix lyrics error in chinese.abc.
 
----- Version 5.9.13 - 10/04/11 ----
+---- Version 6.0.9 - 10/04/11 ----
 
 Fix more security vulnerabilities (thanks to Tim Starling).
 
----- Version 5.9.12 - 10/04/05 ----
+---- Version 6.0.8 - 10/04/05 ----
 
+Change the utf-8 font mechanism from CMAP to composite font (FontType 0).
 Fix some security vulnerabilities (thanks to Tim Starling).
 Add %%Begin/EndDocument when inserting a EPS file (thanks to Reinier Maliepaard).
+Fix bad guitar chord / annotation offset when non latin characters and pango.
+Have flats a bit higher in texts.
+Have more space between accidentals in key signatures.
 
----- Version 5.9.11 - 10/02/24 ----
+---- Version 6.0.7 - 10/02/24 ----
 
 Fix measure bar numbering when %%setbarnb and many voices.
 Fix measure bar numbering when M:none.
+Fix the EPS output when use of pango.
+Fix a crash when '-E' at start of command line and use of pango.
+Fix the EPS output when accidentals.
 Fix the output of user postscript sequences when many output files.
 Fix a crash when slur ending on a grace note at end of a secundary voice.
+Include back chinese.abc in the tarball.
+
+---- Version 6.0.6 - 10/02/19 ----
+
+Handle font changes inside lyric words.
+More flute tablatures from Michel Bellon.
+Add information about pango in the INSTALL file.
+Force recompilation after configure.
+Change the glyphs of accidentals.
+Speed up the PS rendering of pango text.
+Do the TAB in guitar chords work again.
+Fix the parenthesis problem with pango.
+Adjust some compose characters sequences.
+Move the setcachedevice from the Extra font to the extra-draw dict.
+	This permits to add characters from various sizes.
 Fix a crash when a tune ends with T:.
 
----- Version 5.9.10 - 10/02/02 ----
+---- Version 6.0.5 - 10/02/12 ----
 
-Fix lyrics display when not enough or too many lyrics in a music line alone
-	(the previous fix was not applied).
+Add the 'pango' parameter.
+Add an arabic title in chinese.abc.
+Fix a crash when non ascii characters in tunes, outside of text strings.
+Print some texts with the pango/freetype libraries.
 
----- Version 5.9.9 - 10/01/31 ----
+---- Version 6.0.4 - 10/02/09 ----
 
+Do the hyphen work again in lyrics.
+Prepare the 'pango' job.
+Fix bad horizontal spacing of accidentals.
+Add O/obreve.
+Add some compose characters from the ABC standard version 2.
+
+---- Version 6.0.3 - 10/01/31 ----
+
+Change the character values for accidentals to correct utf-8 sequences.
 Fix bar numbering when incomplete measure at start of tune.
 Fix bar numbering when incomplete measure at end of previous line.
-Fix lyrics display when not enough or too many lyrics in a music line alone.
 
----- Version 5.9.8 - 10/01/19 ----
+---- Version 6.0.2 - 10/01/28 ----
 
+Change the utf-8 mechanism for extra characters.
+Fix lyrics display when not enough or too many lyrics in a music line.
+
+---- Version 6.0.1 - 10/01/20 ----
+
+Remove the latin parameters.
+Do the accidentals in string ('\201'.. and '#'.. in guitar chords)
+	work again.
+Accept ABC files coded in latin1.
+
+---- Version 6.0.0 - 10/01/19 ----
+
+Remove multilang.abc.
+Add chinese.abc.
+Generate PostScript level 3 only.
+Add UTF-8 support.
+	!! COMPATIBILITY !!
+	The other encodings (latin-x) are no more supported.
 Add all whistle types in flute.fmt (thanks to Guido Gonzato).
 
----- Version 5.9.7 - 09/11/18 ----
-
-Add default PS definitions for dble sharp/flat percussion heads.
-Lack of time signature at start of new voices.
-+invertedfermata+ did not work since a long time ago!
-Don't loose the words when %%alignbars.
-Don't output the lyrics at end of alignbars.
-Don't align measure bars and notes.
-Bad multi-rests when different durations.
-
----- Version 5.9.6 - 09/10/02 ----
-
-Crash when whole measure rest at start of a voice appearing in %%staves
-	in the middle of a music line.
-Bad multi-rest when Zn at start of new voice appearing in %%staves.
-Bad vertical offset of guitar chords when annotations above.
-May have flatbeams for any music type (not only bagpipe).
-Change the default %%dateformat value on MS-Windows.
-Fix a compilation warning in draw.c.
-Have the bars between staves working again in deco.abc.
-
----- Version 5.9.5 - 09/05/25 ----
-
-Bad duration of notes in nested tuplets.
-Bad clef vertical offset when should go to the 5th line with 'middle='.
-Bad horizontal offset of guitar chords in repeat measures.
-May have repeat measures / sequences on many following music lines.
-No legder line when shifted note of chord between lines.
-Fix bad horizontal offset of ledger lines when note/chord shift.
-Don't display the name/subname of voices with no notes in the staff.
-
----- Version 5.9.4 - 09/04/12 ----
-
-Bad end of slur when should stop on space at start of line.
-Resolve tie on two voices at end of line.
-Bad tuplets when combinevoices and some possible chords.
-Bad value of 'q' in tuplets when omitted and depending of M:
-	(for p = 5, 7, 9 and above).
-Have ']' as a thick bar when not end of repeat.
-Accept ']|' (same as '[|') and '[:' (same as ']:').
-Add the BoundingBox in PS output (thanks to Martin Meyerspeer).
-Crash when more than 8 notes in a chord.
-Don't put lyrics on grace notes.
-Don't put P: or Q: above a multimeasure rest.
-Reset the ABC2WIN flag (detection of new line by '!') at each tune.
-
----- Version 5.9.3 - 08/12/25 ----
-
-Newer config.guess and config.sub (x86_64 problem).
-Bad duration of the (deprecated) measure repeat in second voices.
-Fix compile warning in draw.c.
-Fix a possible bad tie when dotted.
-
----- Version 5.9.2 - 08/12/23 ----
-
-Bad room calculation of upper annotations.
-Don't insert an automatic clef change at start of tune or new %%staves
-	when the first notes may fit the bass clef.
-Bad displayed clef when many automatic clef changes and multi voices.
-Bad clef when voice with some clef replaced by voice with other clef
-	on the same staff after %%staves.
-Smaller hyphen at start of line.
-Bad accidental on the upper voice when chord with second interval
-	in the lower voice.
-Keep the dotted information when slur or tie is continued on next line.
-Set max length of decoration names to 31 characters.
-Fix PostScript inclusion when output file already opened.
-Fix error with old M$ Visual C compiler.
-Bad PS output or crash when two consecutive %%staves have voices inverted
-	in the same staff.
-Crash when voice overlay ('&') in a voice out of %%staves.
-Crash when P: in a voice out of %%staves.
-Small errors in the '%%tablature' documentation.
-
----- Version 5.9.1 - 08/09/29 ----
-
-Bad music line definition when line overfull inside the tune.
-Crash when guitar chord/annotation on first note of a secundary voice.
-Command line parameter '-' alone did not work since a long time ago..
-
----- Version 5.9.0 - 08/09/25 ----
-
-Loop when tabulation in guitar chord and next symbol is not a note/rest/bar.
-Bad vertical offset of longa rests.
-Bad grace note duration and beams when many notes.
-Crash when %%header/footer in tune.
-The clef name in K: or V: may be a PostScript function.
-'stafflines=<value>' in V: was not documented.
-Bad display when repeat bracket on two voices.
-Define the music lines from the EOL of the first voice only.
-Bad grace notes at start of tune when Q: present.
-Bad handling of %%alignbars since 5.7.0.
-Bad handling of multi-rests (Z) at start of tune.
-Replace the PostScript glyph 'Tcedilla' by 'Tcommaaccent'
-	(thanks to Erik Ronstr�m).
-Bad horizontal offset of lyrics when word starts with '$n'.
-Draw the decorations of invisible notes and rests.
-Erroneous measure bar errors when %%staves order different from declaration.
-Crash when lyrics at start of secondary voice.
-Crash on one multi-rest ('Z1').
-Change a bit the guitar chord / annotation handling.
-'gchord=up|down' added in V:.
-Handle the lack of 'exp' in K:.
-Bad display when stem on two staves and reverse directions.
-Decorations +/+, +//+ and +///+ (tremolo on one note) added.
-
----- Version 5.8.1 - 08/06/14 ----
-
-Always apply an octave translation for bass and alto when %%abc2pscompat.
-Bad bars when multi-voices and grace notes before bars.
-Bad bars when multi-voices and voice appearing after %%staves.
-Crash when %%staves with less voices and lyrics.
-Don't change 'b', '#' and '=' to accidentals when 1st char or
-	just after a slash in guitar chord.
-
----- Version 5.8.0 - 08/02/09 ----
-
-Extend %%tablature.
-Add the command line argument '-T'.
-Remove the command line argument '-W'.
-
----- Version 5.7.4 - 08/02/01 ----
-
-Output the ledger lines before the note heads (useful with colored notes).
-Forbid a null voice in '-W'.
-Some format parameters (as %%tablature) were ignored when immediately
-	after K: or V:.
-Move the PostScript definitions for the twin whistle to the file
-	'flute.fmt'.
-Bad whistle tablature since 4.x.x!
-Loss of the space before the line continuation sign since 5.7.1.
-Bad key signature at end of line since 5.7.3.
-Don't shift up the repeat brackets when guitar chord on the next note.
-
----- Version 5.7.3 - 08/01/14 ----
-
-Break the beams on end of line per default.
-%%breakoneoln added.
-Loss of acciaccatura since 5.7.1.
-Bad slur on grace note at start of line and tempo since 5.7.0.
-More space at end of line when no measure bar.
-Crash when pseudo-comment at start of file since 5.7.2.
-
----- Version 5.7.2 - 08/01/08 ----
-
-Bad PostScript output when %%postscript or %%beginps inside a tune
-	since version 5.7.0.
-Don't start a new page anywhere in normal '%%begin/end text', but
-	only on empty lines.
-Crash after the error 'max number of buffer lines exceeded'
-	in multicolumn sequences since version 4.x.x.
-
----- Version 5.7.1 - 07/12/17 ----
-
-Fix more bugs of the previous version(s) (bad starting clefs).
-Word start/stop change in the ABC parser interface.
-Raise an error when measure bars inside grace note sequences.
-
----- Version 5.7.0 - 07/12/08 ----
-
-Better handling of %%staves inside music lines.
-Change some internals.
-Fix more bugs of the previous version(s).
-
----- Version 5.6.2 - 07/12/01 ----
-
-Bad start of music line when 2nd voice starts with grace notes.
-Better spacing of the last music line.
-Better beams when voices with same stem direction in a staff.
-Bad unisson when quaver and minim and one dot.
-Problems with ties and repeat sequences.
-Fix more bugs of the previous version(s).
-
----- Version 5.6.1 - 07/11/19 ----
-
-Bad scan of 'endps' at end of format file when no EOL.
-Bad start of tune when multi-rest and rests at the same time.
-Fix some of the many bugs of the previous version(s).
-
----- Version 5.6.0 - 07/10/29 ----
-
-Don't stop a repeat bracket at end of line.
-Better grace notes with chords and head shifts.
-Don't stop music generation when %%staves encountered (!compatibitily!).
-Crash when %%combinevoices and short rests at end of tune.
-Don't stop the generation when tune filtering (-e) and a tune index
-	with a value greater than the filter stop value.
-No more check of misplaced measure bars.
-Big internal changes.
-Fix the handling of %%stretchstaff and %%stretchlast.
-Stopping beams when spaces at start of continuation line was lost.
-Bad scan of '*' in %%score.
-
----- Version 5.5.2 - 07/08/18 ----
-
-Bad spacing at start of tune when tempo, bar and many voices per staff.
-Bad extra music line when line overflow and no bar at the end.
-Handle the line break of ABC2WIN ('!').
-Align the ABC parser with tclabc-1.0.10.
-
----- Version 5.5.1 - 07/07/27 ----
-
-Change some internals for vertical alignment.
-Ignore the clef of secundary voices.
-Don't change escaped double quotes to column in strings.
-Output PostScript sequences at start of line before staff drawing.
-Draw the staves before notes.
-Smaller repeat bracket when ending on a left repeat bar.
-More changes in the horizontal spacing mechanism.
-Option 'f' added in %%staffbreak.
-
----- Version 5.5.0 - 07/07/11 ----
-
-Better (?) detection of measure bars errors.
-Don't go to the voice of an other staff when drawing a tie between
-	different voices.
-Handle PostScript sequences per voice at start of line.
-Bad handling of voice overlay ('&') when no note or rest before.
-Lack of clef change when measure repeat.
-Big changes in the horizontal spacing mechanism.
-Bigger accidentals in strings.
-
----- Version 5.4.4 - 07/06/23 ----
-
-Bad space at end of line when key signature change.
-%%gracespace added.
-
----- Version 5.4.3 - 07/06/09 ----
-
-Bad spacing when grace notes after a measure bar and multi-voice.
-Don't count incomplete measures in %%barsperstaff.
-Don't output %%text, %%center, %%begin/endtext and %%EPS when
-	%%textoption = 4 (skip).
-Apply %%textoption to %%text.
-Bad placement of P: when between two bars and at start of line.
-May have 'C', 'C|', 'c', ... in complex time signatures.
-
----- Version 5.4.2 - 07/05/01 ----
-
-Lyrics after tune did not work.
-Crash when '&' at start of tune.
-Crash when $Ix in %%header/%%footer.
-
----- Version 5.4.1 - 07/04/26 ----
-
-Bad merge of rests in %%combinevoices.
-%%measrep changed to %%repeat and extension to note sequence repeat.
-Ancient time signatures added ('o' | 'c' [ '.' ]).
-Smaller shift at ends of slurs.
-Lack of helper lines on some breve and longa rests.
-Bad handling of voice overlay when starts with invisible rest.
-Change glyph and alignment of long notes/rests (>= semibreve).
-%%score did not work.
-Don't stop the repeat brackets on invisible bar.
-Bad clef insertion when near a repeat sequence.
-Better horizontal offset of end of repeat bars.
-More compact output of %%writehistory.
-%%infoname added.
-'$Ix' added in %%header/%%footer.
-Any information fields range 'A' to 'Z' may go in %%titleformat.
-
----- Version 5.4.0 - 07/04/01 ----
-
-Rests alone on a staff should now be vertically centered in all cases.
-Better double measure repeat when at end of line.
-%%measrep added.
-Problem when voice overlay and bar at start of tune.
-Changes in the structures of the ABC parser.
-Bad height of some measure bars.
-Better grace notes on different staves.
-Bad horizontal spacing when many voices and grace notes after measure bars.
-Suppress header/footer on the 1st page when format starts with '-'.
-Always indent the 1st line when %%indent set.
-Display the voice name when appearing inside a tune.
-Avoid clash of hyphen in lyrics under staff at end of line.
-Put lyrics after tune before any later text.
-
----- Version 5.3.1 - 07/03/12 ----
-
-Better horizontal offset of short/medium/long phrases at end of line.
-Bad measure bars when some empty voices in a staff system.
-%%score added (ABC standard version 2).
-Better braces/brackets at start of staff systems.
-Better check of misplaced measure bars.
-Command line option '-j<n>' did not work when '%%measurenb' in tune.
-Change the horizontal spacing algorithm.
-
----- Version 5.3.0 - 07/02/09 ----
-
-Bad head when unisson on voices with different scales.
-May have long decorations between different voices on a same staff.
-Bad horizontal spacing when no bar at end of previous line.
-Better place for the measure numbers.
-Change the calculation of decorations near the notes and the
-	PS definition of /dot end /emb (!compatibility!).
-Clash of decorations and tuplets.
-Room for the box of guitar chords.
-Clash of gchord/upper annotations.
-Better vertical offset of rests when voices inverted on the staff.
-%%abc2pscompat added, 'CLEF_TRANSPOSE' (config.h) removed
-	 (!compatibility!).
-Crash when annotation or guitar chord not closed.
-Bad measure bars when empty staves.
-Don't print a staff when 'staffnonote' and visible rests only.
-
----- Version 5.2.5 - 07/01/27 ----
-
-Fix some cases of bad vertical offset of rests in multi-voice staves.
-%%shifthnote removed, replaced by %%shiftunisson.
-Better beams when inverted or multi-staves stems.
-Adjust the stem height when different number of flags at the ends
-	of beams.
-Clash of arpeggio with previous note.
-Bad tie at start of line if tie to other voice.
-Change 'Dbar' to 'Dcroat' in latin 2, 4 and 6 encodings.
-Adjust again the horizontal spacing at start of music lines.
-Bad font in some new page cases.
-
----- Version 5.2.4 - 07/01/15 ----
-
-Smaller horizontal spacing of key and time signatures at start of
-	staff.
-Have the g# above the staff in explicit key signature.
-Put the dynamics of grace notes under the staff if asked for normal
-	notes.
-Bad decorations when put before a grace note sequence.
-Output the encodings before the user global PostScript.
-
----- Version 5.2.3 - 06/12/27 ----
-
-Correct alignment of voice names when scale != 1 and/or stafflines != 5.
-Accept '-O -' (space after 'O') in the command line.
-Add the height above the staff in %%tablature.
-May have !invisible! on rests and measure bars.
-May have V: staffscale up to 3.
-'creator' added in the PostScript output.
-Ignore the invisible notes when calculating the beams.
-%%staffbreak did not work since 5.2.2.
-May have tablatures above the staff.
-Bad font when tablature with forced font and normal lyrics.
-
----- Version 5.2.2 - 06/12/19 ----
-
-May insert PostScript files as format files (with '-F' or %%format).
-%%staffnonote added.
-Bad handling of escaped characters in lyric lines (w:) after
-	font change ($n).
-%%staves did not work in tune header since 5.2.1.
-Change some PS routines (!/staff arguments and encodings!).
-Change %%tablature syntax and associated functions arguments
-	(!compatibility!).
-
----- Version 5.2.1 - 06/12/11 ----
-
-Bad encoding and calculated size when '$0" in a string.
-Handle some "$n" in lyrics under staff.
-%%tablature added.
-Add elements to build a tune index (thanks to the script 'abcmaddidx.tcl').
-New command line option '-i' added.
-%%pslevel removed.
-
----- Version 5.2.0 - 06/11/29 ----
-
-Handle some type 3 fonts.
-Do the PostScript output always work with level 1 interpreters.
-Do the PostScript output work again with RoPS.
-Better place of dots when close voice overlay (again!).
-Have the decorations tied to notes under the slurs.
-Handle the number of lines per staff when displaying the staff system.
-Bad left system bar when stafflines of the lowest staff <= 3.
-Apply %%sysstaffsep and %%maxsysstaffsep to the current voice
-	when in tune.
-
----- Version 5.1.2 - 06/11/13 ----
-
-Align or center the EPS content according to %%textoption.
-Option 'right' in %%textoption and %%begintext.
-Handle the lack of <last_index> in tune filtering.
-Don't break the tie/slur stuff when '%%repbra 0'.
-Big rewrite of voice overlap.
-Bad placement of P: when voice overlay at end of previous line.
-Add '+' in %%titleformat (!compatibility!).
-Bad title when ', A' in %%titleformat.
-
----- Version 5.1.1 - 06/10/02 ----
-
-Better place of notes and dots when close voice overlay.
-Align lines in %%titleformat.
-Have smaller notes in tempo of %%titleformat.
-Have %%titlespace before the whole %%titleformat.
-sample5.abc added.
-Have the tempo printed in %%titleformat when '%%printtempo 0'.
-deco.abc did not work since 5.1.0..
-
----- Version 5.1.0 - 06/09/19 ----
-
-May have accidentals in any string.
-Change the mechanism of displaying accidentals in guitar chords.
-Expand tabulations in guitar chords.
-Don't print the tempo if Q: in the header and '%%printtempo 0' later.
-Format the tempo in %%titleformat.
-Start a new page when a multicol sequence crosses a page.
-Command parameter '-0' / '+0' did not work.
-Search the %%EPS files in the ABC source and format directories.
-May have a quoted string as a file name in %%EPS.
-
----- Version 5.0.6 - 06/09/11 ----
-
-Bad handling of backslashes in quoted strings.
-Handle %%titlespace... in %%titleformat.
-May have the tempo ("Q") in %%titleformat.
-Erroneous vertical shifts of tempo since 5.0.5.
-
----- Version 5.0.5 - 06/08/28 ----
-
-Clash of tempo.
-Clash of slurs and tuplets.
-Bad place of dots in some cases of voice overlay.
-
----- Version 5.0.4 - 06/08/01 ----
-
-Better ties between short notes.
-Problems on ties at end of line since 5.0.3.
-
----- Version 5.0.3 - 06/07/31 ----
-
-Larger space when microtonal accidental and voice unisson.
-Bad ties in some last measures when %%combinevoices.
-Bad annotation when semicomma after 2 backslashes.
-%%titletrim added.
-Loss of the last character of the title when ending with "The".
-Bad horizontal offsets when %%continueall.
-Bigger horizontal space for microtonal accidentals.
-Try also to get the %%format files from the ABC source directory.
-Continue changing the horizontal spacing mechanism.
-
----- Version 5.0.2 - 06/06/30 ----
-
-Handle again the gchord/annotation/lyric font changes.
-Bad time signature on remaining staves when %%timewarn activated.
-Center the multi-measure rests.
-Bad font of the first tempo (Q:).
-Erroneous expansion of multi-measure rests when voice overlay.
-Treat the decorations of multi-measure rests.
-Bad broken rhythm ('>', '<') when space ('y') inside.
-
----- Version 5.0.1 - 06/06/19 ----
-
-May have a negative value in %%vskip.
-Vertical offset problem when %%multicol at start of ABC file.
-Sometimes, bad horizontal offset of symbol when at start of line.
-%%titleformat did not work since 5.0.0.
-When omitted in a specific font definition, take the encoding
-	from a previous "%%font".
-Bad font when font change of the same current type.
-Bad stem direction or dot/tenuto vertical offset in upper voices
-	after a rest.
-
----- Version 5.0.0 - 06/06/15 ----
-
-Bad horizontal offset of tempo (Q:) when M:none.
-Change the internal font handling.
-May concatenate fields in %%titleformat.
-Start changing the horizontal spacing mechanism.
-Remove !YSTEP conditionnal code.
-Purge the code.
-
-Creation from abcm2ps version 4.12.18.
+Creation from abcm2ps version 5.9.7.

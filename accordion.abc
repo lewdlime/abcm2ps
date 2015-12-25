@@ -29,7 +29,6 @@
 	grestore
 }!
 % string x y n accordn - accordion tablature
-/str ( ) def
 /accordn{
 	-18 mul add barh add 3 add M showc
 }!
@@ -39,8 +38,8 @@
 %%endps
 
 X:3
-T:Andro à Patrice Corbel
-N: validé 03/05/01 -- 04/08/02
+T:Andro Ã  Patrice Corbel
+N: validÃ© 03/05/01 -- 04/08/02
 R:Andro
 O:Bretagne
 M:4/4
@@ -66,7 +65,7 @@ L:1/8
 Q:100
 K:Am
 %%tablature 90 accordh accordn accordb
-    |: "Am" ee/f/ "Am" ed "Am" c2   | "Am" ed/c/ "G" Bd "Am" cA | "Am" ee/f/ "Am" ed "Am" c2   |1 "Am" ed/c/ "G" BG "Em" E2 :|2 "Am" ed/c/ "G" BG "Am" A2 |
+ |: "Am" ee/f/ "Am" ed "Am" c2   | "Am" ed/c/ "G" Bd "Am" cA | "Am" ee/f/ "Am" ed "Am" c2   |1 "Am" ed/c/ "G" BG "Em" E2 :|2 "Am" ed/c/ "G" BG "Am" A2 |
 w:     * * *  * *  * | * * *  7 8  * * | * * *  * *  * | * * *  7 6  4'| * * *  7 6  *  
 w:     9 9 8'  9 7'  8 | 9 7' 8  * *  8 7 | 9 9 8'  9 7'  8 | 9 7' 8  * *  * | 9 7' 8  * *  7  
 w: A a *  A a A~~a | A a * G g E e | A a *  A a A~~a | A a * G g E~~e | A a * G g E~~e | 

@@ -1,4 +1,4 @@
-# abcm2ps version 5.x.x
+# abcm2ps version 6.x.x
 
 ## Overview
 ---
@@ -8,7 +8,9 @@ abcm2ps is a program which converts music tunes from ABC format to PostScript. B
 ## Features
 ---
 
-The main features of abcm2ps are quite the same as the abc2ps ones, but they are closer to the current ABC standard (draft IV - 14/8/2003): [abc.sourceforge.net/standard/abc2-draft.html](http://abc.sourceforge.net/standard/abc2-draft.html)
+The main features of abcm2ps are quite the same as the abc2ps ones, but they are closer to the ABC standard 2.0 (draft IV - 14/8/2003):
+
+[abc.sourceforge.net/standard/abc2-draft.html](http://abc.sourceforge.net/standard/abc2-draft.html)
 
 ## Installation and usage
 ---
@@ -31,7 +33,7 @@ where `file1, file2, ..` are the ABC input files. This will generate a Postscrip
 ## Differences with abc2ps
 ---
 
-- the algorithms relative to voice and staff handling are different and may give better or worse results depending on the tunes.
+- The algorithms relative to voice and staff handling are different and may give better or worse results depending on the tunes.
 - abcm2ps does not print the list of tunes and has different filtering functions. On the command line:
     - '`-o`' is implicit
     - '`-e`' accepts only one parameter.
@@ -48,15 +50,14 @@ where `file1, file2, ..` are the ABC input files. This will generate a Postscrip
 
 Many limits may be changed at compilation time (number of voices, staves, ..).
 
-## Contacts
+## Contacts <a name="#Contacts" />
 ---
 
 The primary abcm2ps site is:
 
 [moinejf.free.fr](http://moinejf.free.fr/)
 
-Guido Gonzatto maintains Win32 and RedHat binaries and some more
-documentation at:
+Guido Gonzatto maintains Win32 and RedHat binaries and some more documentation at:
 
 [abcplus.sourceforge.net](http://abcplus.sourceforge.net/)
 
@@ -68,7 +69,7 @@ msm (at) ihp-ffo (dot) de
 
 To know more about the ABC notation, have a look at:
 
-[abc.sourceforge.net](http://abc.sourceforge.net/)
+[abcnotation.com](http://abcnotation.com/)
 
 For any comment:
 

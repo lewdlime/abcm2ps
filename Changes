@@ -1,0 +1,460 @@
+---- Version 1.6.12 - 00/12/30 ----
+
+Bad vertical spacing when guitar chords.
+
+---- Version 1.6.11 - 00/12/24 ----
+
+Have !breath! above the staff.
+
+---- Version 1.6.10 - 00/12/10 ----
+
+Don't display the time signature after P:.
+Bad key signature when changing from flats to no accidental.
+
+---- Version 1.6.9 - 00/11/26 ----
+
+Clef change problem.
+
+---- Version 1.6.8 - 00/11/23 ----
+
+Accept !breath! (thanks to Guido Gonzato).
+
+---- Version 1.6.7 - 00/11/22 ----
+
+Bad head note when minim and quaver at the same pitch.
+
+---- Version 1.6.6 - 00/11/19 ----
+
+Remove ricercar.abc from the distribution.
+Piano/forte decorations below the staff if no lyrics.
+No shift when minim and quaver at the same pitch.
+Invisible and dashed bars.
+Have measure numbering options in format files and in pseudo-comments.
+May start measure numbering with the command line option '-f'.
+Could not read from stdin since some time.
+Abnormal message and exit when eps.
+Too many output files when eps and filtering.
+Bad bar type at start of line.
+
+---- Version 1.6.5 - 00/11/13 ----
+
+Bad extra repeat indication at start of staff when multi-voices.
+Accept '|' in %%staves to prevent bars from crossing the staves.
+Remove the style.h link from the distribution.
+Better position of bar numbers.
+Better clef change (?).
+May have bar numbers (command line) and parts (font spec) in box.
+
+---- Version 1.6.4 - 00/11/05 ----
+
+Bad note/rest display when many ouput files (.eps or many -O).
+May have any number of input files.
+Should work on 64 bits machines.
+Remove the '-b' option that did not work.
+Count with the upper/lower notes in chord for clef changes.
+
+---- Version 1.6.3 - 00/11/01 ----
+
+Have better ties at start/end of line.
+Don't break beaming when symbol != note, rest or bar.
+Fix extra char on multi-line guitar chords.
+Accept 'y' as 'x' (invisble rest).
+Did not have rest under beam since some time.
+Set back the compile option DECO_IS_ROLL.
+Don't center the rests when guitar chord.
+Have ties in the same directions when chord on many notes.
+Crash when [V:1] as the first line after K:!
+
+---- Version 1.6.2 - 00/10/29 ----
+
+Loop when '-c' as an argument.
+Bad spacing when no bar in the line.
+Simplify multi-voice spacing.
+Errors when lines starting with bars and multi-voices.
+Bad display when key sig change at end of line.
+
+---- Version 1.6.1 - 00/10/22 ----
+
+Change space calculation between notes.
+Crash when no bar at end of tune.
+Don't duplicate endings in .ps when multi-voices.
+
+---- Version 1.6.0 - 00/10/15 ----
+
+Correct handling of 'H:'.
+May have tempo with text only.
+Handle end of line after embedded info field.
+Bad repeat indication display when line overfull or underfull.
+Bad rest vertical position when floating voice.
+Have a correct inter-staff space when line overfull.
+
+---- Version 1.5.5 - 00/10/08 ----
+
+Set the piano/forte indication above the staff when lyrics.
+Center again rest alone in the staff (broken since 1.3.0).
+Crash when standard decoration on a bar.
+
+---- Version 1.5.4 - 00/10/08 ----
+
+Stop H: scanning on pseudo-comment.
+Crash when note alone in a slur at start or end of tune.
+Bad ties/slurs when multi-voices.
+Bad beam drawing when on 2 staves (not completely fixed).
+Loss of notes when line overfull.
+Bad line break when -B and multi-voices.
+Bad clef change when floating voices.
+Bad beaming when no bar at end of line.
+May have a same voice on many staves.
+Don't lose the voice clef on %%staves.
+
+---- Version 1.5.3 - 00/10/01 ----
+
+Crash/loop when first voice changes in %%staves.
+Crash when unknown decoration.
+Have greater space at end of line when no bar.
+Could not have titles in tune since 1.2.0!
+Better error messages.
+Set back to 3 the shift for lyrics starting with a digit.
+Better floating voice staff setting.
+
+---- Version 1.5.2 - 00/09/22 ----
+
+Have a compile option for '-v'.
+Bad staves definition since 1.5.0.
+
+---- Version 1.5.1 - 00/09/21 ----
+
+Bad rest vertical offset when multi-voices and floating voice.
+Crash when decoration not treated.
+
+---- Version 1.5.0 - 00/09/17 ----
+
+Little support to 3 voices/staff (not finished).
+Bad rest position when alone in a measure with a tempo.
+Better rest vertical position when multi-voices.
+Bad voice subnames since 1.4.0.
+
+---- Version 1.4.1 - 00/09/11 ----
+
+The voice names were no more displayed since 1.4.0.
+Don't display the time signature after %%staves in tune.
+
+---- Version 1.4.0 - 00/09/10 ----
+
+Better %%staves handling.
+May have clef change inside a measure.
+
+---- Version 1.3.13 - 00/09/03 ----
+
+Clef display problem when %%staves inside a tune.
+Have thicker beams.
+Accept -k (same as -j) in command line (abc2ps compatibility).
+Handle chord overlap in multi-voices.
+
+---- Version 1.3.12 - 00/08/23 ----
+
+Bad .ps output when parenthesis in texts (such as W:).
+
+---- Version 1.3.11 - 00/08/22 ----
+
+w: did not work since 1.3.10.
+
+---- Version 1.3.10 - 00/08/20 ----
+
+Add back some TeX specific text sequences.
+Fix more array overflow potential problems.
+
+---- Version 1.3.9 - 00/08/13 ----
+
+Multi-line guitar chords did not work since 1.3.8.
+Fix some possible array overflows.
+Remove some Borland C++ compile warnings.
+
+---- Version 1.3.8 - 00/08/10 ----
+
+Accept '\%' in texts.
+Bad note spacing when vocals (w:) starting with a digit.
+Accept Latin 2..6 escape sequences in abc files.
+
+---- Version 1.3.7 - 00/08/06 ----
+
+Loop when multi-voices and x: only between bars.
+Crash when verbose >= 3.
+Accept Latin 2..6 encodings.
+
+---- Version 1.3.6 - 00/07/02 ----
+
+Beam break when n-plet.
+Ties drawing problems (thanx to Markus).
+
+---- Version 1.3.5 - 00/06/18 ----
+
+M$win opening file problem.
+
+---- Version 1.3.4 - 00/05/21 ----
+
+Change the slur drawing algorithm.
+K: with clef only was destroying the key signature.
+Have decorations on bars and invisible rests.
+
+---- Version 1.3.3 - 00/05/16 ----
+
+Better slur drawing.
+Do BSTEM_DOWN work.
+
+---- Version 1.3.2 - 00/05/08 ----
+
+Bad unit note length for M:C| and when L: before M:.
+Don't have extra vertical space when tune(s) not selected.
+Have better vertical space when different number of lyric lines.
+More check about the number of lyric words.
+BSTEM_DOWN compilation option (B stem always downwards).
+'pf' decoration a little upper when below the staff.
+
+---- Version 1.3.1 - 00/05/01 ----
+
+Change slur drawing (start/end height).
+Bad key signature drawing when changing form sharps to flats and reverse
+since 1.2.0.
+Accept decorations on rests.
+Crash when not enough notes and floating voices.
+Handle more decorations.
+Error parsing the decorations.
+
+---- Version 1.3.0 - 00/04/24 ----
+
+Handle the mordent decorations.
+Handle all global definitions when tune selection.
+Global definitions did not go to the 1st tune.
+Treat the user defined decorations.
+
+---- Version 1.2.13 - 00/04/16 ----
+
+Let having rest under beams again.
+Bad scanning of %%staves.
+Accept void voices.
+Core dump when slurs/ties at end of line since 1.2.12.
+Accept many guitar chords (doing the same as '\n').
+Spacing problems since 1.2.11.
+Core dump when verbosity > 8 and only one voice.
+
+---- Version 1.2.12 - 00/04/09 ----
+
+Erroneous errors when bar and repeat indication.
+Bad stretch on last line.
+Change some postscript images.
+Have better (?) indentation for the tempo.
+Bad line cut when multi-voices and not on a bar.
+Lack of last char in syntax error.
+
+---- Version 1.2.11 - 00/04/02 ----
+
+Crash when multi-voices and rest alone in a staff (since 1.2.8).
+Update the documentation a little.
+Have voices names up to 31 chars.
+Crash when V: with voice name >= 16 chars.
+Crash when voices without %%staves.
+
+---- Version 1.2.10 - 00/03/26 ----
+
+Bad n-plet bracket on the lower voice of the staff.
+Bad horizontal spacing on note >= whole note.
+Bad horizontal spacing when vocal starting with a digit.
+Change the C time signature.
+Align the ABC parser to the tclabc one.
+Change the voice.abc example.
+
+---- Version 1.2.9 - 00/02/20 ----
+
+Clean the voices when starting new tunes.
+
+---- Version 1.2.8 - 00/02/13 ----
+
+Bad ties at beginning of line since 1.2.7.
+When a rest alone in the staff and multi-voices, center it vertically.
+
+---- Version 1.2.7 - 00/02/06 ----
+
+Crash when more than 4 ties at end of line.
+May have many Q: per tune.
+Bad vertical space when down hold signs.
+Have slurs starting on heads when shifted.
+Bad basic length when L: before M: in header (PARSER).
+
+---- Version 1.2.6 - 00/01/12 ----
+
+Loop when overfull in line without any bar.
+Erroneous errors on lines starting with a bar.
+Have a correct voice name ordering at the left side of the staves.
+
+---- Version 1.2.5 - 99/12/12 ----
+
+Bad dot position (staccato) when multi-voices.
+Fix some note overlap problems.
+Bad reset between tunes.
+Extra printing when empty lines at end of file (PARSER).
+
+---- Version 1.2.4 - 99/12/09 ----
+
+Bad nplet handling since 1.2.0.
+
+---- Version 1.2.3 - 99/12/05 ----
+
+Have the clefs before the bars and the key signatures after them.
+Ignore Q: when not the first voice.
+Fix a loop when incorrect number of notes per measure.
+
+---- Version 1.2.2 - 99/11/28 ----
+
+Better K: and M: handling.
+Core dump fix when %%text in a tune.
+
+---- Version 1.2.1 - 99/11/21 ----
+
+Program loop when bar alone in a line.
+Treat global definitions only once when filtering.
+Scanning problems in format definitions (%%sep, ...).
+Parser change (again! - PARSER+).
+Have guitar chord in bars (PARSER+).
+
+---- Version 1.2.0 - 99/11/01 ----
+
+Bad base length when embedded time signature since 1.1.8.
+Correct tune filtering.
+Have better slur/tie directions.
+Parser change (PARSER+).
+
+---- Version 1.1.8 - 99/10/24 ----
+
+Better error indications (PARSER+).
+Ties ('-') can be only between notes of the same pitch (PARSER+).
+Have a correct type for embedded headers (PARSER).
+Remove some compilation warnings (may solve ISO-Latin problems).
+
+---- Version 1.1.7 - 99/09/26 ----
+
+Sort the notes in chord (and solve some induced problems).
+More than 2 lines for stacked chord / figured bass.
+
+---- Version 1.1.6 - 99/08/15 ----
+
+Bad repeat indication on newline (not completely solved).
+Program loop on voice definition (since 1.1.5).
+
+---- Version 1.1.5 - 99/08/08 ----
+
+Accept 'subname' for a voice subname (was 'snm' only).
+Short appoggiatura when one grace note starting with '/'.
+Have indentation as other staff parameters (with unit).
+Get correctly all voice parameters.
+
+---- Version 1.1.4 - 99/07/14 ----
+
+Bad slurs at beginning of line on floating voices.
+Have some more vertical space for guitar chords.
+Stacked chord / figured bass (thanks to Christoph Dalitz <dalitz@infotech.de>).
+Bad parsing of key modes (dorian, phrygian, etc..).
+
+---- Version 1.1.3 - 99/06/21 ----
+
+Accept digits and ',' for repeat bars.
+With M:3/8, have a whole rest if rest alone in a measure.
+Quarter and sixteenth notes may overlap on the same staff.
+Bad slurs at end of line on floating voices.
+
+---- Version 1.1.2 - 99/05/14 ----
+
+Stemless black note did not work.
+
+---- Version 1.1.1 - 99/05/11 ----
+
+Bad starting clef when %%staves in tune.
+Crash when %%staves in tune and new first voice inserted.
+
+---- Version 1.1.0 - 99/05/07 ----
+
+Accept guitar chord before slurs or nplet definition.
+Bad clef change when multi-voice.
+Change floating voice distribution.
+Accept 'L' in Q:.
+Stemless black note definition (with '0' in note length).
+Have more space in key signatures when sharps<->flats change.
+Handle M:none.
+'-e' in usage.
+
+---- Version 1.0.12 - 99/04/12 ----
+
+Have tune selection (with '-e' - different from abc2ps).
+Don't have title space if no title.
+
+---- Version 1.0.11 - 99/04/11 ----
+
+Many bugs removed, but, sure, some new ones inserted...
+Bad time signature display.
+Bad multi-voice parsing.
+Remove 'syntax error' when no M:.
+Crash when %%staves in tune.
+Remove erroneous 'Overfull' messages.
+
+---- Version 1.0.10 - 99/04/06 ----
+
+Bad drawing when overflow at end of line with a key signature change.
+Have natural stem direction when the associated voice is invisible.
+Correct key signature for all clefs.
+Fix crash when tune without X: nor T:.
+
+---- Version 1.0.9 - 99/03/28 ----
+
+Bad key signature at end of line.
+Bad embedded header handling.
+Bad input file name resolution when '.' in directory.
+Change base note length to the MIDI one.
+Crash on format file search.
+
+---- Version 1.0.8 - 99/03/21 ----
+
+More job in the generic parser.
+Have all seven clefs.
+
+---- Version 1.0.7 - 99/03/14 ----
+
+Bad default length checking.
+
+---- Version 1.0.6 - 99/03/07 ----
+
+Correct 'Q:' parsing.
+Some variables were not initialized.
+
+---- Version 1.0.5 - 99/02/24 ----
+
+Accept tunes without 'X:', (but with 'T:').
+Remove some new bugs...
+
+---- Version 1.0.4 - 99/02/21 ----
+
+Don't have rests under beams.
+Crash when overfull at end of tune.
+
+---- Version 1.0.3 - 99/02/14 ----
+
+Bad display when line overfull.
+K: was not seen after P:.
+
+---- Version 1.0.2 - 99/02/07 ----
+
+Crash when K: before P:.
+No more tune index ('-o' command line option removed).
+
+---- Version 1.0.1 - 99/01/20 ----
+
+No more interactive mode.
+No more selection from command line.
+Bad handling of windoze directory separators.
+Bad output file name when EPS and long file names.
+Bad file extension parsing when dots in the directory part.
+Don't warn on output music directive when '\' at the end of the previous line.
+Rewrite the abc parser.
+
+---- Version 1.0.0 - 99/01/12 ----
+
+Creation from abcm2ps version 0.12.3

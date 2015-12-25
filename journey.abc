@@ -1,0 +1,36 @@
+%%scale 0.70
+%%titlefont Helvetica-Bold 13
+%%composerfont Helvetica 9
+%%composerspace 0.2cm
+%%gchordfont Times-Roman 13
+%%musicspace 1.1cm
+%%leftmargin 1.3cm
+%%staffwidth 18.4cm
+%%staffsep 40
+%%partsfont Times-Bold 10
+%%partsspace 0.35cm
+%musiconly
+
+X: 1
+T: SENTIMENTAL JOURNEY
+C: Words and Music by
+C: Bud Green, Les Brown, and Ben Homer
+M: C
+L: 1/4
+Q: "Easy Swing" 1/4=140
+K: C
+%text Easy Swing
+"C"z/EC/ E>C|E/>C/E/>C/ E<C|z/EC/E>F|"D7"E_E/D/-"G7"D2|
+w: Gon-na take a Sen-ti-men-tal Jour-ney, gon-na set my heart at ease._
+w: Got my bag, I got my re-ser-va-tion, spent each dime I could af-ford.
+"C"z/=EC/ E>C|"F9"_E/>C/E/>C/ E<D|"C"z/=EC/E>F|"G7"E/>_E/ D/C/-"C"C2:|
+w: Gon-na take a Sen-ti-men-tal Jour-ney, to re-new old mem -or-ries._
+w: Like a child in wild an-ti-ci-pa-tion, long to hear that "All_ a-board."
+"FM7"B/c/-c3| B/>c/B/>c/ d<c | "CM7"^F/G/-G3| ^F/>G/F/>G/ A<G|
+w:Se-ven,_ that's the time we leave, at sev-en._ I'll be wait-in' up for
+"D7"^c/d/-d3|^c/>d/c/>d/=c>A|"G7"B/GA/-"Dm7"A>F|"G7"G"C#dim7"E/F/-"G7/D  G7"F2|
+w:Hea-ven,_ count-in' ev-'ry mile of rail-road track_ that takes me back._
+"C"z/EC/ E>C|E/>C/E/>C/ E<C|z/EC/E>F|"D7"E_E/D/-"G7"D2|
+w: Nev-er thought my heart could be so yeam-y. Why did I de-cide to roam?_
+"C"z/=EC/ E>C|"F9"_E/>C/E/>C/ E<D|"C"z/=EC/ E<F|"G7"E/>_E/ D/C/-"C"C2 |]
+w:Got-ta take this Sen-ti-men-tal Jour-ney, Sen-ti-men-tal Jour - ney home._

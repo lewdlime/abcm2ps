@@ -1,0 +1,54 @@
+# abcm2ps version 1.2.0
+
+## Overview
+---
+
+abcm2ps is a package which converts music tunes from ABC format to PostScript. Based on abc2ps version 1.2.5 (see Contacts below), it was developped mainly to print barock organ scores which have independant voices played on one or many keyboards and a pedal-board.
+
+## Features
+---
+
+The main features of abcm2ps are quite the same as the abc2ps ones and the files '[`ReadMe.abc2ps`](./ReadMe.abc2ps)' and '[`New.Features`](./New.Features)' contain an updated description of these ones.
+
+## Installation
+---
+
+See [`ReadMe.abc2ps`](./ReadMe.abc2ps).
+
+## Differences with abc2ps
+---
+
+- abcm2ps follows more strictly the ABC syntax.
+- the algorithms relative to voice and staff handling are different and may give better or worse results depending on the tunes.
+- abcm2ps has no tune listing and has different filtering functions. On the command line:
+    - '`-o`' is implicit
+    - '`-e`' accepts only one parameter.
+    - '`-C`', '`-R`', '`-S`', '`-T`' don't exist anymore. If you want such filtering, you should to use some external script or program instead.
+- abcm2ps has no interactive mode ('`-i`' - did anybody use it?).
+
+## Limits
+---
+
+Many limits may be changed at compilation time (number of voices, staves,..). The current version does not handle more than 2 voices per staff.
+
+## Contacts
+---
+
+The primary abcm2ps site is: <http://moinejf.free.fr/>
+
+Don't forget: abc2ps is still alive and is developed by Michael Methfessel:
+
+[http://www.ihp-ffo.de/~msm/](http://www.ihp-ffo.de/~msm/)
+
+msm (at) ihp-ffo (dot) de
+
+To know more about the ABC notation, have a look at:
+
+[http://www.gre.ac.uk/~c.walshaw/abc/](http://www.gre.ac.uk/~c.walshaw/abc/)
+
+For any comment:
+
+    moinejf (at) free (dot) fr (home)
+or
+
+    moinejf (at) free (dot) fr (job)

@@ -1,0 +1,35 @@
+
+%  Tight format to save space.
+%  Use automatic linebreaking and reduced space between notes.
+
+%  parameters for typesetting music
+   scale 0.65
+   continueall
+   maxshrink 0.90
+   staffsep 43pt
+
+%  set fonts
+   titlefont      Helvetica-Bold 13
+   subtitlefont   Helvetica-Bold 10
+   composerfont   Times-Italic 10
+   partsfont      Times-Bold 10
+   vocalfont      Times-Bold 13   % note: gets scaled by "scale"
+   gchordfont     Times-Roman 12
+   textfont       Times-Roman 10
+   wordsfont      Times-Roman 10
+
+%  spaces
+   topspace       0.50cm
+   titlespace     0.20cm
+   subtitlespace  0.10cm
+   composerspace  0.10cm
+   musicspace     0.20cm
+   partsspace     0.10cm
+   wordsspace     0.00cm
+   textspace      0.20cm
+   vocalspace     18pt
+   
+%  for typesetting text
+   lineskipfac 1.1
+   parskipfac 0.3
+

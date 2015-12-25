@@ -1,0 +1,54 @@
+
+X:1
+T: Reel in E-minor
+C: Trad.
+Z: From Fiddle Book by M. Thaut.
+M: C|
+L: 1/8
+K:EDor
+"Em"EB, ((3B,A,B,) (EG) FE | "D"DA, ((3A,G,A,) DE FA | ("Em"GE) ED (EF) GA | 
+"Em"B2 eB ("Bm"dB) AF | ((3"Em"EDE) B,E (GE) B,E | ((3"D"DED) A,D (FD) A,D |
+((3"Bm"Bcd) "Em7"eB (dB) AF |1 ("D"DE) FA "Bm"B2 AF :|2 "D"DE FA "Em"B2 z2 ||
+T: haha
+|: "Em"eB ((3BAB) (eg) fe | "D"d2 fa (gf) ed | ((3"Bm"Bcd) "Em"ef (gf) ge  |
+("D"fg) ((3agf) "C"gf ed | "Em"eB ((3BAB) ("D"AB) FA | "Em"BE ((3EDE) (Bd) ef|
+"C"g3a "D"f3d |1 ("Em"ef) ed ("Bm"BA) FB :|2 "Em"ef ed B2 z2 |]
+
+X: 2
+T: Carolan's Cup
+C:Trad.
+Z: From Fiddle Book by M. Thaut.
+M: 6/8
+K:D
+ (de) | f3/(g/f/e/) (df)a | ~e2 d/B/ A2 f/e/ | dcB A<FA | Bba bfe |
+ f3/(g/f/e/) (df)a | e(g/f/e/d/) c2 e | (dc)B (AF)A | B3 B2 :|
+|: c | d3/(e/d/c/) d2 f | a3/(b/a/f/) .a2 f | e3/(f/e/d/) (ef)a | (b3 b)(fa) |
+baf/e/ (de)a | ~e2 d/B/ A2 f/e/ | (dc)B (AF)A | B3 B2 :|
+
+X: 3
+T: Anroozha
+C: Persian, arr. Farid Farjad
+S: Anroozha first CD 
+M: 2/4
+L: 1/8
+K:Em
+"Em"zAGF | A(G3 |G4) | zGFE | "B7"G(F3|F4) | zFE^D| "Em"F(E3| E4)|
+|:zAGF|"Am"BA2F|AG2E|("B7"F4|F4)|zGFE|"Am"AG2E|"B7"GF2^D|("Em"E4|"(fine)"E4):|
+"Em"z(g/a/) .b/.b/.a/.a/|g(b3|b4)|z(f/g/) .a/.a/.g/.g/|\
+   "Am"f(a3|a4)|"Em7"z(e/f/) .g/.g/.f/.f/|"C"e({e}g3|g4)|
+"B7"z(^d/e/) f.e/.e/|"Em"^d/(d/(e3)|e2)z2|{E}A2 G2|\
+   "Am"F3G/A/|("Em"G4|G2)z2|"C"G2F2|"B7"E3^D/F/|("Em"E4|E2)z2|
+B2A2| "G"G3A/B/|("Am7"A4|A2)z2|A2G2|"D"F3G/A/|\
+   ("C"G4|G3)F/E/|"B7"^D2E2|A2z G/F/|("Em"E4|E2)z2||
+b3b|"G"{b}e'2d'2|"Am"{d'e'}d'c' b<c'|("Em"b4|b2)z2|\
+   zb2g|"G"a2g2|"Am"ag2a|("Em"b4|b2)z2|
+zb2g|"G"a>g f2|"B7"gfe^d|("Em"e4|e2)z2|\
+   B3B|"G"{B}e2d2|"Am"{de}dc B<c|("Em"B4|B2)z2|
+zB2G|"Am7"A2G2|AG2A|("Em"B4|B2)z2|zB2G|\
+   "Am"A>GF2|"B7"GFE^D|("Em"E4|E2)z2| 
+"Am"A2((3"Em"GFG)|"B"F3G/A/|("C"G4|G2)z2|"C"G2"B"F2|"Am"E3"B7"^D/F/|\
+   ("Em"E4|E2)z2|"Em"B2"D"A2|"G"GF "C6"GA/B/|("Am"A4|A2)z2|
+"D"A2"C"G2|"B"F3G/A/|("C"G4|G3)F/E/|"Em"^D2E2|"B7"A2zG/F/|("Em"E4|E2)z2|\
+   b3b| ("G"a/c'/b2)(a/b/|"Am"a2)z2|
+a3g|(a/b/a2)(g/a/|"Em"g2)z2|"C"{f}g3f|(g/a/g2)(f/g/|"B7"f3)e|\
+   ^d2e2|"Am"a2zg/f/|("Em"e4|e2)"D.C."z2||

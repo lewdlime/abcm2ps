@@ -1,0 +1,453 @@
+
+This description of abc notation has been created for  those  who
+do  not want to (or cannot) use the package ABC2MTeX but who wish
+to  understand  the  notation.  It  has  been   generated   semi-
+automatically  from  the  ABC2MTeX  userguide and so occasionally
+refers to other parts of the package. In particular, it  mentions
+the  document  index.tex, a guide to using ABC2MTeX for archiving
+and  indexing  tunes,  and  to  the  example  files  English.abc,
+Strspys.abc  and Reels.abc. It also refers to playabc, a separate
+package for playing abc tunes  through  the  speaker  of  various
+machines.  It is best read in conjunction with an introduction to
+abc notation available by anonymous ftp from
+
+        celtic.stanford.edu/pub/tunes/abc2mtex/INTRO.txt
+
+or, if you have WWW access,
+
+        http://celtic.stanford.edu/pub/tunes/abc2mtex/INTRO.html
+
+Note that if you are intending to use  the  notation  solely  for
+transcribing  tunes,  you  can  ignore most of description of the
+information fields as all you really need are the  T  (title),  M
+(meter),  K (key), and possibly L (default note length) fields. I
+have included a full description however, for those who  wish  to
+understand tunes transcribed by users of the package.
+
+Finally, the notation can easily be  expanded  to  include  other
+musical symbols. Please mail me with any suggestions.
+
+        Chris Walshaw
+        C.Walshaw@gre.ac.uk
+
+-----------------------------------------------------------------
+
+        The abc Notation System
+        =======================
+
+Each tune consists of a header and a body. The header,  which  is
+composed of information fields, should start with an X (reference
+number) field followed by a T (title) field and finish with  a  K
+(key)  field.  The body of the tune in abc notation should follow
+immediately after. Tunes are separated by blank lines.
+
+  Information fields
+  ==================
+
+The  information  fields  are  used  to  notate  things  such  as
+composer,  meter, etc. in fact anything that isn't music. Most of
+the information fields are for use within a tune  header  but  in
+addition  some  may be used in the tune body, or elsewhere in the
+tune file. Those which are allowed elsewhere can be used  to  set
+up  a  default  for  the whole or part of a file. For example, in
+exactly the same way that tunebooks are organised, a  file  might
+start  with  M:6/8 and R:Jigs, followed by some jigs, followed by
+M:4/4 and R:Reels, followed by  some  reels.  Tunes  within  each
+section then inherit the M: and R: fields automatically, although
+they can be overridden inside a tune header.  Finally  note  that
+any line beginning with a letter in the range A-Z and immediately
+followed by a : is interpreted as a field (so that line like E:|,
+which  could  be  regarded  as  an  E  followed by a right repeat
+symbol, will cause an error).
+
+By far the best way to find out how to use the fields is to  look
+at the example files (in particular English.abc) and try out some
+examples. Thus rather than describing them in  detail,  they  are
+summarised  in  the following table. The second, third and fourth
+columns specify respectively how the field should be used in  the
+header  and  whether it may used in tune body or elsewhere in the
+file. Certain fields do not affect  the  typeset  music  but  are
+there  for  other  reasons,  and  the fifth column reflects this;
+index fields only affect the index (see index.tex) while  archive
+fields  do not affect the output at all, but are just provided to
+put in information that one might find in,  say,  a  conventional
+tunebook.
+
+Field name            header tune elsewhere Used by Examples and notes
+==========            ====== ==== ========= ======= ==================
+A:area                yes                           A:Donegal, A:Bampton
+B:book                yes         yes       archive B:O'Neills
+C:composer            yes                           C:Trad.
+D:discography         yes                   archive D:Chieftans IV
+E:elemskip            yes    yes                    see Line Breaking
+F:file name                         yes               see index.tex
+G:group               yes         yes       archive G:flute
+H:history             yes         yes       archive H:This tune said to ...
+I:information         yes         yes       playabc
+K:key                 last   yes                    K:G, K:Dm, K:AMix
+L:default note length yes    yes                    L:1/4, L:1/8
+M:meter               yes    yes  yes               M:3/4, M:4/4
+N:notes               yes                           N:see also O'Neills - 234
+O:origin              yes         yes       index   O:I, O:Irish, O:English
+P:parts               yes    yes                    P:ABAC, P:A, P:B
+Q:tempo               yes    yes                    Q:200, Q:C2=200
+R:rhythm              yes         yes       index   R:R, R:reel
+S:source              yes                           S:collected in Brittany
+T:title               second yes                    T:Paddy O'Rafferty
+W:words                      yes                    W:Hey, the dusty miller
+X:reference number    first                         X:1, X:2
+Z:transcription note  yes                           Z:from photocopy
+
+Some additional notes on certain of the fields:-
+
+T - tune title. Some tunes have more than one title and  so  this
+field  can  be used more than once per tune - the first time will
+generate the title whilst  subsequent  usage  will  generate  the
+alternatives  in  small  print.   The  T:  field can also be used
+within a tune to name parts of a tune - in this  case  it  should
+come before any key or meter changes.
+
+K - key; the key signature should be  specified  with  a  capital
+letter  which  may  be  followed  by  a  # or b for sharp or flat
+respectively. In addition,  different  scales  or  modes  can  be
+specified  and,  for  example,  K:F  lydian,  K:C, K:C major, K:C
+ionian, K:G mixolydian, K:D dorian, K:A minor, K:Am, K:A aeolian,
+K:E  phrygian  and  K:B locrian would all produce a staff with no
+sharps or flats.  The spaces can be left out,  capitalisation  is
+ignored for the modes and in fact only the first three letters of
+each mode are parsed so that, for example, K:F# mixolydian is the
+same  as  K:F#Mix or even K:F#MIX.  There are two additional keys
+specifically for notating highland bagpipe  tunes;  K:HP  doesn't
+put  a  key  signature  on the music, as is common with many tune
+books of this music, while K:Hp marks the stave with F  sharp,  C
+sharp  and  G natural.  Both force all the beams and staffs to go
+downwards.
+
+Finally, global accidentals can also be  set  in  this  field  so
+that,  for  example,  K:D =c would write the key signature as two
+sharps (key of D) but then mark every  c  as  natural  (which  is
+conceptually  the same as D mixolydian).  Note that the there can
+be several global  accidentals,  separated  by  spaces  and  each
+specified  with  an  accidental,  __,  _, =, ^ or ^^, (see below)
+followed by a  letter  in  lower  case.  Global  accidentals  are
+overridden  by  accidentals  attached to notes within the body of
+the abc tune and are reset by each change of signature.
+
+L - default note length; i.e.  L:1/4  -  quarter  note,  L:1/8  -
+eighth  note,  L:1/16  -  sixteenth,  L:1/32 - thirty-second. The
+default note length is also set automatically by the meter  field
+M: (see below).
+
+M - meter; apart from the normal meters, e.g.   M:6/8  or  M:4/4,
+the   symbols  M:C  and  M:C|  give  common  time  and  cut  time
+respectively.
+
+P - parts; can be used in the header to state the order in  which
+the  tune parts are played, i.e.  P:ABABCDCD, and then inside the
+tune to mark each part, i.e.  P:A or P:B.
+
+Q - tempo; can be used to specify the notes per minute, e.g.   if
+the  default  note length is an eighth note then Q:120 or Q:C=120
+is 120 eighth notes per minute. Similarly  Q:C3=40  would  be  40
+dotted  quarter  notes per minute.  An absolute tempo may also be
+set,  e.g.  Q:1/8=120  is  also  120  eighth  notes  per  minute,
+irrespective of the default note length.
+
+G - group; to group together tunes for indexing purposes.
+
+H - history; can be used for multi-line stories/anecdotes, all of
+which will be ignored until the next field occurs.
+
+
+  abc tune notation
+  =================
+
+The following letters are used to represent notes:-
+
+
+                                                      d'
+                                                -c'- ----
+                                             b
+                                        -a- --- ---- ----
+                                       g
+ ------------------------------------f-------------------
+                                   e
+ --------------------------------d-----------------------
+                               c
+ ----------------------------B---------------------------
+                           A
+ ------------------------G-------------------------------
+                       F
+ --------------------E-----------------------------------
+                   D
+ ---- ---- ---- -C-
+            B,
+ ---- -A,-
+  G,
+
+and by extension, the notes C, D, E, F, a' and b' are  available.
+Notes can be modified in length (see below).
+
+  Rests
+  =====
+
+Rests are generated with a z and can be  modified  in  length  in
+exactly the same way as notes can.
+
+  Note lengths
+  ============
+
+NB  Throughout  this  document  note  lengths  are  referred   as
+sixteenth,  eighth,  etc.   The  commonly  used  equivalents  are
+sixteenth note = semi-quaver, eighth = quaver, quarter = crotchet
+and half = minim.
+
+Each meter automatically sets a default note length and a  single
+letter in the range A-G, a-g will generate a note of this length.
+For example, in 3/4 the default note length is an eighth note and
+so  the  input  DEF  represents  3 eighth notes. The default note
+length can be calculated by computing the meter as a decimal;  if
+it  is  less than 0.75 the default is a sixteenth note, otherwise
+it is an eighth note. For example, 2/4 = 0.5, so the default note
+length is a sixteenth note, while 4/4 = 1.0 or 6/8 = 0.75, so the
+default is an eighth note. Common time  and  cut  time  (M:C  and
+M:C|) have an eighth note as default.
+
+Notes of differing lengths can be obtained by  simply  putting  a
+multiplier  after the letter. Thus in 2/4, A or A1 is a sixteenth
+note, A2 an eighth note, A3 a dotted eighth note,  A4  a  quarter
+note,  A6 a dotted quarter note, A7 a double dotted quarter note,
+A8 a half note, A12 a dotted half note, A14 a double dotted  half
+note,  A15  a triple dotted half note and so on, whilst in 3/4, A
+is an eighth note, A2 a quarter note, A3 a dotted  quarter  note,
+A4 a half note, ...
+
+To get shorter notes, either divide them - e.g. in 3/4, A/2 is  a
+sixteenth  note,  A/4  is  a  thirty-second  note - or change the
+default note length with the L:  field.   Alternatively,  if  the
+music has a broken rhythm, e.g. dotted eighth note/sixteenth note
+pairs, use broken rhythm markers (see below).  Note  that  A/  is
+shorthand for A/2.
+
+  Broken rhythms
+  ==============
+
+A common occurrence in traditional music is the use of  a  dotted
+or broken rhythm. For example, hornpipes, strathspeys and certain
+morris jigs all have dotted eighth notes  followed  by  sixteenth
+notes  as  well  as  vice-versa  in  the  case of strathspeys. To
+support this abc notation uses a > to mean `the previous note  is
+dotted, the next note halved' and < to mean `the previous note is
+halved, the next dotted'. Thus the following lines all  mean  the
+same thing (the third version is recommended):
+
+  L:1/16
+  a3b cd3 a2b2c2d2
+
+  L:1/8
+  a3/2b/2 c/2d3/2 abcd
+
+  L:1/8
+  a>b c<d abcd
+
+As a logical extension, >> means that the first  note  is  double
+dotted and the second quartered and >>> means that the first note
+is triple dotted and the length of the second divided  by  eight.
+Similarly for << and <<<.
+
+  Duplets, triplets, quadruplets, etc.
+  ====================================
+
+These can be simply coded with the notation (2ab  for  a  duplet,
+(3abc  for  a triplet or (4abcd for a quadruplet, etc., up to (9.
+The musical meanings are:
+
+
+ (2 2 notes in the time of 3
+ (3 3 notes in the time of 2
+ (4 4 notes in the time of 3
+ (5 5 notes in the time of n
+ (6 6 notes in the time of 2
+ (7 7 notes in the time of n
+ (8 8 notes in the time of 3
+ (9 9 notes in the time of n
+
+If the time signature is compound (3/8, 6/8, 9/8, 3/4, etc.) then
+n is three, otherwise n is two.
+
+More general tuplets can be specified  using  the  syntax  (p:q:r
+which  means  `put  p  notes  into  the  time of q for the next r
+notes'.  If q is not given, it defaults as above.  If  r  is  not
+given,  it  defaults  to p.  For example, (3:2:2 is equivalent to
+(3::2 and (3:2:3 is equivalent to (3:2 , (3 or even (3:: .   This
+can  be  useful  to  include  notes of different lengths within a
+tuplet, for example (3:2:2G4c2 or (3:2:4G2A2Bc and also describes
+more precisely how the simple syntax works in cases like (3D2E2F2
+or even (3D3EF2. The number written over the tuplet is p.
+
+  Beams
+  =====
+
+To group notes together under one beam  they  should  be  grouped
+together without spaces. Thus in 2/4, A2BC will produce an eighth
+note followed by two sixteenth notes under one beam whilst A2 B C
+will  produce  the  same notes separated. The beam slopes and the
+choice of upper or lower staffs are generated automatically.
+
+  Repeat/bar symbols
+  ==================
+
+Bar line symbols are generated as follows:
+
+
+ | bar line
+ |] thin-thick double bar line
+ || thin-thin double bar line
+ [| thick-thin double bar line
+ :| left repeat
+ |: right repeat
+ :: left-right repeat
+
+
+
+  First and second repeats
+  ========================
+
+First and second repeats can be generated with the symbols [1 and
+[2,  e.g.  faf gfe|[1 dfe dBA:|[2 d2e dcB|]. When adjacent to bar
+lines, these can be shortened to |1 and :|2, but with  regard  to
+spaces | [1 is legal, | 1 is not.
+
+  Accidentals
+  ===========
+
+The symbols ^ = and _  are  used  (before  a  note)  to  generate
+respectively  a  sharp,  natural or flat. Double sharps and flats
+are available with ^^ and __ respectively.
+
+  Changing key, meter, and default note length mid-tune
+  =====================================================
+
+To change key, meter, or default note length, simply put in a new
+line with a K: M: or L: field, e.g.
+  ed|cecA B2ed|cAcA E2ed|cecA B2ed|c2A2 A2:|
+  K:G
+  AB|cdec BcdB|ABAF GFE2|cdec BcdB|c2A2 A2:|
+
+To do this without generating a new line of music, put a \ at the
+end of the first line, i.e.
+  E2E EFE|E2E EFG|\
+  M:9/8
+  A2G F2E D2|]
+
+  Ties and slurs
+  ==============
+
+You can tie two notes together either across or within a bar with
+a  - symbol, e.g. abc-|cba or abc-cba.  More general slurs can be
+put in with () symbols.  Thus (DEFG) puts a slur  over  the  four
+notes.  Spaces within a slur are OK, e.g. (D E F G), but the open
+bracket  should  come  immediately  before  a   note   (and   its
+accents/accidentals,  etc.)  and  the  close  bracket should come
+immediately after a note (and its octave marker or length).  Thus
+(=b c'2) is OK but ( =b c'2 ) is not.
+
+  Gracings
+  ========
+
+Grace notes can be written by enclosing  them  in  curly  braces,
+{}.  For  example,  a  taorluath  on  the Highland pipes would be
+written  {GdGe}. The tune `Athol Brose' (in the file Strspys.abc)
+has an example of complex Highland pipe gracing in all its glory.
+Grace notes have no time value and so expressions such  as   {a2}
+or  {a>b} are not legal.
+
+Alternatively, the tilde symbol ~ represents the general  gracing
+of  a  note  which, in the context of traditional music, can mean
+different things for different instruments, for example  a  roll,
+cran or staccato triplet
+
+  Accents
+  =======
+
+Staccato marks (a small dot above or below the note head) can  be
+generated  by  a  dot before the note, i.e. a staccato triplet is
+written as (3.a.b.c
+
+For fiddlers, the letters u and v can be used  to  denote  up-bow
+and down-bow, e.g. vAuBvA
+
+  Chords and unisons
+  ==================
+
+Chords (i.e. more than one note head on a  single  stem)  can  be
+coded  with [] symbols around the notes, e.g. [CEGc] produces the
+chord  of  C  major.  They  can  be  grouped   in   beams,   e.g.
+[d2f2][ce][df] but there should be no spaces within a chord.  See
+the tune `Kitchen Girl'  in  the  file  Reels.abc  for  a  simple
+example.
+
+If the chord contains two notes  both  of  the  same  length  and
+pitch,  such  as [DD], then it is a unison (e.g. a note played on
+two strings of a violin simultaneously) and is shown as note-head
+with both upward and downward stems.
+
+  Guitar chords
+  =============
+
+Guitar chords can be put in under the melody  line  by  enclosing
+the  chord  in  inverted  commas,  e.g.  "Am7"A2D2 . See the tune
+`William and Nancy' in English.abc for an example.
+
+  Order of symbols
+  ================
+
+The order of symbols for one note is <guitar  chords>,  <accents>
+(e.g. roll, staccato marker or up/downbow), <accidental>, <note>,
+<octave>, <note length>, i.e. ~^c'3 or even "Gm7"v.=G,2
+
+Tie symbols, -, should come immediately after a  note  group  but
+may  be  followed  by  a space, i.e. =G,2- . Open and close chord
+symbols, [], should enclose entire  note  sequences  (except  for
+guitar  chords),  i.e.  "C"[CEGc]  or "Gm7"[.=G,^c'] and open and
+close   slur   symbols,   (),   should    do    likewise,    i.e.
+"Gm7"(v.=G,2~^c'2)
+
+
+  Comments
+  ========
+
+A % symbol will cause the remainder  of  any  input  line  to  be
+ignored. The file English.abc contains plenty of examples.
+
+  New notation
+  ============
+
+The letters H-Z can be used  to  define  your  own  new  notation
+within a tune. Currently the way they are implemented (if at all)
+is extremely package dependent and so users are  advised  not  to
+rely  too  heavily  on  them to include new features. Instead, if
+there is a feature or symbol that  you  need  and  which  is  not
+available  it  is better to press for it to be included as a part
+of the language.
+
+  Line breaking and justification
+  ===============================
+
+Generally one line of abc  notation  will  produce  one  line  of
+music,  although  if  the music is too long it will overflow onto
+the next line. This can look very  effective,  but  it  can  also
+completely  ruin  ties  across  bar  lines,  for example. You can
+counteract this by changing either the note spacing with  the  E:
+field (although currently this is package dependent) or break the
+line of abc notation. If, however, you wish to use two  lines  of
+input  to  generate  one  line  of  music  (see, for example, the
+`Untitled Reel' in Reels.abc) then simply put a \ at the  end  of
+the first line.  This is also useful for changing meter or key in
+the middle of a line of music.
+
+With most packages lines of music are  right-justified.  However,
+where this is not the case (e.g. when using MusicTeX), a * at the
+end of each line of abc notation  will  force  a  right-justified
+line-break.
+

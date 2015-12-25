@@ -71,7 +71,7 @@ V:2 clef=F
 V:1
 [K:G clef=treble][M:C]SDE FG|AG !alcoda!FEO|DE FES||\
 V:2
-[K:G clef=bass]D,4|A,4|D,4||
+[K:G clef=bass][M:C]D,4|A,4|D,4||\
 V:1
 %%staffbreak 2cm
 [K:G clef=treble]OC2D2||
@@ -105,7 +105,9 @@ L:1/4
 K:C
 V:1 name="voice name\non\nthree lines"
 {B2}A{B}A{B/}A{B//}A|{c4B4}A{c2B2}A{cB}A{c/B/}A|
-{a2g2f2 e2d2c2B4}A4|{(AB)}c{(AB}c){(GA)B}c{G(AB}c)|(c2{BA)G}{(G/A/B/) (G/A/B/)}c2||
+{a2g2f2 e2d2c2B4}A4|\
+	{(AB)}c{(AB}c){(GA)B}c{G(AB}c)|\
+	(c2{BA)G}{(G/A/B/) (G/A/B/)}c2||
 
 X:7
 T:Drum

@@ -27,9 +27,23 @@ Some pseudo-comments are treated while being parsed and cannot appear
 in a format file nor in the command line. These ones are listed at the
 end of this file.
 
+In font definitions, <font>, <encoding> and <size> may be specified
+as '*' (star), in which case the font, encoding or size remains
+the same. When the <encoding> is omitted, it defaults to the global
+font encoding (see 'encoding'), or to the last 'font' definition
+of the same font.
+
 
 List of the format parameters
 -----------------------------
+
+  abc2pscompat <bool>
+	Default: 0
+	Compilation: none
+	Command line: -u
+	Description:
+		When true, set 'M' as the +tenuto+ decoration and do a
+		pitch translation for the bass and alto clefs.
 
   alignbars <int>
 	Default: 0
@@ -38,7 +52,8 @@ List of the format parameters
 	Description:
 		Align the bars of the next <int> music lines.
 		Such an alignment works only when there is only one
-		voice in the music lines (no V: or %%staves allowed).
+		voice in each music line (no V:, %%staves or %%score
+		is allowed).
 
   aligncomposer <int>
 	Default: 1
@@ -50,7 +65,7 @@ List of the format parameters
 		and a positive value means 'on the right'.
 			
 
-  annotationfont <font> [<encoding>] <size>
+  annotationfont <font> [<encoding>] [<size>]
 	Default: Helvetica 12
 	Compilation: none
 	Command line: none
@@ -75,6 +90,16 @@ List of the format parameters
 	Description:
 		Try to typeset with <int> bars on each line.
 
+ breakoneoln <bool>
+	Default: 1
+	Compilation: none
+	Command line: none
+	Description:
+		When set, on finding an end of line (eoln), do as if
+		a space was set before the next note or rest.
+		This prevents a beam to be continued between two
+		music lines.
+
   beginps
 	Default: none
 	Compilation: none
@@ -98,7 +123,7 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		When set, the stem of the note on the middle of the
+		When set, the stem of the note in the middle of the
 		staff goes downwards. Otherwise, it goes upwards
 		or downwards according to the previous note.
 
@@ -120,7 +145,7 @@ List of the format parameters
 		If 1, the notes of same duration belonging to voices of
 		the same staff are combined giving chords.
 
-  composerfont <font> [<encoding>] <size>
+  composerfont <font> [<encoding>] [<size>]
 	Default: Times-Italic 14
 	Compilation: none
 	Command line: none
@@ -148,7 +173,7 @@ List of the format parameters
 	Compilation: none
 	Command line: -c
 	Description:
-		Ignore the line breaks in tune if true.
+		If true, ignore the line breaks in tune.
 
   dateformat <text>
 	Default: "\%b \%e, \%Y \%H:\%M"
@@ -212,24 +237,24 @@ List of the format parameters
 	Command line: -L<int>
 	Description:
 		Set the global font encoding to <encoding>, or to
-		ISO-Latin<int>.
+		'Latin<int>'.
 		The recognized encodings are:
 			us-ascii
-			iso-8859-1	(latin1)
-			iso-8859-2	(latin2)
-			iso-8859-3	(latin3)
-			iso-8859-4	(latin4)
-			iso-8859-9	(latin5)
-			iso-8859-10	(latin6)
+			iso-8859-1	(Latin1)
+			iso-8859-2	(Latin2)
+			iso-8859-3	(Latin3)
+			iso-8859-4	(Latin4)
+			iso-8859-9	(Latin5)
+			iso-8859-10	(Latin6)
 			native
 		When the encoding is 'native', the encoding vectors
 		of the fonts are not changed.
 		<encoding> may be any string. In this case, the encoding
 		vector must be defined by a sequence of 'postscript'
 		commands.
-		<int> may take values from '0' to '6'.
-		The value '0' is the same as '1', but the PostScript
-		encoding vector for Latin1 is not output.
+		<int> may take values from 0 to 6. The value 0 is
+		the same as 1, but the PostScript encoding vector
+		'ISOLatin1Encoding' is not output.
 
   exprabove <bool>
 	Default: 0
@@ -258,7 +283,7 @@ List of the format parameters
 	Compilation: none
 	Command line: -f
 	Description:
-		Have flat beams in bagpipe tunes.
+		Draw flat beams.
 
   font <font> [<encoding>]
 	Default: none
@@ -285,13 +310,15 @@ List of the format parameters
 		In each lines 3 areas may be defined: left, center and
 		right.
 		These areas are separated by tabulations (real TABs,
-		not '\t') and may be empty (if the left area is empty,
-		quote the string - see sample3.abc for example).
+		not "\t") and may be empty (if the left area is empty,
+		double quote the string - see sample3.abc for example).
 		The character '$' introduces variable expansion:
 			- '$d' is the date and time of the last modification
 			   of the current ABC input file,
 			- '$D' is the current date and time,
 			- '$F' is the current input file name,
+			- '$Ix' is any header information type ('x' is a
+			   letter range 'A' to 'Z').
 			- '$P' is the current page number,
 			- '$P0' and '$P1' are also the page number, but only
 			   when this one is even ('0') or odd ('1'),
@@ -301,11 +328,10 @@ List of the format parameters
 		as:
 			%%header "$P0		$P1"
 		(note the 2 TABs).
-		A little trick: when a header or footer is defined inside
-		a tune, it is printed on the next page. This may be used
-		for example to have no header/footer on the 1st page.
+		If the footer (or header) begins with '-' (hyphen/minus),
+		it is not printed on the first page.
 
-  footerfont <font> [<encoding>] <size>
+  footerfont <font> [<encoding>] [<size>]
 	Default: Times-Roman 12
 	Compilation: none
 	Command line: none
@@ -318,7 +344,7 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Read the format file <filename>.
+		Read the format (or PostScript) file <filename>.
 		When found in the command line, this parameter is the
 		same as '-F'.
 
@@ -355,6 +381,13 @@ List of the format parameters
 	Description:
 		Draw slurs on grace notes.
 
+  gracespace <float> <float> <float>
+	Default: 6.5 8.0 12.0
+	Compilation: none
+	Command line: none
+	Description:
+		Define the space before, inside and after the grace notes.
+
   header <text>
 	Default: none
 	Compilation: none
@@ -363,7 +396,7 @@ List of the format parameters
 		Set the text printed at the top of each page.
 		See 'footer' above for the header syntax.
 
-  headerfont <font> [<encoding>] <size>
+  headerfont <font> [<encoding>] [<size>]
 	Default: Times-Roman 12
 	Compilation: none
 	Command line: none
@@ -371,7 +404,7 @@ List of the format parameters
 		Set the header font to <font> with a size <size>.
 		Note that the header is not scaled.
 
-  historyfont <font> [<encoding>] <size>
+  historyfont <font> [<encoding>] [<size>]
 	Default: Times-Roman 16
 	Compilation: none
 	Command line: none
@@ -393,7 +426,7 @@ List of the format parameters
 	Description:
 		Indent the first line of the tune by <unit>.
 
-  infofont <font> [<encoding>] <size>
+  infofont <font> [<encoding>] [<size>]
 	Default: Times-Italic 14
 	Compilation: none
 	Command line: none
@@ -407,6 +440,21 @@ List of the format parameters
 	Description:
 		Display the rhythm and origin on a same line, and also
 		display the area ('A:').
+
+  infoname <uppercase letter> <information name>
+	Default:
+		R "Rhythm: "
+		B "Book: "
+		S "Source: "
+		D "Discography: "
+		N "Notes: "
+		Z "Transcription: "
+		H "History: "
+	Compilation: none
+	Command line: none
+	Description:
+		Define the information types and names to be printed
+		after the tunes when 'writehistory' (or -n) is set.
 
   infospace <unit>
 	Default: 0
@@ -451,14 +499,18 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Set the maximum vertical interstaff space to <unit>.
+		Do not put a staff system further than <unit> from the
+		previous system.
 
   maxsysstaffsep <unit>
 	Default: 2000pt
 	Compilation: none
 	Command line: none
 	Description:
-		Set the maximum vertical system interstaff space to <unit>.
+		Do not put the staves further than <unit> inside a system.
+		This values applies to all staves when global or in
+		the tune header. Otherwise, it defines the maximum
+		vertical offset of the next staff.
 
   measurebox <bool>
 	Default: 0
@@ -591,13 +643,6 @@ List of the format parameters
 		function or to define new functions for use in a 'deco'
 		format.
 
-  pslevel <int>
-	Default: 2
-	Compilation: none
-	Command line: none
-	Description:
-		Set the PostScript level for output. It may be 1, 2 or 3.
-
   printparts <bool>
 	Default: 1
 	Compilation: none
@@ -612,7 +657,7 @@ List of the format parameters
 	Description:
 		Print the tempo indications (Q:).
 
-  repeatfont <font> [<encoding>] <size>
+  repeatfont <font> [<encoding>] [<size>]
 	Default: Times-Roman 13
 	Compilation: none
 	Command line: none
@@ -655,16 +700,18 @@ List of the format parameters
 		In most strings, the current font may be changed
 		by "$n" (n = 0, 1 .. 4 - "$0" resets the font to
 		its default value.
+		Note: <size> is mandatory at the first definition..
 
-  shifthnote <bool>
+  shiftunisson <bool>
 	Default: 0
 	Compilation: none
 	Command line: none
 	Description:
-		In multivoice tunes, when voices go to unisson with
-		a minim (half note) and a note smaller than crotchet
-		(black note), there is only one note head, the minim
-		one. When this flag is set, a note shift is done.
+		In multivoice tunes, when voices go to unisson, there
+		is often only one head. Setting this flag keeps the
+		two notes with a shift when there is a minim (half note)
+		and a note smaller than crotchet (black note), and also
+		when one note is dotted and not the other one.
 
   slurheight <float>
 	Default: 1.0
@@ -689,12 +736,21 @@ List of the format parameters
 	Description:
 		Display the breve notes in square format.
 
+  staffnonote <bool>
+	Default: 1
+	Compilation: none
+	Command line: none
+	Description:
+		If not set, do not display the staves which have no note
+		in the music lines.
+
   staffsep <unit>
 	Default: 46pt
 	Compilation: none
 	Command line: -d<unit>
 	Description:
-		Set the vertical interstaff space to <unit>.
+		Do not put a staff system closer than <unit> from the
+		previous system.
 
   staffwidth <unit>
 	Default: none
@@ -722,17 +778,17 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Stretch the last staff of the tune when more expanded
-		than the previous line.
+		Stretch the last music line of a tune when more
+		expanded than the previous line.
 
   stretchstaff <bool>
 	Default: 1
 	Compilation: none
 	Command line: none
 	Description:
-		Stretch underfull staves across page.
+		Stretch underfull music lines inside a tune.
 
-  subtitlefont <font> [<encoding>] <size>
+  subtitlefont <font> [<encoding>] [<size>]
 	Default: Times-Roman 16
 	Compilation: none
 	Command line: none
@@ -751,16 +807,19 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Set the vertical space between staves in a system to <unit>.
+		Do not put the staves closer than <unit> inside a system.
+		This values applies to all staves when global or in
+		the tune header. Otherwise, it defines the minimum
+		vertical offset of the next staff.
 
-  tempofont <font> [<encoding>] <size>
+  tempofont <font> [<encoding>] [<size>]
 	Default: Times-Bold 15
 	Compilation: none
 	Command line: none
 	Description:
 		Set the tempo font to <font> with a size <size>.
 
-  textfont <font> [<encoding>] <size>
+  textfont <font> [<encoding>] [<size>]
 	Default: Times-Roman 16
 	Compilation: none
 	Command line: none
@@ -773,13 +832,17 @@ List of the format parameters
 	Command line: none
 	Description:
 		Set the default text option to <int>. This option is
-		used for text between '%%begintext' and '%%endtext'.
-		<int> may be a keyword. The values are:
+		used for text between '%%begintext' and '%%endtext',
+		'%%text' and '%%EPS'.
+		<int> may be an integer or a keyword. The values are:
 			0: obeylines
 			1: justify
 			2: fill
 			3: center
 			4: skip
+			5: right
+		When <int> is 4 (skip), neither text (including %%center)
+		nor EPS is output.
 
   textspace <unit>
 	Default: 0.5cm
@@ -802,9 +865,9 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Output the title in uppercase letters.
+		Output the titles in uppercase letters.
 
-  titlefont <font> [<encoding>] <size>
+  titlefont <font> [<encoding>] [<size>]
 	Default: Times-Roman 20
 	Compilation: none
 	Command line: none
@@ -818,25 +881,38 @@ List of the format parameters
 	Description:
 		Define the format of the tune title.
 		This format overrides the standard way to display the
-		tune title, i.e. parameters as %%titleleft, %%infoline
-		or %%composerspace will be ignored. The format is
-		a set of letters, numbers and commas. Unrecognized
-		characters are ignored.
-		A letter is the ABC header infomation type. It may be
-		'A', 'B', 'C', 'D', 'H', 'N', 'O', 'P', 'R', 'S',
-		'T', 'X' or 'Z'.
-		A number may follow a letter. It may be:
+		tune title. Then, parameters as %%titleleft, %%infoline
+		are not used.
+		The format is a set of letters, numbers, commas and
+		plus and minus signs. Unrecognized characters are ignored.
+
+		A letter gives the ABC header infomation type. It may be
+		any type range 'A' to 'Z'.
+
+		Alignment is defined by a number and/or a minus sign
+		following the letter. It may be:
 			'0' for 'center',
-			'1' for 'right align' or
-			'-1' for 'left align'.
-		When absent, the number defaults to '0' (center).
-		A comma sets the next fields to appear lower in the page.
-		For example:
-			%%titleformat T-1 T1 T1, R0 C1 A1
-		displays the first title on the left, the second and
-		third titles, if any, on the right. The rhythm is centered
-		a bit below, with the composer and author/area on the
-		right.
+			'1' for 'right align'
+			'-1' (or '-') for 'left align'.
+		When absent, alignment defaults to center ('0').
+
+		A plus sign ('+') may appear between two fields
+		in which case these fields are concatenated (this works
+		only with fields of the same type and same alignment).
+
+		A comma defines a box edge. In each box, the fields are
+		vertically added in their alignment zones.
+
+		Example:
+			%%titleformat R-1 P-1 Q-1 T C1 O1 , T + T N1
+		displays:
+		- in the 1st box:
+		    - on the left: the rhythm, part and tempo
+		    - in the middle: the main title (only)
+		    - on the right: the composer and origin
+		- in the 2nd box:
+		    - in the middle: the concatenated subtitles
+		    - on the right: the notes
 
   titleleft <bool>
 	Default: 0
@@ -851,6 +927,19 @@ List of the format parameters
 	Command line: none
 	Description:
 		Set the vertical space before the title to <unit>.
+
+  titletrim <bool>
+	Default: 1
+	Compilation: none
+	Command line: none
+	Description:
+		When set, if the last word of a title starts with a capital
+		letter and is preceeded by a comma and a space, this word is
+		moved at the head. For example: the title
+			T:Clair de la lune, Au
+		is printed as
+			Au Clair de la lune
+			
 
   topmargin <unit>
 	Default: 1cm
@@ -891,9 +980,9 @@ List of the format parameters
 	Compilation: none
 	Command line: none
 	Description:
-		Set the vocals above the staff.
+		Force the vocals to be above the staff.
 
-  vocalfont <font> [<encoding>] <size>
+  vocalfont <font> [<encoding>] [<size>]
 	Default: Times-Bold 13
 	Compilation: none
 	Command line: none
@@ -909,7 +998,7 @@ List of the format parameters
 		Set the vertical space before the lyrics under staves
 		to <unit>.
 
-  voicefont <font> [<encoding>] <size>
+  voicefont <font> [<encoding>] [<size>]
 	Default: Times-Bold 13
 	Compilation: none
 	Command line: none
@@ -923,7 +1012,7 @@ List of the format parameters
 	Command line: -x
 		Print the X: number in the title.
 
-  wordsfont <font> [<encoding>] <size>
+  wordsfont <font> [<encoding>] [<size>]
 	Default: Times-Roman 16
 	Compilation: none
 	Command line: none
@@ -932,7 +1021,7 @@ List of the format parameters
 		with a size <size>.
 
   wordsspace <unit>
-	Default: 0.5cm
+	Default: 0cm
 	Compilation: none
 	Command line: none
 	Description:
@@ -944,8 +1033,7 @@ List of the format parameters
 	Compilation: none
 	Command line: -n
 	Description:
-		Output notes, history...
-
+		Output the information defined by 'infoname'.
 
 
 List of the pseudo-comments treated while parsed
@@ -961,12 +1049,15 @@ List of the pseudo-comments treated while parsed
 	    'ragged' or 'fill':	  fill the lines
 	    'center':		  center the lines
 	    'skip':		  don't print the lines (same as comments)
+	    'right':		  align the right side
 
   center <line of text>
 	Print one line of centered text.
 
   EPS <eps_file>
 	Include the file <eps_file>.
+	The file content is left or right aligned or centered according
+	to the current value of 'textoption'.
 
   endtext
 	See 'begintext'.
@@ -983,6 +1074,8 @@ List of the pseudo-comments treated while parsed
 	    'end':	restore the left and right margins, and skip down
 			to a safe place.
 	(see 'sample3.abc' for example).
+	This command may also be used to group some tunes and text in a
+	same page.
 
   newpage [<int>]
 	Continue printing on a new page and possibly restart page
@@ -991,6 +1084,22 @@ List of the pseudo-comments treated while parsed
   repbra <bool>
 	The repeat brackets are normally displayed as found in a voice.
 	'%%repbra 0' prevents displaying them for the current voice.
+
+  repeat [<n> [k]]
+	Try to replace a sequence by one or many repeat signs.
+	When placed after a bar, <n> indicates the number of measures
+	to be repeated. It may be only one or two. If <n> is one,
+	<k> indicates how many times the previous measure is to be
+	repeated. If <n> is two, <k> is not used.
+	When placed after a note or rest, <n> indicates the number of
+	notes and rests to be repeated, and <k> how many times this
+	repetition occurs.
+	When omitted, <n> and <k> default to 1.
+	No check is done on the equality of the sequences.
+	See 'sample5.abc' for examples.
+
+  score <definition>
+	See the ABC standard version 2.0 for description.
 
   sep [<h1> <h2> <len>]
 	Print a separator of length <len> with space <h1> above and
@@ -1007,15 +1116,73 @@ List of the pseudo-comments treated while parsed
 	(1..n - see sample4.abc for example), or on the <+int>th or
 	<-int>th staff.
 
-  staffbreak <unit>
+  staffbreak <unit> ["f"]
 	Have a break in the current staff. <unit> gives the width of the
 	break (in points, inches or cm). As a side effect, when the width
 	is bigger than 0.5 cm, the left side of the staff system is redrawn.
 	When used in a multi-voice tune, a staff break must be inserted
 	in each voice.
+	When "f" is not present, the staff break is removed if it occurs
+	at start or end of line.
 
   staves <definition>
 	See 'features.txt' for description.
+
+  tablature [#<int>] [pitch=<pitch>] [[<unit-1>] <unit-2>] <unit-3> \
+			<head-func> <note-func> [<bar-func>]
+	Define a tablature for the current voice.
+
+	Arguments:
+		<int> gives the tablature number (from 1 to 8, default=1).
+		<pitch> is the pitch of the instrument. It looks like
+			a normal ABC note. When present, the pitch of
+			each note is given to the note function.
+			When absent, the information about the note(s)
+			is given by one or many lyrics (w:).
+		<unit-1> gives the width of the header (left side of
+			the music line).
+		<unit-2> gives the tablature height above the staff.
+		<unit-3> gives the tablature height under the staff.
+		<head-func> is the PostScript function called at start
+			of a new music line.
+		<note-func> is the PostScript function called at each note.
+		<bar-func> is the PostScript function called at each bar.
+
+	The arguments of the PostScript functions depend on the pitch
+	presence.
+	When the pitch is absent, the stack contains:
+		- head function:
+			- the music line width,
+			- the x and y offsets,
+			- the number of w: lines.
+		- note function:
+			- the string as defined by the 'w:' line.
+			- the x and y offsets.
+			- the w: line number (0 .. n-1).
+		- bar function:
+			- the ABC bar as a string.
+			- the x and y offsets.
+			- the w: line number (0 .. n-1).
+	Otherwise (pitch present), the PS origins are translated to
+	the tablature area and the stack contains:
+		- head function:
+			- the instrument pitch with a single uppercase
+			  letter and a sharp or flat.
+		- note function:
+			- the octave (0 is 'C') letting pitch >= 0 and < 36
+			- the pitch in 12th of octave on 3 octaves (0..35)
+			- the x offset
+		- the bar function is never called.
+
+	For examples of tablatures without pitch, see:
+		'accordion.abc'
+		'http://moinejf.free.fr/abc/banjo.abc',
+		'http://moinejf.free.fr/abc/bataille.abc'
+		'http://moinejf.free.fr/abc/tabyf1.abc'
+	For examples of tablatures with pitch, look at
+		flute.fmt
+	and try:
+		abcm2ps sample.abc -e1 -f flute.fmt -T1 -T3
 
   text <line of text>
 	Print one line of text.

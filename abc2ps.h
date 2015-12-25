@@ -3,7 +3,7 @@
 #include "config.h"
 
 #define OUTPUTFILE	"Out.ps"	/* standard output file */
-#if defined(unix) || defined(__unix__)
+#ifndef WIN32
 #define DIRSEP '/'
 #else
 #define DIRSEP '\\'
@@ -49,27 +49,18 @@
 #define DOTSHIFT	5	/* dot shift when up flag on note */
 #define GSTEM		14	/* grace note stem length */
 #define GSTEM_XOFF	1.6	/* x offset for grace note stem */
-#define GSPACE0		12.0	/* space from grace note to big note */
-#define GSPACE		8.0	/* space between grace notes */
 
 #define BETA_C		0.1	/* max expansion for flag -c */
-#define ALFA_X		1.0	/* max compression before complaining */
 #define BETA_X		1.0	/* max expansion before complaining */
 
 #define VOCPRE		0.4	/* portion of vocals word before note */
 #define GCHPRE		0.4	/* portion of guitar chord before note */
 
 /* -- Parameters for note spacing -- */
-/* -- bnn determines how strongly the first note enters into the spacing.
-      For bnn=1, the spacing is calculated using the first note.
-      For bnn=0, the spacing is the average for the two notes.
-   -- fnn multiplies the spacing under a beam, to compress the notes a bit
-   -- gnn multiplies the spacing a second time within a tuplet
+/* -- fnn multiplies the spacing under a beam, to compress the notes a bit
  */
 
-#define bnnp 0.9
 #define fnnp 0.9
-#define gnnp 0.8
 
 /* -- macros for program internals -- */
 
@@ -90,13 +81,14 @@
 #define MAXENC		6	/* max number of ISO-Latin encodings */
 #define ENC_NATIVE	7	/* (see format.c) */
 
-#define OBEYLINES	0
+#define T_LEFT		0
 #define T_JUSTIFY	1
 #define T_FILL		2
-#define OBEYCENTER	3
-#define SKIP		4
+#define T_CENTER	3
+#define T_SKIP		4
+#define T_RIGHT		5
 
-#define YSTEP	100		/* number of steps for y offsets */
+#define YSTEP	128		/* number of steps for y offsets */
 
 extern unsigned char deco_glob[256], deco_tune[256];
 
@@ -110,7 +102,7 @@ extern char font_enc[MAXFONTS];	/* font encoding */
 /* lyrics */
 #define MAXLY	16	/* max number of lyrics */
 struct lyl {
-	struct FONTSPEC* f;	/* font */
+	struct FONTSPEC *f;	/* font */
 	float w;		/* width */
 	float s;		/* shift / note */
 	char t[1];		/* word */
@@ -125,8 +117,8 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 	struct SYMBOL *next, *prev;	/* voice linkage */
 	unsigned char type;	/* symbol type */
 #define NO_TYPE		0	/* invalid type */
-#define NOTE		1	/* valid symbol types */
-#define REST		2
+#define NOTEREST	1	/* valid symbol types */
+#define SPACE		2
 #define BAR		3
 #define CLEF		4
 #define TIMESIG 	5
@@ -135,37 +127,42 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define STAVES		8
 #define MREST		9
 #define PART		10
-#define MREP		11
-#define GRACE		12
-#define FMTCHG		13
-#define TUPLET		14
-#define WHISTLE		15
-	unsigned char seq;	/* sequence # - see parse.c */
+#define GRACE		11
+#define FMTCHG		12
+#define TUPLET		13
+#define STBRK		14
 	unsigned char voice;	/* voice (0..nvoice) */
 	unsigned char staff;	/* staff (0..nstaff) */
-	int len;		/* main note length */
+	unsigned char nhd;	/* number of notes in chord - 1 */
+	int dur;		/* main note duration */
 	signed char pits[MAXHD]; /* pitches for notes */
 	struct SYMBOL *ts_next, *ts_prev; /* time linkage */
 	int time;		/* starting time */
-	unsigned short sflags;	/* symbol flags */
+	unsigned int sflags;	/* symbol flags */
 #define S_EOLN		0x0001		/* end of line */
-#define S_WORD_ST	0x0002		/* word starts here */
+#define S_BEAM_ST	0x0002		/* beam starts here */
 #define S_BEAM_BR1	0x0004		/* 2nd beam must restart here */
-#define S_NO_HEAD	0x0008		/* don't draw the highest/lowest note head */
-#define S_OTHER_HEAD	0x0010		/* don't draw any note head */
-#define S_IN_TUPLET	0x0020		/* in a tuplet */
+#define S_OTHER_HEAD	0x0008		/* don't draw any note head */
+#define S_IN_TUPLET	0x0010		/* in a tuplet */
+#define S_TREM2		0x0020		/* tremolo on 2 notes */
 #define S_RRBAR		0x0040		/* right repeat bar (when bar) */
-#define S_XSTEM		0x0040		/* cross-staff stem (when note) */
-#define S_BEAM_ON	0x0080		/* continue beaming */
-#define S_SL1		0x0100		/* some chord slur start */
-#define S_SL2		0x0200		/* some chord slur end */
-#define S_TI1		0x0400		/* some chord tie start */
-#define S_DYNUP		0x0800		/* dynamic marks above the staff */
-#define S_DYNDN		0x1000		/* dynamic marks below the staff */
-#define S_TREM		0x2000		/* tremolo */
-#define S_RBSTOP	0x4000		/* repeat bracket stop */
-#define S_BEAM_BR2	0x8000		/* 3rd beam must restart here */
-	unsigned char nhd;	/* number of notes in chord - 1 */
+#define S_XSTEM		0x0080		/* cross-staff stem (when note) */
+#define S_BEAM_ON	0x0200		/* continue beaming */
+#define S_SL1		0x0400		/* some chord slur start */
+#define S_SL2		0x0800		/* some chord slur end */
+#define S_TI1		0x1000		/* some chord tie start */
+#define S_DYNUP		0x2000		/* dynamic marks above the staff */
+#define S_DYNDN		0x4000		/* dynamic marks below the staff */
+#define S_RBSTOP	0x8000		/* repeat bracket stop */
+#define S_BEAM_BR2	0x00010000	/* 3rd beam must restart here */
+#define S_REPEAT	0x00020000	/* sequence / measure repeat */
+#define S_NL		0x00040000	/* start of new music line */
+#define S_SEQST		0x00080000	/* start of vertical sequence */
+#define S_SECOND	0x00100000	/* symbol on a secondary voice */
+#define S_FLOATING	0x00200000	/* symbol on a floating voice */
+#define S_NOREPBRA	0x00400000	/* don't print the repeat bracket */
+#define S_BEAM_END	0x00800000	/* beam ends here */
+#define S_TREM1		0x01000000	/* tremolo on 1 note */
 	signed char stem;	/* 1 / -1 for stem up / down */
 	signed char nflags;	/* number of note flags when > 0 */
 	char dots;		/* number of dots */
@@ -175,7 +172,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define H_OVAL		2
 #define H_SQUARE	3
 	signed char multi;	/* multi voice in the staff (+1, 0, -1) */
-	signed char doty;	/* dot y pos when voices overlap */
+	signed char nohdix;	/* no head index */
 	unsigned char gcf;	/* font for guitar chords */
 	unsigned char anf;	/* font for annotations */
 	short u;		/* auxillary information:
@@ -183,30 +180,32 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 				 *	- KEYSIG: old key signature
 				 *	- BAR: new bar number
 				 *	- TUPLET: tuplet format
+				 *	- NOTE: tremolo number
 				 *	- FMTCHG (format change): subtype */
-#define STBRK 0				/* staff break
-					 *	xmx: width */
-#define PSSEQ 1				/* postscript sequence */
-	float x;		/* position */
-	short y;
-	short ymn, ymx, yav;	/* min, max, avg note head height */
-	float xmx;		/* max h-pos of a head rel to top */
-#ifndef YSTEP
-	float dc_top;		/* max offset needed for decorations */
-	float dc_bot;		/* min offset for decoration */
-#endif
-	float xs, ys;		/* position of stem end */
+#define PSSEQ 0				/* postscript sequence */
+#define REPEAT 1			/* repeat sequence or measure
+					 *	doty: # measures if > 0
+					 *	      # notes/rests if < 0
+					 *	nohdix: # repeat */
+	float x;		/* x offset */
+	signed char y;		/* y offset of note head */
+	signed char ymn, ymx, yav; /* min, max, avg note head y offset */
+	float xmx;		/* max h-pos of a head rel to top
+				 * width when STBRK */
+	float xs, ys;		/* offset of stem end */
 	float wl, wr;		/* left, right min width */
-	float pl, pr;		/* left, right preferred width */
-	float shrink, stretch;	/* glue before this symbol */
+	float space;		/* natural space before symbol */
+	float shrink;		/* minimum space before symbol */
+	float xmax;		/* max x offset */
 	float shhd[MAXHD];	/* horizontal shift for heads */
 	float shac[MAXHD];	/* horizontal shift for accidentals */
 	struct lyrics *ly;	/* lyrics */
-	struct SYMBOL *grace;	/* grace notes */
+	struct SYMBOL *extra;	/* extra symbols (grace notes, tempo... */
+	signed char doty;	/* dot y pos when voices overlap
+				 * forced when STBRK */
 };
 
-/* bar types */
-#define B_INVIS B_OBRA		/* invisible; for endings without bars */
+/* bar types !tied to abcparse.h! */
 #define B_SINGLE B_BAR		/* |	single bar */
 #define B_DOUBLE 0x11		/* ||	thin double bar */
 #define B_THIN_THICK 0x13	/* |]	thick at section end  */
@@ -226,26 +225,41 @@ struct FORMAT { 		/* struct for page layout */
 	float scale, maxshrink, lineskipfac, parskipfac, sysstaffsep;
 	float indent, infospace, slurheight, notespacingfactor;
 	float maxstaffsep, maxsysstaffsep, stemheight;
-	int alignbars, aligncomposer, autoclef, barsperstaff, breathlow;
-	int bstemdown, combinevoices, contbarnb, continueall, dynalign;
+	int abc2pscompat, alignbars, aligncomposer, autoclef;
+	int barsperstaff, breakoneoln, bstemdown, comball;
+	int combinevoices, contbarnb, continueall, dynalign;
 	int encoding, exprabove, exprbelow, flatbeams, freegchord;
-	int infoline, gchordbox, graceslurs, comball, hyphencont;
-	int landscape, measurenb, measurefirst, measurebox, musiconly;
-	int oneperpage, partsbox, printparts, printtempo, pslevel;
-	int setdefl, shifthnote, splittune, squarebreve;
+	int infoline, gchordbox, graceslurs, gracespace, hyphencont;
+	int landscape, measurebox, measurefirst, measurenb, musiconly;
+	int oneperpage, partsbox, printparts, printtempo;
+	int setdefl, shiftunisson, splittune, squarebreve, staffnonote;
 	int straightflags, stretchstaff, stretchlast;
-	int textoption, titlecaps, titleleft, timewarn, tuplets;
+	int textoption, titlecaps, titleleft, titletrim, timewarn, tuplets;
 	int vocalabove, withxrefs, writehistory;
 	char *dateformat, *header, *footer, *titleformat;
-	struct FONTSPEC annotationfont, composerfont, footerfont;
-	struct FONTSPEC gchordfont, headerfont, historyfont, infofont;
-	struct FONTSPEC measurefont, partsfont, repeatfont, subtitlefont;
-	struct FONTSPEC tempofont, textfont, titlefont;
-	struct FONTSPEC vocalfont, voicefont, wordsfont;
-#define DFONT_MIN 5		/* index of dynamic fonts */
-#define DFONT_MAX 16		/* max number of dynamic fonts */
-	struct FONTSPEC font_tb[DFONT_MAX];
-	char ndfont;
+#define FONT_UMAX 5		/* max number of user fonts */
+#define ANNOTATIONFONT 5
+#define COMPOSERFONT 6
+#define FOOTERFONT 7
+#define GCHORDFONT 8
+#define HEADERFONT 9
+#define HISTORYFONT 10
+#define INFOFONT 11
+#define MEASUREFONT 12
+#define PARTSFONT 13
+#define REPEATFONT 14
+#define SUBTITLEFONT 15
+#define TEMPOFONT 16
+#define TEXTFONT 17
+#define TITLEFONT 18
+#define VOCALFONT 19
+#define VOICEFONT 20
+#define WORDSFONT 21
+#define FONT_DYN 22		/* index of dynamic fonts (gch, an, ly) */
+#define FONT_DYNX 12		/* number of dynamic fonts */
+#define FONT_MAX (FONT_DYN+FONT_DYNX)		/* whole number of fonts */
+	struct FONTSPEC font_tb[FONT_MAX];
+	char ndfont;		/* current index of dynamic fonts */
 	unsigned char gcf, anf, vof;	/* fonts for
 				* guitar chords, annotations and lyrics */
 };
@@ -253,31 +267,14 @@ struct FORMAT { 		/* struct for page layout */
 extern struct FORMAT cfmt;	/* current local format for output */
 extern struct FORMAT dfmt;	/* current global format for output */
 
-struct ISTRUCT {		/* information fields */
-	struct SYMBOL *area;
-	struct SYMBOL *book;
-	struct SYMBOL *comp;
-	struct SYMBOL *disco;
-	struct SYMBOL *histo;
-	struct SYMBOL *notes;
-	struct SYMBOL *orig;
-	struct SYMBOL *parts;
-	struct SYMBOL *rhythm;
-	struct SYMBOL *src;
-	struct SYMBOL *tempo;
-	struct SYMBOL *title;
-	char *xref;
-	struct SYMBOL *trans;
-};
-
-extern struct ISTRUCT info, default_info;
+typedef struct SYMBOL *INFO[26];	/* information fields */
+extern INFO info;
 
 extern char *mbf;		/* where to PUTx() */
 extern int nbuf;		/* number of bytes buffered */
 extern int use_buffer;		/* 1 if lines are being accumulated */
 
-extern struct FONTSPEC *font_init; /* font for page break */
-extern int strcf;		/* current string font */
+extern int outft;		/* last font in the output file */
 extern int tunenum;		/* number of current tune */
 extern int pagenum;		/* current page number */
 extern int nbar;		/* current measure number */
@@ -289,11 +286,12 @@ extern int defl;		/* decoration flags */
 #define DEF_STEMUP 0x04		/* stem up (1) or down (0) */
 
 		/* switches modified by flags: */
-extern int pagenumbers; 	/* write page numbers ? */
+extern int secure;		/* secure mode */
+extern int pagenumbers; 	/* write page numbers */
 extern int epsf;		/* for EPSF postscript output */
-extern int break_continues;	/* ignore continuations ? */
+extern int showerror;		/* show the errors */
 
-extern char outf[STRL1];	/* output file name */
+extern char outfn[STRL1];	/* output file name */
 extern char *in_fname;		/* current input file name */
 extern char *styd;		/* format search directory */
 extern time_t mtime;		/* last modification time of the input file */
@@ -301,62 +299,70 @@ extern time_t mtime;		/* last modification time of the input file */
 extern int file_initialized;	/* for output file */
 extern FILE *fout;		/* output file */
 
-#define MAXWHISTLE	4	/* max number of whistle tablature */
-struct WHISTLE_S {
-	short voice;		/* voice number */
-	short pitch;		/* absolute key pitch */
+#define MAXTBLT 8
+struct tblt_s {
+	char *head;		/* PS head function */
+	char *note;		/* PS note function */
+	char *bar;		/* PS bar function */
+	float wh;		/* width of head */
+	float ha;		/* height above the staff */
+	float hu;		/* height under the staff */
+	short pitch;		/* pitch when no associated 'w:' / 0 */
+	char instr[2];		/* instrument pitch */
 };
-extern struct WHISTLE_S whistle_tb[MAXWHISTLE];
-extern int nwhistle;
+extern struct tblt_s *tblts[MAXTBLT];
+
+#define MAXCMDTBLT	4	/* max number of -T in command line */
+struct cmdtblt_s {
+	short index;		/* tablature number */
+	short active;		/* activate or not */
+	char *vn;		/* voice name */
+};
+extern struct cmdtblt_s cmdtblts[MAXCMDTBLT];
+extern int ncmdtblt;
 
 extern int s_argc;		/* command line arguments */
 extern char **s_argv;
 
 struct STAFF_S {
 	struct clef_s clef;	/* base clef */
-	unsigned brace:1;	/* 1st staff of a brace */
-	unsigned brace_end:1;	/* 2nd staff of a brace */
-	unsigned bracket:1;	/* 1st staff of a bracket */
-	unsigned bracket_end:1;	/* last staff of a bracket */
-	unsigned forced_clef:1;	/* explicit clef */
-	unsigned stop_bar:1;	/* stop drawing measure bar on this staff */
-	unsigned empty:1;	/* no symbol on this staff */
+	char forced_clef;	/* explicit clef */
+	char empty;		/* no symbol on this staff */
+	short botbar, topbar;	/* bottom and top of bar */
 	float y;		/* y position */
-	float scale;
-#ifdef YSTEP
 	float top[YSTEP], bot[YSTEP];	/* top/bottom y offsets */
-#endif
 };
 extern struct STAFF_S staff_tb[MAXSTAFF];
 extern int nstaff;		/* (0..MAXSTAFF-1) */
 
 struct VOICE_S {
 	struct SYMBOL *sym;	/* associated symbols */
-	struct SYMBOL *last_symbol;	/* last symbol while scanning */
-	struct SYMBOL *s_anc;	/* ancillary symbol pointer */
-	struct VOICE_S *next, *prev;	/* staff links */
+	struct SYMBOL *last_sym;	/* last symbol while scanning */
+	struct VOICE_S *next;	/* link */
 	char *name;		/* voice id */
 	char *nm;		/* voice name */
 	char *snm;		/* voice subname */
 	char *bar_text;		/* bar text at start of staff when bar_start */
 	struct SYMBOL *tie;	/* note with ties of previous line */
 	struct SYMBOL *rtie;	/* note with ties before 1st repeat bar */
+	struct tblt_s *tblts[2]; /* tablatures */
 	float scale;		/* scale */
 	int time;		/* current time while parsing */
 	struct clef_s clef;	/* current clef */
 	struct key_s key;	/* current key signature */
 	struct meter_s meter;	/* current time signature */
 	unsigned hy_st;		/* lyrics hyphens at start of line (bit array) */
+	unsigned ignore:1;	/* ignore this voice */
 	unsigned forced_clef:1;	/* explicit clef */
 	unsigned second:1;	/* secondary voice in a brace/parenthesis */
-	unsigned floating:1;	/* floating voice in a brace */
-	unsigned selected:1;	/* selected while sorting by time (music.c) */
+	unsigned floating:1;	/* floating voice in a brace system */
 	unsigned bar_repeat:1;	/* bar at start of staff is a repeat bar */
-	unsigned norepbra:1;	/* display the repeat brackets */
+	unsigned norepbra:1;	/* don't display the repeat brackets */
 	unsigned have_ly:1;	/* some lyrics in this voice */
-	unsigned whistle:1;	/* tin whistle for this voice */
+	unsigned new_name:1;	/* redisplay the voice name */
+	unsigned space:1;	/* have a space before the next note (parsing) */
 	short wmeasure;		/* measure duration while parsing */
-	signed char bar_start;	/* bar type at start of staff / -1 */
+	short bar_start;	/* bar type at start of staff / 0 */
 	signed char clone;	/* duplicate from this voice number */
 	unsigned char staff;	/* staff (0..n-1) */
 	unsigned char cstaff;	/* staff while parsing */
@@ -365,17 +371,41 @@ struct VOICE_S {
 	signed char gstem;	/* grace stem direction while parsing */
 	signed char dyn;	/* place of dynamic marks while parsing */
 	signed char ly_pos;	/* place of lyrics (above / below) */
+	signed char gchord;	/* place of guitar chords (above / below) */
 	unsigned char slur_st;	/* slurs at start of staff */
 };
 extern struct VOICE_S voice_tb[MAXVOICE]; /* voice table */
 extern struct VOICE_S *first_voice; /* first_voice */
 
+extern struct SYMBOL *tsfirst;	/* first symbol in the time linked list */
 extern struct SYMBOL *tsnext;	/* next line when cut */
 extern float realwidth;		/* real staff width while generating */
 
 #define NFLAGS_SZ 10		/* size of note flags tables */
 #define C_XFLAGS 5		/* index of crotchet in flags tables */
-extern float space_tb[NFLAGS_SZ], dot_space; /* note spacing */
+extern float space_tb[NFLAGS_SZ]; /* note spacing */
+
+struct SYSTEM {			/* staff system */
+	struct SYSTEM *next;
+	short top_voice;	/* first voice in the staff system */
+	short nstaff;
+	struct {
+		short flags;	/* brace and bracket flags (from %%staves) */
+		char empty;
+		char dum;
+		struct clef_s clef;
+		float sep, maxsep;
+	} staff[MAXSTAFF];
+	struct {
+		signed char range;
+		unsigned char staff;
+		char second;
+		char dum;
+		float sep, maxsep;
+		struct clef_s clef;
+	} voice[MAXVOICE];
+};
+struct SYSTEM *cursys;		/* current staff system */
 
 /* PUTn: add to buffer with n arguments */
 #define PUT0(f) do {sprintf(mbf,f); a2b(); } while (0)
@@ -388,7 +418,7 @@ extern float space_tb[NFLAGS_SZ], dot_space; /* note spacing */
 /* -- external routines -- */
 /* abc2ps.c */
 void clrarena(int level);
-void lvlarena(int level);
+int lvlarena(int level);
 char *getarena(int len);
 void strext(char *fid, char *ext);
 /* buffer.c */
@@ -406,7 +436,7 @@ void open_output_file(void);
 void write_eps(void);
 /* deco.c */
 void deco_add(char *text);
-void deco_cnv(struct deco *dc, struct SYMBOL *s);
+void deco_cnv(struct deco *dc, struct SYMBOL *s, struct SYMBOL *prev);
 unsigned char deco_intern(unsigned char deco);
 void deco_update(struct SYMBOL *s, float dx);
 float deco_width(struct SYMBOL *s);
@@ -420,8 +450,12 @@ float draw_partempo(float top,
 		    int any_part,
 		    int any_tempo);
 void draw_measnb(void);
-void reset_deco(int deco_old);
+void reset_deco(void);
 void set_defl(int new_defl);
+float tempo_width(struct SYMBOL *s);
+void write_tempo(struct SYMBOL *s,
+		int beat,
+		float sc);
 float y_get(struct SYMBOL *s,
 	    int up,
 	    float x,
@@ -434,31 +468,33 @@ void y_set(struct SYMBOL *s,
 	   float y);
 /* draw.c */
 void draw_sym_near(void);
-void draw_symbols(struct VOICE_S *p_voice);
-void draw_vname(int mline, float indent);
-void draw_whistle(void);
+void draw_all_symb(void);
+float draw_systems(float indent);
 void set_scale(int staff);
+void output_ps(struct SYMBOL *s, int state);
 void putf(float f);
 void putx(float x);
 void puty(float y);
 void putxy(float x, float y);
 /* format.c */
+void define_fonts(void);
+void define_encodings(void);
+int get_textopt(char *p);
 void interpret_fmt_line(char *w, char *p, int lock);
 void lock_fmt(void *fmt);
-void define_fonts(void);
-int get_textopt(char *p);
 void make_font_list(void);
+FILE *open_file(char *fn,
+		char *ext,
+		char *rfn);
 void print_format(void);
 int read_fmt_file(char *filename);
 void set_format(void);
+struct tblt_s *tblt_parse(char *p);
 /* music.c */
 void output_music(void);
 void reset_gen(void);
 /* parse.c */
 extern float multicol_start;
-struct SYMBOL *add_sym(struct VOICE_S *p_voice,
-		       int type);
-void voice_dup(void);
 void do_tune(struct abctune *t,
 	     int header_only);
 void identify_note(struct SYMBOL *s,
@@ -466,16 +502,19 @@ void identify_note(struct SYMBOL *s,
 		   int *p_head,
 		   int *p_dots,
 		   int *p_flags);
+struct SYMBOL *sym_add(struct VOICE_S *p_voice,
+		       int type);
 /* subs.c */
 void bug(char *msg, int fatal);
 void error(int sev, struct SYMBOL *s, char *fmt, ...);
 float scan_u(char *str);
 void add_to_text_block(char *s, int job);
 float cwid(unsigned char c);
+int get_str_font(void);
 void put_history(void);
 void put_words(struct SYMBOL *words);
-void set_font(struct FONTSPEC *font);
-void str_font(struct FONTSPEC *font);
+void set_font(int ft);
+void str_font(int ft);
 #define A_LEFT -1
 #define A_CENTER 0
 #define A_RIGHT 1

@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2006 Jean-François Moine
+ * Copyright (C) 1998-2009 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -74,7 +74,7 @@ static char ps_head[] =
 	"	-4 -0.2 -4.8 -3.1 -2.7 -5.7 RC\n"
 	"	fill}!\n"
 
-	"/stclef{exch 0.85 div exch 0.85 div gsave 0.85 dup scale tclef grestore}!\n"
+	"/stclef{gsave T .85 dup scale 0 0 tclef grestore}!\n"
 
 	/* x y octu - upper '8' */
 	"/octu{/Times-Roman 12 selectfont M -1.5 36 RM(8)show}!\n"
@@ -91,15 +91,11 @@ static char ps_head[] =
 	"	-3 -1.4 -5.7 2.3 -1.9 7 RC\n"
 	"	2.6 2.3 11.4 0.6 10.1 -8 RC\n"
 	"	-0.1 -4.6 -5 -10.2 -13.3 -11.5 RC\n"
-	"	15.5 17 RM\n"
-	"	0 1.5 2 1.5 2 0 RC\n"
-	"	0 -1.5 -2 -1.5 -2 0 RC\n"
-	"	0 -5.5 RM\n"
-	"	0 1.5 2 1.5 2 0 RC\n"
-	"	0 -1.5 -2 -1.5 -2 0 RC\n"
+	"	16 17.5 RM currentpoint 1.1 0 360 arc\n"
+	"	-1.1 -6 RM currentpoint 1.1 0 360 arc\n"
 	"	fill}!\n"
 
-	"/sbclef{exch 0.85 div exch 0.85 div gsave 0.85 dup scale 0 3 T bclef grestore}!\n"
+	"/sbclef{gsave T .85 dup scale 0 3 bclef grestore}!\n"
 
 	"/cchalf{0 12 M\n"
 	"	2.6 5 RL\n"
@@ -117,8 +113,7 @@ static char ps_head[] =
 	"	-5.5 0 3 24 rectfill\n"
 	"	-0.5 0 M 0 24 RL 0.7 SLW stroke grestore}!\n"
 
-	"/scclef{exch .85 div exch .85 div gsave .85 dup scale\n"
-	"	2 add cclef grestore}!\n"
+	"/scclef{gsave T .85 dup scale 0 2 cclef grestore}!\n"
 
 	/* x y pclef */
 	"/pclef{	exch 2.7 sub exch 2 add 5.4 20\n"
@@ -132,7 +127,7 @@ static char ps_head[] =
 	/* str x y bnum - tuplet number / ratio */
 	"/bnum{M/Times-Italic 12 selectfont showc}!\n"
 	/* same with clearing below the number */
-	"/bnumb{	currentgray /Times-Italic 12 selectfont\n"
+	"/bnumb{	currentgray/Times-Italic 12 selectfont\n"
 	"	3 index stringwidth pop 4 add\n"
 	"	dup .5 mul neg 4 index add 3 index 3 -1 roll 8\n"
 	"	1.0 setgray rectfill setgray M showc}!\n"
@@ -143,19 +138,19 @@ static char ps_head[] =
 
 	/* x y r00 - longa rest */
 	"/r00{	xymove\n"
-	"	-1 -6 RM currentpoint 3 12 rectfill}!\n"
+	"	-1.5 -6 RM currentpoint 3 12 rectfill}!\n"
 
 	/* x y r0 - breve rest */
 	"/r0{	xymove\n"
-	"	-1 0 RM currentpoint 3 6 rectfill}!\n"
+	"	-1.5 0 RM currentpoint 3 6 rectfill}!\n"
 
 	/* x y r1 - rest */
 	"/r1{	xymove\n"
-	"	-3 3 RM currentpoint 7 3 rectfill}!\n"
+	"	-3.5 3 RM currentpoint 7 3 rectfill}!\n"
 
 	/* x y r2 - half rest */
 	"/r2{	xymove\n"
-	"	-3 0 RM currentpoint 7 3 rectfill}!\n"
+	"	-3.5 0 RM currentpoint 7 3 rectfill}!\n"
 
 	/* x y r4 - quarter rest */
 	"/r4{	xymove\n"
@@ -251,11 +246,11 @@ static char ps_head[] =
 	"	-5 -8.5 -5.5 4.5 -10 -2 RC fill}!\n"
 
 	/* x y stc - staccato mark */
-	"/stc{M currentpoint 1.2 0 360 arc fill}!\n"
+	"/stc{3 add M currentpoint 1.2 0 360 arc fill}!\n"
 
 	/* x y emb - emphasis bar */
 	"/emb{	1.2 SLW 1 setlinecap M\n"
-	"	-2.5 0 RM 5 0 RL stroke 0 setlinecap}!\n"
+	"	-2.5 3 RM 5 0 RL stroke 0 setlinecap}!\n"
 
 	/* x y cpu - roll sign above head */
 	"/cpu{	M -6 0 RM\n"
@@ -317,7 +312,7 @@ static char ps_head[] =
 	"	1.3 0.7 2.9 -1.3 0.7 -2 RC\n"
 	"	fill\n"
 	"	M 0.8 SLW -6 1.2 RM 12.6 12.6 RL stroke\n"
-	"	7 add exch -6 add exch 1.2 0 360 arc fill\n"
+	"	7 add exch 6 sub exch 1.2 0 360 arc fill\n"
 	"	8 add exch 6 add exch 1.2 0 360 arc fill}!\n"
 
 	/* w x y cresc - crescendo */
@@ -407,15 +402,19 @@ static char ps_head[] =
 	"	0 -6 -5 -6 -5 0 RC\n"
 	"	2 add M 0 -4 RL stroke}!\n"
 
-	/* y hl - helper line at height y */
-	"/hl{	.8 SLW x -6 add exch M\n"
-	"	12 0 RL stroke}!\n"
-	/* y hl1 - longer helper line */
-	"/hl1{	.8 SLW x -7 add exch M\n"
-	"	14 0 RL stroke}!\n"
-	/* y hl2 - more longer helper line */
-	"/hl2{	.8 SLW x -8 add exch M\n"
-	"	16 0 RL stroke}!\n"
+	/* n x y trem - <n> tremolo on one note */
+	"/trem{	M -4.5 0 RM{\n"
+	"		currentpoint\n"
+	"		9 3 RL 0 -3 RL -9 -3 RL 0 3 RL\n"
+	"		fill 5.4 sub M\n"
+	"	}repeat}!\n"
+
+	/* x y hl - ledger line */
+	"/hl{	.8 SLW M -6 0 RM 12 0 RL stroke}!\n"
+	/* x y hl1 - longer ledger line */
+	"/hl1{	.8 SLW M -7 0 RM 14 0 RL stroke}!\n"
+	/* x y hl2 - more longer ledger line */
+	"/hl2{	.7 SLW M -9 0 RM 18 0 RL stroke}!\n"
 
 	/* -- accidentals -- */
 	/* x y sh0 - sharp sign */
@@ -485,35 +484,70 @@ static char ps_head[] =
 	"/ft513{2 copy gsave -1 1 scale exch neg 3 add exch M ftx grestore\n"
 	"	M 1.5 0 RM ftx}!\n"
 
-	/* accidentals in guitar chord */
-	"/sharp_glyph{\n"
-	"	fh .4 mul 0 RM currentpoint\n"
-	"	gsave T fh .08 mul dup scale 0 7 sh0 grestore\n"
-	"	fh .4 mul 0 RM}!\n"
-	"/flat_glyph{\n"
-	"	fh .4 mul 0 RM currentpoint\n"
-	"	gsave T fh .08 mul dup scale 0 5 ft0 grestore\n"
-	"	fh .4 mul 0 RM}!\n"
-	"/nat_glyph{\n"
-	"	fh .4 mul 0 RM currentpoint\n"
-	"	gsave T fh .08 mul dup scale 0 7 nt0 grestore\n"
-	"	fh .4 mul 0 RM}!\n"
+	/* accidentals in strings */
+	"/accfont{\n"
+	"	/CharStrings CharStrings dup length 3 add dict copy def\n"
+	"	FontMatrix 0 get 1 eq{\n"
+	"	 CharStrings/sharpchar{pop\n"
+	"		.60 0 0 -.10 .60 .75 setcachedevice\n"
+	"		.056 dup scale 5.8 6 sh0}bind put\n"
+	"	 CharStrings/flatchar{pop\n"
+	"		.60 0 0 0 .60 .78 setcachedevice\n"
+	"		.056 dup scale 5.8 5 ft0}bind put\n"
+	"	 CharStrings/natchar{pop\n"
+	"		.60 0 0 -.10 .60 .75 setcachedevice\n"
+	"		.056 dup scale 5.8 6 nt0}bind put\n"
+	"	 CharStrings/dsharpchar{pop\n"
+	"		.60 0 0 -.10 .60 .75 setcachedevice\n"
+	"		.056 dup scale 5.8 6 dsh0}bind put\n"
+	"	 CharStrings/dflatchar{pop\n"
+	"		.60 0 0 0 .60 .78 setcachedevice\n"
+	"		.056 dup scale 5.8 5 dft0}bind put\n"
+	"	}{\n"
+	"	 CharStrings/sharpchar{pop\n"
+	"		600 0 0 -100 600 750 setcachedevice\n"
+	"		56 dup scale 5.8 6 sh0}bind put\n"
+	"	 CharStrings/flatchar{pop\n"
+	"		600 0 0 0 600 780 setcachedevice\n"
+	"		56 dup scale 5.8 5 ft0}bind put\n"
+	"	 CharStrings/natchar{pop\n"
+	"		600 0 0 -100 600 750 setcachedevice\n"
+	"		56 dup scale 5.8 6 nt0}bind put\n"
+	"	 CharStrings/dsharpchar{pop\n"
+	"		600 0 0 -100 600 750 setcachedevice\n"
+	"		56 dup scale 5.8 6 dsh0}bind put\n"
+	"	 CharStrings/dflatchar{pop\n"
+	"		600 0 0 0 600 780 setcachedevice\n"
+	"		56 dup scale 5.8 5 dft0}bind put\n"
+	"	 }ifelse\n"
+	/*if RoPS and Font Type 3, change BuildChar*/
+	"	product(RoPS)eq FontType 3 eq and{\n"
+	"		/TTBuildChar/BuildChar load def\n"
+	"		/BuildChar{1 index begin\n"
+	"			dup Encoding exch get\n"
+	"			CharStrings exch get\n"
+	"			end\n"
+	"			dup type/integertype eq{\n"
+	"				pop 1 index/TTBuildChar get exec\n"
+	"			}{\n"
+	"				exec pop\n"
+	"			}ifelse\n"
+	"		}bind def\n"
+	"	}if\n"
+	"	}!\n"
+
 	/* str gcshow - guitar chord */
-	"/gchshow{\n"
-	"	pop pop\n"
-	"	dup 129 eq{pop sharp_glyph}\n"
-	"	  {dup 130 eq{pop flat_glyph}\n"
-	"	    {dup 131 eq{pop nat_glyph}\n"
-	"		{currentfont/Encoding get exch get glyphshow}\n"
-	"		ifelse}\n"
-	"	    ifelse}\n"
-	"	  ifelse}!\n"
-	"/gcshow{/gchshow load cshow}!\n"
+	"/gcshow{show}!\n"
 	/* x y w h box - draw a box */
 	"/box{.6 SLW rectstroke}!\n"
+	/* str w gxshow - expand a guitar chord */
+	"/find{search{pop 3 -1 roll 1 add 3 1 roll}{pop exit}ifelse}!\n"
+	"/gxshow{1 index stringwidth pop\n"
+	"	sub 0 2 index(	){find}loop div\n"
+	"	0 9 4 -1 roll widthshow}!\n"
 
 	/* str anshow - annotation */
-	"/anshow{/gchshow load cshow}!\n"
+	"/anshow{show}!\n"
 
 	/* -- lyrics under notes -- */
 	/* l x y wln - underscore line */
@@ -524,7 +558,7 @@ static char ps_head[] =
 	"	dup 3 sub 3 1 roll\n"		/* (dx-3) l dx */
 	"	dup .5 mul dup 1.5 sub 0 RM\n"	/* (dx-3) l dx (dx/2) */
 	"	exch 3 -1 roll\n"		/* (dx-3) (dx/2) dx l */
-	"	{pop 3 0 RL dup 0 RM} for stroke pop}!\n"
+	"	{pop 3 0 RL dup 0 RM}for stroke pop}!\n"
 	/* str lyshow - lyrics */
 	"/lyshow{show}!\n"
 
@@ -554,6 +588,12 @@ static char ps_head[] =
 	/* x y ctsig - C| timesig */
 	"/ctsig{dlw 2 copy csig 4 add M 0 16 RL stroke}!\n"
 
+	/* x y xxsig - old time signatures ('o', 'o.', 'c' 'c.') */
+	"/pmsig{0.3 SLW 12 add M currentpoint 5 0 360 arc stroke}!\n"
+	"/pMsig{2 copy pmsig 12 add M currentpoint 1.3 0 360 arc fill}!\n"
+	"/imsig{0.3 SLW 12 add 2 copy 5 add M 5 90 270 arc stroke}!\n"
+	"/iMsig{2 copy imsig 12 add M currentpoint 1.3 0 360 arc fill}!\n"
+
 	/* (top) (bot) x y tsig - time signature */
 	"/tsig{	M gsave/Times-Bold 16 selectfont 1.2 1 scale\n"
 	"	0 1 RM currentpoint 3 -1 roll showc\n"
@@ -563,10 +603,9 @@ static char ps_head[] =
 	"/stsig{	M gsave/Times-Bold 18 selectfont 1.2 1 scale\n"
 	"	0 7 RM showc grestore}!\n"
 
-	/* l y n staff - staff with n lines*/
-	"/staff{	dlw 1 1 3 -1 roll{\n"
-	"		pop 0 1 index M 1 index 0 RL 6 add\n"
-	"	}for pop pop stroke}!\n"
+	/* width n x y staff - staff with n lines*/
+	"/staff{	dlw M{dup 0 RL dup neg 6 RM}repeat\n"
+	"	pop stroke}!\n"
 
 	/* l x sep0 - hline separator */
 	"/sep0{dlw 0 M 0 RL stroke}!\n"
@@ -586,7 +625,7 @@ static char ps_head[] =
 	"	-1.7 2 RM 10.5 -1 12 4.5 12 3.5 RC\n"
 	"	0 -1 -3.5 -5.5 -8.5 -5.5 RC fill\n"
 	"	3 SLW M 0 2 RM\n"
-	"	0 exch neg -8 add RL currentpoint stroke\n"
+	"	0 exch neg 8 sub RL currentpoint stroke\n"
 	"	dlw M -1.7 0 RM\n"
 	"	10.5 1 12 -4.5 12 -3.5 RC\n"
 	"	0 1 -3.5 5.5 -8.5 5.5 RC fill}!\n"
@@ -599,8 +638,8 @@ static char ps_head[] =
 
 	/* x y mrep - measure repeat */
 	"/mrep{	2 copy 2 copy\n"
-	"	M -5 16 RM currentpoint 1.4 0 360 arc\n"
-	"	M 5 8 RM currentpoint 1.4 0 360 arc\n"
+	"	M -5 15 RM currentpoint 1.4 0 360 arc\n"
+	"	M 5 9 RM currentpoint 1.4 0 360 arc\n"
 	"	M -7 6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL\n"
 	"	fill}!\n"
 
@@ -611,6 +650,10 @@ static char ps_head[] =
 	"	M 1.8 SLW\n"
 	"	-7 4 RM 14 10 RL -14 -4 RM 14 10 RL\n"
 	"	stroke}!\n"
+
+	/* x y srep - sequence repeat */
+	"/srep{	M -1 6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL\n"
+	"	fill}!\n"
 
 	/* str dy bracket_type dx x y repbra - repeat bracket */
 	"/repbra{gsave dlw T 0 -20 M\n"
@@ -629,15 +672,6 @@ static char ps_head[] =
 	"/strw{stringwidth pop w add/w exch def}!\n"
 	"/jshow{w 0 32 4 -1 roll widthshow}!\n"
 
-	/* texts which may be translated */
-	"/wbook{0 0 M(Book:)show}!\n"
-	"/wdisco{0 0 M(Discography:)show}!\n"
-	"/whisto{0 0 M(History:)show}!\n"
-	"/wnotes{0 0 M(Notes:)show}!\n"
-	"/wrhythm{0 0 M(Rhythm:)show}!\n"
-	"/wsource{0 0 M(Source:)show}!\n"
-	"/wtrans{0 0 M(Transcription:)show}!\n"
-
 	/* -- note heads -- */
 	/* x y hd - full head */
 	"/hd{	xymove\n"
@@ -655,14 +689,14 @@ static char ps_head[] =
 	"	fill}!\n"
 	/* x y HD - open head for whole */
 	"/HD{	xymove\n"
-	"	-1.6 2.4 RM\n"
-	"	2.8 1.6 6 -3.2 3.2 -4.8 RC\n"
-	"	-2.8 -1.6 -6 3.2 -3.2 4.8 RC\n"
-	"	7.2 -2.4 RM\n"
-	"	0 1.8 -2.2 3.2 -5.6 3.2 RC\n"
-	"	-3.4 0 -5.6 -1.4 -5.6 -3.2 RC\n"
-	"	0 -1.8 2.2 -3.2 5.6 -3.2 RC\n"
-	"	3.4 0 5.6 1.4 5.6 3.2 RC\n"
+	"	-2.7 1.4 RM\n"
+	"	1.5 2.8 6.9 0 5.3 -2.7 RC\n"
+	"	-1.5 -2.8 -6.9 0 -5.3 2.7 RC\n"
+	"	8.3 -1.4 RM\n"
+	"	0 1.5 -2.2 3 -5.6 3 RC\n"
+	"	-3.4 0 -5.6 -1.5 -5.6 -3 RC\n"
+	"	0 -1.5 2.2 -3 5.6 -3 RC\n"
+	"	3.4 0 5.6 1.5 5.6 3 RC\n"
 	"	fill}!\n"
 	/* x y HDD - round breve */
 	"/HDD{	dlw HD\n"
@@ -687,6 +721,9 @@ static char ps_head[] =
 	/* x y pfthd - percussion flat head */
 	"/pfthd{/x 2 index def/y 1 index def dsh0\n"
 	"	.7 SLW x y 4 0 360 arc stroke}!\n"
+	/* same for dble sharp/flat */
+	"/pdshhd{pshhd}!\n"
+	"/pdfthd{pfthd}!\n"
 
 	/* x y ghd - grace note head */
 	"/ghd{	xymove\n"
@@ -698,31 +735,16 @@ static char ps_head[] =
 	"/gua{x y M -1 4 RM RL stroke}!\n"
 	"/gda{x y M -5 -4 RM RL stroke}!\n"
 
-	/* y ghl - grace note helper line */
-	"/ghl{	.6 SLW x -3 add exch M\n"
-	"	6 0 RL stroke}!\n"
+	/* x y ghl - grace note ledger line */
+	"/ghl{	.6 SLW M -3 0 RM 6 0 RL stroke}!\n"
 
 	/* x1 y2 x2 y2 x3 y3 x0 y0 gsl - grace note slur */
 	"/gsl{dlw M curveto stroke}!\n"
 
-	/* tin whistle */
-	"/tw_head{/Helvetica 8 selectfont\n"
-	"	0 -45 M 90 rotate(WHISTLE)show -90 rotate\n"
-	"	/Helvetica-Bold 36 selectfont\n"
-	"	0 -45 M show .5 SLW newpath}!\n"
-	"/tw_under{\n"
-	"	1 index 2.5 sub -4 M 2.5 -2.5 RL 2.5 2.5 RL\n"
-	"	-2.5 -2.5 RM 0 6 RL stroke}!\n"
-	"/tw_over{\n"
-	"	1 index 2.5 sub -3 M 2.5 2.5 RL 2.5 -2.5 RL\n"
-	"	-2.5 2.5 RM 0 -6 RL stroke}!\n"
-	"/tw_0{7 sub 2 copy 3.5 sub 3 0 360 arc stroke}!\n"
-	"/tw_1{7 sub 2 copy 3.5 sub 2 copy 3 90 270 arc fill 3 270 90 arc stroke}!\n"
-	"/tw_2{7 sub 2 copy 3.5 sub 3 0 360 arc fill}!\n"
-	"/tw_p{pop -55 M 0 6 RL -3 -3 RM 6 0 RL stroke}!\n"
-	"/tw_pp{	pop 3 sub -53.5 M 6 0 RL\n"
-	"	-1.5 -1.5 RM 0 3 RL\n"
-	"	-3 0 RM 0 -3 RL stroke}!\n"
+	/* x y showerror */
+	"/showerror{	gsave 1 0.7 0.7 setrgbcolor 2.5 SLW 2 copy newpath\n"
+	"	30 0 360 arc stroke grestore}!\n"
+
 	"0 setlinecap 0 setlinejoin\n";
 
 static char *enc_tb[MAXENC] = {
@@ -750,12 +772,12 @@ static char *enc_tb[MAXENC] = {
 	/* (300) */
 	"/Racute/Aacute/Acircumflex/Abreve/Adieresis/Lacute/Cacute/Ccedilla\n"
 	"/Ccaron/Eacute/Eogonek/Edieresis/Ecaron/Iacute/Icircumflex/Dcaron\n"
-	"/Dbar/Nacute/Ncaron/Oacute/Ocircumflex/Ohungarumlaut/Odieresis/multiply\n"
-	"/Rcaron/Uring/Uacute/Uhungarumlaut/Udieresis/Yacute/Tcedilla/germandbls\n"
+	"/Dcroat/Nacute/Ncaron/Oacute/Ocircumflex/Ohungarumlaut/Odieresis/multiply\n"
+	"/Rcaron/Uring/Uacute/Uhungarumlaut/Udieresis/Yacute/Tcommaaccent/germandbls\n"
 	"/racute/aacute/acircumflex/abreve/adieresis/lacute/cacute/ccedilla\n"
 	"/ccaron/eacute/eogonek/edieresis/ecaron/iacute/icircumflex/dcaron\n"
-	"/dbar/nacute/ncaron/oacute/ocircumflex/ohungarumlaut/odieresis/divide\n"
-	"/rcaron/uring/uacute/uhungarumlaut/udieresis/yacute/tcedilla/dotaccent",
+	"/dcroat/nacute/ncaron/oacute/ocircumflex/ohungarumlaut/odieresis/divide\n"
+	"/rcaron/uring/uacute/uhungarumlaut/udieresis/yacute/tcommaaccent/dotaccent",
 	/* 3 */
 	"/space/Hstroke/breve/sterling/currency/yen/Hcircumflex/section\n"
 	"/dieresis/Idotaccent/Scedilla/Gbreve/Jcircumflex/hyphen/registered/Zdotaccent\n"
@@ -782,7 +804,7 @@ static char *enc_tb[MAXENC] = {
 	"/Oslash/Uogonek/Uacute/Ucircumflex/Udieresis/Utilde/Umacron/germandbls\n"
 	"/amacron/aacute/acircumflex/atilde/adieresis/aring/ae/iogonek\n"
 	"/ccaron/eacute/eogonek/edieresis/edotaccent/iacute/icircumflex/imacron\n"
-	"/dbar/ncedilla/omacron/kcedilla/ocircumflex/otilde/odieresis/divide\n"
+	"/dcroat/ncedilla/omacron/kcedilla/ocircumflex/otilde/odieresis/divide\n"
 	"/oslash/uogonek/uacute/ucircumflex/udieresis/utilde/umacron/dotaccent",
 	/* 5 */
 	"/space/exclamdown/cent/sterling/currency/yen/brokenbar/section\n"
@@ -801,12 +823,12 @@ static char *enc_tb[MAXENC] = {
 	/* 6 */
 	"/space/Aogonek/Emacron/Gcedilla/Imacron/Itilde/Kcedilla/Lcedilla\n"
 	"/acute/Rcedilla/Scaron/Tbar/Zcaron/hyphen/kra/Eng\n"
-	"/dbar/aogonek/emacron/gcedilla/imacron/itilde/kcedilla/lcedilla\n"
+	"/dcroat/aogonek/emacron/gcedilla/imacron/itilde/kcedilla/lcedilla\n"
 	"/nacute/rcedilla/scaron/tbar/zcaron/section/germandbls/eng\n"
 	/* (300) */
 	"/Amacron/Aacute/Acircumflex/Atilde/Adieresis/Aring/AE/Iogonek\n"
 	"/Ccaron/Eacute/Eogonek/Edieresis/Edotaccent/Iacute/Icircumflex/Idieresis\n"
-	"/Dbar/Ncedilla/Omacron/Oacute/Ocircumflex/Otilde/Odieresis/Utilde\n"
+	"/Dcroat/Ncedilla/Omacron/Oacute/Ocircumflex/Otilde/Odieresis/Utilde\n"
 	"/Oslash/Uogonek/Uacute/Ucircumflex/Udieresis/Yacute/Thorn/Umacron\n"
 	"/amacron/aacute/acircumflex/atilde/adieresis/aring/ae/iogonek\n"
 	"/ccaron/eacute/eogonek/edieresis/edotaccent/iacute/icircumflex/idieresis\n"
@@ -823,27 +845,13 @@ void define_encoding(int enc,		/* index */
 	if (enc == ENC_NATIVE)
 		return;
 	if (enc < ENC_NATIVE) {
-		sprintf(enc_txt, "ISOLatin%dEncoding", enc > 0 ? enc : 1);
+		sprintf(enc_txt, "ISOLatin%dEncoding", enc);
 		ename = enc_txt;
 		if (enc > 0)
 		    fprintf(fout, "/%s [\n"
-			"/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef\n"
-			"/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef\n"
-			"/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef\n"
-			"/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef\n"
-			"/space/exclam/quotedbl/numbersign/dollar/percent/ampersand/quoteright\n"
-			"/parenleft/parenright/asterisk/plus/comma/minus/period/slash\n"
-			"/zero/one/two/three/four/five/six/seven\n"
-			"/eight/nine/colon/semicolon/less/equal/greater/question\n"
-			/* (100) */
-			"/at/A/B/C/D/E/F/G\n"
-			"/H/I/J/K/L/M/N/O\n"
-			"/P/Q/R/S/T/U/V/W\n"
-			"/X/Y/Z/bracketleft/backslash/bracketright/asciicircum/underscore\n"
-			"/quoteleft/a/b/c/d/e/f/g\n"
-			"/h/i/j/k/l/m/n/o\n"
-			"/p/q/r/s/t/u/v/w\n"
-			"/x/y/z/braceleft/bar/braceright/asciitilde/.notdef\n"
+			"StandardEncoding 0 45 getinterval aload pop\n"
+			"/minus\n"
+			"StandardEncoding 46 82 getinterval aload pop\n"
 			/* (200) */
 			"/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef\n"
 			"/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef/.notdef\n"
@@ -852,15 +860,33 @@ void define_encoding(int enc,		/* index */
 			"%s\n"
 			"] def\n",
 			ename, enc_tb[enc - 1]);
+		else fprintf(fout,
+			"/%s ISOLatin1Encoding dup length array copy def\n",
+			ename);
+		fprintf(fout,
+			"%s dup 8#201/sharpchar put\n"
+			"dup 8#202/flatchar put\n"
+			"dup 8#203/natchar put\n"
+			"dup 8#204/dsharpchar put\n"
+			"8#205/dflatchar put\n",
+			ename);
 	}
 	fprintf(fout, "/mkfontext%d{\n"
-		"	findfont dup length dict begin\n"
-		"		{1 index/FID ne{def}{pop pop}ifelse}forall\n"
-		"		/Encoding %s def\n"
+		"	findfont dup length\n"
+		"	product(RoPS)eq{1 add}if\n"
+		"	dict begin\n"
+		"		{1 index/FID ne{def}{pop pop}ifelse}forall\n",
+		enc);
+	fprintf(fout,
+		"		/Encoding %s def\n",
+		ename);
+	if (enc < ENC_NATIVE)
+		fprintf(fout,
+			"		accfont\n");
+	fprintf(fout,
 		"		currentdict\n"
 		"	end\n"
-		"	definefont pop}!\n",
-		enc, ename);
+		"	definefont pop}!\n");
 }
 
 /* -- define_font -- */
@@ -895,19 +921,17 @@ void define_symbols(void)
 	/* n len sfu - stem and n flags up */
 	fprintf(fout, "/sfu{	dlw x y M %.1f %.1f RM\n"
 		"	%.1f sub 0 exch RL currentpoint stroke\n"
-		"	M dup 1 eq\n"
-		"	  {\n"
+		"	M dup 1 eq{\n"
 		"		pop\n"
 		"		0.6 -5.6 9.6 -9 5.6 -18.4 RC\n"
 		"		1.6 6 -1.3 11.6 -5.6 12.8 RC\n"
 		"		fill\n"
 		"	  }{\n"
-		"		2 1 3 -1 roll{\n"
-		"			pop currentpoint\n"
+		"		1 sub{	currentpoint\n"
 		"			0.9 -3.7 9.1 -6.4 6 -12.4 RC\n"
 		"			1 5.4 -4.2 8.4 -6 8.4 RC\n"
-		"			fill -5.4 add M\n"
-		"		}for\n"
+		"			fill 5.4 sub M\n"
+		"		}repeat\n"
 		"		1.2 -3.2 9.6 -5.7 5.6 -14.6 RC\n"
 		"		1.6 5.4 -1 10.2 -5.6 11.4 RC\n"
 		"		fill\n"
@@ -917,19 +941,17 @@ void define_symbols(void)
 	/* n len sfd - stem and n flags down */
 	fprintf(fout, "/sfd{	dlw x y M %.1f %.1f RM\n"
 		"	%.1f add 0 exch RL currentpoint stroke\n"
-		"	M dup 1 eq\n"
-		"	  {\n"
+		"	M dup 1 eq{\n"
 		"		pop\n"
 		"		0.6 5.6 9.6 9 5.6 18.4 RC\n"
 		"		1.6 -6 -1.3 -11.6 -5.6 -12.8 RC\n"
 		"		fill\n"
 		"	  }{\n"
-		"		2 1 3 -1 roll{\n"
-		"			pop currentpoint\n"
+		"		1 sub{	currentpoint\n"
 		"			0.9 3.7 9.1 6.4 6 12.4 RC\n"
 		"			1 -5.4 -4.2 -8.4 -6 -8.4 RC\n"
 		"			fill 5.4 add M\n"
-		"		}for\n"
+		"		}repeat\n"
 		"		1.2 3.2 9.6 5.7 5.6 14.6 RC\n"
 		"		1.6 -5.4 -1 -10.2 -5.6 -11.4 RC\n"
 		"		fill\n"
@@ -940,23 +962,21 @@ void define_symbols(void)
 	fprintf(fout, "/sfs{	dup 0 lt{\n"
 		"		dlw x y M -%.1f -%.1f RM\n"
 		"		%.1f add 0 exch RL currentpoint stroke\n"
-		"		M 1 1 3 -1 roll{\n"
-		"			pop currentpoint\n"
+		"		M{	currentpoint\n"
 		"			7 %.1f RL\n"
 		"			0 %.1f RL\n"
 		"			-7 -%.1f RL\n"
 		"			fill 5.4 add M\n"
-		"		}for\n"
+		"		}repeat\n"
 		"	}{\n"
 		"		dlw x y M %.1f %.1f RM\n"
-		"		-%.1f add 0 exch RL currentpoint stroke\n"
-		"		M 1 1 3 -1 roll{\n"
-		"			pop currentpoint\n"
+		"		%.1f sub 0 exch RL currentpoint stroke\n"
+		"		M{	currentpoint\n"
 		"			7 -%.1f RL\n"
 		"			0 -%.1f RL\n"
 		"			-7 %.1f RL\n"
-		"			fill -5.4 add M\n"
-		"		}for\n"
+		"			fill 5.4 sub M\n"
+		"		}repeat\n"
 		"	}ifelse}!\n",
 		STEM_XOFF, STEM_YOFF, STEM_YOFF,
 		BEAM_DEPTH, BEAM_DEPTH, BEAM_DEPTH,
@@ -975,50 +995,43 @@ void define_symbols(void)
 	/* n len sgu - gnote stem and n flag up */
 	fprintf(fout, "/sgu{	.6 SLW x y M %.1f 0 RM\n"
 		"	0 exch RL currentpoint stroke\n"
-		"	M dup 1 eq\n"
-		"	  {\n"
+		"	M dup 1 eq{\n"
 		"		pop\n"
 		"		0.6 -3.4 5.6 -3.8 3 -10 RC\n"
 		"		1.2 4.4 -1.4 7 -3 7 RC\n"
 		"		fill\n"
 		"	  }{\n"
-		"		1 1 3 -1 roll{\n"
-		"			pop currentpoint\n"
+		"		{	currentpoint\n"
 		"			1 -3.2 5.6 -2.8 3.2 -8 RC\n"
 		"			1.4 4.8 -2.4 5.4 -3.2 5.2 RC\n"
-		"			fill -3.5 add M\n"
-		"		}for\n"
-		"	  }\n"
-		"	ifelse}!\n",
+		"			fill 3.5 sub M\n"
+		"		}repeat\n"
+		"	  }ifelse}!\n",
 		GSTEM_XOFF);
 
 	/* n len sgd - gnote stem and n flag down */
 	fprintf(fout, "/sgd{	.6 SLW x y M %.1f 0 RM\n"
 		"	0 exch RL currentpoint stroke\n"
-		"	M dup 1 eq\n"
-		"	  {\n"
+		"	M dup 1 eq{\n"
 		"		pop\n"
 		"		0.6 3.4 5.6 3.8 3 10 RC\n"
 		"		1.2 -4.4 -1.4 -7 -3 -7 RC\n"
 		"		fill\n"
 		"	  }{\n"
-		"		1 1 3 -1 roll{\n"
-		"			pop currentpoint\n"
+		"		{	currentpoint\n"
 		"			1 3.2 5.6 2.8 3.2 8 RC\n"
 		"			1.4 -4.8 -2.4 -5.4 -3.2 -5.2 RC\n"
 		"			fill 3.5 add M\n"
-		"		}for\n"
-		"	  }\n"
-		"	ifelse}!\n",
+		"		}repeat\n"
+		"	  }ifelse}!\n",
 		-GSTEM_XOFF);
 
 	/* n len sgs - gnote stem and n straight flag up */
 	fprintf(fout, "/sgs{	.6 SLW x y M %.1f 0 RM\n"
 		"	0 exch RL currentpoint stroke\n"
-		"	M 1 1 3 -1 roll{\n"
-		"		pop currentpoint\n"
+		"	M{	currentpoint\n"
 		"		3 -1.5 RL 0 -2 RL -3 1.5 RL\n"
-		"		closepath fill -3 add M\n"
-		"	}for}!\n",
+		"		closepath fill 3 sub M\n"
+		"	}repeat}!\n",
 		GSTEM_XOFF);
 }

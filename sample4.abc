@@ -27,7 +27,8 @@ s:"^annotation;in 's:' line"**+1+|||H|
 
 X:2
 T:abcm2ps-4.x.x new features
-%% graceslurs 0
+%%graceslurs 0
+%%breakoneoln 0		% needed with abcm2ps-5.x.x
 M:C
 L:1/4
 Q:1/4=ca. 80
@@ -48,6 +49,7 @@ C///D///E///F///G///F///E///D///\
 C///D///E///F///G///F///E///D/// \
 "^beam break"C///D///E///F///!beambr2!G///F///E///D///\
 !beambr1!C///D///E///F///!beambr2!G///F///E///D///||
+T:		% needed with abcm2ps-5.x.x
 %%staves 1 2
 %%rightmargin 12cm
 V:1
@@ -60,16 +62,14 @@ T:Yesterday
 T:(extract)
 M:4/4
 L:1/8
-V:melody1 stem=down
-V:melody2 stem=up scale=0.8
 %%staves (melody1 chords melody2)
 K:F
-V:melody1
+V:melody1 stem=down
 e3/d/ d6 | z2 d/d3/ cB/A/- AG |
 w: far a-way, | Now it looks as though_ they're |
 V:chords
-"Dm"x7 "Dm/C"x | "Bb"x4  "C7"x4 |
-V:melody2
+"Dm"x4 "Dm/C"x4 | "Bb"x4  "C7"x4 |
+V:melody2 stem=up scale=0.8
 ie3/id/ id6 | x2 d/dc/.- c/B3/ AG |
 w: used to be, | There's a shad-_ow hang-ing |
 

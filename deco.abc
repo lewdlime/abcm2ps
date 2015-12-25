@@ -2,7 +2,7 @@
 %!! syntax may change in next releases !!
 %
 % this option is required for !trem!
-%%setdefl 1
+% %setdefl 1
 %
 % == postscript definitions - must be before any tune ==
 %
@@ -26,6 +26,15 @@
 /opchnot{	% usage: x y opchnot
 	M -10.5 -3 RM /Times-Roman 15 selectfont(\(   \))show}!
 %
+% -- sforzando accent
+/sfa{		% usage: x y sfa	
+	1.2 SLW M -2.4 4.8 RM
+	2.4 8.0 RL
+	2.4 -7.4 RL
+	-1.0 0.0 RL
+	-1.8 6.4 RL
+	stroke}!
+%
 % -- draw octava indication
 /octava{	% usage: w x y octava
 	exch -10 add exch 2 copy
@@ -41,13 +50,6 @@
 	22 add M 0 -6 RL currentpoint stroke M
 	[6] 0 setdash 30 add 0 RL stroke
 	[] 0 setdash}!
-%
-% -- single tremolo sign
-/trem{		% usage: x y trem
-	M defl 4 and 0 eq
-	{-3 -13 RM 9 3 RL 0 -3 RL -9 -3 RL}
-	{4 13 RM 9 3 RL 0 -3 RL -9 -3 RL}
-	ifelse fill}!
 %
 % -- write big letters (position marks) above the staff
 % (from Guido Gonzato)
@@ -224,16 +226,16 @@
 		{dup 69 eq {pop(Mi)show}
 		  {dup 70 eq {pop(Fa)show}
 		    {dup 71 eq {pop(Sol)show}
-		      {currentfont /Encoding get exch get glyphshow
-		      } ifelse
-		    } ifelse
-		  } ifelse
-		} ifelse
-	      } ifelse
-	    } ifelse
-	  } ifelse
+		      {currentfont/Encoding get exch get glyphshow
+		      }ifelse
+		    }ifelse
+		  }ifelse
+		}ifelse
+	      }ifelse
+	    }ifelse
+	  }ifelse
 	dup dup length 1 sub 1 exch getinterval
-	/gchshow load cshow
+	show
 	pop}!
 %
 % -- 'tr' + long trill
@@ -306,22 +308,6 @@
 	M 3 1.3 RM
 	-1 2.5 -6.5 0 -5.5 -2.5 RC
 	1 -2.5 6.5 0 5.5 2.5 RC fill}!
-% repeat measure
-/hrmes{		% usage: x y hrmes
-	12 sub 2 copy 2 copy
-	M -5 16 RM currentpoint 1.4 0 360 arc
-	M 5 8 RM currentpoint 1.4 0 360 arc
-	M -7 6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL
-	fill}!
-/rmes2{		% usage: x y rmes2
-	26 sub 2 copy 2 copy
-	M -5 18 RM currentpoint 1.4 0 360 arc
-	M 5 6 RM currentpoint 1.4 0 360 arc fill
-	M 1.8 SLW -7 4 RM 14 10 RL -14 -4 RM 14 10 RL
-	stroke}!
-/rmes2s{	% usage: str x y rmes2s
-	2 copy 5 add M 3 -1 roll /Helvetica 12 selectfont showc
-	rmes2}!
 % -- measure bar between two staves (1 and 2)
 /hbar{		% usage: x y hbar
 	dlw pop dup 0 y0 M 24 y1 lineto stroke}!
@@ -331,6 +317,10 @@
 %
 % actual syntax (see format.txt):
 %	%%deco <name> <c_func> <ps_func> <h> <wl> <wr> [<str>]
+%
+% -- accent near the note / sforzando
+%%deco accn 0 accent 8 4 4
+%%deco sfa 3 sfa 12 5 5
 %
 % -- dynamic indication below the staff
 %%deco fp 6 pf 18 5 11 fp
@@ -360,9 +350,6 @@
 %%deco 8) 5 octava 24 0 0
 %%deco 8b( 7 - 24 0 0
 %%deco 8b) 7 octavab 24 0 0
-%
-% -- tremolo on stem
-%%deco / 1 trem 0 0 0
 %
 % -- big letters
 %%deco biga 3 bigl 20 0 0 A
@@ -412,22 +399,21 @@
 %
 % -- measure bar between two staves
 %%deco hbar 3 hbar 0 0 0
-%
-% -- repeat measures
-%%deco head-rmes 0 hrmes 0 0 0
-%%deco rmes2 3 rmes2 0 0 0
-%%deco rmes2s 3 rmes2s 0 0 0 2
 
 X:1
 T:Customized decorations
 M:C
+L:1/8
 K:C treble-8
 !biga!y!fp!"C"C!t2ub!C !cresc!"D"D!t3tab!D !decresc!"E"E!ubt3ta!E !dimin!"F"F!tbt3!F|\
 !mp!"G"G!t2ta!G !(p)!A!t3b!c T!b!!(pp)!A2 P!#!!(f)!B2|M!=!!(ff)!c8|
+%
 K: clef=treble
 !8(!!riten!EF !-!G2 !ped!GA!ped-end!B!8)!c|!8b(!!bigb!C2!()!E2 !tr(!G3!tr)!!8b)!c!alcoda!|\
-CE!-(!G2!-)!!/!C2"free text"!/!c2|
-"Dm"!Dm!e3/d/ d6 | "Bb"!Bb!z2 d/d3/ "C7"!C7!cB/A/- AG |
+CE!-(!G2!-)!C2"free text"c2|
+%
+"Dm"!Dm!e3/d/ d6 | "Bb"!Bb!z2 d/d3/ "C7"!C7!cB/A/- AG |\
+F!accent!G!accn!AB !sfa!c4||
 
 X:3
 T:Decorations with abcm2ps 4.x.x
@@ -436,10 +422,8 @@ L:1/4
 %%staves {1 2}
 K:C
 V:1
-!arpu![!op!C!op!Gc]4 !hbar!] !breath!!opbrth!!arpd![CGc]4 |\
-	!arps![CGc]4 | !head-rmes!z4 |
-z3/[!head-x!B]/ [c!m!eg]2 | c4 | x4!rmes2s!| x4 ||
+!arpu![!op!C!op!Gc]4 !hbar![] !breath!!opbrth!!arpd![CGc]4 |\
+	!arps![CGc]4 | z3/[!head-x!B]/ [c!m!eg]2 | c4 ||
 V:2
-!arpeggio![C,,G,,C,]4 ] [C,,G,,C,]4 |\
-	!arpe![C,,G,,C,]4 | !head-rmes!z4 |
-[C,,!head-shd!C,][G,,!head-shd!G,]C,2 | C,4 | x4!rmes2!| x4 ||
+!arpeggio![C,,G,,C,]4 [] [C,,G,,C,]4 |\
+	!arpe![C,,G,,C,]4 | [C,,!head-shd!C,][G,,!head-shd!G,]C,2 | C,4 ||

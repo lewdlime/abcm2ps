@@ -27,10 +27,11 @@ enum accidentals {
 #define B_CBRA 3	/* ] */
 #define B_COL 4		/* : */
 
-/* slur types (2 bits) */
+/* slur/tie types (3 bits) */
 #define SL_ABOVE 0x01
 #define SL_BELOW 0x02
 #define SL_AUTO 0x03
+#define SL_DOTTED 0x04		/* (modifier bit) */
 
 /* note structure */
 struct deco {		/* decorations */
@@ -48,14 +49,6 @@ struct note {		/* note or rest */
 	char sl2[MAXHD];	/* number of slur end per head */
 	char ti1[MAXHD];	/* flag to start tie here */
 	unsigned char decs[MAXHD]; /* head decorations (index: 5 bits, len: 3 bits) */
-	unsigned invis:1;	/* invisible rest (x / y) */
-	unsigned word_end:1;	/* 1 if word ends here */
-	unsigned stemless:1;	/* note with no stem */
-	unsigned lyric_start:1;	/* may start a lyric here */
-	unsigned grace:1;	/* grace note */
-	unsigned sappo:1;	/* short appoggiatura */
-	unsigned dotted_slur:1;	/* dotted slur */
-	unsigned dotted_tie:1;	/* dotted tie */
 	short chlen;		/* chord length */
 	char nhd;		/* number of notes in chord - 1 */
 	unsigned char slur_st;	/* slurs starting here (2 bits array) */
@@ -70,25 +63,35 @@ struct abcsym {
 	struct abctune *tune;	/* tune */
 	struct abcsym *next, *prev; /* next / previous symbol */
 	char type;		/* symbol type */
-#define ABC_T_NULL 0
-#define ABC_T_INFO 1		/* (text[0] gives the info type) */
-#define ABC_T_PSCOM 2
-#define ABC_T_CLEF 3
-#define ABC_T_NOTE 4
-#define ABC_T_REST 5
-#define ABC_T_BAR 6
-#define ABC_T_EOLN 7
-#define ABC_T_INFO2 8		/* (info without header - H:) */
-#define ABC_T_MREST 9		/* multi-measure rest */
-#define ABC_T_MREP 10		/* measure repeat */
-#define ABC_T_V_OVER 11		/* voice overlay */
-#define ABC_T_TUPLET 12		/* tuplet */
+#define ABC_T_NULL	0
+#define ABC_T_INFO 	1		/* (text[0] gives the info type) */
+#define ABC_T_PSCOM	2
+#define ABC_T_CLEF	3
+#define ABC_T_NOTE	4
+#define ABC_T_REST	5
+#define ABC_T_BAR	6
+#define ABC_T_EOLN	7
+#define ABC_T_INFO2	8		/* (info without header - H:) */
+#define ABC_T_MREST	9		/* multi-measure rest */
+#define ABC_T_MREP	10		/* measure repeat */
+#define ABC_T_V_OVER	11		/* voice overlay */
+#define ABC_T_TUPLET	12
 	char state;		/* symbol state in file/tune */
 #define ABC_S_GLOBAL 0			/* global */
 #define ABC_S_HEAD 1			/* in header (after X:) */
 #define ABC_S_TUNE 2			/* in tune (after K:) */
 #define ABC_S_EMBED 3			/* embedded header (between [..]) */
 	unsigned short colnum;	/* ABC source column number */
+	unsigned short flags;
+#define ABC_F_ERROR	0x0001		/* error around this symbol */
+#define ABC_F_INVIS	0x0002		/* invisible symbol */
+#define ABC_F_SPACE	0x0004		/* space before a note */
+#define ABC_F_STEMLESS	0x0008		/* note with no stem */
+#define ABC_F_LYRIC_START 0x0010	/* may start a lyric here */
+#define ABC_F_GRACE	0x0020		/* grace note */
+#define ABC_F_GR_END	0x0040		/* end of grace note sequence */
+#define ABC_F_SAPPO	0x0080		/* short appoggiatura */
+	unsigned short free;
 	int linenum;		/* ABC source line number */
 	char *text;		/* main text (INFO, PSCOM),
 				 * guitar chord (NOTE, REST, BAR) */
@@ -99,6 +102,7 @@ struct abcsym {
 			char bagpipe;		/* HP or Hp */
 			char minor;		/* major (0) / minor (1) */
 			char empty;		/* clef alone if 1, 'none' if 2 */
+			char exp;		/* exp (1) or mod (0) */
 			signed char nacc;	/* explicit accidentals */
 			char pits[8];
 			char accs[8];
@@ -133,6 +137,7 @@ struct abcsym {
 			signed char gstem;	/* have grace stems up or down (2 = auto) */
 			signed char dyn;	/* have dynamic marks above or below the staff */
 			signed char lyrics;	/* have lyrics above or below the staff */
+			signed char gchord;	/* have gchord above or below the staff */
 		} voice;
 		struct {		/* bar, mrest or mrep */
 			struct deco dc;		/* decorations */
@@ -142,6 +147,7 @@ struct abcsym {
 			char dotted;
 		} bar;
 		struct clef_s {		/* clef (and staff!) */
+			char *name;		/* PS drawing function */
 			float staffscale;	/* != 0 when change */
 			signed char stafflines;	/* >= 0 when change */
 			signed char type;	/* no clef if < 0 */
@@ -151,20 +157,22 @@ struct abcsym {
 #define PERC 3
 			char line;
 			signed char octave;
-			signed char transpose;
 			char invis;
-#ifndef CLEF_TRANSPOSE
 			char check_pitch;	/* check if old abc2ps transposition */
-#endif
 		} clef;
 		struct note note;	/* note, rest */
 		struct {		/* user defined accent */
 			unsigned char symbol;
 			unsigned char value;
 		} user;
+		struct {
+			char type;	/* 0: end of line
+					 * 1: continuation ('\')
+					 * 2: line break ('!') */
+		} eoln;
 		struct staff_s {	/* %%staves */
-			unsigned char voice;
-			char flags;
+			short voice;
+			short flags;
 #define OPEN_BRACE 0x01
 #define CLOSE_BRACE 0x02
 #define OPEN_BRACKET 0x04
@@ -172,7 +180,11 @@ struct abcsym {
 #define OPEN_PARENTH 0x10
 #define CLOSE_PARENTH 0x20
 #define STOP_BAR 0x40
-			char *name;
+#define FL_VOICE 0x80
+#define OPEN_BRACE2 0x0100
+#define CLOSE_BRACE2 0x0200
+#define OPEN_BRACKET2 0x0400
+#define CLOSE_BRACKET2 0x0800
 		} staves[MAXVOICE];
 		struct {		/* voice overlay */
 			char type;
@@ -182,7 +194,6 @@ struct abcsym {
 			unsigned char voice;
 		} v_over;
 		struct {		/* tuplet */
-			char grace;
 			char p_plet, q_plet, r_plet;
 		} tuplet;
 	} u;

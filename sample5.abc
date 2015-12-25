@@ -1,0 +1,94 @@
+% sample5.abc - this file is part of abcm2ps
+
+%%writehistory 1
+%%infoname F "This file is part of the "
+F:abcm2ps sources at http://moinejf.free.fr/
+
+X:1
+%%titleformat T,TTQ-1C1A1
+T:New features in abcm2ps-5.x.x
+T:Subtitle one
+T:Subtitle two
+C:This is the composer field
+A:This is the Area/Author field
+N:Here are some notes
+N:on two lines
+M:c. C=4/4
+L:1/4
+Q:"Tempo in the tune header"
+%%printtempo 0
+K:C
+%%printtempo 1
+Q:"Tempo in the tune body"
+"C"C"Dm	G"D2"C"C"^<- guitar chords between symbols"|\
+	C//E//G//E// \
+	[I:repeat 4 3]C//E//G//E// "^sequence repeat"C//E//G//E// C//E//G//E//|
+"^measure repeat"GABc|[I:repeat 1 2]GABc|GABc|\
+	G2d2|B2d2|[I:repeat 2]G2d2|B2d2|c4||
+"^tremolo 2 notes"\
+	z/ C//!trem1!c// C/!trem1!c/ C!trem1!c | C2!trem1!c2 | \
+	z/ C//!trem2!c// C/!trem2!c/ C!trem2!c | C2!trem2!c2 |
+"^tremolo 1 note"\
+	z C//!/!c// c//!/!C// C/!/!c/ c/!/!C/ | \
+	z C//!//!c// c//!//!C// C/!//!c/ c/!//!C/ |
+	z !/!C/ !/!c/ !/!C !/!c | !/!C2 !/!c2 | \
+	z !//!C/ !//!c/ !//!C !//!c | !//!C2 !//!c2 ||
+	!/!C4 | !/!c4 | !//!C4 | !//!c4 |
+
+%%writehistory 0
+X:2
+T:Romance sans paroles
+C:F.B. Mendelssohn
+M:12/8
+L:1/8
+K:Eb
+%%staves {M A1 A2}
+V:M	% Melody
+x6z2z(B3|\
+V:A1 scale=0.8
+z(G,[B,E]) z(G,[B,E]) z(G,[B,E]) z(G,[B,E])|\
+V:A2 staffscale=0.8
+E,,3G,,3B,,3G,,3|\
+%%staves M
+A2GF2EE3)E3|(E3c6)(B2A|G3F3B3F3)|
+
+X:3
+T:Fugue II
+T:(extract from the well-tempered clavichord II)
+C:J.S. Bach
+M:none
+L:1/8
+K:Cm
+%%rightmargin 0.5cm
+%%leftmargin 0cm
+%%staves 1s 3s | {(1 2) 3}
+V:1s name="Ossia" staffscale=0.8
+V:3s staffscale=0.8
+V:1
+gc fe/d/ e>e d=e\
+V:2
+B_A/G/ c/[I:staff 4]C/[I:staff 3]G- G/G/=A B/cD/\
+V:3
+B,/G,/ C=A,=B, CF, _B,_A,/G,/\
+%%staves (1s 2s) 3s | {(1 2) 3}
+V:1s
+|fB _e_d/c/ dG\
+V:2s
+|z/c/B/_A/ G=A BG\
+V:3s bass
+|=A,=D- D/C/F/E/ D/C/_D-\
+V:1
+|fB _ed/c/ dG\
+V:2
+|z/c/B/_A/ G=A BG\
+V:3
+|_A,_D- D/C/F/E/ D/C/D-\
+%%staves 1s 3s | {(1 2) (3 4)}
+V:1
+ e2-|e/e/d- d/c/=B cg de/f/|
+V:2
+ _AG/F/|G>F ED CeA2|
+V:3
+ D/C/B,/A,/|B,=B,CD G,/C/B,/C/- C/B,/C-|
+V:4
+ x2|z2G,2E,2F,2|

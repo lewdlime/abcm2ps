@@ -1,10 +1,14 @@
-		Command line options
-		====================
+		abcm2ps command line options
+		============================
 
 The list of the command line options may be known running:
 	'abcm2ps -h'
 
-When an option starts with '+', this one is disabled.
+The options may be grouped when they have no argument, except the
+last one (ex: "-lnGI20").
+
+The options may be disabled when starting with '+' or ending with '-'
+(ex: "+MT1" is the same as "-MT1-"
 
 List of the options
 -------------------
@@ -56,14 +60,16 @@ List of the options
 	An item may be a single index value (as indicated in the 'X:'
 	field), or a range of such values. A range is indicated as
 	<first_index>-<last_index>. The last index may be omitted
-	meaning 'end of file'.
+	meaning 'last tune of file'.
 	Example:
 		abcm2ps voices -e 5,2-4 newfeatures -e5-
 	Note: Filtering may raise problems, mainly on global definitions.
 
   -F<file>, +F
-	Read the format file <file>.fmt. In the form '+F', the default
-	format file ('default.fmt') is not read.
+	Read the format (or PostScript) file <file>.
+	When omitted, the default type of a format file is '.fmt'.
+	In the form '+F', the default format file ('default.fmt') is not
+	read.
 
   -f
 	See: format.txt - flatbeams <bool>
@@ -80,6 +86,9 @@ List of the options
 
   -I<unit>
 	See: format.txt - indent <unit>
+
+  -i, +i
+	Insert a red cercle around the errors in the PostScript output.
 
   -j<int>[b], +j
 	See: format.txt - measurenb <int>
@@ -115,35 +124,43 @@ List of the options
 	See: format.txt - writehistory <bool>
 
   -O[<directory>][<name>], +O
-	Define the output file name.
-	By default, the output file goes to the current directory.
-	By default, the output file name is 'Out.ps' for PS, and
-	'Outnnn.eps' for EPS (see option '-E').
-	With this option, it will be <name> or <name>nnn.eps.
+	Define the output file directory and/or name.
+	By default, the output file goes to the current directory
+	with a name 'Out.ps' for PS, and 'Outnnn.eps' for EPS (see
+	option '-E').
+	With this option, the file name may be <name> or <name>nnn.eps.
 	If <name> is '=', the output file is the name of the ABC
 	source file with the extension '.ps' for PS, or the title
 	of the tune for EPS.
 	If <name> is '-', the result is output on stdout (PS only).
-	'+O' is the same as '-O'.
+	'+O' resets the output file directory and name to their defaults.
 
   -s<float>
 	See: format.txt - scale <float>
 
+  -S
+	Secure mode.
+	When present, file inclusion (%%format and %%EPS) and PostScript
+	injection (%%beginps and %%postscript) are disabled.
+
+  -T<int>[<voice>], +T[<int>[<voice>]]
+	Activate or deactivate tablature drawing.
+	<int> is the tablature number as defined in %%tablature.
+		There may be only 8 different tablatures.
+	<voice> is the voice name, full name or subname as found in V:.
+		When absent, apply to all voices.
+	Up to 4 such commands may be defined.
+	Ex: '-T1flute +T2'
+	See: format.txt - tablature
+
   -u
-	Select the abc2ps implicit decorations.
+	See: format.txt - abc2pscompat <bool>
 
   -V
 	Show the version number.
 
   -w<unit>
 	See: format.txt - staffwidth <unit>
-
-  -W<voice><keypitch>, +W
-	Display a tin whistle tablature for the voice number <voice>.
-	This number (range '1' to '9' only) is the number internally
-	incremented as new voices are encountered; it is not the voice
-	name. Up to 4 tablatures may be defined.
-	Ex: '-W1c -W2Bb,'.
 
   -x, +x
 	See: format.txt - withxrefs <bool>

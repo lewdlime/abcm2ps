@@ -1,0 +1,132 @@
+% format file for flute tablatures - this file is part of abcm2ps
+% you may try it running:
+%	abcm2ps sample -e1 -f flute.fmt -T1 -T3
+
+beginps
+% -- whistle drawing functions --
+%
+% start of line 
+%	string tw_head
+/tw_head{/Helvetica 8 selectfont
+	0 15 M 90 rotate(WHISTLE)show -90 rotate
+	/Helvetica-Bold 36 selectfont
+	0 15 M show .5 SLW newpath}!
+/tw_under{
+	-2.5 6.5 M 2.5 -2.5 RL 2.5 2.5 RL
+	-2.5 -2.5 RM 0 6 RL stroke}!
+/tw_over{
+	-2.5 7.5 M 2.5 2.5 RL 2.5 -2.5 RL
+	-2.5 2.5 RM 0 -6 RL stroke}!
+/tw_p{-3 0 M 6 0 RL -3 -3 RM 0 6 RL stroke}!
+/tw_pp{-3 0 M 6 0 RL
+	-1.5 -1.5 RM 0 3 RL
+	-3 0 RM 0 -3 RL stroke}!
+% holes
+/tw_0{0 0 3 0 360 arc stroke}!
+/tw_1{0 0 3 90 270 arc fill 0 0 3 270 90 arc stroke}!
+/tw_2{0 0 3 0 360 arc fill}!
+% hole table - from C to B
+/tw_holes
+	[8#222222 8#222221 8#222220 8#222210 8#222200 8#222000
+	 8#221000 8#220000 8#210000 8#200000 8#022000 8#000000]
+	def
+% draw a note
+%	octave pitch x tw_note
+/tw_note{gsave
+	7 T			% oct pit
+	dup 12 idiv		% oct pit pit/12
+	dup 0 eq{pop}
+		{1 eq{tw_p}
+		     {tw_pp}ifelse
+	}ifelse
+	dup 12 eq{
+		pop 8#022222	% (special case)
+	}{
+		12 mod tw_holes exch get
+	}ifelse			% oct holes
+	0 1 5{pop
+		0 7 T
+		dup 8#3 and dup 0 eq{pop tw_0}
+				    {1 eq{tw_1}
+					 {tw_2}ifelse
+		}ifelse
+		-3 bitshift
+	}for
+	pop			% oct
+	dup 0 gt{pop tw_over}
+		 {0 lt{tw_under}if
+	}ifelse
+	grestore
+}!
+% -- galoubet en Do --
+%
+% début de ligne
+%	string gbl_head
+/gbl_tete{/Helvetica 7 selectfont
+	0 10 M 90 rotate(GALOUBET)show -90 rotate
+	/Helvetica-Bold 24 selectfont
+	0 10 M show .5 SLW newpath}!
+/gbl_doux{-3.5 0 M 7 0 RL stroke}!
+/gbl_fort{-3.5 0 M 7 0 RL -3.5 -3.5 RM 0 7 RL stroke}!
+/gbl_tres_fort{-5 0 M 10 0 RL
+	-2.5 -3 RM 0 6 RL
+	-5 0 RM 0 -6 RL stroke}!
+% trous
+/gbl_0{0 0 3.5 0 360 arc stroke}!
+/gbl_1{0 0 3.5 90 270 arc fill 0 0 3.5 270 90 arc stroke}!
+/gbl_2{0 0 3.5 0 360 arc fill}!
+% table des trous - de E à d'
+/gbl_trous
+	[8#22210
+% F.. B
+	 8#22200 8#22100 8#22000 8#21000 8#20000 8#10000 8#00000
+% c .. e
+	 8#22201 8#22101 8#22001 8#21001 8#20001
+% f ..b
+	 8#22202 8#00002 8#22002 8#21002 8#20002 8#10202 8#00202
+% c' .. d'
+	 8#22203 8#22103 8#22003]
+	def
+% dessin d'une note
+%	octave pitch x tw_note
+/gbl_note{gsave
+	8 T			% oct pit
+	4 sub			% oct pit/'E'
+	exch			% pit/E oct
+	0 eq			% (1ere octave seulement)
+	1 index 0 ge and	% (pitch = 0 .. 22 = E .. d')
+	1 index 23 lt and{
+		gbl_trous exch get
+		dup 8#3 and 
+			dup 0 eq{pop gbl_doux}
+				{dup 1 eq{pop}
+					{2 eq{gbl_fort}
+					     {gbl_tres_fort}ifelse
+				}ifelse
+			}ifelse
+		-3 bitshift
+		0 9 T
+		dup 8#3 and 1 eq{gbl_1}if
+		-3 bitshift
+		0 1 2{pop
+			0 9 T
+			dup 8#3 and dup 0 eq{pop gbl_0}
+					    {1 eq{gbl_1}
+						 {gbl_2}ifelse
+			}ifelse
+			-3 bitshift
+		}for
+	}if
+	pop grestore
+}!
+endps
+% all tin whistle transpositions
+tablature #1 pitch=D 28 0 63 tw_head tw_note
+tablature #2 pitch=C 28 0 63 tw_head tw_note
+tablature #3 pitch=Eb 28 0 63 tw_head tw_note
+tablature #4 pitch=Bb, 54 0 63 tw_head tw_note
+tablature #5 pitch=F, 54 0 63 tw_head tw_note
+tablature #6 pitch=G, 54 0 63 tw_head tw_note
+tablature #7 pitch=A, 54 0 63 tw_head tw_note
+% galoubet
+tablature #8 pitch=C 10 0 56 gbl_tete gbl_note

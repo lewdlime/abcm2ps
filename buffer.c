@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2006 Jean-François Moine
+ * Copyright (C) 1998-2009 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -37,6 +37,7 @@ static float ln_pos[BUFFLN];	/* vertical positions of buffered lines */
 static int ln_buf[BUFFLN];	/* buffer location of buffered lines */
 static float ln_lmarg[BUFFLN];	/* left margin of buffered lines */
 static float ln_scale[BUFFLN];	/* scale of buffered lines */
+static signed char ln_font[BUFFLN];	/* font of buffered lines */
 static char buf[BUFFSZ];	/* output buffer.. should hold one tune */
 static float cur_lmarg = 0;	/* current left margin */
 static float cur_scale = 1.0;	/* current scale */
@@ -56,7 +57,7 @@ static void cnv_date(time_t *ltime)
 {
 	char buf[TEX_BUF_SZ];
 
-	tex_str(p_fmt->dateformat);
+	tex_str(cfmt.dateformat);
 	strcpy(buf, tex_buf);
 	strftime(tex_buf, TEX_BUF_SZ, buf, localtime(ltime));
 }
@@ -66,6 +67,7 @@ static void init_ps(char *str, int is_epsf)
 {
 	time_t ltime;
 	int i;
+	char version[32];
 
 	if (is_epsf) {
 /*fixme: no landscape for EPS?*/
@@ -75,34 +77,41 @@ static void init_ps(char *str, int is_epsf)
 				- p_fmt->rightmargin + 20,
 			-bposy);
 		cur_lmarg = p_fmt->leftmargin - 10;
-	} else	fprintf(fout, "%%!PS-Adobe-%d.0\n",
-			p_fmt->pslevel);
-
+	} else {
+		fprintf(fout, "%%!PS-Adobe-2.0\n");
+		fprintf(fout, "%%%%BoundingBox: 0 0 %.0f %.0f\n",
+			p_fmt->pagewidth,
+			p_fmt->pageheight);
+	}
 	fprintf(fout, "%%%%Title: %s\n", str);
-
-	/* CreationDate */
 	time(&ltime);
+#ifndef WIN32
 	strftime(tex_buf, TEX_BUF_SZ, "%b %e, %Y %H:%M", localtime(&ltime));
+#else
+	strftime(tex_buf, TEX_BUF_SZ, "%b %#d, %Y %H:%M", localtime(&ltime));
+#endif
 	fprintf(fout, "%%%%Creator: abcm2ps-" VERSION "\n"
 		"%%%%CreationDate: %s\n", tex_buf);
 	if (!is_epsf)
 		fprintf(fout, "%%%%Pages: (atend)\n");
-	fprintf(fout, "%%%%LanguageLevel: %d\n"
+	fprintf(fout, "%%%%LanguageLevel: 2\n"
 		"%%%%EndComments\n"
-		"%%CommandLine:",
-		p_fmt->pslevel);
+		"%%CommandLine:");
 	for (i = 1; i < s_argc; i++) {
 		fprintf(fout,
 			strchr(s_argv[i], ' ') != 0 ? " \'%s\'" : " %s",
 			s_argv[i]);
 	}
 	fprintf(fout, "\n\n");
-
 	if (is_epsf)
 		fprintf(fout,
 			"gsave /origstate save def mark\n"
 			"100 dict begin\n");
-
+	strcpy(version, "/creator [(abcm2ps) " VERSION "] def");
+	for (i = 0; i < strlen(version); i++) {
+		if (version[i] == '.')
+			version[i] = ' ';
+	}
 	fprintf(fout, "%%%%BeginSetup\n"
 		"/!{bind def}bind def\n"
 		"/bdef{bind def}!\n"		/* for compatibility */
@@ -113,28 +122,24 @@ static void init_ps(char *str, int is_epsf)
 		"/RC/rcurveto load def\n"
 		"/SLW/setlinewidth load def\n"
 		"/defl 0 def\n"	/* decoration flags - see deco.c for values */
-		"/dlw{0.7 SLW}!\n");
-	if (p_fmt->pslevel < 2)
-		/* (simple!) level2 emulation */
-	    fprintf(fout, 
-		"/cshow{exch dup{fh fh 4 index exec}forall pop pop}!\n"
-/*		"/glyphshow{currentfont/Encoding .knownget not{{}} if\n" */
-		"/glyphshow{currentfont/Encoding get\n"
-		"   0 1 2 index length 1 sub{\n"	/* stack: glyph encoding index */
-		"      2 copy get 3 index eq{exch pop exch pop null exit}if\n"
-		"      pop\n"
-		"    }\n"
-		"   for null eq{(X) dup 0 4 -1 roll put show}{pop}ifelse\n"
-		"}!\n"
-		"/rectstroke{\n"
+		"/dlw{0.7 SLW}!\n"
+
+	/* (simple!) level2 emulation */
+		"/languagelevel where{pop}{/languagelevel 1 def}ifelse\n"
+		"languagelevel 1 eq{\n"
+		" /rectstroke{\n"
 		"	4 2 roll M 1 index 0 RL 0 exch RL neg 0 RL closepath\n"
 		"	stroke}!\n"
-		"/rectfill{\n"
+		" /rectfill{\n"
 		"	4 2 roll M 1 index 0 RL 0 exch RL neg 0 RL closepath\n"
 		"	fill}!\n"
-		"/selectfont{exch findfont exch dup\n"
-		"	type/arraytype eq{makefont}{scalefont}ifelse setfont}!\n");
+		" /selectfont{exch findfont exch dup\n"
+		"	type/arraytype eq{makefont}{scalefont}ifelse setfont}!\n"
+		" /product where{pop}{/product()def}ifelse\n"
+		" }if\n"
+		"%s\n", version);
 	define_symbols();
+	define_encodings();
 	user_ps_write();
 	define_fonts();
 	fprintf(fout, "%%%%EndSetup\n");
@@ -185,6 +190,7 @@ void close_page(void)
 		"showpage\n");
 	cur_lmarg = 0;
 	cur_scale = 1.0;
+	outft = -1;
 }
 
 /* -- output a header/footer element -- */
@@ -235,6 +241,12 @@ static void format_hf(char *p)
 			fprintf(fout, "%s", tex_buf);
 #endif
 			break;
+		case 'I':		/* information field */
+			p++;
+			if (*p < 'A' || *p > 'Z' || info[*p - 'A'] == 0)
+				break;
+			fprintf(fout, "%s", &info[*p - 'A']->as.text[2]);
+			break;
 		case 'P':		/* page number */
 			if (p[1] == '0') {
 				p++;
@@ -248,7 +260,7 @@ static void format_hf(char *p)
 			fprintf(fout, "%d", pagenum);
 			break;
 		case 'T':		/* tune title */
-			q = &info.title->as.text[2];
+			q = &info['T' - 'A']->as.text[2];
 			while (isspace((unsigned char) *q))
 				q++;
 			tex_str(q);
@@ -272,28 +284,32 @@ static float headfooter(int header,
 	char str[512];
 	char *p, *q, *r;
 	float size, y, wsize;
-	int fnum, fi_sav;
 	struct FONTSPEC *f, f_sav;
-
-	memcpy(&f_sav, &cfmt.font_tb[0], sizeof f_sav);
-	fi_sav = strcf;
+	int defft_sav;
 
 	if (header) {
 		p = cfmt.header;
-		f = &cfmt.headerfont;
+		f = &cfmt.font_tb[HEADERFONT];
 		size = f->size;
-		y = 2.;
+		y = 2;
 	} else {
 		p = cfmt.footer;
-		f = &cfmt.footerfont;
+		f = &cfmt.font_tb[FOOTERFONT];
 		size = f->size;
-		y = - (pheight - p_fmt->topmargin - p_fmt->botmargin)
-			- size + 2.;
+		y = - (pheight - cfmt.topmargin - cfmt.botmargin)
+			- size + 2;
 	}
+	if (*p == '-') {
+		if (pagenum == 1)
+			return 0;
+		p++;
+	}
+	defft_sav = get_str_font();
+	memcpy(&f_sav, &cfmt.font_tb[0], sizeof f_sav);
 	wsize = 0;
-	str_font(f);
-	fnum = f->fnum;
-	fprintf(fout, "%.1f F%d ", size, fnum);
+	str_font(f - cfmt.font_tb);
+	fprintf(fout, "%.1f F%d ", size, f->fnum);
+	outft = f - cfmt.font_tb;
 
 	/* may have 2 lines */
 	if ((r = strstr(p, "\\n")) != 0) {
@@ -302,7 +318,6 @@ static float headfooter(int header,
 		wsize += size;
 		*r = '\0';
 	}
-
 	for (;;) {
 		tex_str(p);
 		strcpy(str, tex_buf);
@@ -347,10 +362,8 @@ static float headfooter(int header,
 		r = 0;
 		y -= size;
 	}
-
 	memcpy(&cfmt.font_tb[0], &f_sav, sizeof cfmt.font_tb[0]);
-	strcf = fi_sav;
-
+	str_font(defft_sav);
 	return wsize;
 }
 
@@ -362,29 +375,34 @@ static void init_page(void)
 	if (in_page)
 		return;
 
-	p_fmt = info.xref == 0 ? &cfmt : &dfmt;	/* global format */
+	p_fmt = info['X' - 'A'] == 0 ? &cfmt : &dfmt;	/* global format */
 
 	if (!file_initialized)
 		init_ps(in_fname, 0);
 	in_page = 1;
 	nbpages++;
+	outft = -1;
 
 	fprintf(fout, "%%%%Page: %d %d\n",
 		nbpages, nbpages);
-	if (p_fmt->landscape) {
+	if (cfmt.landscape) {
 		pheight = p_fmt->pagewidth;
-		pwidth = p_fmt->pageheight;
+		pwidth = cfmt.pageheight;
 		fprintf(fout, "%%%%PageOrientation: Landscape\n"
 			"gsave 90 rotate 0 %.1f T\n",
-			-p_fmt->topmargin);
+			-cfmt.topmargin);
 	} else {
-		pheight = p_fmt->pageheight;
+		pheight = cfmt.pageheight;
 		pwidth = p_fmt->pagewidth;
 		fprintf(fout, "gsave 0 %.1f T\n",
-			pheight - p_fmt->topmargin);
+			pheight - cfmt.topmargin);
 	}
+	fprintf(fout,
+		"%% --- width %.1f\n",		/* for index */
+		((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
+		 - cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale);
 
-	posy = pheight - p_fmt->topmargin - p_fmt->botmargin;
+	posy = pheight - cfmt.topmargin - cfmt.botmargin;
 
 	/* output the header and footer */
 	if (cfmt.header == 0) {
@@ -411,8 +429,7 @@ static void init_page(void)
 	if (cfmt.footer != 0)
 		posy -= headfooter(0, pwidth, pheight);
 	pagenum++;
-	if (font_init != 0)
-		fprintf(fout,"%.1f F%d ", font_init->size, font_init->fnum);
+	outft = -1;
 }
 
 /* -- open the output file -- */
@@ -421,7 +438,7 @@ void open_output_file(void)
 	int i;
 	char fnm[STRL1];
 
-	strcpy(fnm, outf);
+	strcpy(fnm, outfn);
 	i = strlen(fnm) - 1;
 	if (i < 0)
 		strcpy(fnm, OUTPUTFILE);
@@ -489,15 +506,15 @@ void write_eps(void)
 	long m;
 	char *p, fnm[STRL1], finf[STRL1];
 
-	p_fmt = info.xref == 0 ? &cfmt : &dfmt;	/* global format */
+	p_fmt = info['X' - 'A'] == 0 ? &cfmt : &dfmt;	/* global format */
 	close_output_file();
-	strcpy(fnm, outf);
+	strcpy(fnm, outfn);
 	if (fnm[0] == '\0')
 		strcpy(fnm, OUTPUTFILE);
 	cutext(fnm);
 	i = strlen(fnm) - 1;
 	if (fnm[i] == '=') {
-		p = &info.title->as.text[2];
+		p = &info['T' - 'A']->as.text[2];
 		while (isspace((unsigned char) *p))
 			p++;
 		strncpy(&fnm[i], p, sizeof fnm - i - 4);
@@ -509,7 +526,7 @@ void write_eps(void)
 		fprintf(stderr, "Cannot open output file %s\n", fnm);
 		exit(2);
 	}
-	sprintf(finf, "%.72s (%.4s)", in_fname, info.xref);
+	sprintf(finf, "%.72s (%.4s)", in_fname, &info['X' - 'A']->as.text[2]);
 	init_ps(finf, 1);
 	fprintf(fout, "0 %.1f T\n", -bposy);
 	write_buffer();
@@ -544,7 +561,7 @@ void a2b(void)
 
 	l = strlen(mbf);
 	nbuf += l;
-	if (nbuf >= BUFFSZ - 500) {	/* must have place for 1 more line */
+	if (nbuf >= BUFFSZ - BSIZE) {	/* must have room for 1 more line */
 		error(1, 0, "a2b: buffer full, BUFFSZ=%d", BUFFSZ);
 		exit(3);
 	}
@@ -579,17 +596,27 @@ void write_buffer(void)
 {
 	int i, l, b2, np;
 	float p1, dp;
+	int outft_sav;
 
 	if (nbuf == 0 || multicol_start != 0)
 		return;
+	outft_sav = outft;
 	i = 0;
 	p1 = 0;
 	for (l = 0; l < ln_num; l++) {
 		b2 = ln_buf[l];
 		dp = ln_pos[l] - p1;
 		np = posy + dp < 0 && !epsf;
-		if (np)
+		if (np) {
 			newpage();
+			if (ln_font[l] >= 0) {
+				struct FONTSPEC *f;
+
+				f = &cfmt.font_tb[ln_font[l]];
+				fprintf(fout, "%.1f F%d\n",
+					f->size, f->fnum);
+			}
+		}
 		if (ln_scale[l] != cur_scale) {
 			fprintf(fout, "%.2f dup scale\n",
 				ln_scale[l] / cur_scale);
@@ -608,27 +635,30 @@ void write_buffer(void)
 			fwrite(&buf[i], 1, b2 - i, fout);
 		else {				/* %%EPS - see parse.c */
 			FILE *f;
-			char line[BSIZE], *p;
-			float x1, y1;
+			char line[BSIZE], *p, *q;
 
 			i++;
 			p = strchr(&buf[i], '\n');
 			fwrite(&buf[i], 1, p - &buf[i] + 1, fout);
-			sscanf(p + 1, "%f %f %s\n", &x1, &y1, line);
-			if ((f = fopen(line, "r")) == 0) {
-				error(1, 0, "Cannot open EPS file '%s'", line);
+			i = p - buf + 1;
+			p = strchr(&buf[i], '%');
+			*p++ = '\0';
+			q = strchr(p, '\n');
+			*q = '\0';
+			if ((f = fopen(p, "r")) == 0) {
+				error(1, 0, "Cannot open EPS file '%s'", p);
 			} else {
 				fprintf(fout,
-					"%% ----- EPS file '%s' -----\n"
 					"save\n"
 					"/showpage{}def/setpagedevice{pop}def\n"
-					"%.2f %.2f T\n", 
-					line, -x1, -y1);
+					"%s T\n"
+					"%%%%BeginDocument: %s\n",
+					&buf[i], p);
 				while (fgets(line, sizeof line, f))	/* copy the file */
 					fwrite(line, 1, strlen(line), fout);
 				fclose(f);
-				strcpy(line, "restore\n"
-						"% ----- end EPS -----\n");
+				strcpy(line, "%%EndDocument\n"
+					"restore\n");
 				fwrite(line, 1, strlen(line), fout);
 			}
 		}
@@ -638,6 +668,7 @@ void write_buffer(void)
 	}
 	fwrite(&buf[i], 1, nbuf - i, fout);
 	clear_buffer();
+	outft = outft_sav;
 }
 
 /* -- handle completed block in buffer -- */
@@ -650,15 +681,21 @@ void buffer_eob(void)
 	if (ln_num > 0 && ln_buf[ln_num - 1] == nbuf)
 		return;
 	if (ln_num >= BUFFLN) {
+		int mc_sav;
+
 		error(1, 0, "max number of buffer lines exceeded"
 			" -- check BUFFLN");
+		mc_sav = multicol_start;
+		multicol_start = 0;
 		write_buffer();
+		multicol_start = mc_sav;
 		use_buffer = 0;
 	}
 	ln_buf[ln_num] = nbuf;
 	ln_pos[ln_num] = bposy;
 	ln_lmarg[ln_num] = cfmt.leftmargin;
 	ln_scale[ln_num] = cfmt.scale;
+	ln_font[ln_num] = outft;
 	ln_num++;
 	if (!use_buffer) {
 		write_buffer();

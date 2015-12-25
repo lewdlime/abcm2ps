@@ -1,4 +1,4 @@
-/* config.h.  Generated automatically by configure.  */
+/* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in */
 
 /* default directory to search for format files */
@@ -11,13 +11,10 @@
 #define HAVE_MALLOC_H 1
 
 /* Define to handle the european A4 format.  */
-#define A4_FORMAT 1
-
-/* Define to have clef definition changing the note pitch.  */
-/* #undef CLEF_TRANSPOSE */
+/* #undef A4_FORMAT */
 
 /* Define to have ~ as roll instead of twiddle.  */
 /* #undef DECO_IS_ROLL */
 
-#define VERSION "4.12.30"
-#define VDATE "May 28, 2007"
+#define VERSION "5.9.25"
+#define VDATE "November 2, 2011"

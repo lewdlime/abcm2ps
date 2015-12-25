@@ -1,5 +1,5 @@
-	Features of abcm2ps 4.12.6 (J.F. Moine, January 2006)
-	=====================================================
+	Features of abcm2ps 5.9.0 (J.F. Moine, September 2008)
+	======================================================
 
 abcm2ps tries to follow the ABC standard version 2.0:
 
@@ -39,15 +39,15 @@ Features that work differently.
 File structure.
 
 	- The X header field may be omitted in tunebooks in which case
-	  a tune will start on a T header field.
+	  a tune starts on a T header field.
 
-	- The T header field may be omitted (when some 'X' is present).
+	- The T header field may be omitted (when 'X' is present).
 
 	- There is no notion of 'file header': any valid ABC field
 	  found outside the tunes is considered as global, and applies
 	  to the remaining tunes.
 
-	- When the %%abc-version is lower than '2.0', a backslash as the
+	- When the %%abc-version is less than '2.0', a backslash as the
 	  last character of a line means 'concatenate the next line of the
 	  same type to this one'.
 	  This works only for music lines and 'd', 's' and 'w' fields.
@@ -71,19 +71,15 @@ Information fields.
 	  or a-g and immediately followed by a colon are interpreted as
 	  information fields.
 
-	- When the %%abc-version is lower than '2.0', the field 'A' is
+	- When the %%abc-version is less than '2.0', the field 'A' is
 	  'Area', and not 'Author of lyrics'. It is displayed only when
 	  'infoline' is set.
-
-	- In 'K' fields, when present, the list of accidentals always
-	  replaces the accidentals of the key signature (as if 'exp'
-	  was present).
 
 	- In 'K' fields, the list of accidentals may be 'none' (for
 	  no accidental).
 
 	- When a 'K' or 'M' field is found inside a tune, in the first
-	  voice, alone in a line (not enclosed by '[' / ']') and when
+	  voice, alone in a line (not enclosed by '[' and ']') and when
 	  the voice is empty, it is applied to all voices.
 
 Tune body.
@@ -121,7 +117,7 @@ Clefs.
 Multiple voices.
 
 	- The 'P' information field inside a tune and alone in a line
-	  (not enclosed by '[' / ']') is set in the first voice,
+	  (not enclosed by '[' and ']') is set in the first voice,
 	  without changing the current voice.
 
 Data format.
@@ -134,13 +130,15 @@ Data format.
 
 ABC Stylesheet specification.
 
-	- '%%score' is not implemented. '%%staves' shall be used instead.
-	  The differences are:
-		- continued bar lines are drawn when there is no '|'
-		  between the voice names (this feature is inverted in
-		  %%score).
-		- '*' is not accepted. A floating voice may be only the
-		  second one in a 3 voices brace.
+	- The star ('*' = floating voice) is not treated in '%%score'.
+
+	- '%%staves' coexists with '%%score'.
+	  The differences in '%%staves' are:
+		- measure bars are drawn between staves when there is
+		  no '|' between the voice names (this feature is inverted
+		  in %%score).
+		- A floating voice may be only the second one in a
+		  3 voices brace.
 
 	- Some formatting directives are not implemented, and some new
 	  ones are defined. See the file 'format.txt' for details.
@@ -158,7 +156,9 @@ Information fields.
 
 	- The field 'M' may specify more complex meters with a
 	  combination of digits, parenthesis, slashes and blanks.
-	  It may also specify ancient meters as 'M:2' or 'M:3'.
+	  It may also specify ancient meters as 'M:2' or 'M:3',
+	  and also 'M:o' (perfect minor), 'M:o.' (perfect major),
+	  'M:c' (imperfect minor) and 'M:c.' (imperfect major).
 	  An explicit measure duration may be specified putting its
 	  value after an '=' sign (ex: 'M:C|=2/1').
 
@@ -200,7 +200,7 @@ Tune body.
 
 	- Repeat bars may contain a set of digits, '-' (hyphen),
 	  ',' (comma) or '.' (dot), or even a free string. Ex:
-		|: ... [1,3 ... :|2,4-6 :|["last time" ...
+		|: ... [1,3 ... :|2,4-6 ... :|["last time" ...
 	  (note that a '[' is needed before the string - this one may
 	   be empty).
 
@@ -224,10 +224,11 @@ Tune body.
 		+rbstop+	stop here the current repeat bracket
 		+trem1+ .. +trem4+
 				tremolo (on the second of a couple of notes
-				- see sample4.abc for an example)
+				- see sample4.abc for example)
 		+xstem+		draw a stem up to the note on the previous
 				staff
 		!+!		same as +plus+
+		+/+ .. +///+	tremolo on one note
 
 	- There may be decorations on notes inside chords.
 	  Such decorations cannot be standard ones, they must be
@@ -236,13 +237,26 @@ Tune body.
 	- There may be decorations on grace notes.
 
 	- Multiple lines of guitar chord / annotation may also be
-	  indicated by '\n', ';' or a new line inside the quoted
-	  string. Ex:
-		"G3""4"G "G3\n4"G "G3;4"G "G3
-		4"G
+	  indicated by '\n' or ';'. In this case, the next lines are of
+	  the same type (gchord or annotation).
+	  The 3 next notations are equivalent:
+		"_ann1" "_ann2" "G3" "4" G
+		"_ann1;ann2" "G3;4" G
+		"_ann1\nann2" "G3\n4" G
+	  (annotation on 2 lines and guitar chord on 2 lines)
+	  The two next notations are NOT equivalent:
+		"_ann1" "G"
+		"_ann1;G"
+	  (in the 1st line, 'G' is a guitar chord, in the 2nd one,
+	  it is the 2nd line of the annotation)
+	  A new annotation type may be indicated after the new line as:
+		"^above;_below"
 
 	- Annotations may contain '\#', '\b' and '\=' to display
 	  accidentals.
+
+	- Strings with ISO latin encoding may contain '\201', '\202', '\203',
+	  '\204' and '\205' to display accidentals.
 
 Clefs.
 
@@ -258,20 +272,21 @@ Clefs.
 	- When no clef is specified, clef changes are automatically
 	  inserted when needed ('bass' or 'treble').
 
-	- When the clef is bass or alto, for abc2ps compatibility,
-	  abcm2ps scans the beginning of the tune to see if some
-	  transposition was applied.
-	  If the option CLEF_TRANSPOSE was set during abcm2ps generation,
-	  abc2ps transposition always occurs.
+	- The clef name may be enclosed by double quotes in which case
+	  it is the name of a PostScript function which will draw the
+	  clef. This function arguments are the x and y offsets.
 
 Multiple voices.
-
-	- 'gstem=up' or 'gstem=down' in a V field forces the direction
-	  of the stems of the grace notes.
 
 	- 'stem=auto' and 'gstem=auto' in a V field re-enables the
 	  automatic computation of the direction of the stems (default
 	  values).
+
+	- 'gstem=up' or 'gstem=down' in a V field forces the direction
+	  of the stems of the grace notes.
+
+	- 'gchord=up' (default) or 'gchord=down' in a V field forces the
+	  display of guitar chords above or below the staff.
 
 	- 'dyn=up', 'dyn=down' or 'dyn=auto' in a V field forces the
 	  place of the dynamic marks (above or below the staff -
@@ -280,6 +295,9 @@ Multiple voices.
 	- 'lyrics=up', 'lyrics=down' or 'lyrics=auto' in a V field forces
 	  the place of the lyrics (above or below the staff - default
 	  is 'auto').
+
+	- 'stafflines=<value>' in a V field sets the number of lines
+	  of the associated staff. The default value is '5'.
 
 	- 'staffscale=<value>' in a V field sets the scale of the
 	  associated staff. The default value is '1'.

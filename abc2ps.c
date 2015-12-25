@@ -1,7 +1,7 @@
 /*
  * abcm2ps: a program to typeset tunes written in abc format using PostScript
  *
- * Copyright (C) 1998-2006 Jean-François Moine
+ * Copyright (C) 1998-2010 Jean-François Moine
  *
  * Adapted from abc2ps-1.2.5:
  *  Copyright (C) 1996,1997  Michael Methfessel
@@ -20,7 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * Original page:
+ * Original site:
  *	http://moinejf.free.fr/
  *
  * Original abc2ps:
@@ -48,7 +48,7 @@
 
 /* -- global variables -- */
 
-struct ISTRUCT info, default_info;
+INFO info;
 unsigned char deco_glob[256], deco_tune[256];
 struct SYMBOL *sym;		/* (points to the symbols of the current voice) */
 
@@ -58,10 +58,12 @@ int pagenum = 1;		/* current page in output file */
 int in_page;
 
 				/* switches modified by flags: */
+int secure;			/* secure mode */
 int pagenumbers;		/* write page numbers ? */
 int epsf;			/* for EPSF postscript output */
+int showerror;		/* show the errors */
 
-char outf[STRL1];		/* output file name */
+char outfn[STRL1];		/* output file name */
 int  file_initialized;		/* for output file */
 FILE *fout;			/* output file */
 char *in_fname;			/* current input file name */
@@ -71,21 +73,22 @@ time_t mtime;			/* last modification time of the input file */
 int s_argc;			/* command line arguments */
 char **s_argv;
 
-struct WHISTLE_S whistle_tb[MAXWHISTLE];
-int nwhistle;
+struct tblt_s *tblts[MAXTBLT];
+struct cmdtblt_s cmdtblts[MAXCMDTBLT];
+int ncmdtblt;
 
 /* -- local variables -- */
 
-static int deco_old;		/* abc2ps decorations */
 static int def_fmt_done = 0;	/* default format read */
 static struct SYMBOL notitle;
 
 /* memory arena (for clrarena, lvlarena & getarena) */
-#define MAXAREAL 4		/* max area levels:
-				 * 0; global, 1: tune, 2: output, 3: output line */
+#define MAXAREAL 2		/* max area levels:
+				 * 0; global, 1: tune */
+#define MAXAREANASZ 8192
 static int str_level;		/* current arena level */
 static struct str_a {
-	char	str[4096];	/* memory area */
+	char	str[MAXAREANASZ]; /* memory area */
 	char	*p;		/* pointer in area */
 	struct str_a *n;	/* next area */
 	int	r;		/* remaining space in area */
@@ -105,7 +108,7 @@ static void usage(void);
 #ifdef linux
 static void wherefmtdir(void);
 #endif
-static void whistle_parse(char *p);
+static struct cmdtblt_s *cmdtblt_parse(char *p);
 static void write_version(void);
 
 /* -- main program -- */
@@ -113,25 +116,25 @@ int main(int argc,
 	 char **argv)
 {
 	int j;
-	char *p, *sel;
-	char c, *aaa;
+	char *p, *sel, c, *aaa;
 
 	fprintf(stderr, "abcm2ps-" VERSION " (" VDATE ")\n");
 	if (argc <= 1)
 		usage();
 
 	/* initialize */
-	outf[0] = '\0';
-	clrarena(0);			/* global desription */
-	clrarena(1);			/* tune description */
-	clrarena(2);			/* tune generation */
-	clrarena(3);			/* line generation */
+	outfn[0] = '\0';
+	clrarena(0);			/* global */
+	clrarena(1);			/* tune */
 	clear_buffer();
 	abc_init((void *(*)(int size)) getarena, /* alloc */
-		 0,				/* free */
+		0,				/* free */
 		(void (*)(int level)) lvlarena, /* new level */
-		 sizeof(struct SYMBOL) - sizeof(struct abcsym),
-		 0);			/* don't keep comments */
+		sizeof(struct SYMBOL) - sizeof(struct abcsym),
+		0);				/* don't keep comments */
+	memset(&info, 0, sizeof info);
+	info['T' - 'A'] = &notitle;
+	notitle.as.text = "T:";
 	set_format();
 	s_argc = argc;
 	s_argv = argv;
@@ -147,11 +150,26 @@ int main(int argc,
 	while (--argc > 0) {
 		argv++;
 		p = *argv;
-		if (*p == 0)
+		if ((c = *p) == '\0')
 			continue;
-		if (*p == '+') {	/* switch off flags with '+' */
+		if (c == '-') {
+			if (p[1] == '\0') {		/* '-' alone */
+				if (in_fname != 0) {
+					output_file(sel);
+					sel = 0;
+				}
+				in_fname = "";		/* read from stdin */
+				continue;
+			}
+			if (p[1] != '-' && p[1] != 'e'
+			 && p[strlen(p) - 1] == '-')
+				c = '+'; /* switch off flags with '-x-' */
+		}
+		if (c == '+') {		/* switch off flags with '+' */
 			while (*++p != '\0') {
 				switch (*p) {
+				case '-':
+					break;
 				case 'B':
 					cfmt.barsperstaff = 0;
 					lock_fmt(&cfmt.barsperstaff);
@@ -166,6 +184,9 @@ int main(int argc,
 					cfmt.graceslurs = 1;
 					lock_fmt(&cfmt.graceslurs);
 					break;
+				case 'i':
+					showerror = 0;
+					break;
 				case 'j':
 				case 'k':
 					cfmt.measurenb = -1;
@@ -179,24 +200,45 @@ int main(int argc,
 					cfmt.musiconly = 0;
 					lock_fmt(&cfmt.musiconly);
 					break;
-				case 'N': pagenumbers = 0; break;
+				case 'N':
+					pagenumbers = 0;
+					break;
 				case 'n':
 					cfmt.writehistory = 0;
 					lock_fmt(&cfmt.writehistory);
 					break;
 				case 'O':
-					outf[0] = '\0';
+					outfn[0] = '\0';
 					break;
 				case 'Q':
 					cfmt.printtempo = 0;
 					lock_fmt(&cfmt.printtempo);
 					break;
+				case 'T': {
+					struct cmdtblt_s *cmdtblt;
+					aaa = p + 1;
+					if (*aaa == '\0') {
+						if (argc > 1
+						    && argv[1][0] != '-') {
+							aaa = *++argv;
+							argc--;
+						}
+					} else {
+						while (p[1] != '\0')	/* stop */
+							p++;
+						if (*p == '-')
+							*p-- = '\0';	/* (not clean) */
+					}
+					cmdtblt = cmdtblt_parse(aaa);
+					if (cmdtblt != 0)
+						cmdtblt->active = 0;
+					break;
+				   }
 				case 'x':
 					cfmt.withxrefs = 0;
 					lock_fmt(&cfmt.withxrefs);
 					break;
-				case 'W': nwhistle = 0; break;
-				case '0':		/*4.12.27*/
+				case '0':
 					cfmt.splittune = 0;
 					lock_fmt(&cfmt.splittune);
 					break;
@@ -215,16 +257,8 @@ int main(int argc,
 			continue;
 		}
 
-		if (*p == '-') {	     /* interpret a flag with '-'*/
-			if (p[1] == '\0') {
-				if (in_fname != 0) {
-					output_file(sel);
-					sel = 0;
-				}
-				in_fname = "";		/* read from stdin */
-				continue;
-			}
-			if (p[1] == '-') {
+		if (c == '-') {		     /* interpret a flag with '-' */
+			if (p[1] == '-') {		/* long argument */
 				p += 2;
 				if (--argc <= 0) {
 					fprintf(stderr,
@@ -235,15 +269,18 @@ int main(int argc,
 				interpret_fmt_line(p, *argv, 1);
 				continue;
 			}
-			while (*++p != '\0') {
-				switch (c = *p) {
+			while ((c = *++p) != '\0') {
+				switch (*p) {
 
 					/* simple flags */
 				case 'c':
 					cfmt.continueall = 1;
 					lock_fmt(&cfmt.continueall);
 					break;
-				case 'E': epsf = 1; break;
+				case 'E':
+					close_output_file();
+					epsf = 1;
+					break;
 				case 'f':
 					cfmt.flatbeams = 1;
 					lock_fmt(&cfmt.flatbeams);
@@ -258,6 +295,9 @@ int main(int argc,
 					print_format();
 					return 0;
 				case 'h': usage(); break;
+				case 'i':
+					showerror = 1;
+					break;
 				case 'l':
 					cfmt.landscape = 1;
 					lock_fmt(&cfmt.landscape);
@@ -274,7 +314,13 @@ int main(int argc,
 					cfmt.printtempo = 1;
 					lock_fmt(&cfmt.printtempo);
 					break;
-				case 'u': deco_old = 1; break;
+				case 'S':
+					secure = 1;
+					break;
+				case 'u':
+					cfmt.abc2pscompat = 1;
+					lock_fmt(&cfmt.abc2pscompat);
+					break;
 				case 'V':
 					write_version();
 					return 0;
@@ -282,7 +328,7 @@ int main(int argc,
 					cfmt.withxrefs = 1;
 					lock_fmt(&cfmt.withxrefs);
 					break;
-				case '0':		/*4.12.27*/
+				case '0':
 					cfmt.splittune = 1;
 					lock_fmt(&cfmt.splittune);
 					break;
@@ -334,12 +380,13 @@ int main(int argc,
 				case 'm':
 				case 'O':
 				case 's':
+				case 'T':
 				case 'w':
-				case 'W':
 					aaa = p + 1;
 					if (*aaa == '\0') {
 						aaa = *++argv;
-						if (--argc <= 0 || *aaa == '-') {
+						if (--argc <= 0
+						    || (*aaa == '-' && c != 'O')) {
 							fprintf(stderr,
 								"++++ Missing parameter after flag -%c\n",
 								c);
@@ -367,34 +414,24 @@ int main(int argc,
 					}
 
 					switch (c) {
-					case 'a': {
-						float alfa_c;
-
-						sscanf(aaa, "%f", &alfa_c);
-						if (alfa_c > 1 || alfa_c < 0) {
-							fprintf(stderr,
-								"++++ Bad parameter for flag -a: %s\n",
-								aaa);
-							return 2;
-						}
-						cfmt.maxshrink = alfa_c;
-						lock_fmt(&cfmt.maxshrink);
+					case 'a':
+						interpret_fmt_line("maxshrink",
+								aaa, 1);
 						break;
-					    }
 					case 'B':
-						sscanf(aaa, "%d", &cfmt.barsperstaff);
-						lock_fmt(&cfmt.barsperstaff);
+						interpret_fmt_line("barsperstaff",
+								aaa, 1);
 						break;
 					case 'b':
-						sscanf(aaa, "%d", &cfmt.measurefirst);
-						lock_fmt(&cfmt.measurefirst);
+						interpret_fmt_line("measurefirst",
+								aaa, 1);
 						break;
 					case 'D':
 						styd = aaa;
 						break;
 					case 'd':
-						cfmt.staffsep = scan_u(aaa);
-						lock_fmt(&cfmt.staffsep);
+						interpret_fmt_line("staffsep",
+								aaa, 1);
 						break;
 					case 'F':
 						read_def_format();
@@ -406,8 +443,8 @@ int main(int argc,
 						}
 						break;
 					case 'I':
-						cfmt.indent = scan_u(aaa);
-						lock_fmt(&cfmt.indent);
+						interpret_fmt_line("indent",
+								aaa, 1);
 						break;
 					case 'j':
 					case 'k':
@@ -419,18 +456,12 @@ int main(int argc,
 						lock_fmt(&cfmt.measurebox);
 						break;
 					case 'L':
-						sscanf(aaa, "%d", &cfmt.encoding);
-						if ((unsigned) cfmt.encoding > MAXENC) {
-							fprintf(stderr,
-								"++++ Bad encoding value %s - reset to 0\n",
-								aaa);
-							cfmt.encoding = 0;
-						}
-						lock_fmt(&cfmt.encoding);
+						interpret_fmt_line("encoding",
+								aaa, 1);
 						break;
 					case 'm':
-						cfmt.leftmargin = scan_u(aaa);
-						lock_fmt(&cfmt.leftmargin);
+						interpret_fmt_line("leftmargin",
+								aaa, 1);
 						break;
 					case 'N':
 						sscanf(aaa, "%d", &pagenumbers);
@@ -442,24 +473,28 @@ int main(int argc,
 						}
 						break;
 					case 'O':
-						strcpy(outf, aaa);
+						if (strlen(aaa) >= sizeof outfn) {
+							fprintf(stderr,
+								"++++ '-O' too large\n");
+							exit(1);
+						}
+						strcpy(outfn, aaa);
 						break;
 					case 's':
-						sscanf(aaa, "%f", &cfmt.scale);
-						lock_fmt(&cfmt.scale);
+						interpret_fmt_line("scale",
+								aaa, 1);
 						break;
-					case 'w': {
-						float w;
+					case 'T': {
+						struct cmdtblt_s *cmdtblt;
 
-						w = scan_u(aaa);
-						cfmt.rightmargin = cfmt.pagewidth - w - cfmt.leftmargin;
-						if (cfmt.rightmargin < 0)
-							fprintf(stderr, "Warning: staffwidth too big\n");
-						lock_fmt(&cfmt.rightmargin);
+						cmdtblt = cmdtblt_parse(aaa);
+						if (cmdtblt != 0)
+							cmdtblt->active = 1;
 						break;
 					    }
-					case 'W':
-						whistle_parse(aaa);
+					case 'w':
+						interpret_fmt_line("staffwidth",
+								aaa, 1);
 						break;
 					}
 					break;
@@ -521,17 +556,11 @@ static void output_file(char *sel)
 	/* initialize if not already done */
 	if (fout == 0)
 		set_page_format();
-	memset(&default_info, 0, sizeof default_info);
-	default_info.title = &notitle;
-	notitle.as.text = "T:(notitle)";
-	memcpy(&info, &default_info, sizeof info);
-	reset_deco(deco_old);
+	reset_deco();
 	memcpy(&deco_tune, &deco_glob, sizeof deco_tune);
 	if (!epsf)
 		open_output_file();
 	fprintf(stderr, "File %s\n", in_fname);
-	clrarena(1);
-	lvlarena(0);
 	t = abc_parse(file);
 	free(file);
 
@@ -556,8 +585,8 @@ static void do_filter(struct abctune *t, char *sel)
 			sel++;
 			end_sel = (int) ((unsigned) (~0) >> 1);
 			if (sscanf(sel, "%d%n", &end_sel, &n) != 1)
-				break;
-			sel += n;
+				end_sel = (unsigned) ~0 >> 1;
+			else	sel += n;
 		} else	end_sel = cur_sel;
 		do_select(t, cur_sel, end_sel);
 		if (*sel != ',')
@@ -579,19 +608,17 @@ static void do_select(struct abctune *t,
 		for (s = t->first_sym; s != 0; s = s->next) {
 			if (s->type == ABC_T_INFO
 			    && s->text[0] == 'X') {
-				sscanf(s->text, "X:%d", &i);
+				if (sscanf(s->text, "X:%d", &i) != 1)
+					i = 0;
 				break;
 			}
 		}
 		print_tune = i >= first_tune && i <= last_tune;
 		if (print_tune
 		    || !t->client_data) {	/* (parse the global symbols) */
-			clrarena(2);
 			do_tune(t, !print_tune);
 			t->client_data = (void *) 1;	/* treated */
 		}
-		if (i >= last_tune)
-			break;
 		t = t->next;
 	}
 }
@@ -699,21 +726,22 @@ static void usage(void)
 		"     -E      produce EPSF output, one tune per file\n"
 		"     -O fff  set outfile name to fff\n"
 		"     -O =    make outfile name from infile/title\n"
+		"     -i      indicate where are the errors\n"
 		"  .output formatting:\n"
 		"     -s xx   set scale factor to xx\n"
 		"     -w xx   set staff width (cm/in/pt)\n"
 		"     -m xx   set left margin (cm/in/pt)\n"
 		"     -d xx   set staff separation (cm/in/pt)\n"
 		"     -a xx   set max shrinkage to xx (between 0 and 1)\n"
-		"     -F foo  read format from \"foo.fmt\"\n"
+		"     -F foo  read format file \"foo.fmt\"\n"
 		"     -D bar  look for format files in directory \"bar\"\n"
 		"  .output options:\n"
 		"     -l      landscape mode\n"
 		"     -I xx   indent 1st line (cm/in/pt)\n"
-		"     -x      include xref numbers in output\n"
+		"     -x      add xref numbers in titles\n"
 		"     -M      don't output the lyrics\n"
 		"     -n      include notes and history in output\n"
-		"     -N n    set page number mode to n=\n"
+		"     -N n    set page numbering mode to n=\n"
 		"             0=off 1=left 2=right 3=even left,odd right 4=even right,odd left\n"
 		"     -1      write one tune per page\n"
 		"     -G      no slur in grace notes\n"
@@ -721,15 +749,15 @@ static void usage(void)
 		"             if 'b', display in a box\n"
 		"     -k n[b] same as '-j' (abc2ps compatibility)\n"
 		"     -b n    set the first measure number to n\n"
-		"     -f      have flat beams when bagpipe tunes\n"
-		"     -W vk   output a whistle tablature for voice 'v', key 'k'\n"
+		"     -f      have flat beams\n"
+		"     -T n[v]   output the tablature 'n' for voice 'v' / all voices\n"
 		"  .line breaks:\n"
 		"     -c      auto line break\n"
 		"     -B n    break every n bars\n"
 		"  .input file selection/options:\n"
 		"     -e pattern\n"
 		"             xref list of tunes to select\n"
-		"     -u      abc2ps implicit decorations\n"
+		"     -u      abc2ps behaviour\n"
 		"     -L n    set char encoding to Latin number n\n"
 		"  .help/configuration:\n"
 		"     -V      show program version\n"
@@ -768,47 +796,29 @@ static void wherefmtdir(void)
 }
 #endif
 
-/* -- parse the whistle command ('-Wvk') -- */
-static void whistle_parse(char *p)
+/* -- parse the tablature command ('-T n[v]') -- */
+static struct cmdtblt_s *cmdtblt_parse(char *p)
 {
-	short pitch;
-	char *q;
-	static char notes_tb[14] = "CDEFGABcdefgab";
-	static char pitch_tb[14] = {60, 62, 64, 65, 67, 69, 71,
-				    72, 74, 76, 77, 79, 81, 83};
+	struct cmdtblt_s *cmdtblt;
+	short val;
 
-	if (nwhistle >= MAXWHISTLE) {
-		fprintf(stderr, "++++ Too many '-W'\n");
-		return;
+	if (ncmdtblt >= MAXCMDTBLT) {
+		fprintf(stderr, "++++ Too many '-T'\n");
+		return 0;
 	}
-	if ((unsigned) (*p - '0') > 9) {
-		fprintf(stderr, "++++ Bad voice number in '-W'\n");
-		return;
+	if (*p == '\0')
+		val = -1;
+	else {
+		val = *p++ - '0' - 1;
+		if ((unsigned) val > MAXTBLT) {
+			fprintf(stderr, "++++ Bad tablature number in '-T'\n");
+			return 0;
+		}
 	}
-	whistle_tb[nwhistle].voice = *p++ - '0' - 1;
-	pitch = 0;
-	if (*p == '^' || *p == '_') {
-		if (*p++ == '^')
-			pitch++;
-		else	pitch--;
-	}
-	if (*p == '\0' || (q = strchr(notes_tb, *p)) == 0) {
-		fprintf(stderr, "++++ Bad note name in '-W'\n");
-		return;
-	}
-	pitch += pitch_tb[q - notes_tb];
-	p++;
-	if (*p == '#' || *p == 'b') {
-		if (*p++ == '#')
-			pitch++;
-		else	pitch--;
-	}
-	while (*p == '\'' || *p == ',') {
-		if (*p++ == '\'')
-			pitch += 12;
-		else	pitch -= 12;
-	}
-	whistle_tb[nwhistle++].pitch = pitch;
+	cmdtblt = &cmdtblts[ncmdtblt++];
+	cmdtblt->index = val;
+	cmdtblt->vn = p;
+	return cmdtblt;
 }
 
 /* -- write the program version -- */
@@ -819,21 +829,15 @@ static void write_version(void)
 #ifdef A4_FORMAT
 		" A4_FORMAT"
 #endif
-#ifdef CLEF_TRANSPOSE
-		" CLEF_TRANSPOSE"
-#endif
 #ifdef DECO_IS_ROLL
 		" DECO_IS_ROLL"
 #endif
-#if !defined(A4_FORMAT) && !defined(CLEF_TRANSPOSE) \
-     && !defined(DECO_IS_ROLL)
+#if !defined(A4_FORMAT) && !defined(DECO_IS_ROLL)
 		" NONE"
 #endif
 		"\n");
-
 	if (strlen(styd) > 0)
-		fprintf(stderr,
-			"Default format directory: %s\n", styd);
+		fprintf(stderr, "Default format directory: %s\n", styd);
 }
 
 /* -- arena routines -- */
@@ -850,9 +854,13 @@ void clrarena(int level)
 	a_p->r = sizeof a_p->str;
 }
 
-void lvlarena(int level)
+int lvlarena(int level)
 {
+	int old_level;
+
+	old_level = str_level;
 	str_level = level;
+	return old_level;
 }
 
 /* The area is 8 bytes aligned to handle correctly int and pointers access
@@ -864,7 +872,13 @@ char *getarena(int len)
 
 	a_p = str_c[str_level];
 	len = (len + 7) & ~7;		/* align at 64 bits boundary */
-	if (a_p->r < len) {
+	if (len > a_p->r) {
+		if (len > MAXAREANASZ) {
+			fprintf(stderr,
+				"++++ getarena - data too wide %d - aborting\n",
+				len);
+			exit(1);
+		}
 		if (a_p->n == 0) {
 			a_p->n = malloc(sizeof *str_r[0]);
 			a_p->n->n = 0;

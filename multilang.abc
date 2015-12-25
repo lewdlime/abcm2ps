@@ -45,27 +45,32 @@
 %%endps
 
 % Define the alternate string fonts.
-% (don't forget the size - else 0!)
+% (don't forget the size, otherwise size = 0!)
 
-%%setfont-1 Times-Roman iso-8859-2 16	% latin 2
-%%setfont-2 Times-Roman native 16	% font encoding
-%%setfont-3 Times-Roman OgonkiEncoding 16 % multi-latin encoding
+%%setfont-1 Times-Bold 20		% default latin 1
+%%setfont-2 Times-Bold iso-8859-2 20	% latin 2
+%%setfont-3 Times-Bold native 20	% standard encoding
+%%setfont-4 Times-Bold OgonkiEncoding 20 % multi-latin encoding
 
 %%text Look at the source to know more about encoding!
 %%vskip 30
 
 % Default is latin1, as the source.
-%%text default latin1 encoding: agrave:à eacute:é ocircumflex:ô udieresis:ü ntilde:ñ
+%%text default latin1 encoding:
+%%center $1agrave:à eacute:é ocircumflex:ô udieresis:ü ntilde:ñ
 
 % Special latin2 characters.
 % Here, as the source is latin1, many characters must be coded in octal.
-%%text latin2 encoding: $1aogonek:\261 sacute:\266 racute:\340 ccaron:\350 ohungarumlaut:\365
+%%text latin2 encoding:
+%%center $2aogonek:\261 sacute:\266 racute:\340 ccaron:\350 ohungarumlaut:\365
 
 % A standard font has the PostScript standard encoding...
-%%text font encoding: $2agrave:à eacute:é ocircumflex:ô udieresis:ü ntilde:ñ
+%%text standard native encoding:
+%%center $3fi:\256 dagger:\262 ellipsis:\274 fraction:\244 guilsinglleft:\254
 
 % The ogonkify encoding is based on latin2 with some latin1 characters,
 % but not at a standard place!
-%%text ogonkify encoding: $3exclamdown:\001 oslash:\211 cacute:\346 uring:\371 oe:\212
+%%text ogonkify encoding:
+%%center $4exclamdown:\001 oslash:\211 cacute:\346 uring:\371 oe:\212
 
 % (right, there is no tune!)

@@ -1,21 +1,21 @@
-# Generated automatically from Makefile.in by configure.
 # Makefile source for abcm2ps
 
-VERSION = 4.12.30
+VERSION = 5.9.25
 
 CC = gcc
-INSTALL = /usr/bin//install -c
+INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 
 CPPFLAGS = -DHAVE_CONFIG_H -I.
 CFLAGS = -g -O2 -Wall -pipe
-LDFLAGS = -lm	# 
+LDFLAGS =	# 
 
 prefix = /usr/local
 exec_prefix = ${prefix}
 
 srcdir = .
+
 bindir = ${exec_prefix}/bin
 libdir = ${exec_prefix}/lib
 datadir = ${prefix}/share
@@ -29,14 +29,14 @@ abcm2ps: $(OBJECTS)
 	$(CC) $(CFLAGS) -o abcm2ps $(OBJECTS) $(LDFLAGS)
 $(OBJECTS): abcparse.h abc2ps.h config.h
 
-DOCFILES=Changes License README *.abc *.eps *.txt
+DOCFILES=$(addprefix $(srcdir)/,Changes License README *.abc *.eps *.txt)
 
 install: abcm2ps
 	mkdir -p $(bindir); \
 	mkdir -p $(datadir)/abcm2ps; \
 	mkdir -p $(docdir)/abcm2ps; \
 	$(INSTALL_PROGRAM) abcm2ps $(bindir)
-	for f in *.fmt; do \
+	for f in $(srcdir)/*.fmt; do \
 		$(INSTALL_DATA) $$f $(datadir)/abcm2ps; \
 	done
 	for f in $(DOCFILES); do \
@@ -61,6 +61,7 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/abc2ps.h \
 	abcm2ps-$(VERSION)/abcparse.c \
 	abcm2ps-$(VERSION)/abcparse.h \
+	abcm2ps-$(VERSION)/accordion.abc \
 	abcm2ps-$(VERSION)/buffer.c \
 	abcm2ps-$(VERSION)/configure \
 	abcm2ps-$(VERSION)/configure.in \
@@ -73,6 +74,7 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/draw.c \
 	abcm2ps-$(VERSION)/fbook.fmt \
 	abcm2ps-$(VERSION)/features.txt \
+	abcm2ps-$(VERSION)/flute.fmt \
 	abcm2ps-$(VERSION)/fonts.fmt \
 	abcm2ps-$(VERSION)/format.c \
 	abcm2ps-$(VERSION)/format.txt \
@@ -91,6 +93,7 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/sample3.abc \
 	abcm2ps-$(VERSION)/sample3.eps \
 	abcm2ps-$(VERSION)/sample4.abc \
+	abcm2ps-$(VERSION)/sample5.abc \
 	abcm2ps-$(VERSION)/subs.c \
 	abcm2ps-$(VERSION)/syms.c \
 	abcm2ps-$(VERSION)/tight.fmt \
@@ -126,6 +129,8 @@ EXAMPLES = deco.ps \
 	sample.ps \
 	sample2.ps \
 	sample3.ps \
+	sample4.ps \
+	sample5.ps \
 	voices.ps
 
 test:	$(EXAMPLES)

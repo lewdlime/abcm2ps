@@ -1,0 +1,97 @@
+# rules for ninja (ninja-build)
+
+VERSION = 7.8.14
+
+#cflags = -g -O2 -Wall -pipe -DHAVE_CONFIG_H  -I.
+cflags = -g -Wall -pipe -DHAVE_CONFIG_H  -I.
+ldflags = -lm
+
+rule cc
+#  command = gcc $cflags -c $in -o $out
+  command = clang $cflags -c $in -o $out
+# -mcpu=iwmmxt
+# -mcpu=iwmmxt2
+# -mthumb -march=armv7-a
+
+rule ld
+#  command = cc $ldflags -o $out $in
+  command = clang $ldflags -o $out $in
+
+build abc2ps.o: cc abc2ps.c | config.h abcparse.h abc2ps.h front.h
+build abcparse.o: cc abcparse.c | config.h abcparse.h
+build buffer.o: cc buffer.c | config.h abcparse.h abc2ps.h
+build deco.o: cc deco.c | config.h abcparse.h abc2ps.h
+build draw.o: cc draw.c | config.h abcparse.h abc2ps.h
+build format.o: cc format.c | config.h abcparse.h abc2ps.h
+build front.o: cc front.c | config.h abcparse.h abc2ps.h front.h slre.h
+build glyph.o: cc glyph.c | config.h abcparse.h abc2ps.h
+build music.o: cc music.c | config.h abcparse.h abc2ps.h
+build parse.o: cc parse.c | config.h abcparse.h abc2ps.h
+build slre.o: cc slre.c | slre.h
+build subs.o: cc subs.c | config.h abcparse.h abc2ps.h
+build svg.o: cc svg.c | config.h abcparse.h abc2ps.h
+build syms.o: cc syms.c | config.h abcparse.h abc2ps.h
+
+build abcm2ps: ld abc2ps.o abcparse.o buffer.o deco.o draw.o format.o front.o $
+  glyph.o music.o parse.o slre.o subs.o svg.o syms.o
+
+default abcm2ps
+
+rule dist_tar
+  command = ln -s . abcm2ps-$VERSION; $
+   tar -zcvf $out $
+  abcm2ps-$VERSION/Changes $
+  abcm2ps-$VERSION/INSTALL $
+  abcm2ps-$VERSION/License $
+  abcm2ps-$VERSION/Makefile $
+  abcm2ps-$VERSION/Makefile.in $
+  abcm2ps-$VERSION/README $
+  abcm2ps-$VERSION/abc2ps.c $
+  abcm2ps-$VERSION/abc2ps.h $
+  abcm2ps-$VERSION/abcparse.c $
+  abcm2ps-$VERSION/abcparse.h $
+  abcm2ps-$VERSION/accordion.abc $
+  abcm2ps-$VERSION/build.ninja $
+  abcm2ps-$VERSION/buffer.c $
+  abcm2ps-$VERSION/chinese.abc $
+  abcm2ps-$VERSION/configure $
+  abcm2ps-$VERSION/configure.in $
+  abcm2ps-$VERSION/config.h $
+  abcm2ps-$VERSION/config.h.in $
+  abcm2ps-$VERSION/config.guess $
+  abcm2ps-$VERSION/config.sub $
+  abcm2ps-$VERSION/deco.c $
+  abcm2ps-$VERSION/deco.abc $
+  abcm2ps-$VERSION/draw.c $
+  abcm2ps-$VERSION/features.txt $
+  abcm2ps-$VERSION/flute.fmt $
+  abcm2ps-$VERSION/format.c $
+  abcm2ps-$VERSION/format.txt $
+  abcm2ps-$VERSION/front.c $
+  abcm2ps-$VERSION/front.h $
+  abcm2ps-$VERSION/glyph.c $
+  abcm2ps-$VERSION/install.sh $
+  abcm2ps-$VERSION/landscape.fmt $
+  abcm2ps-$VERSION/music.c $
+  abcm2ps-$VERSION/musicfont.fmt $
+  abcm2ps-$VERSION/newfeatures.abc $
+  abcm2ps-$VERSION/options.txt $
+  abcm2ps-$VERSION/parse.c $
+  abcm2ps-$VERSION/sample.abc $
+  abcm2ps-$VERSION/sample2.abc $
+  abcm2ps-$VERSION/sample3.abc $
+  abcm2ps-$VERSION/sample3.eps $
+  abcm2ps-$VERSION/sample4.abc $
+  abcm2ps-$VERSION/sample5.abc $
+  abcm2ps-$VERSION/slre.c $
+  abcm2ps-$VERSION/slre.h $
+  abcm2ps-$VERSION/subs.c $
+  abcm2ps-$VERSION/svg.c $
+  abcm2ps-$VERSION/syms.c $
+  abcm2ps-$VERSION/tight.fmt $
+  abcm2ps-$VERSION/voices.abc;$
+   rm abcm2ps-$VERSION
+
+build abcm2ps-$VERSION.tar.gz: dist_tar
+
+build dist: phony abcm2ps-$VERSION.tar.gz

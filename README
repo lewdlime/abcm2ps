@@ -1,9 +1,9 @@
-# abcm2ps version 6.x.x
+# abcm2ps version 7.x.x
 
 ## Overview
 ---
 
-abcm2ps is a program which converts music tunes from ABC format to PostScript. Based on abc2ps version 1.2.5 (see Contacts below), it was developped mainly to print barock organ scores which have independant voices played on one or many keyboards and a pedal-board.
+abcm2ps is a program which converts music tunes from ABC format to PostScript or SVG. Based on abc2ps version 1.2.5 (see [Contacts](#contacts) below), it was developped mainly to print barock organ scores which have independant voices played on one or many keyboards and a pedal-board (the '`m`' of abcm2ps stands for many or multi staves/voices).
 
 ## Features
 ---

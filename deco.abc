@@ -217,12 +217,13 @@
 	/Times-BoldItalic 16 selectfont M 5.5 -14 RM(8vb)show}!
 %
 % -- latin guitar chords
+% note: 'Ré' cannot be used
 /gcshow{
 	dup 0 get
 	dup dup 65 ge exch 71 le and{
-		65 sub[(La)(Si)(Do)(Ré)(Mi)(Fa)(Sol)]exch get
-	}if show
-	dup length 1 sub 1 exch getinterval show}!
+		65 sub[(La)(Si)(Do)(Re)(Mi)(Fa)(Sol )]exch get show
+		dup length 1 sub 1 exch getinterval
+	}if show}!
 %
 % -- 'tr' + long trill
 /trtrill{	% usage: w x y trtrill
@@ -356,7 +357,6 @@
 %%deco t3b 3 t3b 12 5 15
 %%deco # 3 sharp 8 0 0
 %%deco b 3 flat 8 0 0
-%%deco = 3 natural 8 0 0
 %%deco = 3 natural 8 0 0
 %
 % -- 'tr' + long trill

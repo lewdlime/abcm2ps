@@ -3,22 +3,13 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2014 Jean-François Moine
+ * Copyright (C) 1998-2015 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA  02110-1335  USA
  */
 
 #include <stdio.h>
@@ -32,7 +23,7 @@
 #include <pango/pangofc-font.h>
 #endif
 
-#include "abc2ps.h" 
+#include "abcm2ps.h" 
 
 char tex_buf[TEX_BUF_SZ];	/* result of tex_str() */
 int outft = -1;			/* last font in the output file */
@@ -50,38 +41,22 @@ static char strtx;		/* PostScript text outputing (bits) */
 /* these are the widths for Times-Roman, extracted from the 'a2ps' package */
 /*fixme-hack: set 500 to control characters for utf-8*/
 static short cw_tb[] = {
+	500,500,500,500,500,500,500,500,	// 00
 	500,500,500,500,500,500,500,500,
+	500,500,500,500,500,500,500,500,	// 10
 	500,500,500,500,500,500,500,500,
-	500,500,500,500,500,500,500,500,
-	500,500,500,500,500,500,500,500,
-	250,333,408,500,500,833,778,333,
+	250,333,408,500,500,833,778,333,	// 20
 	333,333,500,564,250,564,250,278,
-	500,500,500,500,500,500,500,500,
+	500,500,500,500,500,500,500,500,	// 30
 	500,500,278,278,564,564,564,444,
-	921,722,667,667,722,611,556,722,
+	921,722,667,667,722,611,556,722,	// 40
 	722,333,389,722,611,889,722,722,
-	556,722,667,556,611,722,722,944,
+	556,722,667,556,611,722,722,944,	// 50
 	722,722,611,333,278,333,469,500,
-	333,444,500,444,500,444,333,500,
+	333,444,500,444,500,444,333,500,	// 60
 	500,278,278,500,278,778,500,500,
-	500,500,333,389,278,500,500,722,
+	500,500,333,389,278,500,500,722,	// 70
 	500,500,444,480,200,480,541,500,
-	500,500,500,500,500,500,500,500,
-	500,500,500,500,500,500,500,500,
-	500,500,500,500,500,500,500,500,
-	500,500,500,500,500,500,500,500,
-	250,333,500,500,500,500,200,500,
-	333,760,276,500,564,333,760,333,
-	400,564,300,300,333,500,453,350,
-	333,278,310,500,750,750,750,444,
-	722,722,722,722,722,722,889,667,
-	611,611,611,611,333,333,333,333,
-	722,722,722,722,722,722,722,564,
-	722,722,722,722,722,722,556,500,
-	444,444,444,444,444,444,667,444,
-	444,444,444,444,278,278,278,278,
-	500,500,500,500,500,500,500,564,
-	500,500,500,500,500,500,500,500,
 };
 
 static struct u_ps {
@@ -106,50 +81,20 @@ void error(int sev,	/* 0: warning, 1: error */
 	   char *fmt, ...)
 {
 	va_list args;
-static struct SYMBOL *t;
 
-	if (t != info['T' - 'A']) {
-		char *p;
-
-		t = info['T' - 'A'];
-		p = &t->as.text[2];
-		while (isspace((unsigned char) *p))
-			p++;
-		fprintf(stderr, "   - In tune '%s':\n", p);
-	}
-	fprintf(stderr, sev == 0 ? "Warning " : "Error ");
 	if (s) {
-		fprintf(stderr, "in line %d.%d",
-			s->as.linenum, s->as.colnum);
-		s->as.flags |= ABC_F_ERROR;
+		if (s->fn)
+			fprintf(stderr, "%s:%d:%d: ", s->fn,
+					s->linenum, s->colnum);
+		s->flags |= ABC_F_ERROR;
 	}
-	fprintf(stderr, ": ");
+	fprintf(stderr, sev == 0 ? "warning: " : "error: ");
 	va_start(args, fmt);
 	vfprintf(stderr, fmt, args);
 	va_end(args);
 	fprintf(stderr, "\n");
 	if (sev > severity)
 		severity = sev;
-}
-
-/* -- read a number with a unit -- */
-float scan_u(char *str)
-{
-	float a;
-	int nch;
-
-	if (sscanf(str, "%f%n", &a, &nch) == 1) {
-		if (str[nch] == '\0' || str[nch] == ' ')
-			return a PT;
-		if (!strncasecmp(str + nch, "cm", 2))
-			return a CM;
-		if (!strncasecmp(str + nch, "in", 2))
-			return a IN;
-		if (!strncasecmp(str + nch, "pt", 2))
-			return a PT;
-	}
-	error(1, NULL, "Unknown unit value \"%s\"", str);
-	return 20 PT;
 }
 
 /* -- capitalize a string -- */
@@ -182,10 +127,13 @@ static void cap_str(char *p)
 }
 
 /* -- return the character width -- */
-float cwid(unsigned short c)
+float cwid(unsigned char c)
 {
-	if (c > sizeof cw_tb / sizeof cw_tb[0])
+	if (c > 0x80) {
+		if (c < 0xc0)
+			return 0;	// not start of utf8 character
 		c = 'a';
+	}
 	return (float) cw_tb[c] / 1000.;
 }
 
@@ -193,8 +141,8 @@ float cwid(unsigned short c)
 /* Return an estimated width of the string. */
 float tex_str(char *s)
 {
-	char *d;
-	signed char c1;
+	char *d, *p;
+	unsigned char c1;
 	unsigned maxlen, i;
 	float w, swfac;
 
@@ -204,7 +152,10 @@ float tex_str(char *s)
 	if ((i = curft) <= 0)
 		i = defft;
 	swfac = cfmt.font_tb[i].swfac;
-	while ((c1 = *s++) != '\0') {
+	while (1) {
+		c1 = (unsigned char) *s++;
+		if (c1 == '\0')
+			break;
 		switch (c1) {
 		case '\\':
 			c1 = *s++;
@@ -241,8 +192,18 @@ float tex_str(char *s)
 				s++;
 			}
 			break;
-		case '&':
-			if (*s == '#' && !svg && epsf != 2) {	/* XML char ref */
+		case '&':			/* treat XML characters */
+			if (svg || epsf > 1) {
+				p = strchr(s, ';');
+				if (!p || p - s >= 10)
+					break;
+				*d++ = c1;
+				while (s <= p)
+					*d++ = *s++;
+				w += cwid('a') * swfac;
+				continue;
+			}
+			if (*s == '#') {
 				int j;
 				long v;
 
@@ -269,19 +230,31 @@ float tex_str(char *s)
 					*d++ = 0x80 | ((v >> 6) & 0x3f);
 					*d++ = 0x80 | (v & 0x3f);
 				}
+				w += cwid('a') * swfac;
 				s += j;
 				continue;
 			}
+			if (strncmp(s, "lt;", 3) == 0) {
+				c1 = '<';
+				s += 3;
+			} else if (strncmp(s, "gt;", 3) == 0) {
+				c1 = '>';
+				s += 3;
+			} else if (strncmp(s, "amp;", 4) == 0) {
+				c1 = '&';
+				s += 4;
+			} else if (strncmp(s, "apos;", 5) == 0) {
+				c1 = '\'';
+				s += 5;
+			} else if (strncmp(s, "quot;", 5) == 0) {
+				c1 = '"';
+				s += 5;
+			}
 			break;
 		}
-		if (c1 < 0) {
-			if ((c1 & 0xc0) == 0x80) {
-				unsigned short unicode;
-
-/*fixme: does not work with utf-8 on 3 characters*/
-				unicode = ((d[-1] & 0x0f) << 6) | (c1 & 0x3f);
-				w += cwid(unicode) * swfac;
-			}
+		if (c1 >= 0x80) {
+			if (c1 >= 0xc0)
+				w += cwid('a') * swfac;	// start of unicode char
 		} else if (c1 <= 5) {		/* accidentals from gchord */
 			if (--maxlen < 4)
 				break;
@@ -317,7 +290,7 @@ float tex_str(char *s)
 			w += cwid('a') * swfac;
 			continue;
 		} else {
-			w += cwid((unsigned short) c1) * swfac;
+			w += cwid(c1) * swfac;
 		}
 	addchar_nowidth:
 		if (--maxlen <= 0)
@@ -715,7 +688,7 @@ static void pg_write_text(char *s, int job, float parskip)
 			if (pg_str->len > 0)
 				pg_para_output(job);
 			bskip(parskip);
-			buffer_eob();
+			buffer_eob(0);
 			s = ++p;
 			continue;
 		}
@@ -780,13 +753,18 @@ static void str_end(int end)
 	if (strtx & TX_STR) {
 		a2b(")");
 		strtx &= ~TX_STR;
-		if (!(strtx & TX_ARR))
+		if (!(strtx & TX_ARR)) {
 			a2b("%s", strop);
+			return;
+		}
 	}
 	if (!end || !(strtx & TX_ARR))
 		return;
 	strtx &= ~TX_ARR;
+//fixme:showarray - removed
 	a2b("]arrayshow");
+////fixme: does not work for gxshow
+//	a2b("]%s", strop);
 }
 
 /* check if some non ASCII characters */
@@ -824,14 +802,14 @@ static char *strop_tb[] = {	/* index = action (A_xxxx) */
 	"gxshow",
 };
 
-/* -- output a string and the font changes -- */
+/* -- output a string handling the font changes -- */
 static void str_ft_out(char *p, int end)
 {
 	int use_glyph;
 	char *q;
 
-	use_glyph = !svg && epsf != 2 &&		/* not SVG */
-		 get_font_encoding(curft) == 0;		/* utf-8 */
+	use_glyph = !svg && epsf <= 1 &&	/* not SVG */
+		get_font_encoding(curft) == 0;	/* utf-8 font */
 	if (use_glyph && non_ascii_p(p)) {
 		if (curft != outft) {
 			str_end(1);
@@ -846,7 +824,7 @@ static void str_ft_out(char *p, int end)
 	}
 	q = p;
 	while (*p != '\0') {
-		if ((unsigned char) *p >= 0x80
+		if ((unsigned char) *p >= 0xc2
 		 && use_glyph) {
 			if (p > q) {
 				str_ft_out1(q, p - q);
@@ -856,6 +834,11 @@ static void str_ft_out(char *p, int end)
 //				set_font(curft);
 			}
 			str_end(0);
+			if (curft != outft) {
+				str_end(1);
+				a2b(" ");
+				set_font(curft);
+			}
 			if (!(strtx & TX_ARR)) {
 				a2b("[");
 				strtx |= TX_ARR;
@@ -873,7 +856,7 @@ static void str_ft_out(char *p, int end)
 					curft = p[1] - '0';
 					if (curft == 0)
 						curft = defft;
-					use_glyph = !svg && epsf != 2 &&
+					use_glyph = !svg && epsf <= 1 &&
 						 get_font_encoding(curft) == 0;
 				}
 				p += 2;
@@ -930,9 +913,8 @@ void str_out(char *p, int action)
 	}
 #endif
 
-	/* direct output if no font change
-	 * nor non ASCII characters */
-	if (strchr(p, '$') == 0
+	/* direct output if no font change and only ASCII characters */
+	if (!strchr(p, '$')
 	 && !non_ascii_p(p)) {
 		strop = strop_tb[action];
 		str_ft_out(p, 1);		/* output the string */
@@ -943,7 +925,7 @@ void str_out(char *p, int action)
 	switch (action) {
 	case A_CENTER:
 	case A_RIGHT:
-		if (!svg && epsf != 2) {
+		if (!svg && epsf <= 1) {
 			a2b("/str{");
 			outft = -1;
 			strop = "strop";
@@ -958,7 +940,7 @@ void str_out(char *p, int action)
 	str_ft_out(p, 1);		/* output the string */
 
 	/* if not left aligned, call the PS function */
-	if (svg || epsf == 2)
+	if (svg || epsf > 1)		/* not for SVG */
 		return;
 	if (action == A_CENTER || action == A_RIGHT) {
 		a2b("}def\n"
@@ -982,7 +964,7 @@ static void put_inf(struct SYMBOL *s)
 {
 	char *p;
 
-	p = s->as.text;
+	p = s->text;
 	if (p[1] == ':')
 		p += 2;
 	while (isspace((unsigned char) *p))
@@ -1001,8 +983,8 @@ static void put_inf2r(struct SYMBOL *s1,
 		s1 = s2;
 		s2 = NULL;
 	}
-	p = &s1->as.text[2];
-	if (s1->as.text[0] == 'T')
+	p = &s1->text[2];
+	if (s1->text[0] == 'T')
 		p = trim_title(p, s1);
 	if (s2) {
 		buf[sizeof buf - 1] = '\0';
@@ -1011,7 +993,7 @@ static void put_inf2r(struct SYMBOL *s1,
 		if (q < buf + sizeof buf - 4) {
 			*q++ = ' ';
 			*q++ = '(';
-			p = &s2->as.text[2];
+			p = &s2->text[2];
 			strncpy(q, p, buf + sizeof buf - 2 - q);
 			q += strlen(q);
 			*q++ = ')';
@@ -1051,11 +1033,13 @@ void write_text(char *cmd, char *s, int job)
 #if T_LEFT != A_LEFT
 			job = A_LEFT;
 #endif
+			strlw = 0;
 			break;
 		case T_CENTER:
 #if T_CENTER != A_CENTER
 			job = A_CENTER;
 #endif
+			strlw /= 2;
 			break;
 		default:
 #if T_RIGHT != A_RIGHT
@@ -1063,28 +1047,24 @@ void write_text(char *cmd, char *s, int job)
 #endif
 			break;
 		}
+		p = s;
 		while (*s != '\0') {
-			p = s;
 			while (*p != '\0' && *p != '\n')
 				p++;
 			if (*p != '\0')
 				*p++ = '\0';
-			if (*s == '\0') {
+			if (*s == '\0') {		// new paragraph
 				bskip(parskip);
-				buffer_eob();
+				buffer_eob(0);
+				while (*p == '\n') {
+					bskip(lineskip);
+					p++;
+				}
+				if (*p == '\0')
+					goto skip;
 			} else {
 				bskip(lineskip);
-				switch (job) {
-				case A_LEFT:
-					a2b("0 0 M");
-					break;
-				case A_CENTER:
-					a2b("%.1f 0 M", strlw * 0.5);
-					break;
-				default:
-					a2b("%.1f 0 M", strlw);
-					break;
-				}
+				a2b("%.1f 0 M", strlw);
 				put_str(s, job);
 			}
 			s = p;
@@ -1105,35 +1085,46 @@ void write_text(char *cmd, char *s, int job)
 //	curft = defft;
 	nw = 0;					/* number of words */
 	strw = 0;				/* have gcc happy */
+	strop = job == T_FILL ? "show" : "strop";
 	while (*s != '\0') {
 		float lw;
 
-		if (nw == 0) {			/* if new paragraph */
-			bskip(lineskip);
-			a2b("0 0 M");
-			if (job == T_FILL) {
-				strop = "show";
-			} else {
-				a2b("/str{");
-				outft = -1;
-				strop = "strop";
-			}
-			strw = 0;		/* current line width */
-		}
-		if (*s == '\n') {		/* empty line */
+		if (*s == '\n') {		/* empty line = new paragraph */
 			if (strtx) {
 				str_end(1);
 				if (job == T_JUSTIFY)
 					a2b("}def\n"
 					    "/strop/show load def str");
+				a2b("\n");
 			}
-			a2b("\n");
+//			a2b("\n");
 			bskip(parskip);
-			buffer_eob();
-			nw = 0;
-			while (isspace((unsigned char) *s))
+			buffer_eob(0);
+//			while (isspace((unsigned char) *s))
+//				s++;
+			while (*s == '\n') {
+				bskip(lineskip);
 				s++;
-			continue;
+			}
+			if (*s == '\0')
+				goto skip;
+			nw = 0;
+//			a2b("0 0 M");
+//			if (job != T_FILL) {
+//				a2b("/str{");
+//				outft = -1;
+//			}
+//			continue;
+		}
+
+		if (nw == 0) {			/* if new paragraph */
+			bskip(lineskip);
+			a2b("0 0 M");
+			if (job != T_FILL) {
+				a2b("/str{");
+				outft = -1;
+			}
+			strw = 0;		/* current line width */
 		}
 
 		/* get a word */
@@ -1163,7 +1154,7 @@ void write_text(char *cmd, char *s, int job)
 				n = nw - 1;
 				if (n <= 0)
 					n = 1;
-				if (svg || epsf == 2)
+				if (svg || epsf > 1)
 					a2b("}def\n"
 						"%.1f jshow"
 						"/strop/show load def str",
@@ -1206,7 +1197,7 @@ void write_text(char *cmd, char *s, int job)
 		a2b("\n");
 skip:
 	bskip(parskip);
-	buffer_eob();
+	buffer_eob(0);
 }
 
 /* -- output a line of words after tune -- */
@@ -1246,7 +1237,7 @@ static int put_wline(char *p,
 		sep = *r;
 		*r = '\0';
 		a2b("%.1f 0 M", x);
-		put_str(q,  A_RIGHT);
+		put_str(q, A_RIGHT);
 		*r = sep;
 	}
 	if (*p != '\0') {
@@ -1264,7 +1255,7 @@ void put_words(struct SYMBOL *words)
 	int i, n, have_text, max2col;
 	float middle;
 
-	buffer_eob();
+	buffer_eob(0);
 	str_font(WORDSFONT);
 
 	/* see if we may have 2 columns */
@@ -1274,7 +1265,7 @@ void put_words(struct SYMBOL *words)
 	n = 0;
 	have_text = 0;
 	for (s = words; s != 0; s = s->next) {
-		p = &s->as.text[2];
+		p = &s->text[2];
 /*fixme:utf8*/
 		if ((int) strlen(p) > max2col) {
 			n = 0;
@@ -1296,7 +1287,7 @@ void put_words(struct SYMBOL *words)
 		have_text = 0;
 		s_end = words;
 		for (;;) {
-			p = &s_end->as.text[2];
+			p = &s_end->text[2];
 			while (isspace((unsigned char) *p))
 				p++;
 			if (*p == '\0') {
@@ -1310,25 +1301,25 @@ void put_words(struct SYMBOL *words)
 		}
 		s2 = s_end->next;
 	} else {
-		s_end = 0;
-		s2 = 0;
+		s_end = NULL;
+		s2 = NULL;
 	}
 
 	/* output the text */
 	bskip(cfmt.wordsspace);
-	for (s = words; s != 0 || s2 != 0; ) {
+	for (s = words; s || s2; ) {
 //fixme:should also permit page break on stanza start
-		if (s && s->as.text[2] == '\0')
-			buffer_eob();
+		if (s && s->text[2] == '\0')
+			buffer_eob(0);
 		bskip(cfmt.lineskipfac * cfmt.font_tb[WORDSFONT].size);
 		if (s) {
-			put_wline(&s->as.text[2], 45., 0);
+			put_wline(&s->text[2], 45., 0);
 			s = s->next;
 			if (s == s_end)
 				s = NULL;
 		}
 		if (s2) {
-			if (put_wline(&s2->as.text[2], 20. + middle, 1)) {
+			if (put_wline(&s2->text[2], 20. + middle, 1)) {
 				if (--n == 0) {
 					if (s) {
 						n++;
@@ -1343,7 +1334,7 @@ void put_words(struct SYMBOL *words)
 			s2 = s2->next;
 		}
 	}
-//	buffer_eob();
+//	buffer_eob(0);
 }
 
 /* -- output history -- */
@@ -1357,7 +1348,7 @@ void put_history(void)
 
 	font = 0;
 	for (s = info['I' - 'A']; s; s = s->next) {
-		u = s->as.text[0] - 'A';
+		u = s->text[0] - 'A';
 		if (!(cfmt.fields[0] & (1 << u))
 		 || (s2 = info[u]) == NULL)
 			continue;
@@ -1366,11 +1357,13 @@ void put_history(void)
 			str_font(HISTORYFONT);
 			font = 1;
 		}
-		get_str(tmp, &s->as.text[1], sizeof tmp);
+		get_str(tmp, &s->text[1], sizeof tmp);
 		w = tex_str(tmp);
 		h = cfmt.font_tb[HISTORYFONT].size * cfmt.lineskipfac;
 		set_font(HISTORYFONT);
-		a2b("0 0 M(%s)show ", tex_buf);
+//		a2b("0 0 M(%s)show ", tex_buf);
+		a2b("0 0 M");
+		str_out(tex_buf, A_LEFT);
 		for (;;) {
 			put_inf(s2);
 			if ((s2 = s2->next) == NULL)
@@ -1379,7 +1372,7 @@ void put_history(void)
 			a2b("%.2f 0 M ", w);
 		}
 		bskip(h * 1.2);
-		buffer_eob();
+		buffer_eob(0);
 	}
 }
 
@@ -1394,7 +1387,7 @@ static char buf[STRL1];
 		q = strrchr(p, ',');
 		if (q) {
 			if (q[1] != ' ' || !isupper((unsigned char) q[2])
-			 || strlen(q) > 7	/* word no more than 4 characters */
+			 || strlen(q) > 7	/* word no more than 5 characters */
 			 || strchr(q + 2, ' '))
 				q = NULL;
 		}
@@ -1407,7 +1400,7 @@ static char buf[STRL1];
 	 && !cfmt.titlecaps)
 		return p;		/* keep the title as it is */
 	b = buf;
-	r = &info['X' - 'A']->as.text[2];
+	r = &info['X' - 'A']->text[2];
 	if (title
 	 && *r != '\0') {
 		if (strlen(p) + strlen(r) + 3 >= sizeof buf) {
@@ -1436,7 +1429,7 @@ void write_title(struct SYMBOL *s)
 	char *p;
 	float sz;
 
-	p = &s->as.text[2];
+	p = &s->text[2];
 	if (*p == '\0')
 		return;
 	if (s == info['T' - 'A']) {
@@ -1457,7 +1450,7 @@ void write_title(struct SYMBOL *s)
 		a2b("%.1f",
 		     0.5 * ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 			- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale);
-	a2b(" %.1f M ", sz * 0.2);
+	a2b(" %.1f M", sz * 0.2);
 	p = trim_title(p, s);
 	put_str(p, cfmt.titleleft ? A_LEFT : A_CENTER);
 }
@@ -1582,13 +1575,13 @@ static void write_headform(float lwidth)
 			f = &cfmt.font_tb[j];
 			sz = f->size * 1.1 + inf_sz[i];
 			y = ya[align] + sz;
-			if (s->as.text[2] != '\0') {
+			if (s->text[2] != '\0') {
 				if (i == 'T' - 'A') {
 					if (s == info['T' - 'A'])
 						a2b("%% --- title");
 					else
 						a2b("%% --- titlesub");
-					a2b(" %s\n", &s->as.text[2]);
+					a2b(" %s\n", &s->text[2]);
 				}
 				a2b("%.1f %.1f M ", x, -y);
 			}
@@ -1599,7 +1592,7 @@ static void write_headform(float lwidth)
 			     && s->next) {
 				char buf[256], *r;
 
-				q = s->as.text;
+				q = s->text;
 				if (q[1] == ':')
 					q += 2;
 				while (isspace((unsigned char) *q))
@@ -1614,12 +1607,12 @@ static void write_headform(float lwidth)
 					buf[j + 1] = '\0';
 				}
 				s = s->next;
-				q = s->as.text;
+				q = s->text;
 				if (q[1] == ':')
 					q += 2;
 				while (isspace((unsigned char) *q))
 					q++;
-				if (s->as.text[0] == 'T' && s->as.text[1] == ':')
+				if (s->text[0] == 'T'/* && s->text[1] == ':'*/)
 					q = trim_title(q, s);
 				r = buf + strlen(buf);
 				strncpy(r, q, buf + sizeof buf - r - 1);
@@ -1678,13 +1671,13 @@ static void write_headform(float lwidth)
 }
 
 /* -- output the tune heading -- */
-void write_heading(struct abctune *t)
+void write_heading(void)
 {
 	struct SYMBOL *s, *rhythm, *area, *author, *composer, *origin;
 	float lwidth, down1, down2;
 
 	lwidth = ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
-		- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale;
+			- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale;
 
 	if (cfmt.titleformat && cfmt.titleformat[0] != '\0') {
 		write_headform(lwidth);
@@ -1700,19 +1693,19 @@ void write_heading(struct abctune *t)
 
 	/* rhythm, composer, origin */
 	down1 = cfmt.composerspace + cfmt.font_tb[COMPOSERFONT].size;
-	rhythm = (first_voice->key.mode >= BAGPIPE
+	rhythm = ((first_voice->key.instr == K_HP
+		|| first_voice->key.instr == K_Hp)
 			&& !cfmt.infoline
 			&& (cfmt.fields[0] & (1 << ('R' - 'A'))))
 					? info['R' - 'A'] : NULL;
 	if (rhythm) {
 		str_font(COMPOSERFONT);
-		a2b("0 %.1f M ",
-		     -(cfmt.composerspace + cfmt.font_tb[COMPOSERFONT].size));
+		a2b("0 %.1f M ", -cfmt.composerspace);
 		put_inf(rhythm);
-		down1 -= cfmt.font_tb[COMPOSERFONT].size;
+		down1 = cfmt.composerspace;
 	}
 	area = author = NULL;
-	if (t->abc_vers != (2 << 16))
+	if (parse.abc_vers != (2 << 16))
 		area = info['A' - 'A'];
 	else
 		author = info['A' - 'A'];
@@ -1779,7 +1772,7 @@ void write_heading(struct abctune *t)
 		}
 		down2 = 0;
 	} else {
-		down2 = cfmt.composerspace + cfmt.font_tb[COMPOSERFONT].size;
+		down2 = cfmt.composerspace;
 	}
 
 	/* parts */
@@ -1854,17 +1847,17 @@ void user_ps_write(void)
 			continue;
 		    }
 		case '%':		/* "%svg " = SVG code */
-//			if (svg || epsf == 2)
+//			if (svg || epsf > 1)
 //				svg_write(t->text, strlen(t->text));
 			fputs(p + 5, fout);
 			fputc('\n', fout);
 			continue;
 		case 'p':		/* PS code for PS output only */
-//			if (secure || svg || epsf == 2)
+//			if (secure || svg || epsf > 1)
 //				continue;
 			break;
 		case 'b':		/* PS code for both PS and SVG */
-			if (svg || epsf == 2) {
+			if (svg || epsf > 1) {
 				svg_write(p + 1, strlen(p + 1));
 				continue;
 			}
@@ -1872,7 +1865,7 @@ void user_ps_write(void)
 //				continue;
 			break;
 		case 's':		/* PS code for SVG output only */
-//			if (!svg && epsf != 2)
+//			if (!svg && epsf <= 1)
 //				continue;
 			svg_write(p + 1, strlen(&t->text[1]));
 			continue;

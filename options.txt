@@ -16,6 +16,7 @@ It may be:
 	"-g" for SVG, one file per tune
 	"-v" for SVG, one file per page
 	"-X" for XHTML+SVG
+	"-z" for (X)HTML+SVG with (X)HTML+ABC input
 	(none) for PostScript
 (see below for more information)
 
@@ -26,10 +27,10 @@ List of the options
 	Read the abc file from stdin.
 
   --<format> <value>
-	Set the format parameter to <value>. See format.txt.
+	Set the format parameter to <value>. See [1].
 
   -a <float>
-	See: format.txt - maxshrink <float>
+	See: [1] - maxshrink <float>
 
   -A
 	Annotate.
@@ -37,19 +38,19 @@ List of the options
 	or SVG output.
 
   -B <int>, +B
-	See: format.txt - barsperstaff <int>
+	See: [1] - barsperstaff <int>
 
   -b <int>
-	See: format.txt - measurefirst <int>
+	See: [1] - measurefirst <int>
 
   -c, +c
-	See: format.txt - continueall <bool>
+	See: [1] - continueall <bool>
 
   -D <dir>
 	Search the format files in the directory <dir>.
 
   -d <unit>
-	See: format.txt - staffsep <unit>
+	See: [1] - staffsep <unit>
 
   -E
 	Produce EPS output instead of simple PS.
@@ -69,7 +70,7 @@ List of the options
 	 for -r, and 72 is the default resolution)
 
   -e [ <tune index list> ] [ <regular expression> ]
-	See: format.txt - select [ <tune index list> ] [ <regular expression> ]
+	See: [1] - select [ <tune index list> ] [ <regular expression> ]
 
   -F <file>, +F
 	Read the format (or PostScript) file <file>.
@@ -78,10 +79,10 @@ List of the options
 	read.
 
   -f
-	See: format.txt - flatbeams <bool>
+	See: [1] - flatbeams <bool>
 
   -G, +G
-	See: format.txt - graceslurs <bool>
+	See: [1] - graceslurs <bool>
 
   -g
 	Produce SVG output instead of EPS.
@@ -98,13 +99,13 @@ List of the options
 	This also shows the default settings for some parameters.
 
   -I <unit>
-	See: format.txt - indent <unit>
+	See: [1] - indent <unit>
 
   -i, +i
 	Insert a red cercle around the errors in the PostScript output.
 
   -j <int>[b], +j
-	See: format.txt - measurenb <int>
+	See: [1] - measurenb <int>
 
   -k <int>
 	Set the size of the PostScript output buffer in Kibytes.
@@ -113,13 +114,13 @@ List of the options
 	The default value is 64.
 
   -l, +l
-	See: format.txt - landscape <bool>
+	See: [1] - landscape <bool>
 
   -M, +M
-	See: format.txt - writefields w <bool>
+	See: [1] - writefields w <bool>
 
   -m <unit>
-	See: format.txt - leftmargin <unit>
+	See: [1] - leftmargin <unit>
 
   -N <int>, +N
 	Number the pages.
@@ -134,7 +135,7 @@ List of the options
 	If a header is defined ('%%header'), this option is ignored.
 
   -n, +n
-	See: format.txt - writehistory <bool>
+	See: [1] - writehistory <bool>
 
   -O [ <directory> ] [ <name> ], +O
 	Define the output file directory and/or name.
@@ -145,12 +146,12 @@ List of the options
 		'Out.ps' for PS,
 		'Outnnn.eps' for EPS (see option '-E'),
 		'Outnnn.svg' for SVG (see options '-g' and '-v') or
-		'Out.xhtml' for XHTML+SVG (see option '-X').
+		'Out.xhtml' for XHTML+SVG (see options '-X' and '-z').
 	'nnn' being a sequence number.
 	When <name> is present, it is the name of the file, or it
 	replaces 'Out' in the file name.
 	If <name> is '=', it is replaced by the name of the ABC
-	source file.
+	source file (not for '-z').
 	If <name> is '-', the result is output to stdout (not for EPS).
 	'+O' resets the output file directory and name to their defaults.
 
@@ -159,7 +160,7 @@ List of the options
 	When present, only the errors are shown.
 
   -s <float>
-	See: format.txt - scale <float>
+	See: [1] - scale <float>
 
   -S
 	Secure mode.
@@ -174,7 +175,7 @@ List of the options
 		When absent, apply to all voices.
 	Up to 4 such commands may be defined.
 	Ex: '-T1flute +T2'
-	See: format.txt - tablature
+	See: [1] - tablature
 
   -V
 	Show the version number.
@@ -185,17 +186,44 @@ List of the options
 	is 'Outnnn.svg' (see option '-O').
 
   -w <unit>
-	See: format.txt - staffwidth <unit>
+	See: [1] - staffwidth <unit>
 
   -X
 	Produce XML + SVG output instead of simple PS.
 	The default file name is 'Out.xhtml' (see option '-O').
 
   -x, +x
-	See: format.txt - writefields X <bool>
+	See: [1] - writefields X <bool>
+
+  -z
+	Produce SVG images from ABC embedded in markup language files
+	(HTML, XHTML..).
+
+	The source file is copied to the output file and the ABC sequences
+	are converted to SVG images.
+	The ABC sequences start by either
+		%abc2...
+	or
+		X:...
+	and stop on the first markup tag ("<..").
+
+	The generation creates one image per block, i.e. a music line
+	or a text block. For a same rendering as the other SVG generation
+	(-g, -v or -X), don't forget to set the line space to null, for
+	example enclosing the ABC sequences by
+		<div style="line-height:0"> .. </div>
+
+	There can be only one output file.
+	Note that the default output file is 'Out.xhtml', so, don't
+	forget to change the file type if you generate HTML (.html)
+	or XML (.xml) files.
+
+	See sample8.html for a source example.
 
   -0, +0
-	See: format.txt - splittune <bool>
+	See: [1] - splittune <bool>
 
   -1, +1
-	See: format.txt - oneperpage <bool>
+	See: [1] - oneperpage <bool>
+
+[1] http://moinejf.free.fr/abcm2ps-doc/index.html

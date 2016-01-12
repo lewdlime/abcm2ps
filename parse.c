@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2015 Jean-François Moine
+ * Copyright (C) 1998-2016 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -17,9 +17,9 @@
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
+#include <regex.h>
 
 #include "abcm2ps.h"
-#include "slre.h"
 
 /* options = external formatting */
 struct symsel_s {			/* symbol selection */
@@ -2507,8 +2507,9 @@ static void tune_filter(struct SYMBOL *s)
 {
 	struct tune_opt_s *opt;
 	struct SYMBOL *s1, *s2;
-	struct slre slre;
+	regex_t r;
 	char *header, *p;
+	int ret;
 
 	header = tune_header_rebuild(s);
 	for (opt = tune_opts; opt; opt = opt->next) {
@@ -2517,9 +2518,13 @@ static void tune_filter(struct SYMBOL *s)
 		p = &opt->s->text[2 + 5];	/* "%%tune RE" */
 		while (isspace((unsigned char) *p))
 			p++;
-		if (!slre_compile(&slre, p))
+
+		ret = regcomp(&r, p, REG_EXTENDED | REG_NEWLINE | REG_NOSUB);
+		if (ret)
 			continue;
-		if (!slre_match(&slre, header, strlen(header), 0))
+		ret = regexec(&r, header, 0, NULL, 0);
+		regfree(&r);
+		if (ret)
 			continue;
 
 		/* apply the options */
@@ -2561,8 +2566,8 @@ static void voice_filter(void)
 {
 	struct voice_opt_s *opt;
 	struct SYMBOL *s;
-	struct slre slre;
-	int pass;
+	regex_t r;
+	int pass, ret;
 	char *p;
 
 	/* scan the global, then the tune options */
@@ -2580,11 +2585,15 @@ static void voice_filter(void)
 		p = &opt->s->text[2 + 6];	/* "%%voice RE" */
 		while (isspace((unsigned char) *p))
 			p++;
-		if (!slre_compile(&slre, p))
+
+		ret = regcomp(&r, p, REG_EXTENDED | REG_NOSUB);
+		if (ret)
 			goto next_voice;
-		if (!slre_match(&slre, curvoice->id, strlen(curvoice->id), 0)
-		 && (!curvoice->nm
-		  || !slre_match(&slre, curvoice->nm, strlen(curvoice->nm), 0)))
+		ret = regexec(&r, curvoice->id, 0, NULL, 0);
+		if (ret && curvoice->nm)
+			ret = regexec(&r, curvoice->nm, 0, NULL, 0);
+		regfree(&r);
+		if (ret)
 			goto next_voice;
 
 		/* apply the options */

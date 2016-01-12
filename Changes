@@ -1,3 +1,14 @@
+---- Version 8.10.0 - 16/01/09 ----
+
+Change the length of the repeat brackets
+	(asked by ABC people)
+Fix bad length unit when M:none in tune header and no L:
+	(reported by David Lacroix)
+Add %%rbmax and %%rbmin
+	(asked by ABC people)
+Fix bad offset of some decorations on grace notes with beam
+Use the POSIX C extended regular expressions for selection
+
 ---- Version 8.9.4 - 15/12/21 ----
 
 Extend the repeat bars on next line up to 4 measures instead of 2

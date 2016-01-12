@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2015 Jean-François Moine
+ * Copyright (C) 1998-2016 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -106,6 +106,8 @@ static struct format {
 	{"partsfont", &cfmt.font_tb[PARTSFONT], FORMAT_F, 1},
 	{"partsspace", &cfmt.partsspace, FORMAT_U, 0},
 	{"pdfmark", &cfmt.pdfmark, FORMAT_I, 0},
+	{"rbmax", &cfmt.rbmax, FORMAT_I, 0},
+	{"rbmin", &cfmt.rbmin, FORMAT_I, 0},
 	{"repeatfont", &cfmt.font_tb[REPEATFONT], FORMAT_F, 0},
 	{"rightmargin", &cfmt.rightmargin, FORMAT_U, 1},
 //	{"scale", &cfmt.scale, FORMAT_R, 0},
@@ -385,6 +387,8 @@ void set_format(void)
 	else
 		lock_fmt(&cfmt.pango);	/* SVG output does not use panga */
 #endif
+	f->rbmax = 4;
+	f->rbmin = 2;
 	f->staffnonote = 1;
 	f->titletrim = 1;
 	f->aligncomposer = A_RIGHT;
@@ -758,9 +762,9 @@ struct tblt_s *tblt_parse(char *p)
 	struct tblt_s *tblt;
 	int n;
 	char *q;
-	static char notes_tb[] = "CDEFGABcdefgab";
-	static char pitch_tb[14] = {60, 62, 64, 65, 67, 69, 71,
-				    72, 74, 76, 77, 79, 81, 83};
+	static const char notes_tb[] = "CDEFGABcdefgab";
+	static const char pitch_tb[14] = {60, 62, 64, 65, 67, 69, 71,
+					  72, 74, 76, 77, 79, 81, 83};
 
 	/* number */
 	if (*p == '#') {

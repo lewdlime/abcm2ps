@@ -3246,7 +3246,7 @@ static void init_music_line(void)
 		 || cursys->voice[voice].second
 		 || cursys->staff[cursys->voice[voice].staff].empty)
 			continue;
-		i = 2;
+		i = cfmt.rbmin + 1;
 		if (!p_voice->bar_text		/* if repeat continuation */
 		 && p_voice->bar_start == B_OBRA) {
 			for (s = p_voice->last_sym;

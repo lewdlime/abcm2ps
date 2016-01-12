@@ -1,13 +1,15 @@
 # rules for ninja (ninja-build)
 
-VERSION = 8.9.4
+VERSION = 8.10.0
 
-cc=gcc
+cc=musl-gcc
+#cc=gcc
 #cc=clang
 
 #cflags = -g -O2 -Wall -pipe -I.
 cflags = -g -Wall -pipe -I.
-ldflags = -lm
+#ldflags = -lm
+ldflags=-static
 
 rule cc
   command = $cc $cflags -c $in -o $out
@@ -21,17 +23,16 @@ build buffer.o: cc buffer.c | config.h abcm2ps.h
 build deco.o: cc deco.c | config.h abcm2ps.h
 build draw.o: cc draw.c | config.h abcm2ps.h
 build format.o: cc format.c | config.h abcm2ps.h
-build front.o: cc front.c | config.h abcm2ps.h slre.h
+build front.o: cc front.c | config.h abcm2ps.h
 build glyph.o: cc glyph.c | config.h abcm2ps.h
 build music.o: cc music.c | config.h abcm2ps.h
 build parse.o: cc parse.c | config.h abcm2ps.h
-build slre.o: cc slre.c | slre.h
 build subs.o: cc subs.c | config.h abcm2ps.h
 build svg.o: cc svg.c | config.h abcm2ps.h
 build syms.o: cc syms.c | config.h abcm2ps.h
 
 build abcm2ps: ld abcm2ps.o abcparse.o buffer.o deco.o draw.o format.o front.o $
-  glyph.o music.o parse.o slre.o subs.o svg.o syms.o
+  glyph.o music.o parse.o subs.o svg.o syms.o
 
 default abcm2ps
 
@@ -76,8 +77,6 @@ rule dist_tar
   abcm2ps-$VERSION/sample4.abc $
   abcm2ps-$VERSION/sample5.abc $
   abcm2ps-$VERSION/sample8.html $
-  abcm2ps-$VERSION/slre.c $
-  abcm2ps-$VERSION/slre.h $
   abcm2ps-$VERSION/subs.c $
   abcm2ps-$VERSION/svg.c $
   abcm2ps-$VERSION/syms.c $

@@ -991,10 +991,10 @@ static char top_err[] = "Cannot identify meter top";
 	s->u.meter.wmeasure = wmeasure;
 	s->u.meter.nmeter = nm;
 
-	/* if in the header, change the unit note length */
+	/* in the tune header, change the unit note length */
 	if (parse.abc_state == ABC_S_HEAD && ulen == 0) {
 		if (wmeasure >= BASE_LEN * 3 / 4
-		 || wmeasure == 0)
+		 || wmeasure <= 1)
 			ulen = BASE_LEN / 8;
 		else
 			ulen = BASE_LEN / 16;

@@ -235,7 +235,7 @@ static int calculate_beam(struct BEAM *bm,
 		if (two_staves)
 			return 0;
 	} else {			/* staves defined */
-		if (!two_staves && !(s1->flags & ABC_F_GRACE)) {
+		if (!two_staves) {
 			bm->s1 = s1;	/* beam already calculated */
 if (s1->xs == s2->xs)
  bug("beam with null length", 1);
@@ -4116,6 +4116,13 @@ void draw_sym_near(void)
 		int first_note = 1;
 
 		for (s = p_voice->sym; s; s = s->next) {
+			for (g = s->extra; g; g = g->next) {
+				if (g->type != NOTEREST)
+					continue;
+				if ((g->sflags & (S_BEAM_ST | S_BEAM_END))
+							== S_BEAM_ST)
+					calculate_beam(&bm, g);
+			}
 			if (s->abc_type != ABC_T_NOTE)
 				continue;
 			if (((s->sflags & S_BEAM_ST) && !(s->sflags & S_BEAM_END))

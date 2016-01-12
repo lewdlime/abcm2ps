@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <regex.h>
 
 #ifdef WIN32
 #define strncasecmp _strnicmp
@@ -22,7 +23,6 @@
 #endif
 
 #include "abcm2ps.h"
-#include "slre.h"
 
 static unsigned char *dst;
 static int offset, size;
@@ -394,8 +394,9 @@ static void get_vers(char *p)
 /* check if the current tune is to be selected */
 static int tune_select(unsigned char *s)
 {
-	struct slre slre;
+	regex_t r;
 	unsigned char *p, *sel;
+	int ret;
 
 	/* if there is a list of tune indexes,
 	 * check the tune index */
@@ -449,10 +450,22 @@ static int tune_select(unsigned char *s)
 			p++;		/* keep the EOL for RE with '\s' */
 		break;
 	}
-//fixme: should compile only one time
-	if (!slre_compile(&slre, (char *) sel))
+
+	ret = p - s;
+	if (ret >= TEX_BUF_SZ - 1) {
+		fprintf(stderr, "Tune header too big for %%%%select\n");
 		return 0;
-	return slre_match(&slre, (char *) s, p - s, 0);
+	}
+	memcpy(tex_buf, s, ret);
+	tex_buf[ret] = '\0';
+
+	ret = regcomp(&r, (char *) sel,
+				REG_EXTENDED | REG_NEWLINE | REG_NOSUB);
+	if (ret)
+		return 0;
+	ret = regexec(&r, tex_buf, 0, NULL, 0);
+	regfree(&r);
+	return !ret;
 }
 
 /* -- front end parser -- */

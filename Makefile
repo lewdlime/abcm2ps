@@ -1,6 +1,6 @@
 # Makefile source for abcm2ps
 
-VERSION = 8.9.4
+VERSION = 8.10.0
 
 CC = gcc
 INSTALL = /usr/bin/install -c
@@ -25,14 +25,13 @@ docdir = ${prefix}/doc
 # unix
 OBJECTS=abcm2ps.o \
 	abcparse.o buffer.o deco.o draw.o format.o front.o glyph.o music.o parse.o \
-	slre.o subs.o svg.o syms.o
+	subs.o svg.o syms.o
 abcm2ps: $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(LDFLAGS)
 
 $(OBJECTS): config.h Makefile
 abcparse.o abcm2ps.o buffer.o deco.o draw.o format.o front.o glyph.o \
 	music.o parse.o subs.o svg.o syms.o: abcm2ps.h
-front.o parse.o slre.o: slre.h
 subs.o: subs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPPANGO) -c -o $@ $<
 
@@ -95,8 +94,6 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/sample4.abc \
 	abcm2ps-$(VERSION)/sample5.abc \
 	abcm2ps-$(VERSION)/sample8.html \
-	abcm2ps-$(VERSION)/slre.c \
-	abcm2ps-$(VERSION)/slre.h \
 	abcm2ps-$(VERSION)/subs.c \
 	abcm2ps-$(VERSION)/svg.c \
 	abcm2ps-$(VERSION)/syms.c \

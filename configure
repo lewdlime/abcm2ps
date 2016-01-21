@@ -12,8 +12,8 @@ if test -f ./custom; then
 	. ./custom
 fi
 
-VERSION=8.10.0
-VDATE='January 9, 2016'
+VERSION=8.10.1
+VDATE='January 18, 2016'
 
 for c in $@; do
  case "$c" in

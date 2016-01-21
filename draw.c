@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2015 Jean-François Moine
+ * Copyright (C) 1998-2016 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1025,7 +1025,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 	/* normal accidentals */
 	if (s->u.key.nacc == 0 && !s->u.key.empty) {
 
-		/* put neutrals if not 'accidental cancel' */
+		/* put neutrals if 'accidental cancel' */
 		if (cfmt.cancelkey || s->u.key.sf == 0) {
 
 			/* when flats to sharps, or sharps to flats, */
@@ -1053,57 +1053,49 @@ static void draw_keysig(struct VOICE_S *p_voice,
 				}
 				if (s->u.key.sf != 0)
 					x += 3;		/* extra space */
-
-			/* or less sharps or flats */
-			} else if (s->u.key.sf > 0) {	/* sharps */
-				if (s->u.key.sf < old_sf) {
-					shift = sharp_cl[clef_ix];
-					p_seq = shift > 9 ? sharp1 : sharp2;
-					for (i = 0; i < s->u.key.sf; i++)
-						shift += *p_seq++;
-					for (; i < old_sf; i++) {
-						putxy(x, staffb + shift);
-						a2b("nt0 ");
-						shift += *p_seq++;
-						x += 5.5;
-					}
-					x += 3;			/* extra space */
-				}
-			} else /*if (s->u.key.sf < 0)*/ {	/* flats */
-				if (s->u.key.sf > old_sf) {
-					shift = flat_cl[clef_ix];
-					p_seq = shift < 18 ? flat1 : flat2;
-					for (i = 0; i > s->u.key.sf; i--)
-						shift += *p_seq++;
-					for (; i > old_sf; i--) {
-						putxy(x, staffb + shift);
-						a2b("nt0 ");
-						shift += *p_seq++;
-						x += 5.5;
-					}
-					x += 3;			/* extra space */
-				}
 			}
 		}
 
 		/* new sharps */
-		shift = sharp_cl[clef_ix];
-		p_seq = shift > 9 ? sharp1 : sharp2;
-		for (i = 0; i < s->u.key.sf; i++) {
-			putxy(x, staffb + shift);
-			a2b("sh0 ");
-			shift += *p_seq++;
-			x += 5.5;
+		if (s->u.key.sf > 0) {
+			shift = sharp_cl[clef_ix];
+			p_seq = shift > 9 ? sharp1 : sharp2;
+			for (i = 0; i < s->u.key.sf; i++) {
+				putxy(x, staffb + shift);
+				a2b("sh0 ");
+				shift += *p_seq++;
+				x += 5.5;
+			}
+			if (cfmt.cancelkey && s->u.key.sf < old_sf) {
+				x += 2;
+				for (; i < old_sf; i++) {
+					putxy(x, staffb + shift);
+					a2b("nt0 ");
+					shift += *p_seq++;
+					x += 5.5;
+				}
+			}
 		}
 
 		/* new flats */
-		shift = flat_cl[clef_ix];
-		p_seq = shift < 18 ? flat1 : flat2;
-		for (i = 0; i > s->u.key.sf; i--) {
-			putxy(x, staffb + shift);
-			a2b("ft0 ");
-			shift += *p_seq++;
-			x += 5.5;
+		if (s->u.key.sf < 0) {
+			shift = flat_cl[clef_ix];
+			p_seq = shift < 18 ? flat1 : flat2;
+			for (i = 0; i > s->u.key.sf; i--) {
+				putxy(x, staffb + shift);
+				a2b("ft0 ");
+				shift += *p_seq++;
+				x += 5.5;
+			}
+			if (cfmt.cancelkey && s->u.key.sf > old_sf) {
+				x += 2;
+				for (; i > old_sf; i--) {
+					putxy(x, staffb + shift);
+					a2b("nt0 ");
+					shift += *p_seq++;
+					x += 5.5;
+				}
+			}
 		}
 	} else {
 		int acc, last_acc, last_shift;
@@ -3370,7 +3362,6 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			tie.staff = s2->staff;
 			tie.time = s2->time - tie.dur;
 			draw_ties(&tie, s2, 1);
-			continue;
 		}
 		if (!s1)
 			break;

@@ -1,7 +1,7 @@
 /*
  * Generic ABC parser.
  *
- * Copyright (C) 1998-2015 Jean-François Moine
+ * Copyright (C) 1998-2016 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996, 1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1395,10 +1395,11 @@ static struct kw_s {
 static char *parse_bar(char *p)
 {
 	struct SYMBOL *s;
-	int bar_type;
+	char *q;
+	int bar_type, i;
 	char repeat_value[32];
 
-	p--;
+	q = --p;
 	bar_type = 0;
 	for (;;) {
 		switch (*p++) {
@@ -1446,6 +1447,22 @@ static char *parse_bar(char *p)
 		gchord = NULL;
 	s->u.bar.type = bar_type;
 
+	/* handle the repeat sequences */
+	if ((bar_type & 0x0f) == B_COL) {		/* left repeat bar */
+		s->flags |= ABC_F_RBSTOP;
+		s->sflags |= S_RBSTOP;
+	}
+	if (*q == ':') {				/* right repeat bar */
+		s->flags |= ABC_F_RBSTOP;
+		s->sflags |= S_RRBAR | S_RBSTOP;
+	} else if (*q == ']') {				/* repeat bar stop */
+		i = p - q - 1;
+		if (i > 0)				/* remove the starting ']' */
+			s->u.bar.type &= (1 << (i * 4)) - 1;
+		s->flags |= ABC_F_RBSTOP;
+		s->sflags |= S_RRBAR | S_RBSTOP;
+	}
+
 	if (dc.n > 0) {
 		memcpy(&s->u.bar.dc, &dc, sizeof s->u.bar.dc);
 		dc.n = 0;
@@ -1486,6 +1503,8 @@ static char *parse_bar(char *p)
 		strcpy(s->text, repeat_value);
 	}
 	s->u.bar.repeat_bar = 1;
+	s->flags |= ABC_F_RBSTART | ABC_F_RBSTOP;
+	s->sflags |= S_RBSTART | S_RBSTOP;
 	return p;
 }
 

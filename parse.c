@@ -992,8 +992,10 @@ static void gen_ly(int eob)
 		buffer_eob(0);
 }
 
-/* for transpose purpose, check if a pitch is already in the measure
- * in the current voice and return its accidental or (-1) */
+/*
+ * for transpose purpose, check if a pitch is already in the measure or
+ * if it is tied from a previous note, and return the associated accidental
+ */
 static int acc_same_pitch(int pitch)
 {
 	struct SYMBOL *s = curvoice->last_sym;
@@ -1092,32 +1094,10 @@ static void note_transpose(struct SYMBOL *s)
 		a = acc2[(unsigned) i1];
 		if (s->u.note.notes[i].acc != 0) {
 			;
-		} else if (curvoice->ckey.empty != 0) {	/* key none */
-			int other_acc;
-
-			other_acc = acc_same_pitch(s->u.note.notes[i].pit);
-			switch (s->u.note.notes[i].acc) {
-			case 0:
-				if (other_acc >= 0 || a == A_NT)
-					continue;
-				break;
-			case A_NT:
-				break;
-			default:
-#if 1
-// this sequence may be removed for:
-// "Always set natural accidentals when transposing K:none (modified in 7.5.3)"
-// (David Lacroix's request...)
-				if (other_acc < 0) {
-					if (a == A_NT)
-						a = 0;
-				} else {
-					if (a == other_acc)
-						a = 0;
-				}
-#endif
-				break;
-			}
+		} else if (curvoice->ckey.empty) {	/* key none */
+			if (a == A_NT
+			 || acc_same_pitch(s->u.note.notes[i].pit) >= 0)
+				continue;
 		} else if (curvoice->ckey.nacc > 0) {	/* acc list */
 			i4 = cgd2cde[(unsigned) ((i3 + 16 * 7) % 7)];
 			for (j = 0; j < curvoice->ckey.nacc; j++) {
@@ -3140,7 +3120,9 @@ static void get_bar(struct SYMBOL *s)
 		  || (s->sflags & S_NOREPBRA))) {
 			s2->text = s->text;
 			s2->u.bar.repeat_bar = s->u.bar.repeat_bar;
-			s2->sflags |= (s->sflags & S_NOREPBRA);
+			s2->flags |= s->flags & (ABC_F_RBSTART | ABC_F_RBSTOP);
+			s2->sflags |= s->sflags
+					& (S_NOREPBRA | S_RBSTART | S_RBSTOP);
 			s = s2;
 			goto gch_build;
 		}
@@ -3149,6 +3131,8 @@ static void get_bar(struct SYMBOL *s)
 		if (bar_type == B_LREP && !s->text
 		 && s2->u.bar.type == B_RREP) {
 			s2->u.bar.type = B_DREP;
+			s2->flags |= ABC_F_RBSTOP;
+			s2->sflags |= S_RBSTOP;
 			return;
 		}
 	}
@@ -3172,7 +3156,6 @@ static void get_bar(struct SYMBOL *s)
 	/* set some flags */
 	switch (bar_type) {
 	case B_OBRA:
-/*	case B_CBRA:			thick bar or end of repeat braket */
 	case (B_OBRA << 4) + B_CBRA:
 		s->flags |= ABC_F_INVIS;
 		break;
@@ -3182,13 +3165,7 @@ static void get_bar(struct SYMBOL *s)
 		s->u.bar.type = bar_type;
 		break;
 	}
-	if ((bar_type & 0xf0) != 0) {
-		do {
-			bar_type >>= 4;
-		} while ((bar_type & 0xf0) != 0);
-		if (bar_type == B_COL)
-			s->sflags |= S_RRBAR;
-	}
+
 	if (s->u.bar.dc.n > 0)
 		deco_cnv(&s->u.bar.dc, s, 0); /* convert the decorations */
 

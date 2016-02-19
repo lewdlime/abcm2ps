@@ -376,6 +376,7 @@ void set_format(void)
 	f->measurefirst = 1;
 	f->autoclef = 1;
 	f->breakoneoln = 1;
+	f->cancelkey = 1;
 	f->dblrepbar = (B_COL << 12) + (B_CBRA << 8) + (B_OBRA << 4) + B_COL;
 	f->decoerr = 1;
 	f->dynalign = 1;
@@ -1222,9 +1223,9 @@ void interpret_fmt_line(char *w,		/* keyword */
 			float f1, f2, f3;
 
 			if (sscanf(p, "%f %f %f", &f1, &f2, &f3) != 3
-			 || f1 > 256 || f2 > 256 || f3 > 256)
+			 || f1 > 25 || f2 > 25 || f3 > 25)
 				goto bad;
-			i1 = f2 * 10;
+			i1 = f1 * 10;
 			i2 = f2 * 10;
 			i3 = f3 * 10;
 			cfmt.gracespace = (i1 << 16) | (i2 << 8) | i3;

@@ -1,3 +1,25 @@
+---- Version 8.11.0 - 16/02/05 ----
+
+Better vertical offset of rests when many voices
+	(reported by David Lacroix)
+Fix bad setting of grace note spacing
+Permit ties from grace notes to chord
+	(asked by Hudson Lacerda)
+Erroneous meter on many staves when last staff empty
+	(reported by Hudson Lacerda)
+Close the last repeat bracket at end of tune
+	(asked by Hudson Lacerda)
+Set %%cancelkey by default !! compatibility !!
+
+---- Version 8.10.1 - 16/01/18 ----
+
+On K:, put the natural accidentals after the other ones
+		when less sharps or flats
+	(reported by Nils Liberg)
+!rbend! added
+Better repeat brackets
+	(reported by Nils Liberg)
+
 ---- Version 8.10.0 - 16/01/09 ----
 
 Change the length of the repeat brackets

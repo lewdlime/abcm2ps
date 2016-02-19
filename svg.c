@@ -3300,10 +3300,10 @@ rmoveto:
 				"<path class=\"stroke\"\n"
 				"	d=\"M%.2f %.2f",
 				x, y);
-			if (i != 1)
+			if (i & 1)
 				fprintf(fout, "m0 20v-20");
 			fprintf(fout, "h%.2f", w);
-			if (i != 0)
+			if (i & 2)
 				fprintf(fout, "v20");
 			fprintf(fout, "\"/>\n");
 			free(s);

@@ -163,6 +163,7 @@ static char *std_deco_tb[] = {
 	"beam-accel 39 0 0 0 0",
 	"beam-rall 39 0 0 0 0",
 	"stemless 40 0 0 0 0",
+	"rbend 41 0 0 0 0",
 	0
 };
 
@@ -769,7 +770,7 @@ static unsigned char deco_build(char *name, char *text)
 		return 128;
 	}
 	if ((unsigned) c_func >= sizeof func_tb / sizeof func_tb[0]
-	 && (c_func < 32 || c_func > 40)) {
+	 && (c_func < 32 || c_func > 41)) {
 		error(1, NULL, "%%%%deco: bad C function index (%s)", text);
 		return 128;
 	}
@@ -1102,6 +1103,10 @@ void deco_cnv(struct decos *dc,
 				break;
 			}
 			s->flags |= ABC_F_STEMLESS;
+			break;
+		case 41:		/* 41 = rbend */
+			s->flags |= ABC_F_RBSTOP;	/* with bracket end */
+			s->sflags |= S_RBSTOP;
 			break;
 		}
 		dc->tm[i].t = 0;	/* already treated */
@@ -1591,19 +1596,16 @@ void draw_deco_note(void)
 static void draw_repbra(struct VOICE_S *p_voice)
 {
 	struct SYMBOL *s, *s1, *s2, *first_repeat;
+	int i;
 	float x, y, y2, w;
-	int i, nbar, use_nbar, repnl;
 
-	/* search the max y offset and set the end of the brackets */
+	/* search the max y offset */
 	y = staff_tb[p_voice->staff].topbar + 6 + 20;
 	first_repeat = 0;
-	nbar = cfmt.rbmax;
 	for (s = p_voice->sym->next; s; s = s->next) {
 		if (s->type != BAR)
 			continue;
-		if ((s->u.bar.type & 0x0f) == B_COL)
-			nbar = cfmt.rbmax;
-		if (!s->u.bar.repeat_bar
+		if (!(s->sflags & S_RBSTART)
 		 || (s->sflags & S_NOREPBRA))
 			continue;
 /*fixme: line cut on repeat!*/
@@ -1612,45 +1614,13 @@ static void draw_repbra(struct VOICE_S *p_voice)
 		if (!first_repeat)
 			first_repeat = s;
 		s1 = s;
-		use_nbar = s->text && s->text[0] > '1' && s->text[0] <= '9';
-		i = use_nbar ? nbar : cfmt.rbmax;
 		for (;;) {
 			if (!s->next)
 				break;
 			s = s->next;
 			if (s->sflags & S_RBSTOP)
 				break;
-			if (s->type != BAR)
-				continue;
-			i--;
-			if ((s->sflags & S_RRBAR)
-			 || s->u.bar.type == B_CBRA	// explicit end
-			 || s->u.bar.repeat_bar)
-				break;
-			if (i <= 0) {
-				int j;
-
-				/* have a shorter repeat bracket */
-				s = s1;
-				j = use_nbar ? nbar : cfmt.rbmin;
-				i = cfmt.rbmax - j;
-				for (;;) {
-					s = s->next;
-					if (s->type != BAR)
-						continue;
-					if (--j <= 0)
-						break;
-				}
-				s->sflags |= S_RBSTOP;
-				break;
-			}
-			if ((s->u.bar.type & 0x0f) == B_COL) {
-				s->sflags |= S_RBSTOP;
-				break;
-			}
 		}
-		if (!use_nbar)
-			nbar = cfmt.rbmax - i;
 		y2 = y_get(p_voice->staff, 1, s1->x, s->x - s1->x);
 		if (y < y2)
 			y = y2;
@@ -1663,7 +1633,7 @@ static void draw_repbra(struct VOICE_S *p_voice)
 			if (y < y2)
 				y = y2;
 		}
-		if (s->u.bar.repeat_bar)
+		if (s->sflags & S_RBSTART)
 			s = s->prev;
 	}
 
@@ -1673,12 +1643,10 @@ static void draw_repbra(struct VOICE_S *p_voice)
 		return;
 	set_sscale(p_voice->staff);
 	set_font(REPEATFONT);
-	repnl = 0;
 	for ( ; s; s = s->next) {
 		char *p;
 
-		if (s->type != BAR
-		 || !s->u.bar.repeat_bar
+		if (!(s->sflags & S_RBSTART)
 		 || (s->sflags & S_NOREPBRA))
 			continue;
 		s1 = s;
@@ -1688,12 +1656,6 @@ static void draw_repbra(struct VOICE_S *p_voice)
 			s = s->next;
 			if (s->sflags & S_RBSTOP)
 				break;
-			if (s->type != BAR)
-				continue;
-			if ((s->sflags & S_RRBAR)
-			 || s->u.bar.type == B_CBRA
-			 || s->u.bar.repeat_bar)
-				break;
 		}
 		s2 = s;
 		if (s1 == s2)
@@ -1701,18 +1663,16 @@ static void draw_repbra(struct VOICE_S *p_voice)
 		x = s1->x;
 		if ((s1->u.bar.type & 0x0f) == B_COL)
 			x -= 4;
-		i = 0;				/* no bracket end */
-//		if (s2->sflags & S_RBSTOP) {
-//			w = 8;			/* (w = left shift) */
-//		} else 
 		if (s2->type != BAR) {
-			w = s2->x - realwidth + 4;
+			if (s2->sflags & S_RBSTOP)
+				w = 0;
+			else
+				w = s2->x - realwidth + 4;
 		} else if (((s2->u.bar.type & 0xf0)	/* if complex bar */
 			 && s2->u.bar.type != (B_OBRA | B_CBRA))
 			|| s2->u.bar.type == B_CBRA) {
 			if (s2->u.bar.type == B_CBRA)
 				s2->flags |= ABC_F_INVIS;
-			i = 2;			/* bracket start and stop */
 /*fixme:%%staves: cursys moved?*/
 			if (s1->staff > 0
 			 && !(cursys->staff[s1->staff - 1].flags & STOP_BAR)) {
@@ -1730,29 +1690,26 @@ static void draw_repbra(struct VOICE_S *p_voice)
 		}
 		w = s2->x - x - w;
 		p = s1->text;
-		if (!p) {
-			i--;		/* no bracket start (1) or not drawn */
+		if (!p)
 			p = "";
+		if (!s2->next			/* 2nd ending at end of line */
+		 && !(s2->sflags & S_RBSTOP)
+		 && (p_voice->bar_start == 0)) {
+			p_voice->bar_start = B_OBRA | 0x1000;	/* S_RBSTART */
+			p_voice->bar_repeat = 1;	/* continue on next line */
 		}
-		if (i == 0 && !s2->next		/* 2nd ending at end of line */
-		 && !(s2->sflags & S_RBSTOP)) {
-			if (p_voice->bar_start == 0)
-				repnl = 1;	/* continue on next line */
-		}
-		if (i >= 0) {
-			a2b("(%s)-%.1f %d ",
-				p, cfmt.font_tb[REPEATFONT].size * 0.8 + 1, i);
-			putx(w);
-			putxy(x, y);
-			a2b("y%d repbra\n", s1->staff);
-			y_set(s1->staff, 1, x, w, y + 2);
-		}
+		if (s1->flags & ABC_F_RBSTART)
+			i = (s2->flags & ABC_F_RBSTOP) ? 3 : 1;
+		else
+			i = (s2->flags & ABC_F_RBSTOP) ? 2 : 0;
+		a2b("(%s)-%.1f %d ",
+			p, cfmt.font_tb[REPEATFONT].size * 0.8 + 1, i);
+		putx(w);
+		putxy(x, y);
+		a2b("y%d repbra\n", s1->staff);
+		y_set(s1->staff, 1, x, w, y + 2);
 		if (s->u.bar.repeat_bar)
 			s = s->prev;
-	}
-	if (repnl) {
-		p_voice->bar_start = B_OBRA;
-		p_voice->bar_repeat = 1;
 	}
 }
 

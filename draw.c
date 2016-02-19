@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2015 Jean-François Moine
+ * Copyright (C) 1998-2016 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1025,7 +1025,7 @@ static void draw_keysig(struct VOICE_S *p_voice,
 	/* normal accidentals */
 	if (s->u.key.nacc == 0 && !s->u.key.empty) {
 
-		/* put neutrals if not 'accidental cancel' */
+		/* put neutrals if 'accidental cancel' */
 		if (cfmt.cancelkey || s->u.key.sf == 0) {
 
 			/* when flats to sharps, or sharps to flats, */
@@ -1053,57 +1053,49 @@ static void draw_keysig(struct VOICE_S *p_voice,
 				}
 				if (s->u.key.sf != 0)
 					x += 3;		/* extra space */
-
-			/* or less sharps or flats */
-			} else if (s->u.key.sf > 0) {	/* sharps */
-				if (s->u.key.sf < old_sf) {
-					shift = sharp_cl[clef_ix];
-					p_seq = shift > 9 ? sharp1 : sharp2;
-					for (i = 0; i < s->u.key.sf; i++)
-						shift += *p_seq++;
-					for (; i < old_sf; i++) {
-						putxy(x, staffb + shift);
-						a2b("nt0 ");
-						shift += *p_seq++;
-						x += 5.5;
-					}
-					x += 3;			/* extra space */
-				}
-			} else /*if (s->u.key.sf < 0)*/ {	/* flats */
-				if (s->u.key.sf > old_sf) {
-					shift = flat_cl[clef_ix];
-					p_seq = shift < 18 ? flat1 : flat2;
-					for (i = 0; i > s->u.key.sf; i--)
-						shift += *p_seq++;
-					for (; i > old_sf; i--) {
-						putxy(x, staffb + shift);
-						a2b("nt0 ");
-						shift += *p_seq++;
-						x += 5.5;
-					}
-					x += 3;			/* extra space */
-				}
 			}
 		}
 
 		/* new sharps */
-		shift = sharp_cl[clef_ix];
-		p_seq = shift > 9 ? sharp1 : sharp2;
-		for (i = 0; i < s->u.key.sf; i++) {
-			putxy(x, staffb + shift);
-			a2b("sh0 ");
-			shift += *p_seq++;
-			x += 5.5;
+		if (s->u.key.sf > 0) {
+			shift = sharp_cl[clef_ix];
+			p_seq = shift > 9 ? sharp1 : sharp2;
+			for (i = 0; i < s->u.key.sf; i++) {
+				putxy(x, staffb + shift);
+				a2b("sh0 ");
+				shift += *p_seq++;
+				x += 5.5;
+			}
+			if (cfmt.cancelkey && s->u.key.sf < old_sf) {
+				x += 2;
+				for (; i < old_sf; i++) {
+					putxy(x, staffb + shift);
+					a2b("nt0 ");
+					shift += *p_seq++;
+					x += 5.5;
+				}
+			}
 		}
 
 		/* new flats */
-		shift = flat_cl[clef_ix];
-		p_seq = shift < 18 ? flat1 : flat2;
-		for (i = 0; i > s->u.key.sf; i--) {
-			putxy(x, staffb + shift);
-			a2b("ft0 ");
-			shift += *p_seq++;
-			x += 5.5;
+		if (s->u.key.sf < 0) {
+			shift = flat_cl[clef_ix];
+			p_seq = shift < 18 ? flat1 : flat2;
+			for (i = 0; i > s->u.key.sf; i--) {
+				putxy(x, staffb + shift);
+				a2b("ft0 ");
+				shift += *p_seq++;
+				x += 5.5;
+			}
+			if (cfmt.cancelkey && s->u.key.sf > old_sf) {
+				x += 2;
+				for (; i > old_sf; i--) {
+					putxy(x, staffb + shift);
+					a2b("nt0 ");
+					shift += *p_seq++;
+					x += 5.5;
+				}
+			}
 		}
 	} else {
 		int acc, last_acc, last_shift;
@@ -3168,29 +3160,6 @@ static void draw_ties(struct SYMBOL *k1,
 	int mhead1[MAXHD], mhead2[MAXHD], mhead3[MAXHD];
 
 	time = k1->time + k1->dur;
-
-	/* special cases for ties to/from a grace note */
-	if (k1->type == GRACE) {
-		k3 = k1->extra;
-		while (k3) {
-			if (k3->type == NOTEREST)
-				k1 = k3;	/* last grace note */
-			k3 = k3->next;
-		}
-	}
-	if (k2 && k2->type == GRACE) {
-		k3 = k2->extra;
-		while (k3) {
-			if (k3->type == NOTEREST) {
-				k2 = k3;	/* first grace note */
-				if (job == 2)
-					job = 0;
-				break;
-			}
-			k3 = k3->next;
-		}
-	}
-
 	ntie = ntie3 = 0;
 	nh1 = k1->nhd;
 
@@ -3272,6 +3241,22 @@ static void draw_ties(struct SYMBOL *k1,
 
 //	if (ntie3 != 0)
 		error(1, k1, "Bad tie");
+}
+
+static void draw_ties_g(struct SYMBOL *s1,
+			struct SYMBOL *s2,
+			int job)
+{
+	struct SYMBOL *g;
+
+	if (s1->type == GRACE) {
+		for (g = s1->extra; g; g = g->next) {
+			if (g->sflags & S_TI1)
+				draw_ties(g, s2, job);
+		}
+	} else {
+		draw_ties(s1, s2, job);
+	}
 }
 
 /* -- try to get the symbol of a ending tie when combined voices -- */
@@ -3370,7 +3355,6 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			tie.staff = s2->staff;
 			tie.time = s2->time - tie.dur;
 			draw_ties(&tie, s2, 1);
-			continue;
 		}
 		if (!s1)
 			break;
@@ -3396,7 +3380,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 					break;
 			}
 			if (!s4) {
-				draw_ties(s1, NULL, 2);
+				draw_ties_g(s1, NULL, 2);
 				p_voice->tie = s1;
 				break;
 			}
@@ -3447,7 +3431,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			s4->x -= dx;
 			if (s4->x > s1->x + 32.)
 				s4->x = s1->x + 32.;
-			draw_ties(s1, s4, 2);
+			draw_ties_g(s1, s4, 2);
 			s4->x = x;
 			x = s1->x;
 			s1->x += dx;
@@ -3457,7 +3441,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 			s1->x = x;
 			continue;
 		}
-		draw_ties(s1, s4, s4->abc_type == ABC_T_NOTE ? 0 : 2);
+		draw_ties_g(s1, s4, s4->abc_type == ABC_T_NOTE ? 0 : 2);
 	}
 	p_voice->rtie = rtie;
 }

@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2015 Jean-François Moine
+ * Copyright (C) 1998-2016 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -686,7 +686,8 @@ static char ps_head[] =
 
 	/* str dy bracket_type dx x y repbra - repeat bracket */
 	"/repbra{gsave dlw T 0 -20 M\n"
-	"	0 20 3 index 1 ne{RL}{RM}ifelse 0 RL 0 ne{0 -20 RL}if stroke\n"
+	"	0 20 3 index 1 and 1 eq{RL}{RM}ifelse 0\n"
+	"	RL 2 and 2 eq{0 -20 RL}if stroke\n"
 	"	4 exch M show grestore}!\n"
 
 	/* pp2x pp1x p1 pp1 pp2 p2 p1 SL - slur / tie */

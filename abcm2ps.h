@@ -278,7 +278,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define S_BEAM_BR1	0x0004		/* 2nd beam must restart here */
 #define S_BEAM_BR2	0x0008		/* 3rd beam must restart here */
 #define S_BEAM_END	0x0010		/* beam ends here */
-//#define S_free	0x0020
+#define S_CLEF_AUTO	0x0020		/* auto clef (when clef) */
 #define S_IN_TUPLET	0x0040		/* in a tuplet */
 #define S_TREM2		0x0080		/* tremolo on 2 notes */
 #define S_RRBAR		0x0100		/* right repeat bar (when bar) */
@@ -288,7 +288,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define S_SL2		0x1000		/* some chord slur end */
 #define S_TI1		0x2000		/* some chord tie start */
 #define S_PERC		0x4000		/* percussion */
-#define S_RBSTOP	0x8000		/* repeat bracket stop */
+#define S_RBSTOP	0x8000		// end of repeat bracket
 #define S_FEATHERED_BEAM 0x00010000	/* feathered beam */
 #define S_REPEAT	0x00020000	/* sequence / measure repeat */
 #define S_NL		0x00040000	/* start of new music line */
@@ -301,7 +301,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define S_SHIFTUNISON_1	0x02000000	/* %%shiftunison 1 */
 #define S_SHIFTUNISON_2	0x04000000	/* %%shiftunison 2 */
 #define S_NEW_SY	0x08000000	/* staff system change (%%staves) */
-#define S_CLEF_AUTO	0x10000000	/* auto clef (when clef) */
+#define S_RBSTART	0x10000000	// start of repeat bracket
 	struct posit_s posit;	/* positions / directions */
 	signed char stem;	/* 1 / -1 for stem up / down */
 	signed char combine;	/* voice combine */
@@ -331,7 +331,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 					 *	doty: # measures if > 0
 					 *	      # notes/rests if < 0
 					 *	nohdi1: # repeat */
-#define VOICE_COLOR 3			/*	color in as.u.length.base_length */
+#define VOICE_COLOR 3			/* color in as.u.length.base_length */
 	float x;		/* x offset */
 	signed char y;		/* y offset of note head */
 	signed char ymn, ymx, yav; /* min, max, avg note head y offset */
@@ -358,6 +358,8 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define ABC_F_GRACE	0x0020		/* grace note */
 #define ABC_F_GR_END	0x0040		/* end of grace note sequence */
 #define ABC_F_SAPPO	0x0080		/* short appoggiatura */
+#define ABC_F_RBSTART	0x0100		// start of repeat bracket and mark
+#define ABC_F_RBSTOP	0x0200		// end of repeat bracket and mark
 	unsigned short colnum;	/* ABC source column number */
 	int linenum;		/* ABC source line number */
 	char *fn;		/* ABC source file name */

@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2015 Jean-François Moine
+ * Copyright (C) 1998-2016 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -3232,13 +3232,12 @@ static void init_music_line(void)
 			memcpy(&s->u.meter, &p_voice->meter,
 			       sizeof s->u.meter);
 //			set_yval(s);
+			insert_meter &= ~1;	// no more meter
 		}
 	}
 
 	/* add bar if needed */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
-		int i;
-
 		if (!p_voice->bar_start)
 			continue;
 		voice = p_voice - voice_tb;
@@ -3246,46 +3245,26 @@ static void init_music_line(void)
 		 || cursys->voice[voice].second
 		 || cursys->staff[cursys->voice[voice].staff].empty)
 			continue;
-		i = cfmt.rbmin + 1;
-		if (!p_voice->bar_text		/* if repeat continuation */
-		 && p_voice->bar_start == B_OBRA) {
-			for (s = p_voice->last_sym;
-			     s;
-			     s = s->next) {	/* search the end of repeat */
-				if (s->sflags & S_RBSTOP) {
-					i = -1;
-					break;
-				}
-				if (s->type != BAR)
-					continue;
-				if ((s->u.bar.type & 0xf0)	/* if complex bar */
-				 || s->u.bar.type == B_CBRA
-				 || s->u.bar.repeat_bar)
-					break;
-				if (--i < 0)
-					break;
-			}
-			if (!s)
-				i = -1;
-			if (i >= 0 && p_voice->last_sym->time == s->time)
-				i = -1;		/* no note */
-		}
-		if (i >= 0) {
-			s = sym_new(BAR, p_voice, last_s);
-			s->u.bar.type = p_voice->bar_start & 0x3fff;
-			if (p_voice->bar_start & 0x8000)
-				s->flags |= ABC_F_INVIS;
-			if (p_voice->bar_start & 0x4000)
-				s->sflags |= S_NOREPBRA;
-			s->text = p_voice->bar_text;
-			s->gch = p_voice->bar_gch;
+
+		s = sym_new(BAR, p_voice, last_s);
+		s->u.bar.type = p_voice->bar_start & 0x0fff;
+		if (p_voice->bar_start & 0x8000)
+			s->flags |= ABC_F_INVIS;
+		if (p_voice->bar_start & 0x4000)
+			s->sflags |= S_NOREPBRA;
+		if (p_voice->bar_start & 0x2000)
+			s->flags |= ABC_F_RBSTART;
+		if (p_voice->bar_start & 0x1000)
+			s->sflags |= S_RBSTART;
+		s->text = p_voice->bar_text;
+		s->gch = p_voice->bar_gch;
+		if (p_voice->bar_repeat)
 			s->u.bar.repeat_bar = p_voice->bar_repeat;
-//			set_yval(s);
-		}
+
 		p_voice->bar_start = 0;
 		p_voice->bar_repeat = 0;
-		p_voice->bar_text = 0;
-		p_voice->bar_gch = 0;
+		p_voice->bar_text = NULL;
+		p_voice->bar_gch = NULL;
 	}
 
 	/* if initialization of a new music line, compute the spacing,
@@ -3302,6 +3281,157 @@ static void init_music_line(void)
 				break;
 	}
 	set_allsymwidth(s);	/* set the width of the added symbols */
+}
+
+/* -- set a pitch in all symbols and the start/stop of the beams -- */
+static void set_words(struct VOICE_S *p_voice)
+{
+	int pitch, beam_start;
+	struct SYMBOL *s, *s2, *lastnote;
+
+	for (s = p_voice->sym; s; s = s->next) {
+		if (s->abc_type == ABC_T_NOTE) {
+			pitch = s->pits[0];
+			break;
+		}
+	}
+	if (!s)
+		pitch = 127;			/* no note */
+	beam_start = 1;
+	lastnote = NULL;
+	for (s = p_voice->sym; s; s = s->next) {
+		switch (s->type) {
+		default:
+			if (s->flags & ABC_F_SPACE)
+				beam_start = 1;
+			break;
+		case MREST:
+			beam_start = 1;
+			break;
+		case BAR:
+			if (!(s->sflags & S_BEAM_ON))
+				beam_start = 1;
+
+			/* change the last long note to the square note */
+			if (!s->next && s->prev
+			 && s->prev->abc_type == ABC_T_NOTE
+			 && s->prev->dur >= BREVE)
+				s->prev->head = H_SQUARE;
+			break;
+		case NOTEREST:
+			if (s->sflags & S_TREM2)
+				break;
+			if (s->flags & ABC_F_SPACE)
+				beam_start = 1;
+			if (beam_start
+			 || s->nflags - s->aux <= 0) {
+				if (lastnote) {
+					lastnote->sflags |= S_BEAM_END;
+					lastnote = NULL;
+				}
+				if (s->nflags - s->aux <= 0) {
+					s->sflags |= (S_BEAM_ST | S_BEAM_END);
+				} else if (s->abc_type == ABC_T_NOTE) {
+					s->sflags |= S_BEAM_ST;
+					beam_start = 0;
+				}
+			}
+			if (s->sflags & S_BEAM_END)
+				beam_start = 1;
+			if (s->abc_type == ABC_T_NOTE)
+				lastnote = s;
+			break;
+		}
+		if (s->abc_type == ABC_T_NOTE) {
+			pitch = s->pits[0];
+//			if (s->prev
+//			 && s->prev->abc_type != ABC_T_NOTE) {
+//				s->prev->pits[0] =
+//					(s->prev->pits[0] + pitch)
+//						/ 2;
+			for (s2 = s->prev; s2; s2 = s2->prev) {
+				if (s2->abc_type != ABC_T_REST)
+					break;
+				s2->pits[0] = pitch;
+			}
+		} else {
+			s->pits[0] = pitch;
+		}
+	}
+	if (lastnote)
+		lastnote->sflags |= S_BEAM_END;
+}
+
+/* -- set the end of the repeat sequences -- */
+static void set_rb(struct VOICE_S *p_voice)
+{
+	struct SYMBOL *s, *s2;
+	int mx, n;
+
+	s = p_voice->sym;
+	while (s) {
+		if (s->type != BAR || !(s->sflags & S_RBSTART)) {
+			s = s->next;
+			continue;
+		}
+
+		mx = cfmt.rbmax;
+
+		/* if 1st repeat sequence, compute the bracket length */
+		if (s->text && s->text[0] == '1') {
+			n = 0;
+			s2 = NULL;
+			for (s = s->next; s; s = s->next) {
+				if (s->type != BAR)
+					continue;
+				n++;
+				if (s->sflags & S_RBSTOP) {
+					if (n <= cfmt.rbmax) {
+						mx = n;
+						s2 = NULL;
+					}
+					break;
+				}
+				if (n == cfmt.rbmin)
+					s2 = s;
+			}
+			if (s2) {
+				s2->sflags |= S_RBSTOP;
+				mx = cfmt.rbmin;
+			}
+		}
+		while (s) {
+
+			/* check repbra shifts (:| | |2 in 2nd staves) */
+			if (!(s->flags & ABC_F_RBSTART)) {
+				s = s->next;
+				if (!s)
+					break;
+				if (!(s->flags & ABC_F_RBSTART)) {
+					s = s->next;
+					if (!s)
+						break;
+					if (!(s->flags & ABC_F_RBSTART))
+						break;
+				}
+			}
+			n = 0;
+			s2 = NULL;
+			for (s = s->next; s; s = s->next) {
+				if (s->type != BAR)
+					continue;
+				n++;
+				if (s->sflags & S_RBSTOP)
+					break;
+				if (!s->next) {
+					s->flags |= ABC_F_RBSTOP;
+					s->sflags |= S_RBSTOP;
+				} else if (n == mx) {
+					s->sflags |= S_RBSTOP;
+				}
+			}
+		}
+	}
 }
 
 /* -- initialize the generator -- */
@@ -3375,77 +3505,11 @@ static void set_global(void)
 		}
 	}
 
-	/* set a pitch for all symbols and the start/stop of words (beams) */
+	/* set the pitches, the words (beams) and the repeat brackets */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
-		int pitch, start_flag;
-		struct SYMBOL *sym, *lastnote;
-
-		sym = p_voice->sym;
-		for (s = sym; s; s = s->next) {
-			if (s->abc_type == ABC_T_NOTE) {
-				pitch = s->pits[0];
-				break;
-			}
-		}
-		if (!s)
-			pitch = 127;			/* no note */
-		start_flag = 1;
-		lastnote = 0;
-		for (s = sym; s; s = s->next) {
-			switch (s->type) {
-			default:
-				if (s->flags & ABC_F_SPACE)
-					start_flag = 1;
-				break;
-			case MREST:
-				start_flag = 1;
-				break;
-			case BAR:
-				if (!(s->sflags & S_BEAM_ON))
-					start_flag = 1;
-				if (!s->next && s->prev
-				 && s->prev->abc_type == ABC_T_NOTE
-				 && s->prev->dur >= BREVE)
-					s->prev->head = H_SQUARE;
-				break;
-			case NOTEREST:
-				if (s->sflags & S_TREM2)
-					break;
-				if (s->flags & ABC_F_SPACE)
-					start_flag = 1;
-				if (start_flag
-				 || s->nflags - s->aux <= 0) {
-					if (lastnote) {
-						lastnote->sflags |= S_BEAM_END;
-						lastnote = NULL;
-					}
-					if (s->nflags - s->aux <= 0) {
-						s->sflags |= (S_BEAM_ST | S_BEAM_END);
-					} else if (s->abc_type == ABC_T_NOTE) {
-						s->sflags |= S_BEAM_ST;
-						start_flag = 0;
-					}
-				}
-				if (s->sflags & S_BEAM_END)
-					start_flag = 1;
-				if (s->abc_type == ABC_T_NOTE)
-					lastnote = s;
-				break;
-			}
-			if (s->abc_type == ABC_T_NOTE) {
-				pitch = s->pits[0];
-				if (s->prev
-				 && s->prev->abc_type != ABC_T_NOTE) {
-					s->prev->pits[0] =
-						(s->prev->pits[0] + pitch)
-							/ 2;
-				}
-			} else {
-				s->pits[0] = pitch;
-			}
-		}
-		if (lastnote)
-			lastnote->sflags |= S_BEAM_END;
+		set_words(p_voice);
+		if (!p_voice->second && !p_voice->norepbra)
+			set_rb(p_voice);
 	}
 
 	/* set the staff of the floating voices */
@@ -4330,6 +4394,10 @@ static void check_bar(struct SYMBOL *s)
 			p_voice->bar_start |= 0x8000;
 		if (s->sflags & S_NOREPBRA)
 			p_voice->bar_start |= 0x4000;
+		if (s->flags & ABC_F_RBSTART)
+			p_voice->bar_start |= 0x2000;
+		if (s->sflags & S_RBSTART)
+			p_voice->bar_start |= 0x1000;
 	}
 	bar_type = s->u.bar.type;
 	if (bar_type == B_COL)			/* ':' */
@@ -4337,7 +4405,7 @@ static void check_bar(struct SYMBOL *s)
 	if ((bar_type & 0x0f) != B_COL)		/* if not left repeat bar */
 		return;
 	if (!(s->sflags & S_RRBAR)) {		/* 'xx:' (not ':xx:') */
-		p_voice->bar_start = bar_type & 0x3fff;
+		p_voice->bar_start = bar_type & 0x0fff;
 		if (s->flags & ABC_F_INVIS)
 			p_voice->bar_start |= 0x8000;
 		if (s->sflags & S_NOREPBRA)
@@ -4355,6 +4423,10 @@ static void check_bar(struct SYMBOL *s)
 			p_voice->bar_start |= 0x8000;
 		if (s->sflags & S_NOREPBRA)
 			p_voice->bar_start |= 0x4000;
+		if (s->flags & ABC_F_RBSTART)
+			p_voice->bar_start |= 0x2000;
+		if (s->sflags & S_RBSTART)
+			p_voice->bar_start |= 0x1000;
 		return;
 	}
 	for (i = 0; bar_type != 0; i++)
@@ -4362,12 +4434,16 @@ static void check_bar(struct SYMBOL *s)
 	bar_type = s->u.bar.type;
 	s->u.bar.type = bar_type >> ((i / 2) * 4);
 	i = ((i + 1) / 2 * 4);
-	bar_type &= 0x3fff;
+	bar_type &= 0x0fff;
 	p_voice->bar_start = bar_type & ((1 << i) - 1);
 	if (s->flags & ABC_F_INVIS)
 		p_voice->bar_start |= 0x8000;
 	if (s->sflags & S_NOREPBRA)
 		p_voice->bar_start |= 0x4000;
+		if (s->flags & ABC_F_RBSTART)
+			p_voice->bar_start |= 0x2000;
+		if (s->sflags & S_RBSTART)
+			p_voice->bar_start |= 0x1000;
 }
 
 /* -- move the symbols of an empty staff to the next one -- */
@@ -4528,8 +4604,6 @@ static void set_piece(void)
 
 	/* initialize the music line */
 	init_music_line();
-	if (!empty[cursys->nstaff])
-		insert_meter &= ~1;	// no more meter
 
 	/* if last music line, nothing more to do */
 	if (!tsnext)

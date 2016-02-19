@@ -3,21 +3,12 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2000-2014, Jean-François Moine.
+ * Copyright (C) 2000-2016, Jean-François Moine.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA  02110-1335  USA
  */
 
 #include <stdlib.h>
@@ -29,9 +20,10 @@
 #define lroundf(x) ((long) ((x) + 0.5))
 #endif
 
-#include "abc2ps.h"
+#include "abcm2ps.h"
 
 int defl;		/* decoration flags */
+char *deco[256];	/* decoration names */
 
 static struct deco_elt {
 	struct deco_elt *next, *prev;	/* next/previous decoration */
@@ -49,6 +41,7 @@ static struct deco_elt {
 #define DE_LDEN 0x80		/* end of long decoration */
 	unsigned char defl;	/* decorations flags - see DEF_xx */
 	float x, y;		/* x, y */
+	float dy;		/* dy for annotation strings */
 	float v;		/* extra value */
 	char *str;		/* string / 0 */
 } *deco_head, *deco_tail;
@@ -63,11 +56,10 @@ static struct deco_def_s {
 	unsigned char func;	/* function index */
 	signed char ps_func;	/* postscript function index */
 	unsigned char h;	/* height */
-	unsigned char wl;	/* width */
-	unsigned char wr;
+	unsigned char wl, wr;	/* left and right widths */
 	unsigned char strx;	/* string index - 255=deco name */
 	unsigned char ld_end;	/* index of end of long decoration */
-	unsigned char dum;
+	unsigned char flags;	/* only DE_LDST and DE_LDEN */
 } deco_def_tb[128];
 
 /* c function table */
@@ -120,6 +112,8 @@ static char *std_deco_tb[] = {
 	"+ 3 dplus 7 3 3",
 	"accent 3 accent 7 4 4",
 	"> 3 accent 7 4 4",
+	"marcato 3 marcato 9 3 3",
+	"^ 3 marcato 9 3 3",
 	"D.C. 3 dacs 16 10 10 D.C.",
 	"D.S. 3 dacs 16 10 10 D.S.",
 	"fine 3 dacs 16 10 10 FINE",
@@ -140,18 +134,18 @@ static char *std_deco_tb[] = {
 	"turn 3 turn 10 0 5",
 	"wedge 3 wedge 8 1 1",
 	"turnx 3 turnx 10 0 5",
-	"trill( 5 - 8 0 0",
+	"trill( 5 ltr 8 0 0",
 	"trill) 5 ltr 8 0 0",
 	"snap 3 snap 14 3 3",
 	"thumb 3 thumb 14 2 2",
 	"arpeggio 2 arp 12 10 0",
-	"crescendo( 7 - 18 0 0",
+	"crescendo( 7 cresc 18 0 0",
 	"crescendo) 7 cresc 18 0 0",
-	"<( 7 - 18 0 0",
+	"<( 7 cresc 18 0 0",
 	"<) 7 cresc 18 0 0",
-	"diminuendo( 7 - 18 0 0",
+	"diminuendo( 7 dim 18 0 0",
 	"diminuendo) 7 dim 18 0 0",
-	">( 7 - 18 0 0",
+	">( 7 dim 18 0 0",
 	">) 7 dim 18 0 0",
 	"invisible 32 0 0 0 0",
 	"beamon 33 0 0 0 0",
@@ -168,6 +162,8 @@ static char *std_deco_tb[] = {
 	"/// 38 0 0 6 6",
 	"beam-accel 39 0 0 0 0",
 	"beam-rall 39 0 0 0 0",
+	"stemless 40 0 0 0 0",
+	"rbend 41 0 0 0 0",
 	0
 };
 
@@ -259,6 +255,20 @@ void y_set(int staff,
 	}
 }
 
+// set the string of a decoration
+static char *set_str(struct deco_elt *de, char *str)
+{
+	float dx, dy;
+	int n;
+
+	if (sscanf(str, "@%f,%f%n", &dx, &dy, &n) == 2) {
+		de->x += dx;
+		de->dy = dy;
+		return str + n;
+	}
+	return str;
+}
+
 /* -- get the staff position of the dynamic and volume marks -- */
 static int up_p(struct SYMBOL *s, int pos)
 {
@@ -289,20 +299,22 @@ static void d_arp(struct deco_elt *de)
 	s = de->s;
 	dd = &deco_def_tb[de->t];
 	xc = 0;
-	for (m = 0; m <= s->nhd; m++) {
-		if (s->as.u.note.accs[m]) {
-			dx = 5 + s->shac[m];
-		} else {
-			dx = 6 - s->shhd[m];
-			switch (s->head) {
-			case H_SQUARE:
-			case H_OVAL:
-				dx += 2.5;
-				break;
+	if (s->type == NOTEREST) {
+		for (m = 0; m <= s->nhd; m++) {
+			if (s->u.note.notes[m].acc) {
+				dx = 5 + s->u.note.notes[m].shac;
+			} else {
+				dx = 6 - s->u.note.notes[m].shhd;
+				switch (s->head) {
+				case H_SQUARE:
+				case H_OVAL:
+					dx += 2.5;
+					break;
+				}
 			}
+			if (dx > xc)
+				xc = dx;
 		}
-		if (dx > xc)
-			xc = dx;
 	}
 	h = 3 * (s->pits[s->nhd] - s->pits[0]) + 4;
 	m = dd->h;		/* minimum height */
@@ -370,7 +382,7 @@ static void d_cresc(struct deco_elt *de)
 		dx = x2 - x - 4;
 		if (dx < 20) {
 			x -= (20 - dx) * 0.5;
-			if (de->start == 0)
+			if (!de->start)
 				x -= (20 - dx) * 0.5;
 			dx = 20;
 		}
@@ -394,6 +406,7 @@ static void d_near(struct deco_elt *de)
 
 	s = de->s;
 	dd = &deco_def_tb[de->t];
+
 	if (s->multi)
 		up = s->multi > 0;
 	else
@@ -412,7 +425,9 @@ static void d_near(struct deco_elt *de)
 	else
 		s->ymn = y;
 	de->y = (float) y;
-	de->x = s->x + s->shhd[s->stem >= 0 ? 0 : s->nhd];
+	de->x = s->x;
+	if (s->type == NOTEREST)
+		de->x += s->u.note.notes[s->stem >= 0 ? 0 : s->nhd].shhd;
 	if (dd->name[0] == 'd'			/* if dot decoration */
 	 && s->nflags >= -1) {			/* on stem */
 		if (up) {
@@ -422,6 +437,11 @@ static void d_near(struct deco_elt *de)
 			if (s->stem < 0)
 				de->x -= STEM_XOFF;
 		}
+	}
+	if (dd->strx != 0 && dd->strx != 255) {
+		de->x = s->x;
+		de->y = s->y;
+		de->str = set_str(de, str_tb[dd->strx]);
 	}
 }
 
@@ -472,14 +492,14 @@ static void d_pf(struct deco_elt *de)
 #endif
 	}
 
-	str = dd->name;
-	if (dd->strx != 0 && dd->strx != 255)
-		str = str_tb[dd->strx];
-
 	de->x = x;
 	de->y = y_get(s->staff, up, x, de->v);
 	if (!up)
 		de->y -= dd->h;
+
+	str = dd->name;
+	if (dd->strx != 0 && dd->strx != 255)
+		str = set_str(de, str_tb[dd->strx]);
 	de->str = str;
 	/* (y_set is done later in draw_deco_staff) */
 }
@@ -494,20 +514,22 @@ static void d_slide(struct deco_elt *de)
 	s = de->s;
 	yc = s->pits[0];
 	xc = 5;
-	for (m = 0; m <= s->nhd; m++) {
-		if (s->as.u.note.accs[m]) {
-			dx = 4 + s->shac[m];
-		} else {
-			dx = 5 - s->shhd[m];
-			switch (s->head) {
-			case H_SQUARE:
-			case H_OVAL:
-				dx += 2.5;
-				break;
+	if (s->type == NOTEREST) {
+		for (m = 0; m <= s->nhd; m++) {
+			if (s->u.note.notes[m].acc) {
+				dx = 4 + s->u.note.notes[m].shac;
+			} else {
+				dx = 5 - s->u.note.notes[m].shhd;
+				switch (s->head) {
+				case H_SQUARE:
+				case H_OVAL:
+					dx += 2.5;
+					break;
+				}
 			}
+			if (s->pits[m] <= yc + 3 && dx > xc)
+				xc = dx;
 		}
-		if (s->pits[m] <= yc + 3 && dx > xc)
-			xc = dx;
 	}
 	de->x = s->x - xc;
 	de->y = (float) (3 * (yc - 18));
@@ -528,8 +550,8 @@ static void d_trill(struct deco_elt *de)
 	if (de->start) {		/* deco start */
 		s = de->start->s;
 		x = s->x;
-		if (s->as.type == ABC_T_NOTE
-		 && s->as.u.note.dc.n > 1)
+		if (s->abc_type == ABC_T_NOTE
+		 && s->u.note.dc.n > 1)
 			x += 10;
 	} else {			/* end without start */
 		s = first_note;
@@ -546,11 +568,11 @@ static void d_trill(struct deco_elt *de)
 		}
 	} else {
 		w = s2->x - x - 6;
-		if (s2->as.type == ABC_T_NOTE)
+		if (s2->abc_type == ABC_T_NOTE)
 			w -= 6;
 		if (w < 20) {
 			x -= (20 - w) * 0.5;
-			if (de->start == 0)
+			if (!de->start)
 				x -= (20 - w) * 0.5;
 			w = 20;
 		}
@@ -586,39 +608,58 @@ static void d_trill(struct deco_elt *de)
 		s->ymn = s2->ymn = y;
 }
 
-/* above (or below) the staff */
+/* 3, 4: above (or below) the staff */
 static void d_upstaff(struct deco_elt *de)
 {
 	struct SYMBOL *s;
 	struct deco_def_s *dd;
+	char *ps_name;
 	float x, yc, stafft, staffb, w;
-	int inv;
+	int up, inv;
 
 	s = de->s;
 	dd = &deco_def_tb[de->t];
 	inv = 0;
-	x = s->x + s->shhd[s->stem >= 0 ? 0 : s->nhd];
+	x = s->x;
+	if (s->type == NOTEREST)
+		x += s->u.note.notes[s->stem >= 0 ? 0 : s->nhd].shhd;
 	w = dd->wl + dd->wr;
 	stafft = staff_tb[s->staff].topbar + 2;
 	staffb = staff_tb[s->staff].botbar - 2;
-	if (dd->strx != 0)
-		de->str = dd->strx == 255 ? dd->name : str_tb[dd->strx];
 
-	switch (s->posit.orn) {
-	case SL_ABOVE:
-		de->flags &= ~DE_BELOW;
-		break;
-	case SL_BELOW:
-		de->flags |= DE_BELOW;
-		break;
+	up = -1;			// undefined
+	if (dd->func == 4) {		// upstaff below
+		up = 0;
+	} else {
+		switch (s->posit.orn) {
+		case SL_ABOVE:
+			up = 1;
+			break;
+		case SL_BELOW:
+			up = 0;
+			break;
+//		default:
+//			if (s->multi > 0)
+//				up = 1;
+//			else if (s->multi < 0)
+//				up = 0;
+//			else
+//				up = s->stem < 0;
+//			break;
+		}
 	}
 
-	if (strcmp(dd->name, ">") == 0
-	 || strcmp(dd->name, "accent") == 0
-	 || strcmp(dd->name, "emphasis") == 0
-	 || strcmp(dd->name, "roll") == 0) {
-		if (s->multi < 0
-		 || (s->multi == 0 && s->stem > 0)) {
+	ps_name = ps_func_tb[dd->ps_func];
+//	if (strcmp(dd->name, ">") == 0
+//	 || strcmp(dd->name, "accent") == 0
+//	 || strcmp(dd->name, "emphasis") == 0
+//	 || strcmp(dd->name, "roll") == 0) {
+	if (strcmp(ps_name, "accent") == 0
+	 || strcmp(ps_name, "cpu") == 0) {
+		if (!up
+		 || (up < 0
+		  && (s->multi < 0
+		   || (s->multi == 0 && s->stem > 0)))) {
 			yc = y_get(s->staff, 0, s->x - dd->wl, w);
 			if (yc > staffb)
 				yc = staffb;
@@ -630,16 +671,17 @@ static void d_upstaff(struct deco_elt *de)
 			yc = y_get(s->staff, 1, s->x, 0);
 			if (yc < stafft)
 				yc = stafft;
-//			if (s->stem <= 0
-//			 && (s->dots == 0 || ((int) s->y % 6)))
-//				yc -= 2;
 			y_set(s->staff, 1, s->x - dd->wl, w, yc + dd->h);
 			s->ymx = yc + dd->h;
 		}
-	} else if (strcmp(dd->name, "breath") == 0
-		|| strcmp(dd->name, "longphrase") == 0
-		|| strcmp(dd->name, "mediumphrase") == 0
-		|| strcmp(dd->name, "shortphrase") == 0) {
+//	} else if (strcmp(dd->name, "breath") == 0
+//		|| strcmp(dd->name, "longphrase") == 0
+//		|| strcmp(dd->name, "mediumphrase") == 0
+//		|| strcmp(dd->name, "shortphrase") == 0) {
+	} else if (strcmp(ps_name, "brth") == 0
+		|| strcmp(ps_name, "lphr") == 0
+		|| strcmp(ps_name, "mphr") == 0
+		|| strcmp(ps_name, "sphr") == 0) {
 		yc = stafft + 1;
 		for (s = s->ts_next; s; s = s->ts_next)
 			if (s->shrink != 0)
@@ -649,12 +691,11 @@ static void d_upstaff(struct deco_elt *de)
 		else
 			x += (realwidth - x) * 0.4;
 	} else {
-		if (strcmp(dd->name, "invertedturn") == 0
-		 || strcmp(dd->name, "invertedturnx") == 0)
+		if (strncmp(dd->name, "invert", 6) == 0)
 			inv = 1;
-		if (s->multi >= 0
-		 && strcmp(dd->name, "invertedfermata") != 0
-		 && !(de->flags & DE_BELOW)) {
+		if (strcmp(dd->name, "invertedfermata") != 0
+		 && (up > 0
+		  || (up < 0 && s->multi >= 0))) {
 			yc = y_get(s->staff, 1, s->x - dd->wl, w);
 			if (yc < stafft)
 				yc = stafft;
@@ -666,8 +707,8 @@ static void d_upstaff(struct deco_elt *de)
 				yc = staffb;
 			yc -= dd->h;
 			y_set(s->staff, 0, s->x - dd->wl, w, yc);
-			if (strcmp(dd->name, "fermata") == 0
-			 || strcmp(dd->name, "invertedfermata") == 0)
+			if (strcmp(dd->name, "fermata") == 0)
+//			 || strcmp(dd->name, "invertedfermata") == 0)
 				inv = 1;
 			s->ymn = yc;
 		}
@@ -678,6 +719,10 @@ static void d_upstaff(struct deco_elt *de)
 	}
 	de->x = x;
 	de->y = yc;
+
+	if (dd->strx != 0)
+		de->str = set_str(de,
+				dd->strx == 255 ? dd->name : str_tb[dd->strx]);
 }
 
 /* -- add a decoration - from %%deco -- */
@@ -696,31 +741,45 @@ void deco_add(char *s)
 	user_deco = d;
 }
 
-static unsigned char deco_build(char *text)
+static int get_deco(char *name)
+{
+	struct deco_def_s *dd;
+	int ideco;
+
+	for (ideco = 1, dd = &deco_def_tb[1]; ideco < 128; ideco++, dd++) {
+		if (!dd->name
+		 || strcmp(dd->name, name) == 0)
+			return ideco;
+	}
+	error(1, NULL, "Too many decorations");
+	return ideco;
+}
+
+static unsigned char deco_build(char *name, char *text)
 {
 	struct deco_def_s *dd;
 	int c_func, ideco, h, o, wl, wr, n;
 	unsigned l, ps_x, strx;
-	char name[32];
+	char name2[32];
 	char ps_func[16];
 
 	/* extract the arguments */
 	if (sscanf(text, "%15s %d %15s %d %d %d%n",
-			name, &c_func, ps_func, &h, &wl, &wr, &n) != 6) {
-		error(1, 0, "Invalid deco %s", text);
+			name2, &c_func, ps_func, &h, &wl, &wr, &n) != 6) {
+		error(1, NULL, "Invalid %%%%deco %s", text);
 		return 128;
 	}
 	if ((unsigned) c_func >= sizeof func_tb / sizeof func_tb[0]
-	 && (c_func < 32 || c_func > 39)) {
-		error(1, 0, "%%%%deco: bad C function index (%s)", text);
+	 && (c_func < 32 || c_func > 41)) {
+		error(1, NULL, "%%%%deco: bad C function index (%s)", text);
 		return 128;
 	}
 	if (h < 0 || wl < 0 || wr < 0) {
-		error(1, 0, "%%%%deco: cannot have a negative value (%s)", text);
+		error(1, NULL, "%%%%deco: cannot have a negative value (%s)", text);
 		return 128;
 	}
 	if (h > 50 || wl > 80 || wr > 80) {
-		error(1, 0, "%%%%deco: abnormal h/wl/wr value (%s)", text);
+		error(1, NULL, "%%%%deco: abnormal h/wl/wr value (%s)", text);
 		return 128;
 	}
 	text += n;
@@ -728,15 +787,10 @@ static unsigned char deco_build(char *text)
 		text++;
 
 	/* search the decoration */
-	for (ideco = 1, dd = &deco_def_tb[1]; ideco < 128; ideco++, dd++) {
-		if (!dd->name
-		 || strcmp(dd->name, name) == 0)
-			break;
-	}
-	if (ideco == 128) {
-		error(1, 0, "Too many decorations");
-		return 128;
-	}
+	ideco = get_deco(name);
+	if (ideco == 128)
+		return ideco;
+	dd = &deco_def_tb[ideco];
 
 	/* search the postscript function */
 	for (ps_x = 0; ps_x < sizeof ps_func_tb / sizeof ps_func_tb[0]; ps_x++) {
@@ -745,7 +799,7 @@ static unsigned char deco_build(char *text)
 			break;
 	}
 	if (ps_x == sizeof ps_func_tb / sizeof ps_func_tb[0]) {
-		error(1, 0, "Too many postscript functions");
+		error(1, NULL, "Too many postscript functions");
 		return 128;
 	}
 
@@ -774,14 +828,14 @@ static unsigned char deco_build(char *text)
 				break;
 		}
 		if (strx == sizeof str_tb / sizeof str_tb[0]) {
-			error(1, 0, "Too many decoration strings");
+			error(1, NULL, "Too many decoration strings");
 			return 128;
 		}
 	}
 
 	/* set the values */
 	if (!dd->name)
-		dd->name = strdup(name);	/* new decoration */
+		dd->name = name;		/* new decoration */
 	dd->func = c_func;
 	if (!ps_func_tb[ps_x]) {
 		if (ps_func[0] == '-' && ps_func[1] == '\0')
@@ -800,9 +854,14 @@ static unsigned char deco_build(char *text)
 	if (l == 0)
 		return ideco;
 	l--;
-	if (name[l] == '(' || name[l] == ')') {
+	if (name[l] == '('
+	 || (name[l] == ')' && !strchr(name, '('))) {
 		struct deco_def_s *ddo;
 
+		if (name[l] == '(')
+			dd->flags = DE_LDST;
+		else
+			dd->flags = DE_LDEN;
 		for (o = 1, ddo = &deco_def_tb[1]; o < 128; o++, ddo++) {
 			if (!ddo->name)
 				break;
@@ -836,11 +895,11 @@ static void set_feathered_beam(struct SYMBOL *s1,
 	d = s1->dur;
 	s2 = NULL;
 	n = 1;
-	for (s = (struct SYMBOL *) s1->as.next;
+	for (s = (struct SYMBOL *) s1->abc_next;
 	     s;
-	     s = (struct SYMBOL *) s->as.next) {
+	     s = (struct SYMBOL *) s->abc_next) {
 		if (s->dur != d
-		 || (s->as.flags & ABC_F_SPACE))
+		 || (s->flags & ABC_F_SPACE))
 			break;
 		s2 = s;
 		n++;
@@ -854,7 +913,7 @@ static void set_feathered_beam(struct SYMBOL *s1,
 	if (accel) {				/* !beam-accel! */
 		for (s = s1, i = n - 1;
 		     s != s2;
-		     s = (struct SYMBOL *) s->as.next, i--) {
+		     s = (struct SYMBOL *) s->abc_next, i--) {
 			d = (int) lroundf(a * i) + b;
 			s->dur = d;
 			t += d;
@@ -862,107 +921,13 @@ static void set_feathered_beam(struct SYMBOL *s1,
 	} else {				/* !beam-rall! */
 		for (s = s1, i = 0;
 		     s != s2;
-		     s = (struct SYMBOL *) s->as.next, i++) {
+		     s = (struct SYMBOL *) s->abc_next, i++) {
 			d = (int) lroundf(a * i) + b;
 			s->dur = d;
 			t += d;
 		}
 	}
 	s2->dur = tt - t;
-}
-
-/* -- convert the decorations -- */
-void deco_cnv(struct deco *dc,
-		struct SYMBOL *s,
-		struct SYMBOL *prev)
-{
-	int i, j;
-	struct deco_def_s *dd;
-	unsigned char ideco;
-	static char must_note_fmt[] = "Deco !%s! must be on a note";
-
-	for (i = dc->n; --i >= 0; ) {
-		if ((ideco = dc->t[i]) == 0)
-			continue;
-		if (ideco < 128) {
-			ideco = deco[ideco];
-			if (ideco == 0)
-				error(1, s,
-					"Notation '%c' not treated", dc->t[i]);
-		} else {
-			ideco = deco_intern(ideco);
-		}
-		dc->t[i] = ideco;
-		if (ideco == 0)
-			continue;
-
-		/* special decorations */
-		dd = &deco_def_tb[ideco];
-		switch (dd->func) {
-		default:
-			continue;
-		case 32:		/* 32 = invisible */
-			s->as.flags |= ABC_F_INVIS;
-			break;
-		case 33:		/* 33 = beamon */
-			s->sflags |= S_BEAM_ON;
-			break;
-		case 34:		/* 34 = trem1..trem4 */
-			if (s->as.type != ABC_T_NOTE
-			 || !prev
-			 || prev->as.type != ABC_T_NOTE) {
-				error(1, s,
-					"!%s! must be on the last of a couple of notes",
-					dd->name);
-				break;
-			}
-			s->sflags |= (S_TREM2 | S_BEAM_END);
-			s->sflags &= ~S_BEAM_ST;
-			prev->sflags |= (S_TREM2 | S_BEAM_ST);
-			prev->sflags &= ~S_BEAM_END;
-			s->u = prev->u = dd->name[4] - '0';
-			for (j = 0; j <= s->nhd; j++)
-				s->as.u.note.lens[j] *= 2;
-			for (j = 0; j <= prev->nhd; j++)
-				prev->as.u.note.lens[j] *= 2;
-			break;
-		case 35:		/* 35 = xstem */
-			if (s->as.type != ABC_T_NOTE) {
-				error(1, s, must_note_fmt, dd->name);
-				break;
-			}
-			s->sflags |= S_XSTEM;
-			break;
-		case 36:		/* 36 = beambr1 / beambr2 */
-			if (s->as.type != ABC_T_NOTE) {
-				error(1, s, must_note_fmt, dd->name);
-				break;
-			}
-			s->sflags |= dd->name[6] == '1' ?
-					S_BEAM_BR1 : S_BEAM_BR2;
-			break;
-		case 37:		/* 37 = rbstop */
-			s->sflags |= S_RBSTOP;
-			break;
-		case 38:		/* 38 = /, // and /// = tremolo */
-			if (s->as.type != ABC_T_NOTE) {
-				error(1, s, must_note_fmt, dd->name);
-				break;
-			}
-			s->sflags |= S_TREM1;
-			s->u = strlen(dd->name);	/* 1, 2 or 3 */
-			break;
-		case 39:		/* 39 = beam-accel/beam-rall */
-			if (s->as.type != ABC_T_NOTE) {
-				error(1, s, must_note_fmt, dd->name);
-				break;
-			}
-			s->sflags |= S_FEATHERED_BEAM;
-			set_feathered_beam(s, dd->name[5] == 'a');
-			break;
-		}
-		dc->t[i] = 0;			/* already treated */
-	}
 }
 
 /* -- define a user decoration -- */
@@ -975,13 +940,13 @@ static unsigned char user_deco_define(char *name)
 	for (d = user_deco; d; d = d->next) {
 		if (strncmp(d->text, name, l) == 0
 		 && d->text[l] == ' ')
-			return deco_build(d->text);
+			return deco_build(name, d->text);
 	}
 	return 128;
 }
 
 /* -- define a standard decoration -- */
-unsigned char deco_define(char *name)
+static unsigned char deco_define(char *name)
 {
 	unsigned char ideco;
 	int l;
@@ -994,17 +959,24 @@ unsigned char deco_define(char *name)
 		 && std_deco_tb[ideco][l] == ' ')
 			break;
 	}
-	return deco_build(std_deco_tb[ideco]);
+	return deco_build(name, std_deco_tb[ideco]);
 }
 
 /* -- convert the external deco number to the internal one -- */
-unsigned char deco_intern(unsigned char ideco)
+static unsigned char deco_intern(unsigned char ideco,
+				struct SYMBOL *s)
 {
 	char *name;
 
-	if (ideco == 0)
-		return ideco;
-	name = deco_tb[ideco - 128];
+	if (ideco < 128) {
+		name = deco[ideco];
+		if (!name) {
+			error(1, s, "Bad character '%c'", ideco);
+			return 0;
+		}
+	} else {
+		name = parse.deco_tb[ideco - 128];
+	}
 	for (ideco = 1; ideco < 128; ideco++) {
 		if (!deco_def_tb[ideco].name) {
 			ideco = user_deco_define(name);	/* try a user decoration */
@@ -1016,10 +988,129 @@ unsigned char deco_intern(unsigned char ideco)
 			break;
 	}
 	if (ideco == 128) {
-		error(1, 0, "Decoration !%s! not treated", name);
+		if (cfmt.decoerr)
+			error(1, s, "Decoration !%s! not defined", name);
 		ideco = 0;
 	}
 	return ideco;
+}
+
+/* -- convert the decorations -- */
+void deco_cnv(struct decos *dc,
+		struct SYMBOL *s,
+		struct SYMBOL *prev)
+{
+	int i, j, k;
+	struct deco_def_s *dd;
+	unsigned char ideco;
+	static char must_note_fmt[] = "Deco !%s! must be on a note";
+
+	for (i = dc->n; --i >= 0; ) {
+		if ((ideco = dc->tm[i].t) == 0)
+			continue;
+		ideco = deco_intern(ideco, s);
+		dc->tm[i].t = ideco;
+		if (ideco == 0)
+			continue;
+
+		/* special decorations */
+		dd = &deco_def_tb[ideco];
+		switch (dd->func) {
+		default:
+			if (strncmp(dd->name, "head-", 5) == 0
+			 && dc->tm[i].m == 255) {	// apply !head-xx! to each head
+//				if (s->type != NOTEREST) {
+//					error(1, s,
+//						"!%s! must be on a note or a rest",
+//						dd->name);
+//					break;
+//				}
+				dc->tm[i].m = 0;
+				k = dc->n;
+				if (k + s->nhd >= MAXDC) {
+					error(1, s, "Too many decorations");
+					break;
+				}
+				for (j = 1; j <= s->nhd; j++) {
+					dc->tm[k].t = ideco;
+					dc->tm[k++].m = j;
+				}
+				dc->n = k;
+			}
+			continue;
+		case 32:		/* 32 = invisible */
+			s->flags |= ABC_F_INVIS;
+			break;
+		case 33:		/* 33 = beamon */
+			s->sflags |= S_BEAM_ON;
+			break;
+		case 34:		/* 34 = trem1..trem4 */
+			if (s->abc_type != ABC_T_NOTE
+			 || !prev
+			 || prev->abc_type != ABC_T_NOTE) {
+				error(1, s,
+					"!%s! must be on the last of a couple of notes",
+					dd->name);
+				break;
+			}
+			s->sflags |= (S_TREM2 | S_BEAM_END);
+			s->sflags &= ~S_BEAM_ST;
+			prev->sflags |= (S_TREM2 | S_BEAM_ST);
+			prev->sflags &= ~S_BEAM_END;
+			s->aux = prev->aux = dd->name[4] - '0';
+			for (j = 0; j <= s->nhd; j++)
+				s->u.note.notes[j].len *= 2;
+			for (j = 0; j <= prev->nhd; j++)
+				prev->u.note.notes[j].len *= 2;
+			break;
+		case 35:		/* 35 = xstem */
+			if (s->abc_type != ABC_T_NOTE) {
+				error(1, s, must_note_fmt, dd->name);
+				break;
+			}
+			s->sflags |= S_XSTEM;
+			break;
+		case 36:		/* 36 = beambr1 / beambr2 */
+			if (s->abc_type != ABC_T_NOTE) {
+				error(1, s, must_note_fmt, dd->name);
+				break;
+			}
+			s->sflags |= dd->name[6] == '1' ?
+					S_BEAM_BR1 : S_BEAM_BR2;
+			break;
+		case 37:		/* 37 = rbstop */
+			s->sflags |= S_RBSTOP;
+			break;
+		case 38:		/* 38 = /, // and /// = tremolo */
+			if (s->abc_type != ABC_T_NOTE) {
+				error(1, s, must_note_fmt, dd->name);
+				break;
+			}
+			s->sflags |= S_TREM1;
+			s->aux = strlen(dd->name);	/* 1, 2 or 3 */
+			break;
+		case 39:		/* 39 = beam-accel/beam-rall */
+			if (s->abc_type != ABC_T_NOTE) {
+				error(1, s, must_note_fmt, dd->name);
+				break;
+			}
+			s->sflags |= S_FEATHERED_BEAM;
+			set_feathered_beam(s, dd->name[5] == 'a');
+			break;
+		case 40:		/* 40 = stemless */
+			if (s->abc_type != ABC_T_NOTE) {
+				error(1, s, must_note_fmt, dd->name);
+				break;
+			}
+			s->flags |= ABC_F_STEMLESS;
+			break;
+		case 41:		/* 41 = rbend */
+			s->flags |= ABC_F_RBSTOP;	/* with bracket end */
+			s->sflags |= S_RBSTOP;
+			break;
+		}
+		dc->tm[i].t = 0;	/* already treated */
+	}
 }
 
 /* -- update the x position of a decoration -- */
@@ -1041,19 +1132,19 @@ void deco_update(struct SYMBOL *s, float dx)
 /* -- adjust the symbol width -- */
 float deco_width(struct SYMBOL *s)
 {
-	struct deco *dc;
+	struct decos *dc;
 	int i;
 	float wl;
 
 	wl = 0;
 	if (s->type == BAR)
-		dc = &s->as.u.bar.dc;
+		dc = &s->u.bar.dc;
 	else
-		dc = &s->as.u.note.dc;
+		dc = &s->u.note.dc;
 	for (i = dc->n; --i >= 0; ) {
 		struct deco_def_s *dd;
 
-		dd =  &deco_def_tb[dc->t[i]];
+		dd =  &deco_def_tb[dc->tm[i].t];
 		switch (dd->func) {
 		case 1:			/* slide */
 			if (wl < 7)
@@ -1076,7 +1167,8 @@ void draw_all_deco(void)
 {
 	struct deco_elt *de;
 	struct deco_def_s *dd;
-	int f, staff;
+	int f, staff, l;
+	char *gl, *p;
 	float x, y, y2, ym;
 	float ymid[MAXSTAFF];
 
@@ -1092,8 +1184,25 @@ void draw_all_deco(void)
 
 	for (de = deco_head; de; de = de->next) {
 		dd = &deco_def_tb[de->t];
+		if ((dd->flags & DE_LDST) && dd->ld_end != 0)
+			continue;		// start of full long decoration
 		if ((f = dd->ps_func) < 0)
-			continue;
+			continue;		// old behaviour
+
+		// handle the stem direction
+		gl = ps_func_tb[f];		// glyph name(s)
+		p = strchr(gl, '/');
+		if (p) {
+			if (de->s->stem >= 0) {
+				l = (int) (p - gl);
+			} else {
+				gl = p + 1;
+				l = strlen(gl);
+			}
+		} else {
+			l = strlen(gl);
+		}
+
 		staff = de->staff;
 		y = de->y + staff_tb[staff].y;
 
@@ -1109,16 +1218,16 @@ void draw_all_deco(void)
 			ym -= dd->h * 0.5;
 			if (((de->flags & DE_UP) && y < ym)
 			 || (!(de->flags & DE_UP) && y > ym)) {
-				struct SYMBOL *s;
-
-				s = de->s;
-				if (s->staff > staff) {
-					while (s->staff != staff)
-						s = s->ts_prev;
-				} else if (s->staff < staff) {
-					while (s->staff != staff)
-						s = s->ts_next;
-				}
+//				struct SYMBOL *s;
+//
+//				s = de->s;
+//				if (s->staff > staff) {
+//					while (s->staff != staff)
+//						s = s->ts_prev;
+//				} else if (s->staff < staff) {
+//					while (s->staff != staff)
+//						s = s->ts_next;
+//				}
 				y2 = y_get(staff, !(de->flags & DE_UP),
 							de->x, de->v)
 					+ staff_tb[staff].y;
@@ -1135,16 +1244,32 @@ void draw_all_deco(void)
 			}
 		}
 
+		set_v_color(de->s->voice);
 		set_scale(de->s);
 		set_defl(de->defl);
-/*fixme: scaled or not?*/
-		if (de->flags & DE_VAL)
-			putf(de->v);
+		if (de->flags & DE_VAL) {
+			if (dd->func != 2 || voice_tb[de->s->voice].scale != 1)
+				putx(de->v);
+			else
+				putf(de->v);
+		}
+		x = de->x;
 		if (de->str) {
 			char *p, *q;
 
+			y += dd->h * 0.2;		// font descent
+			p = de->str;
+			if (dd->strx != 0 && dd->strx != 255
+			 && str_tb[dd->strx][0] == '@') { // annotation like
+				str_font(ANNOTATIONFONT);
+				outft = -1;		// force font selection
+				putxy(x, y + de->dy);
+				a2b("M");
+				put_str(p, A_LEFT);
+				continue;
+			}
 			a2b("(");
-			q = p = de->str;
+			q = p;
 			while (*p != '\0') {
 				if (*p == '(' || *p == ')') {
 					if (p != q)
@@ -1158,7 +1283,7 @@ void draw_all_deco(void)
 				a2b("%.*s", (int) (p - q), q);
 			a2b(")");
 		}
-		putxy(de->x, y);
+		putxy(x, y);
 		if (de->flags & DE_LDEN) {
 			if (de->start) {
 				x = de->start->x;
@@ -1172,24 +1297,25 @@ void draw_all_deco(void)
 		}
 		if (de->flags & DE_GRACE) {
 			if (de->flags & DE_INV)
-				a2b("gsave T 0.7 -0.7 scale 0 0 %s grestore\n",
-						ps_func_tb[f]);
+				a2b("gsave T 0.7 -0.7 scale 0 0 %.*s grestore\n",
+						l, gl);
 			else
-				a2b("gsave T 0.7 dup scale 0 0 %s grestore\n",
-						ps_func_tb[f]);
+				a2b("gsave T 0.7 dup scale 0 0 %.*s grestore\n",
+						l, gl);
 		} else {
 			if (de->flags & DE_INV)
-				a2b("gsave 1 -1 scale neg %s grestore\n",
-						ps_func_tb[f]);
+				a2b("gsave 1 -1 scale neg %.*s grestore\n",
+						l, gl);
 			else
-				a2b("%s\n", ps_func_tb[f]);
+				a2b("%.*s\n", l, gl);
 		}
 	}
 	set_sscale(-1);			/* restore the scale */
+	set_v_color(-1);
 }
 
 /* -- draw a decoration relative to a note head -- */
-/* return 1 if the decoration is a head */
+/* return 1 if the decoration replaces the head */
 int draw_deco_head(int ideco, float x, float y, int stem)
 {
 	struct deco_def_s *dd;
@@ -1202,65 +1328,52 @@ int draw_deco_head(int ideco, float x, float y, int stem)
 		return 0;
 	if (cfmt.setdefl)
 		set_defl(stem >= 0 ? DEF_STEMUP : 0);
-	switch (dd->func) {
-	case 2:
-	case 5:
-	case 7:
-		a2b("0 ");
-		break;
-	case 3:
-	case 4:
-		if (dd->strx == 0)
+
+	if (dd->strx != 0) {
+		struct deco_elt v_de;
+
+		v_de.x = x;
+		v_de.dy = 0;
+		if (dd->strx != 255) {
+			str = set_str(&v_de, str_tb[dd->strx]);
+			x = v_de.x;
+			y += v_de.dy;
+		} else {
+			str = dd->name;
+		}
+		str_font(ANNOTATIONFONT);
+		outft = -1;
+		putxy(x, y);
+		a2b("M");
+		put_str(str, A_LEFT);
+	} else {
+		switch (dd->func) {
+		case 2:				// arpeggio
+		case 5:				// trill
+		case 7:				// d_cresc
+			a2b("0 ");
 			break;
-		/* fall thru */
-	case 6:
-		str = dd->name;
-		if (dd->strx != 0 && dd->strx != 255)
-			str = str_tb[dd->strx];
-		a2b("(%s)", str);
-		break;
+		}
+		putxy(x, y);
+		a2b("%s ", ps_func_tb[dd->ps_func]);
 	}
-	putxy(x, y);
-	a2b("%s ", ps_func_tb[dd->ps_func]);
 	return strncmp(dd->name, "head-", 5) == 0;
-}
-
-/* -- draw the chord decorations relative to the heads -- */
-void draw_all_deco_head(struct SYMBOL *s, float x, float y)
-{
-	int k;
-	unsigned char ideco;
-	struct deco *dc;
-	struct deco_def_s *dd;
-
-	dc = &s->as.u.note.dc;
-	for (k = dc->n; --k >= 0; ) {
-		if (k >= dc->h && k < dc->s)	/* skip the head decorations */
-			continue;
-		if ((ideco = dc->t[k]) == 0)
-			continue;
-		dd = &deco_def_tb[ideco];
-
-		if (strncmp(dd->name, "head-", 5) != 0)
-			continue;
-		draw_deco_head(ideco, x, y, s->stem);
-	}
 }
 
 /* -- create the deco elements, and treat the near ones -- */
 static void deco_create(struct SYMBOL *s,
-			struct deco *dc)
+			struct decos *dc)
 {
-	int k, l, posit;
+	int k, posit;
 	unsigned char ideco;
 	struct deco_def_s *dd;
 	struct deco_elt *de;
 #if 1
 /*fixme:pb with decorations above the staff*/
 	for (k = 0; k < dc->n; k++) {
-		if (k >= dc->h && k < dc->s)	/* skip the head decorations */
+		if (dc->tm[k].m != 255)		/* skip the head decorations */
 			continue;
-		if ((ideco = dc->t[k]) == 0)
+		if ((ideco = dc->tm[k].t) == 0)
 			continue;
 		dd = &deco_def_tb[ideco];
 #else
@@ -1272,9 +1385,9 @@ static void deco_create(struct SYMBOL *s,
 	i = 0;
 	j = dc->n;
 	for (k = 0; k < dc->n; k++) {
-		if (k >= dc->h && k < dc->s)	/* skip the head decorations */
+		if (dc->tm[k].m != 255)		/* skip the head decorations */
 			continue;
-		if ((ideco = dc->t[k]) == 0)
+		if ((ideco = dc->tm[k].t) == 0)
 			continue;
 		dd = &deco_def_tb[ideco];
 		if (dd->func < 3) {		/* if near the note */
@@ -1316,17 +1429,13 @@ static void deco_create(struct SYMBOL *s,
 			break;
 		}
 		if (posit == SL_HIDDEN) {
-			dc->t[k] = 0;
+			dc->tm[k].t = 0;
 			continue;
 		}
 
 		/* memorize the decorations, but not the head ones */
 		if (strncmp(dd->name, "head-", 5) == 0) {
-			switch (s->type) {
-			case NOTEREST:
-				s->sflags |= S_OTHER_HEAD;
-				break;
-			default:
+			if (s->type != NOTEREST) {
 				error(1, s, "Cannot have !%s! on a bar",
 					dd->name);
 				break;
@@ -1344,26 +1453,20 @@ static void deco_create(struct SYMBOL *s,
 		de->s = s;
 		de->t = dd - deco_def_tb;
 		de->staff = s->staff;
-		if (s->as.type == ABC_T_NOTE
-		 && (s->as.flags & ABC_F_GRACE))
+		if (s->flags & ABC_F_GRACE)
 			de->flags = DE_GRACE;
-		if (dd->ld_end != 0) {
+		if (dd->flags & DE_LDST) {
 			de->flags |= DE_LDST;
-		} else {
-			l = strlen(dd->name) - 1;
-			if (l > 0 && dd->name[l] == ')') {
-				if (strchr(dd->name, '(') == 0) {
-					de->flags |= DE_LDEN;
-					de->defl = DEF_NOST;
-				}
-			}
+		} else if (dd->flags & DE_LDEN) {
+			de->flags |= DE_LDEN;
+			de->defl = DEF_NOST;
 		}
 		if (cfmt.setdefl && s->stem >= 0)
 			de->defl |= DEF_STEMUP;
 
 		if (dd->func >= 3)	/* if not near the note */
 			continue;
-		if (s->as.type != ABC_T_NOTE) {
+		if (s->abc_type != ABC_T_NOTE) {
 			error(1, s,
 				"Cannot have !%s! on a rest or a bar",
 				dd->name);
@@ -1379,7 +1482,7 @@ static void deco_create(struct SYMBOL *s,
 void draw_deco_near(void)
 {
 	struct SYMBOL *s, *g;
-	struct deco *dc;
+	struct decos *dc;
 	struct SYMBOL *first;
 
 	deco_head = deco_tail = NULL;
@@ -1388,24 +1491,24 @@ void draw_deco_near(void)
 		switch (s->type) {
 		case BAR:
 		case MREST:
-			if (s->as.u.bar.dc.n == 0)
+			if (s->u.bar.dc.n == 0)
 				continue;
-			dc = &s->as.u.bar.dc;
+			dc = &s->u.bar.dc;
 			break;
 		case NOTEREST:
 		case SPACE:
 			if (!first)
 				first = s;
-			if (s->as.u.note.dc.n == 0)
+			if (s->u.note.dc.n == 0)
 				continue;
-			dc = &s->as.u.note.dc;
+			dc = &s->u.note.dc;
 			break;
 		case GRACE:
 			for (g = s->extra; g; g = g->next) {
-				if (g->as.type != ABC_T_NOTE
-				 || g->as.u.note.dc.n == 0)
+				if (g->abc_type != ABC_T_NOTE
+				 || g->u.note.dc.n == 0)
 					continue;
-				dc = &g->as.u.note.dc;
+				dc = &g->u.note.dc;
 				deco_create(g, dc);
 			}
 			/* fall thru */
@@ -1428,8 +1531,32 @@ void draw_deco_note(void)
 	for (de = deco_head; de; de = de->next) {
 		t = de->t;
 		dd = &deco_def_tb[t];
+
+		// link the long decorations
 		if (de->flags & DE_LDST) {	/* start of long decoration */
 			t = dd->ld_end;
+			if (t == 0) {		// if long deco has no end
+				int l;		// create one
+				char *name;
+
+				l = strlen(dd->name);
+				name = getarena(l + 1);
+				strcpy(name, dd->name);
+				name[l - 1] = ')';
+				t = get_deco(name);
+				if (t != 128) {
+					struct deco_def_s *dd2;
+
+					dd2 = &deco_def_tb[t];
+					dd2->name = name;
+					dd2->func = dd->func;
+					dd2->ps_func = dd->ps_func;
+					dd2->h = dd->h;
+					dd->ld_end = t;
+				} else {
+					t = 0;
+				}
+			}
 			voice = de->s->voice;	/* search in the voice */
 			for (de2 = de->next; de2; de2 = de2->next)
 				if (de2->t == t && de2->s->voice == voice)
@@ -1465,13 +1592,134 @@ void draw_deco_note(void)
 	}
 }
 
+/* draw the repeat brackets */
+static void draw_repbra(struct VOICE_S *p_voice)
+{
+	struct SYMBOL *s, *s1, *s2, *first_repeat;
+	int i;
+	float x, y, y2, w;
+
+	/* search the max y offset */
+	y = staff_tb[p_voice->staff].topbar + 6 + 20;
+	first_repeat = 0;
+	for (s = p_voice->sym->next; s; s = s->next) {
+		if (s->type != BAR)
+			continue;
+		if (!(s->sflags & S_RBSTART)
+		 || (s->sflags & S_NOREPBRA))
+			continue;
+/*fixme: line cut on repeat!*/
+		if (!s->next)
+			break;
+		if (!first_repeat)
+			first_repeat = s;
+		s1 = s;
+		for (;;) {
+			if (!s->next)
+				break;
+			s = s->next;
+			if (s->sflags & S_RBSTOP)
+				break;
+		}
+		y2 = y_get(p_voice->staff, 1, s1->x, s->x - s1->x);
+		if (y < y2)
+			y = y2;
+
+		/* have room for the repeat numbers */
+		if (s1->gch) {
+			w = s1->gch->w;
+			y2 = y_get(p_voice->staff, 1, s1->x + 4, w);
+			y2 += cfmt.font_tb[REPEATFONT].size + 2;
+			if (y < y2)
+				y = y2;
+		}
+		if (s->sflags & S_RBSTART)
+			s = s->prev;
+	}
+
+	/* draw the repeat indications */
+	s = first_repeat;
+	if (!s)
+		return;
+	set_sscale(p_voice->staff);
+	set_font(REPEATFONT);
+	for ( ; s; s = s->next) {
+		char *p;
+
+		if (!(s->sflags & S_RBSTART)
+		 || (s->sflags & S_NOREPBRA))
+			continue;
+		s1 = s;
+		for (;;) {
+			if (!s->next)
+				break;
+			s = s->next;
+			if (s->sflags & S_RBSTOP)
+				break;
+		}
+		s2 = s;
+		if (s1 == s2)
+			break;
+		x = s1->x;
+		if ((s1->u.bar.type & 0x0f) == B_COL)
+			x -= 4;
+		if (s2->type != BAR) {
+			if (s2->sflags & S_RBSTOP)
+				w = 0;
+			else
+				w = s2->x - realwidth + 4;
+		} else if (((s2->u.bar.type & 0xf0)	/* if complex bar */
+			 && s2->u.bar.type != (B_OBRA | B_CBRA))
+			|| s2->u.bar.type == B_CBRA) {
+			if (s2->u.bar.type == B_CBRA)
+				s2->flags |= ABC_F_INVIS;
+/*fixme:%%staves: cursys moved?*/
+			if (s1->staff > 0
+			 && !(cursys->staff[s1->staff - 1].flags & STOP_BAR)) {
+				w = s2->wl;
+			} else if ((s2->u.bar.type & 0x0f) == B_COL) {
+				w = 12;
+			} else if (!(s2->sflags & S_RRBAR)
+				|| s2->u.bar.type == B_CBRA) {
+				w = 0;		/* explicit repeat end */
+			} else {
+				w = 8;
+			}
+		} else {
+			w = 8;
+		}
+		w = s2->x - x - w;
+		p = s1->text;
+		if (!p)
+			p = "";
+		if (!s2->next			/* 2nd ending at end of line */
+		 && !(s2->sflags & S_RBSTOP)
+		 && (p_voice->bar_start == 0)) {
+			p_voice->bar_start = B_OBRA | 0x1000;	/* S_RBSTART */
+			p_voice->bar_repeat = 1;	/* continue on next line */
+		}
+		if (s1->flags & ABC_F_RBSTART)
+			i = (s2->flags & ABC_F_RBSTOP) ? 3 : 1;
+		else
+			i = (s2->flags & ABC_F_RBSTOP) ? 2 : 0;
+		a2b("(%s)-%.1f %d ",
+			p, cfmt.font_tb[REPEATFONT].size * 0.8 + 1, i);
+		putx(w);
+		putxy(x, y);
+		a2b("y%d repbra\n", s1->staff);
+		y_set(s1->staff, 1, x, w, y + 2);
+		if (s->u.bar.repeat_bar)
+			s = s->prev;
+	}
+}
+
 /* -- draw the music elements tied to the staff -- */
 /* (the staves are not yet defined) */
 void draw_deco_staff(void)
 {
 	struct SYMBOL *s, *first_gchord;
 	struct VOICE_S *p_voice;
-	float x, y, w;
+	float y, w;
 	struct deco_elt *de;
 	struct {
 		float ymin, ymax;
@@ -1483,28 +1731,27 @@ void draw_deco_staff(void)
 	memset(minmax, 0, sizeof minmax);
 	first_gchord = 0;
 	for (s = tsfirst; s; s = s->ts_next) {
-		struct gch *gch;
-		int ix, ig;
+		struct gch *gch, *gch2;
+		int ix;
 
 		gch = s->gch;
 		if (!gch)
 			continue;
 		if (!first_gchord)
 			first_gchord = s;
-		ig = -1;
+		gch2 = NULL;
 		for (ix = 0; ix < MAXGCH; ix++, gch++) {
 			if (gch->type == '\0')
 				break;
 			if (gch->type != 'g')
 				continue;
-			ig = ix;	/* guitar chord closest to the staff */
+			gch2 = gch;	/* guitar chord closest to the staff */
 			if (gch->y < 0)
 				break;
 		}
-		if (ig >= 0) {
-			gch = s->gch + ig;
-			w = gch->w;
-			if (gch->y >= 0) {
+		if (gch2) {
+			w = gch2->w;
+			if (gch2->y >= 0) {
 				y = y_get(s->staff, 1, s->x, w);
 				if (y > minmax[s->staff].ymax)
 					minmax[s->staff].ymax = y;
@@ -1526,7 +1773,7 @@ void draw_deco_staff(void)
 			bot = staff_tb[i].botbar;
 			minmax[i].ymin -= 3;
 			if (minmax[i].ymin > bot - 10)
-				minmax[i].ymin = bot -10;
+				minmax[i].ymin = bot - 10;
 			top = staff_tb[i].topbar;
 			minmax[i].ymax += 3;
 			if (minmax[i].ymax < top + 10)
@@ -1542,7 +1789,7 @@ void draw_deco_staff(void)
 			case MREST:
 				break;
 			case BAR:
-				if (!s->as.u.bar.repeat_bar)
+				if (!s->u.bar.repeat_bar)
 					break;
 			default:
 				continue;
@@ -1554,165 +1801,9 @@ void draw_deco_staff(void)
 
 	/* draw the repeat brackets */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
-		struct SYMBOL *s1, *s2, *first_repeat;
-		float y2;
-		int i, repnl;
-
 		if (p_voice->second || !p_voice->sym)
 			continue;
-
-		/* search the max y offset and set the end of bracket */
-		y = staff_tb[p_voice->staff].topbar + 6 + 20;
-		first_repeat = 0;
-		for (s = p_voice->sym->next; s; s = s->next) {
-			if (s->type != BAR
-			 || !s->as.u.bar.repeat_bar
-			 || (s->sflags & S_NOREPBRA))
-				continue;
-/*fixme: line cut on repeat!*/
-			if (!s->next)
-				break;
-			if (!first_repeat)
-				first_repeat = s;
-			s1 = s;
-
-			/* a bracket may be 4 measures
-			 * but only 2 measures when it has no start */
-			i = s1->as.text ? 4 : 2;
-			for (;;) {
-				if (!s->next)
-					break;
-				s = s->next;
-				if (s->sflags & S_RBSTOP)
-					break;
-				if (s->type != BAR)
-					continue;
-				if (((s->as.u.bar.type & 0xf0)	/* if complex bar */
-				   && s->as.u.bar.type != (B_OBRA << 4) + B_CBRA)
-				  || s->as.u.bar.type == B_CBRA
-				  || s->as.u.bar.repeat_bar)
-					break;
-				if (--i <= 0) {
-
-					/* have a shorter repeat bracket */
-					s = s1;
-					i = 2;
-					for (;;) {
-						s = s->next;
-						if (s->type != BAR)
-							continue;
-						if (--i <= 0)
-							break;
-					}
-					s->sflags |= S_RBSTOP;
-					break;
-				}
-			}
-			y2 = y_get(p_voice->staff, 1, s1->x, s->x - s1->x);
-			if (y < y2)
-				y = y2;
-
-			/* have room for the repeat numbers */
-			if (s1->gch) {
-				w = s1->gch->w;
-				y2 = y_get(p_voice->staff, 1, s1->x + 4, w);
-				y2 += cfmt.font_tb[REPEATFONT].size + 2;
-				if (y < y2)
-					y = y2;
-			}
-			if (s->as.u.bar.repeat_bar)
-				s = s->prev;
-		}
-
-		/* draw the repeat indications */
-		s = first_repeat;
-		if (!s)
-			continue;
-		set_sscale(p_voice->staff);
-		set_font(REPEATFONT);
-		repnl = 0;
-		for ( ; s; s = s->next) {
-			char *p;
-
-			if (s->type != BAR
-			 || !s->as.u.bar.repeat_bar
-			 || (s->sflags & S_NOREPBRA))
-				continue;
-			s1 = s;
-			for (;;) {
-				if (!s->next)
-					break;
-				s = s->next;
-				if (s->sflags & S_RBSTOP)
-					break;
-				if (s->type != BAR)
-					continue;
-				if (((s->as.u.bar.type & 0xf0)	/* if complex bar */
-				  && s->as.u.bar.type != (B_OBRA << 4) + B_CBRA)
-				 || s->as.u.bar.type == B_CBRA
-				 || s->as.u.bar.repeat_bar)
-					break;
-			}
-			s2 = s;
-			if (s1 == s2)
-				break;
-			x = s1->x;
-			if ((s1->as.u.bar.type & 0x07) == B_COL)
-				x -= 4;
-			i = 0;				/* no bracket end */
-			if (s2->sflags & S_RBSTOP) {
-				w = 8;			/* (w = left shift) */
-			} else if (s2->type != BAR) {
-				w = s2->x - realwidth + 4;
-			} else if (((s2->as.u.bar.type & 0xf0)	/* if complex bar */
-				 && s2->as.u.bar.type != (B_OBRA << 4) + B_CBRA)
-				|| s2->as.u.bar.type == B_CBRA) {
-				i = 2;			/* bracket start and stop */
-/*fixme:%%staves: cursys moved?*/
-				if (s->staff > 0
-				 && !(cursys->staff[s->staff - 1].flags & STOP_BAR)) {
-					w = s2->wl;
-				} else if ((s2->as.u.bar.type & 0x0f) == B_COL) {
-					w = 12;
-				} else if (!(s2->sflags & S_RRBAR)
-					|| s2->as.u.bar.type == B_CBRA) {
-					w = 0;		/* explicit repeat end */
-
-					/* if ']', don't display as thick bar */
-					if (s2->as.u.bar.type == B_CBRA)
-						s2->as.flags |= ABC_F_INVIS;
-				} else {
-					w = 8;
-				}
-			} else {
-				w = 8;
-			}
-			w = s2->x - x - w;
-			p = s1->as.text;
-			if (!p) {
-				i--;		/* no bracket start (1) or not drawn */
-				p = "";
-			}
-			if (i == 0 && !s2->next	/* 2nd ending at end of line */
-			 && !(s2->sflags & S_RBSTOP)) {
-				if (p_voice->bar_start == 0)
-					repnl = 1;	/* continue on next line */
-			}
-			if (i >= 0) {
-				a2b("(%s)-%.1f %d ",
-					p, cfmt.font_tb[REPEATFONT].size * 0.8 + 1, i);
-				putx(w);
-				putxy(x, y);
-				a2b("y%d repbra\n", s1->staff);
-				y_set(s1->staff, 1, x, w, y + 2);
-			}
-			if (s->as.u.bar.repeat_bar)
-				s = s->prev;
-		}
-		if (repnl) {
-			p_voice->bar_start = B_OBRA;
-			p_voice->bar_repeat = 1;
-		}
+		draw_repbra(p_voice);
 	}
 
 	/* create the decorations tied to the staves */
@@ -1765,10 +1856,10 @@ void draw_deco_staff(void)
 static void draw_gchord(struct SYMBOL *s,
 			float gchy_min, float gchy_max)
 {
-	struct gch *gch;
-	int action, ix, ig, box;
+	struct gch *gch, *gch2;
+	int action, ix, box;
 	float x, y, w, h, y_above, y_below;
-	float hbox, xboxh, xboxl, yboxh, yboxl, expdx;
+	float hbox, xboxl, yboxh, yboxl, expdx;
 
 	/* adjust the vertical offset according to the guitar chords */
 //fixme: w may be too small
@@ -1780,19 +1871,18 @@ static void draw_gchord(struct SYMBOL *s,
 	y_above = y_get(s->staff, 1, s->x - 2, w) + 2;
 	y_below = y_get(s->staff, 0, s->x - 2, w) - 2;
 #endif
-	ig = -1;
+	gch2 = NULL;
 	for (ix = 0, gch = s->gch; ix < MAXGCH; ix++, gch++) {
 		if (gch->type == '\0')
 			break;
 		if (gch->type != 'g')
 			continue;
-		ig = ix;	/* index of guitar chord closest to the staff */
+		gch2 = gch;		/* guitar chord closest to the staff */
 		if (gch->y < 0)
 			break;
 	}
-	if (ig >= 0) {
-		gch = s->gch + ig;
-		if (gch->y >= 0) {
+	if (gch2) {
+		if (gch2->y >= 0) {
 			if (y_above < gchy_max)
 				y_above = gchy_max;
 		} else {
@@ -1804,8 +1894,8 @@ static void draw_gchord(struct SYMBOL *s,
 	str_font(s->gch->font);
 	set_font(s->gch->font);			/* needed if scaled staff */
 	set_sscale(s->staff);
-	action = A_GCHORD;
-	xboxh = xboxl = s->x;
+//	action = A_GCHORD;
+	xboxl = s->x;
 	yboxh = -100;
 	yboxl = 100;
 	box = 0;
@@ -1815,7 +1905,8 @@ static void draw_gchord(struct SYMBOL *s,
 			break;
 		h = cfmt.font_tb[gch->font].size;
 		str_font(gch->font);
-		w = tex_str(s->as.text + gch->idx);
+		tex_str(s->text + gch->idx);
+		w = gch->w;
 		if (gch->type == 'g') {			/* guitar chord */
 			if (!strchr(tex_buf, '\t')) {
 				action = A_GCHORD;
@@ -1876,9 +1967,6 @@ static void draw_gchord(struct SYMBOL *s,
 			if (gch->box) {
 				if (xboxl > x)
 					xboxl = x;
-				w += x;
-				if (xboxh < w)
-					xboxh = w;
 				if (yboxl > y)
 					yboxl = y;
 				if (yboxh < y + h)
@@ -1888,8 +1976,8 @@ static void draw_gchord(struct SYMBOL *s,
 			break;
 		case '<':			/* left */
 /*fixme: what symbol space?*/
-			if (s->as.u.note.accs[0])
-				x -= s->shac[0];
+			if (s->u.note.notes[0].acc)
+				x -= s->u.note.notes[0].shac;
 			y = s->yav + gch->y;
 			break;
 		case '>':			/* right */
@@ -1907,23 +1995,20 @@ static void draw_gchord(struct SYMBOL *s,
 		if (action == A_GCHEXP)
 			a2b("%.2f ", expdx);
 		str_out(tex_buf, action);
-		if (gch->type == 'g' && box > 0)
-			a2b(" boxstart");
+		if (gch->type == 'g' && box > 0) {
+			if (box == 1)
+				a2b(" boxend");
+			else
+				a2b(" boxmark");
+		}
 		a2b("\n");
 	}
 
-	/* draw the box of the guitar chords */
-	if (xboxh != xboxl) {		/* if any normal guitar chord */
+	/* draw the box around the guitar chords */
+	if (box) {
 		xboxl -= 2;
-		w = xboxh - xboxl + 2;
-		putxy(xboxl, yboxl - 2);
-#if 1
-		a2b("y%d %.1f boxdraw\n",
-			s->staff, yboxh - yboxl + 3);
-#else
-		a2b("y%d %.1f %.1f box\n",
-			s->staff, w, yboxh - yboxl + 3);
-#endif
+		putxy(xboxl, yboxl - 1);
+		a2b("y%d %.1f boxdraw\n", s->staff, yboxh - yboxl + 3);
 	}
 }
 
@@ -1952,7 +2037,7 @@ void draw_measnb(void)
 
 	/* leave the measure numbers as unscaled */
 	font_size = cfmt.font_tb[MEASUREFONT].size;
-	cfmt.font_tb[MEASUREFONT].size /= staff_tb[staff].clef.staffscale;
+	cfmt.font_tb[MEASUREFONT].size /= staff_tb[staff].staffscale;
 
 	s = tsfirst;				/* clef */
 	bar_num = nbar;
@@ -1962,8 +2047,6 @@ void draw_measnb(void)
 			any_nb = 1;
 			x = 0;
 			w = 20;
-//			while (s->staff != staff)
-//				s = s->ts_next;
 			y = y_get(staff, 1, x, w);
 			if (y < staff_tb[staff].topbar + 14)
 				y = staff_tb[staff].topbar + 14;
@@ -1983,14 +2066,12 @@ void draw_measnb(void)
 				}
 				break;
 			}
-//			while (s->staff != staff)
-//				s = s->ts_next;
 			if (s->prev->type != CLEF)
 				s = s->prev;
 			x = s->x - s->wl;
 			set_font(MEASUREFONT);
 			any_nb = 1;
-			w = cwid('0') * cfmt.font_tb[MEASUREFONT].size;
+			w = cwid('0') * cfmt.font_tb[MEASUREFONT].swfac;
 			if (bar_num >= 10) {
 				if (bar_num >= 100)
 					w *= 3;
@@ -2012,34 +2093,26 @@ void draw_measnb(void)
 	}
 
 	for ( ; s; s = s->ts_next) {
-		switch (s->type) {
-		case STAVES:
+		if (s->sflags & S_NEW_SY) {
 			sy = sy->next;
 			for (staff = 0; staff < nstaff; staff++) {
 				if (!sy->staff[staff].empty)
 					break;
 			}
 			set_sscale(staff);
-			continue;
-		default:
-			continue;
-		case BAR:
-			break;
 		}
-		if (s->u <= 0)
+		if (s->type != BAR || s->aux <= 0)
 			continue;
-		bar_num = s->u;
+		bar_num = s->aux;
 		if (cfmt.measurenb == 0
 		 || (bar_num % cfmt.measurenb) != 0
 		 || !s->next)
 			continue;
-//		while (s->staff != staff)
-//			s = s->ts_next;
 		if (!any_nb) {
 			any_nb = 1;
 			set_font(MEASUREFONT);
 		}
-		w = cwid('0') * cfmt.font_tb[MEASUREFONT].size;
+		w = cwid('0') * cfmt.font_tb[MEASUREFONT].swfac;
 		if (bar_num >= 10) {
 			if (bar_num >= 100)
 				w *= 3;
@@ -2052,7 +2125,7 @@ void draw_measnb(void)
 		y = y_get(staff, 1, x, w);
 		if (y < staff_tb[staff].topbar + 6)
 			y = staff_tb[staff].topbar + 6;
-		if (s->next->as.type == ABC_T_NOTE) {
+		if (s->next->abc_type == ABC_T_NOTE) {
 			if (s->next->stem > 0) {
 				if (y < s->next->ys - cfmt.font_tb[MEASUREFONT].size)
 					y = s->next->ys - cfmt.font_tb[MEASUREFONT].size;
@@ -2155,21 +2228,21 @@ float tempo_width(struct SYMBOL *s)
 	float w;
 
 	w = 0;
-	if (s->as.u.tempo.str1)
-		w += tex_str(s->as.u.tempo.str1);
-	if (s->as.u.tempo.value != 0) {
+	if (s->u.tempo.str1)
+		w += tex_str(s->u.tempo.str1);
+	if (s->u.tempo.value != 0) {
 		i = 1;
-		while (i < sizeof s->as.u.tempo.length
-				/ sizeof s->as.u.tempo.length[0]
-		       && s->as.u.tempo.length[i] > 0) {
+		while (i < sizeof s->u.tempo.length
+				/ sizeof s->u.tempo.length[0]
+		       && s->u.tempo.length[i] > 0) {
 			w += 10;
 			i++;
 		}
-		w += 6 + cwid(' ') * cfmt.font_tb[TEMPOFONT].size * 6
+		w += 6 + cwid(' ') * cfmt.font_tb[TEMPOFONT].swfac * 6
 			+ 10 + 10;
 	}
-	if (s->as.u.tempo.str2)
-		w += tex_str(s->as.u.tempo.str2);
+	if (s->u.tempo.str2)
+		w += tex_str(s->u.tempo.str2);
 	return w;
 }
 
@@ -2181,32 +2254,32 @@ void write_tempo(struct SYMBOL *s,
 	int top, bot;
 	unsigned j;
 
-	if (s->as.u.tempo.str1)
-		put_str(s->as.u.tempo.str1, A_LEFT);
-	if (s->as.u.tempo.value != 0) {
+	if (s->u.tempo.str1)
+		put_str(s->u.tempo.str1, A_LEFT);
+	if (s->u.tempo.value != 0) {
 		sc *= 0.7 * cfmt.font_tb[TEMPOFONT].size / 15.0;
 						/*fixme: 15.0 = initial tempofont*/
-		if (s->as.u.tempo.length[0] == 0) {
+		if (s->u.tempo.length[0] == 0) {
 			if (beat == 0)
 				beat = get_beat(&voice_tb[cursys->top_voice].meter);
-			s->as.u.tempo.length[0] = beat;
+			s->u.tempo.length[0] = beat;
 		}
 		for (j = 0;
-		     j < sizeof s->as.u.tempo.length
-				/ sizeof s->as.u.tempo.length[0]
-			&& s->as.u.tempo.length[j] > 0;
+		     j < sizeof s->u.tempo.length
+				/ sizeof s->u.tempo.length[0]
+			&& s->u.tempo.length[j] > 0;
 		     j++) {
-			draw_notempo(s, s->as.u.tempo.length[j], sc);
+			draw_notempo(s, s->u.tempo.length[j], sc);
 		}
 		put_str("= ", A_LEFT);
-		if (sscanf(s->as.u.tempo.value, "%d/%d", &top, &bot) == 2
+		if (sscanf(s->u.tempo.value, "%d/%d", &top, &bot) == 2
 		 && bot > 0)
 			draw_notempo(s, top * BASE_LEN / bot, sc);
 		else
-			put_str(s->as.u.tempo.value, A_LEFT);
+			put_str(s->u.tempo.value, A_LEFT);
 	}
-	if (s->as.u.tempo.str2)
-		put_str(s->as.u.tempo.str2, A_LEFT);
+	if (s->u.tempo.str2)
+		put_str(s->u.tempo.str2, A_LEFT);
 }
 
 /* -- draw the parts and the tempo information -- */
@@ -2266,10 +2339,10 @@ float draw_partempo(int staff, float top)
 			if (!(s->sflags & S_SEQST))
 				continue;
 			if (s->type == TIMESIG)
-				beat = get_beat(&s->as.u.meter);
+				beat = get_beat(&s->u.meter);
 			g = s->extra;
-			if (!g)
-				continue;
+//			if (!g)
+//				continue;
 			for ( ; g; g = g->next)
 				if (g->type == TEMPO)
 					break;
@@ -2300,7 +2373,7 @@ float draw_partempo(int staff, float top)
 			some_part = 1;
 			str_font(PARTSFONT);
 		}
-		w = tex_str(&g->as.text[2]);
+		w = tex_str(&g->text[2]);
 		y = y_get(staff, 1, s->x - 10, w + 15) + 5;
 		if (ymin < y)
 			ymin = y;
@@ -2323,45 +2396,62 @@ float draw_partempo(int staff, float top)
 				break;
 		if (!g)
 			continue;
-		w = tex_str(&g->as.text[2]);
+//		w = tex_str(&g->text[2]);
 		a2b("%.1f %.1f M", s->x - 10, 2 - ht - h);
+		tex_str(&g->text[2]);
 		str_out(tex_buf, A_LEFT);
 		if (cfmt.partsbox)
-			a2b(" %.1f %.1f %.1f %.1f box",
-				s->x - 10 - 2, 2 - ht - h - 4,
-				w + 4, h);
+			a2b(" %.1f %.1f %.1f boxend boxdraw",
+				s->x - 10 - 2, 2 - ht - h - 4, h);
+//			a2b(" %.1f %.1f %.1f %.1f box",
+//				s->x - 10 - 2, 2 - ht - h - 4,
+//				w + 4, h);
 		a2b("\n");
 	}
 out:
-	return dy * staff_tb[staff].clef.staffscale;
+	return dy * staff_tb[staff].staffscale;
 }
 
 /* -- initialize the default decorations -- */
-void reset_deco(void)
+void init_deco(void)
 {
 	memset(&deco, 0, sizeof deco);
 
 	/* standard */
-	deco['.'] = deco_define("dot");
+	deco['.'] = "dot";
 #ifdef DECO_IS_ROLL
-	deco['~'] = deco_define("roll");
+	deco['~'] = "roll";
 #endif
-	deco['H'] = deco_define("fermata");
-	deco['L'] = deco_define("emphasis");
-	deco['M'] = deco_define("lowermordent");
-	deco['O'] = deco_define("coda");
-	deco['P'] = deco_define("uppermordent");
-	deco['S'] = deco_define("segno");
-	deco['T'] = deco_define("trill");
-	deco['u'] = deco_define("upbow");
-	deco['v'] = deco_define("downbow");
+	deco['H'] = "fermata";
+	deco['L'] = "emphasis";
+	deco['M'] = "lowermordent";
+	deco['O'] = "coda";
+	deco['P'] = "uppermordent";
+	deco['S'] = "segno";
+	deco['T'] = "trill";
+	deco['u'] = "upbow";
+	deco['v'] = "downbow";
 
 	/* non-standard */
 #ifndef DECO_IS_ROLL
-	deco['~'] = deco_define("gmark");
+	deco['~'] = "gmark";
 #endif
-	deco['J'] = deco_define("slide");
-	deco['R'] = deco_define("roll");
+	deco['J'] = "slide";
+	deco['R'] = "roll";
+}
+
+/* reset the decoration table at start of a new tune */
+void reset_deco(void)
+{
+//	struct deco_def_s *dd;
+//	int ideco;
+//
+//	for (ideco = 1, dd = &deco_def_tb[1]; ideco < 128; ideco++, dd++) {
+//		if (!dd->name)
+//			break;
+//		free(dd->name);
+//	}
+	memset(deco_def_tb, 0, sizeof deco_def_tb);
 }
 
 /* -- set the decoration flags -- */

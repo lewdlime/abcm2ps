@@ -1,46 +1,41 @@
 # Makefile source for abcm2ps
 
-VERSION = 7.8.14
+VERSION = 8.11.0
 
 CC = gcc
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 
-CPPFLAGS = -DHAVE_CONFIG_H  -I.
-CPPPANGO = 
+CPPFLAGS = -DHAVE_PANGO=1 -I.
+CPPPANGO = -I/usr/include/pango-1.0 -pthread -I/usr/include/cairo -I/usr/include/glib-2.0 -I/usr/lib/arm-linux-gnueabihf/glib-2.0/include -I/usr/include/pixman-1  -I/usr/include/libpng12 -I/usr/include/freetype2  
 CFLAGS = -g -O2 -Wall -pipe
-LDFLAGS =  -lm
+LDFLAGS =  -lpangocairo-1.0 -lcairo -lpangoft2-1.0 -lpango-1.0 -lgobject-2.0 -lglib-2.0 -lfontconfig -lfreetype   -lm
 
 prefix = /usr/local
 exec_prefix = ${prefix}
 
 srcdir = .
-
+VPATH = .
 bindir = ${exec_prefix}/bin
 libdir = ${exec_prefix}/lib
 datadir = ${prefix}/share
-docdir = /usr/local/doc
+docdir = ${prefix}/doc
 
 # unix
-OBJECTS=abc2ps.o \
+OBJECTS=abcm2ps.o \
 	abcparse.o buffer.o deco.o draw.o format.o front.o glyph.o music.o parse.o \
-	slre.o subs.o svg.o syms.o
+	subs.o svg.o syms.o
 abcm2ps: $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(LDFLAGS)
 
-$(OBJECTS): abcparse.h config.h Makefile
-abc2ps.o buffer.o deco.o draw.o format.o front.o glyph.o music.o parse.o \
-	subs.o svg.o syms.o: abc2ps.h
-abc2ps.o front.o: front.h
-front.o parse.o slre.o: slre.h
+$(OBJECTS): config.h Makefile
+abcparse.o abcm2ps.o buffer.o deco.o draw.o format.o front.o glyph.o \
+	music.o parse.o subs.o svg.o syms.o: abcm2ps.h
 subs.o: subs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPPANGO) -c -o $@ $<
 
-abcmfe: front.c front.h slre.h
-	$(CC) $(CFLAGS) -DMAIN -o $@ $< slre.o
-
-DOCFILES=$(addprefix $(srcdir)/,Changes License README *.abc *.eps *.txt)
+DOCFILES=$(addprefix $(srcdir)/,Changes README *.abc *.eps *.txt)
 
 install: abcm2ps
 	mkdir -p $(bindir); \
@@ -63,35 +58,29 @@ uninstall:
 DIST_FILES = \
 	abcm2ps-$(VERSION)/Changes \
 	abcm2ps-$(VERSION)/INSTALL \
-	abcm2ps-$(VERSION)/License \
 	abcm2ps-$(VERSION)/Makefile \
 	abcm2ps-$(VERSION)/Makefile.in \
 	abcm2ps-$(VERSION)/README \
-	abcm2ps-$(VERSION)/abc2ps.c \
-	abcm2ps-$(VERSION)/abc2ps.h \
+	abcm2ps-$(VERSION)/abcm2ps.c \
+	abcm2ps-$(VERSION)/abcm2ps.h \
 	abcm2ps-$(VERSION)/abcparse.c \
-	abcm2ps-$(VERSION)/abcparse.h \
 	abcm2ps-$(VERSION)/accordion.abc \
+	abcm2ps-$(VERSION)/bravura.abc \
 	abcm2ps-$(VERSION)/build.ninja \
 	abcm2ps-$(VERSION)/buffer.c \
 	abcm2ps-$(VERSION)/chinese.abc \
 	abcm2ps-$(VERSION)/configure \
-	abcm2ps-$(VERSION)/configure.in \
 	abcm2ps-$(VERSION)/config.h \
 	abcm2ps-$(VERSION)/config.h.in \
-	abcm2ps-$(VERSION)/config.guess \
-	abcm2ps-$(VERSION)/config.sub \
 	abcm2ps-$(VERSION)/deco.c \
 	abcm2ps-$(VERSION)/deco.abc \
 	abcm2ps-$(VERSION)/draw.c \
-	abcm2ps-$(VERSION)/features.txt \
 	abcm2ps-$(VERSION)/flute.fmt \
 	abcm2ps-$(VERSION)/format.c \
-	abcm2ps-$(VERSION)/format.txt \
+	abcm2ps-$(VERSION)/free.abc \
 	abcm2ps-$(VERSION)/front.c \
-	abcm2ps-$(VERSION)/front.h \
 	abcm2ps-$(VERSION)/glyph.c \
-	abcm2ps-$(VERSION)/install.sh \
+	abcm2ps-$(VERSION)/glyphs.abc \
 	abcm2ps-$(VERSION)/landscape.fmt \
 	abcm2ps-$(VERSION)/music.c \
 	abcm2ps-$(VERSION)/musicfont.fmt \
@@ -104,15 +93,13 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/sample3.eps \
 	abcm2ps-$(VERSION)/sample4.abc \
 	abcm2ps-$(VERSION)/sample5.abc \
-	abcm2ps-$(VERSION)/slre.c \
-	abcm2ps-$(VERSION)/slre.h \
+	abcm2ps-$(VERSION)/sample8.html \
 	abcm2ps-$(VERSION)/subs.c \
 	abcm2ps-$(VERSION)/svg.c \
 	abcm2ps-$(VERSION)/syms.c \
-	abcm2ps-$(VERSION)/tight.fmt \
 	abcm2ps-$(VERSION)/voices.abc
 
-dist:
+dist: Changes
 	ln -s . abcm2ps-$(VERSION); \
 	tar -zcvf abcm2ps-$(VERSION).tar.gz $(DIST_FILES); \
 	rm abcm2ps-$(VERSION)

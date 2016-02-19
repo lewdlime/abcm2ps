@@ -1,0 +1,59 @@
+% Definition of the glyph names of some musical unicode characters
+% for use in PostScript output (without pango) with abcm2ps.
+% These values were extracted from FreeSerif.ttf.
+
+%
+%%glyph	 2669 quarternote
+%%glyph	 266a musicalnote
+%%glyph	 266b musicalnotedbl
+%%glyph	 266c beamedsixteenthnotes
+%%glyph	 266d flat
+%%glyph	 266e natural
+%%glyph	 266f sharp
+%%glyph 1d109 dal_segno
+%%glyph 1d10a dal_capo
+%%glyph 1d10b segno
+%%glyph 1d10c coda
+%%glyph 1d110 fermata
+%%glyph 1d112 breath_mark
+%%glyph 1d113 caesura
+%%glyph 1d114 brace
+%%glyph 1d115 bracket
+%%glyph 1d11e g_clef
+%%glyph 1d11f g_clef_ottava_alta
+%%glyph 1d120 g_clef_ottava_bassa
+%%glyph 1d121 c_clef
+%%glyph 1d122 f_clef
+%%glyph 1d123 f_clef_ottava_alta
+%%glyph 1d124 f_clef_ottava_bassa
+%%glyph 1d125 drum_clef_1
+%%glyph 1d126 drum_clef_2
+%%glyph 1d12a double_sharp
+%%glyph 1d12b double_flat
+%%glyph 1d134 common_time
+%%glyph 1d135 cut_time
+%%glyph 1d136 ottava_alta
+%%glyph 1d137 ottava_bassa
+%%glyph 1d13d quarter_rest
+%%glyph 1d143 x_notehead
+%%glyph 1d144 plus_notehead
+%%glyph 1d145 circle_x_notehead
+%%glyph 1d15d whole_note
+%%glyph 1d15e half_note
+%%glyph 1d15f quarter_note
+%%glyph 1d160 eighth_note
+%%glyph 1d18d subito
+%%glyph 1d18e z_mus
+%%glyph 1d18f piano
+%%glyph 1d190 mezzo
+%%glyph 1d191 forte
+%%glyph 1d196 tr		% Trill
+%%glyph 1d197 turn		% Turn
+%%glyph 1d19b ornament_stroke_1	% Ornament left vertical stroke
+%%glyph 1d19c ornament_stroke_2	% Ornament zig-zag line without right-hand end
+%%glyph 1d19d ornament_stroke_3	% Ornament zig-zag line with right-hand end
+%%glyph 1d19e ornament_stroke_4	% Ornament top right convex stroke
+%%glyph 1d1a0 ornament_stroke_6	% Ornament middle vertical stroke
+%%glyph 1d1a3 ornament_stroke_9	% Ornament low right concave stroke
+%%glyph 1d1ae pedal_mark
+%%glyph 1d1af pedal_up_mark

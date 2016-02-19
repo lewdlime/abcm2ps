@@ -1,0 +1,27 @@
+% example of musical symbols with FreeFont
+
+% --- definitions for SVG output ---
+%%beginsvg
+<defs>
+    <text id="tclef" x="-12" y="0" font-family="FreeSerif"
+	font-size="36" font-weight="normal" font-style="normal">&#x1d11e;</text>
+    <text id="bclef" x="-10" y="1.5" font-family="FreeSerif"
+	font-size="34" font-weight="normal" font-style="normal">&#x1d122;</text>
+    <text id="csig" x="-7.5" y="-1" font-family="FreeSerif"
+	font-size="31" font-weight="normal" font-style="normal">&#x1d134;</text>
+    <text id="brace" x="-9" y="-.5" transform="scale(1.2,-4.2)" font-family="FreeSerif"
+	font-size="31" font-weight="normal" font-style="normal">&#x1d114;</text>
+</defs>
+%%endsvg
+
+% --- definitions for PostScript output ---
+%%beginps nosvg
+/tclef{/FreeSerif 36 selectfont M -12 0 RM/g_clef glyphshow}!
+/bclef{/FreeSerif 34 selectfont M -10 -1.5 RM/f_clef glyphshow}!
+/csig{/FreeSerif 31 selectfont M -7.5 1 RM/common_time glyphshow}!
+/brace{/FreeSerif 31 selectfont
+	gsave
+		T -9 -1 M -.042 mul 1.1 exch scale
+		/brace glyphshow
+	grestore}!
+%%endps

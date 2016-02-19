@@ -1,0 +1,53 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<title>ABC HTML formatting example</title>
+</head>
+<body>
+<h2 align="center">ABC in HTML formatting example</h2>
+<p>
+This file contains 3 ABC sequences:
+<ul>
+	<li>a normal ABC tune
+	<li>a ABC tune in a textline
+	<li>2 tunes selected from an external ABC file (voice.abc)
+</ul>
+</p>
+<p>
+To generate the music, do:
+<pre>	abcm2ps sample8.html -z -O Out.html</pre>
+and this will create the file <code>Out.html</code>.
+</p>
+<div style="line-height:0">
+X:1
+T:An durzunell
+%%infoline 1
+C:Trad.
+O:Brittany
+M:6/8
+K:Bb
+B,2DF2F|FB GF2z|DGFC2D|B,3-B,2z|B,2DF2F|FB GF2z|DGFC2D|B,3-B,2z||
+B,2CD2D|DE DC2z|DEFG2F|C3-C2z|B,2DF2F|FB GF2z|DGFC2D|B,6||
+</div>
+
+<p>
+Beginning of 'Au clair de la lune'
+<span style="vertical-align:-100%">
+X:2
+%%bgcolor lightblue
+%%musicspace 0
+M:C
+L:auto
+%%pagewidth 14cm
+K:C
+cccd|ed|cedd|c||
+</span>
+</p>
+<div style="line-height:0">
+%abc2.1
+%%select 2,4
+%%abc-include voices.abc
+</div>
+</body>
+</html>

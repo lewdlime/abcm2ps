@@ -1,0 +1,56 @@
+% example of musical symbols by Bravura
+
+% --- definitions for SVG output ---
+%%beginsvg
+<style type="text/css">
+	@font-face {
+	    font-family: 'Bravura';
+	    src: url(/usr/share/fonts/truetype/Bravura.otf);
+	    font-weight: normal;
+	    font-style: normal;
+	}
+</style>
+<defs>
+    <text id="brace" x="-3" y="0" transform="scale(3,-4.2)" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe000;</text>
+    <text id="tclef" x="-8" y="-6" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe050;</text>
+    <text id="cclef" x="-7" y="-12" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe05c;</text>
+    <text id="bclef" x="-7" y="-18" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe062;</text>
+    <text id="csig" x="-5" y="-12" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe08a;</text>
+    <text id="ft0" x="-2" y="0" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe260;</text>
+    <text id="nt0" x="-2" y="0" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe261;</text>
+    <text id="sh0" x="-2" y="0" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe262;</text>
+    <text id="dsh0" x="-2" y="0" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe263;</text>
+    <text id="dft0" x="-3" y="0" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe264;</text>
+    <text id="turn" x="-4" y="0" font-family="Bravura"
+	font-size="24" font-weight="normal" font-style="normal">&#xe567;</text>
+</defs>
+%%endsvg
+
+% --- definitions for PostScript output ---
+%%beginps nosvg
+/brace{/Bravura 24 selectfont
+	gsave
+		T -7.5 0 M -.042 mul 3 exch scale
+		/uniE000 glyphshow
+	grestore}!
+/tclef{/Bravura 24 selectfont M -8 6 RM/uniE050 glyphshow}!
+/cclef{/Bravura 24 selectfont M -8 12 RM/uniE05C glyphshow}!
+/bclef{/Bravura 24 selectfont M -8 18 RM/uniE062 glyphshow}!
+/csig{/Bravura 24 selectfont M -5 12 RM/uniE08A glyphshow}!
+/ft0{/Bravura 24 selectfont M -2 0 RM/uniE260 glyphshow}!
+/nt0{/Bravura 24 selectfont M -2 0 RM/uniE261 glyphshow}!
+/sh0{/Bravura 24 selectfont M -2 0 RM/uniE262 glyphshow}!
+/dsh0{/Bravura 24 selectfont M -2 0 RM/uniE263 glyphshow}!
+/dft0{/Bravura 24 selectfont M -3 0 RM/uniE264 glyphshow}!
+/turn{/Bravura 24 selectfont M -4 0 RM/uniE567 glyphshow}!
+%%endps

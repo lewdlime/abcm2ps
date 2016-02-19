@@ -1,19 +1,7 @@
+%abc-2.1
 % abcm2ps sample file with chinese characters
 
-% define the chinese utf-8 truetype font
-%%font UKaiCN-UTF8-H native
-
-% add the utf8 -> CID translator
-%%beginps nosvg
-/UKaiCN-UTF8-H /UniGB-UTF8-H [ /UKaiCN ] composefont pop
-%%endps
-
-% define some fonts
-%%titlefont UKaiCN-UTF8-H native 20
-%%subtitlefont UKaiCN-UTF8-H native 16
-%%textfont UKaiCN-UTF8-H native 16
-%%vocalfont UKaiCN-UTF8-H native 13
-%%wordsfont UKaiCN-UTF8-H native 16
+% this file works with truetype fonts (as UKaiCN) and pango support in abcm2ps
 
 X: 1
 T: Green Island Serenade

@@ -1140,8 +1140,8 @@ static int bar_cnv(int bar_type)
 /*	case B_CBRA: */
 	case (B_OBRA << 4) + B_CBRA:
 		return 0;			/* invisible */
-	case B_COL:
-		return B_BAR;			/* dotted */
+//	case B_COL:
+//		return B_BAR;			/* dotted */
 #if 0
 	case (B_CBRA << 4) + B_BAR:
 		return B_BAR;
@@ -1171,7 +1171,7 @@ static int bar_cnv(int bar_type)
 /* -- draw a measure bar -- */
 static void draw_bar(struct SYMBOL *s, float bot, float h)
 {
-	int staff, bar_type, dotted;
+	int staff, bar_type;
 	float x, yb;
 	char *psf;
 
@@ -1207,7 +1207,6 @@ static void draw_bar(struct SYMBOL *s, float bot, float h)
 	 && (s->ts_prev->type != BAR || s->ts_prev->staff != staff - 1))
 		h = staff_tb[staff].topbar * staff_tb[staff].staffscale;
 
-	dotted = s->u.bar.dotted || s->u.bar.type == B_COL;
 	bar_type = bar_cnv(s->u.bar.type);
 	if (bar_type == 0)
 		return;				/* invisible */
@@ -1215,7 +1214,7 @@ static void draw_bar(struct SYMBOL *s, float bot, float h)
 		psf = "bar";
 		switch (bar_type & 0x07) {
 		case B_BAR:
-			if (dotted)
+			if (s->u.bar.dotted)
 				psf = "dotbar";
 			break;
 		case B_OBRA:
@@ -1263,8 +1262,9 @@ static void draw_rest(struct SYMBOL *s)
 	if (staff_tb[s->staff].empty)
 		return;
 
-	/* if rest alone in the measure, center */
-	if (s->dur == voice_tb[s->voice].meter.wmeasure) {
+	/* if rest alone in the measure or measure repeat, center */
+	if (s->dur == voice_tb[s->voice].meter.wmeasure
+	 || ((s->sflags & S_REPEAT) && s->doty >= 0)) {
 		struct SYMBOL *s2;
 
 		/* don't use next/prev: there is no bar in voice averlay */
@@ -3034,8 +3034,8 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 static void draw_note_ties(struct SYMBOL *k1,
 			   struct SYMBOL *k2,
 			   int ntie,
-			   int *mhead1,
-			   int *mhead2,
+			   unsigned char *mhead1,
+			   unsigned char *mhead2,
 			   int job)
 {
 	int i, s, m1, m2, p, p1, p2, y, staff;
@@ -3045,7 +3045,7 @@ static void draw_note_ties(struct SYMBOL *k1,
 		m1 = mhead1[i];
 		p1 = k1->pits[m1];
 		m2 = mhead2[i];
-		p2 = k2->pits[m2];
+		p2 = job != 2 ? k2->pits[m2] : p1;
 		s = (k1->u.note.notes[m1].ti1 & 0x07) == SL_ABOVE ? 1 : -1;
 
 		x1 = k1->x;
@@ -3063,18 +3063,19 @@ static void draw_note_ties(struct SYMBOL *k1,
 		x1 += sh * 0.6;
 
 		x2 = k2->x;
-		sh = k2->u.note.notes[m2].shhd;
-		if (s > 0) {
-			if (m2 < k2->nhd && p2 + 1 == k2->pits[m2 + 1])
-				if (k2->u.note.notes[m2 + 1].shhd < sh)
-					sh = k2->u.note.notes[m2 + 1].shhd;
-		} else {
-			if (m2 > 0 && p2 == k2->pits[m2 - 1] + 1)
-				if (k2->u.note.notes[m2 - 1].shhd < sh)
-					sh = k2->u.note.notes[m2 - 1].shhd;
+		if (job != 2) {
+			sh = k2->u.note.notes[m2].shhd;
+			if (s > 0) {
+				if (m2 < k2->nhd && p2 + 1 == k2->pits[m2 + 1])
+					if (k2->u.note.notes[m2 + 1].shhd < sh)
+						sh = k2->u.note.notes[m2 + 1].shhd;
+			} else {
+				if (m2 > 0 && p2 == k2->pits[m2 - 1] + 1)
+					if (k2->u.note.notes[m2 - 1].shhd < sh)
+						sh = k2->u.note.notes[m2 - 1].shhd;
+			}
+			x2 += sh * 0.6;
 		}
-//		x2 += sh;
-		x2 += sh * 0.6;
 
 		staff = k1->staff;
 		switch (job) {
@@ -3084,25 +3085,28 @@ static void draw_note_ties(struct SYMBOL *k1,
 			else
 				p = p2;
 			break;
-		case 1:				/* no starting note */
 		case 3:				/* clef or staff change */
+			s = -s;
+			// fall thru
+		case 1:				/* no starting note */
 			x1 = k1->x;
 			if (x1 > x2 - 20)
 				x1 = x2 - 20;
 			p = p2;
 			staff = k2->staff;
-			if (job == 3)
-				s = -s;
 			break;
 /*		case 2:				 * no ending note */
 		default:
 			if (k1 != k2) {
-				x2 -= k2->wl;
+				if (k2->type == BAR)
+					x2 -= 2;
+				else
+					x2 -= k2->wl;
 			} else {
 				struct SYMBOL *k;
 
 				for (k = k2->ts_next; k; k = k->ts_next)
-					if (k->sflags & S_NEW_SY)
+					if (k->sflags & (S_NEW_SY | S_SEQST))
 						break;
 				if (!k)
 					x2 = realwidth;
@@ -3117,12 +3121,15 @@ static void draw_note_ties(struct SYMBOL *k1,
 		if (x2 - x1 > 20) {
 			x1 += 3.5;
 			x2 -= 3.5;
+		} else {
+			x1 += 1.5;
+			x2 -= 1.5;
 		}
 
 		y = 3 * (p - 18);
+		if (p & 1)
+			y += 2 * s;
 		if (job != 1 && job != 3) {
-			if (p & 1)
-				y += 2 * s;
 			if (s > 0) {
 //				if (k1->nflags > -2 && k1->stem > 0
 //				 && k1->nhd == 0)
@@ -3130,9 +3137,7 @@ static void draw_note_ties(struct SYMBOL *k1,
 				if (!(p & 1) && k1->dots > 0)
 					y = 3 * (p - 18) + 6;
 			}
-		} else {
-			if (p & 1)
-				y += 2 * s;
+//		} else {
 //			if (s < 0) {
 //				if (k2->nflags > -2 && k2->stem < 0
 //				 && k2->nhd == 0)
@@ -3157,7 +3162,7 @@ static void draw_ties(struct SYMBOL *k1,
 {
 	struct SYMBOL *k3;
 	int i, m1, nh1, pit, ntie, tie2, ntie3, time;
-	int mhead1[MAXHD], mhead2[MAXHD], mhead3[MAXHD];
+	unsigned char mhead1[MAXHD], mhead2[MAXHD], mhead3[MAXHD];
 
 	time = k1->time + k1->dur;
 	ntie = ntie3 = 0;
@@ -3404,12 +3409,12 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 				continue;
 			}
 			if (s3->type == BAR) {
-				if ((s3->sflags & S_RRBAR)
-				 || s3->u.bar.type == B_THIN_THICK
-				 || s3->u.bar.type == B_THICK_THIN) {
-					s4 = s3;
-					break;
-				}
+//				if ((s3->sflags & S_RRBAR)
+//				 || s3->u.bar.type == B_THIN_THICK
+//				 || s3->u.bar.type == B_THICK_THIN) {
+//					s4 = s3;
+//					break;
+//				}
 				if (!s3->u.bar.repeat_bar
 				 || !s3->text)
 					continue;

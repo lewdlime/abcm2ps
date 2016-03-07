@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2015 Jean-François Moine
+ * Copyright (C) 1998-2016 Jean-François Moine
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,8 +60,6 @@ static char *path;
 static char path_buf[256];
 
 /* graphical context */
-//#define DLW 0.7			/* default line width */
-static float DLW = 0.7;			// != 0.7 !
 static struct gc {
 	float cx, cy;		// current point (volatile)
 	float xscale, yscale;	// scale
@@ -615,6 +613,8 @@ static struct {
 };
 
 /* PS functions */
+static void ps_exec(char *op);
+
 static void elts_link(struct elt_s *e)
 {
 	int i;
@@ -1109,7 +1109,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 	// reset the interpreter
 	memset(&gcur, 0, sizeof gcur);
 	gcur.xscale = gcur.yscale = 1;
-	gcur.linewidth = DLW;
+	gcur.linewidth = 0.7;		// default line width
 	gcur.cos = 1;
 	gcur.font_n = strdup("");
 	gcur.font_n_old = strdup("");
@@ -1134,6 +1134,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 
 	s = strdup("/defl 0 def\n"
 		   "/svg 1 def\n"
+		   "/dlw{0.7 SLW}def\n"
 		   "/gsc{gsave y T .7 dup scale 0 0}def\n");
 	svg_write(s, strlen(s));
 	free(s);
@@ -1344,7 +1345,7 @@ static void def_use(int def)
 {
 	int i;
 
-//	gcur.linewidth = DLW;
+	ps_exec("dlw");
 //	if (g == 2) {		-- may have other changes
 //		fputs("</text>\n", fout);
 //		g = 1;
@@ -1482,10 +1483,34 @@ static void arp_ltr(char type)
 	while (--n >= 0) {
 		fprintf(fout, "<use x=\"%.2f\" y=\"%.2f\" xlink:href=\"#ltr\"/>\n",
 			x, y);
-			x += 6;
+		x += 6;
 	}
 	if (type == 'a')
 		fprintf(fout, "</g>\n");
+}
+
+// glissendo with squiggly line
+static void glisq(void)
+{
+	float x1, y1, x2, y2, a;
+	int n;
+
+	def_use(D_ltr);
+	y1 = gcur.yoffs - pop_free_val();
+	x1 = gcur.xoffs + pop_free_val() + 12;
+	y2 = gcur.yoffs - pop_free_val();
+	x2 = gcur.xoffs + pop_free_val();
+	a = atan((y2 - y1) / (x2 - x1)) / M_PI * 180;
+	n = (x2 - x1) / 6;
+	fprintf(fout,
+		"<g transform=\"translate(%.2f,%.2f) rotate(%.2f)\">\n",
+		x1, y1, a);
+	x1 = 0;
+	while (--n >= 0) {
+		fprintf(fout, "<use x=\"%.2f\" xlink:href=\"#ltr\"/>\n", x1);
+		x1 += 6;
+	}
+	fprintf(fout, "</g>\n");
 }
 
 /* sd su gd gu */
@@ -1494,7 +1519,7 @@ static void stem(char *op)
 	struct ps_sym_s *sym;
 	float x, y, dx, h;
 
-//	gcur.linewidth = DLW;
+	ps_exec("dlw");
 
 	setg(1);
 	h = pop_free_val();
@@ -1625,8 +1650,6 @@ back:
 		free(s);
 }
 
-static void ps_exec(char *op);
-
 /* execute a sequence
  * returns 1 on 'exit' or error */
 static int seq_exec(struct elt_s *e)
@@ -1676,7 +1699,7 @@ static int seq_exec(struct elt_s *e)
 }
 
 /* execute a command */
-/* (in case of error, a string may be not freed, but it is not important!) */
+/* (in case of error, a string may be not freed, but this is not important!) */
 static void ps_exec(char *op)
 {
 	struct ps_sym_s *sym;
@@ -1828,19 +1851,14 @@ stack_dump();
 			return;
 		}
 		if (strcmp(op, "atan") == 0) {
-			y = pop_free_val();	/* den */
-			if (!stack || stack->type != VAL) {
-				fprintf(stderr, "svg atan: Bad den value\n");
+			x = pop_free_val();	/* den */
+			if (!stack || stack->type != VAL || x == 0) {
+				fprintf(stderr, "svg atan: Bad value\n");
 				ps_error = 1;
 				return;
 			}
-			x = stack->u.v;		/* num */
-			if (x == 0 && y == 0) {
-				fprintf(stderr, "svg atan: Bad num value\n");
-				ps_error = 1;
-				return;
-			}
-			stack->u.v = atan(x / y) / M_PI * 180;
+			y = stack->u.v;		/* num */
+			stack->u.v = atan(y / x) / M_PI * 180;
 			return;
 		}
 		break;
@@ -2263,10 +2281,6 @@ curveto:
 				x, y);
 			return;
 		}
-		if (strcmp(op, "dlw") == 0) {
-			gcur.linewidth = DLW;
-			return;
-		}
 		if (strcmp(op, "dotbar") == 0) {
 			setg(1);
 			y = gcur.yoffs - pop_free_val();
@@ -2628,6 +2642,22 @@ curveto:
 		}
 		if (strcmp(op, "ghl") == 0) {
 			xysym(op, D_ghl);
+			return;
+		}
+		if (strcmp(op, "glisq") == 0) {
+			glisq();
+			return;
+		}
+		if (strcmp(op, "gliss") == 0) {
+			float x2, y2;
+
+			y = gcur.yoffs - pop_free_val();
+			x = gcur.xoffs + pop_free_val() + 10;
+			y2 = gcur.yoffs - pop_free_val();
+			x2 = gcur.xoffs + pop_free_val();
+			fprintf(fout, "<path class=\"stroke\" stroke-width=\"1\"\n"
+				"	d=\"M%.2f %.2fL%.2f %.2f\"/>\n",
+				x, y, x2, y2);
 			return;
 		}
 		if (strcmp(op, "gt") == 0) {
@@ -3796,7 +3826,7 @@ rmoveto:
 			return;
 		}
 		if (strcmp(op, "staff") == 0) {
-//			gcur.linewidth = DLW;
+			ps_exec("dlw");
 			setg(1);
 			y = gcur.yoffs - pop_free_val();
 			x = gcur.xoffs + pop_free_val();

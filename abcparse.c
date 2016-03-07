@@ -1399,7 +1399,7 @@ static char *parse_bar(char *p)
 	int bar_type, i;
 	char repeat_value[32];
 
-	q = --p;
+	q = --p;			// keep the first char
 	bar_type = 0;
 	for (;;) {
 		switch (*p++) {
@@ -1445,14 +1445,15 @@ static char *parse_bar(char *p)
 	s = abc_new(ABC_T_BAR, gchord);
 	if (gchord)
 		gchord = NULL;
-	s->u.bar.type = bar_type;
 
 	/* handle the repeat sequences */
-	if ((bar_type & 0x0f) == B_COL) {		/* left repeat bar */
+	if (bar_type == B_COL) {
+		bar_type = B_BAR;
+		s->u.bar.dotted = 1;
+	} else if ((bar_type & 0x0f) == B_COL) {	/* left repeat bar */
 		s->flags |= ABC_F_RBSTOP;
 		s->sflags |= S_RBSTOP;
-	}
-	if (*q == ':') {				/* right repeat bar */
+	} else if (*q == ':') {				/* right repeat bar */
 		s->flags |= ABC_F_RBSTOP;
 		s->sflags |= S_RRBAR | S_RBSTOP;
 	} else if (*q == ']') {				/* repeat bar stop */
@@ -1462,6 +1463,8 @@ static char *parse_bar(char *p)
 		s->flags |= ABC_F_RBSTOP;
 		s->sflags |= S_RRBAR | S_RBSTOP;
 	}
+
+	s->u.bar.type = bar_type;
 
 	if (dc.n > 0) {
 		memcpy(&s->u.bar.dc, &dc, sizeof s->u.bar.dc);

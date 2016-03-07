@@ -660,7 +660,7 @@ static void set_float(void)
 		for (s = p_voice->sym; s; s = s->next) {
 			signed char up, down;
 
-			if (s->abc_type != ABC_T_NOTE) {
+			if (!s->dur) {
 				if (staff_chg)
 					s->staff++;
 				continue;
@@ -1759,7 +1759,7 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 			s3->doty = 1;
 			break;
 		}
-		s3->doty = g->nohdi1 - j + 1;	/* number to print above the repeat rest */
+		s3->doty = g->nohdi1 - j + 1; /* number to print above the repeat rest */
 		s3 = s2->next;
 	}
 	return;
@@ -2975,24 +2975,26 @@ static void set_rest_offset(void)
 				continue;
 			not_alone++;
 			if (sy->voice[voice].range < sy->voice[s->voice].range) {
-				if (s2->ymn < ymax) {
-					if (s2->time == s->time) {
+				if (s2->time == s->time) {
+					if (s2->ymn < ymax) {
 						ymax = s2->ymn;
 						if (s2->dots)
 							dots = 1;
-					} else {
-						ymax = (s2->ymx + s2->ymn) / 2;
 					}
+				} else {
+					if (s2->y < ymax)
+						ymax = s2->y;
 				}
 			} else {
-				if (s2->ymx > ymin) {
-					if (s2->time == s->time) {
+				if (s2->time == s->time) {
+					if (s2->ymx > ymin) {
 						ymin = s2->ymx;
 						if (s2->dots)
 							dots = 1;
-					} else {
-						ymin = (s2->ymx + s2->ymn) / 2;
 					}
+				} else {
+					if (s2->y > ymin)
+						ymin = s2->y;
 				}
 			}
 		}
@@ -3008,24 +3010,26 @@ static void set_rest_offset(void)
 				continue;
 			not_alone++;
 			if (sy->voice[s2->voice].range < sy->voice[s->voice].range) {
-				if (s2->ymn < ymax) {
-					if (s2->time == s->time) {
+				if (s2->time == s->time) {
+					if (s2->ymn < ymax) {
 						ymax = s2->ymn;
 						if (s2->dots)
 							dots = 1;
-					} else {
-						ymax = (s2->ymx + s2->ymn) / 2;
 					}
+				} else {
+					if (s2->y < ymax)
+						ymax = s2->y;
 				}
 			} else {
-				if (s2->ymx > ymin) {
-					if (s2->time == s->time) {
+				if (s2->time == s->time) {
+					if (s2->ymx > ymin) {
 						ymin = s2->ymx;
 						if (s2->dots)
 							dots = 1;
-					} else {
-						ymin = (s2->ymx + s2->ymn) / 2;
 					}
+				} else {
+					if (s2->y > ymin)
+						ymin = s2->y;
 				}
 			}
 		}

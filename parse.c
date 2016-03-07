@@ -88,23 +88,23 @@ static void set_tuplet(struct SYMBOL *s);
 static void sym_link(struct SYMBOL *s, int type);
 
 /* -- weight of the symbols -- */
-static signed char w_tb[NSYMTYPES] = {	/* !! index = symbol type !! */
+static char w_tb[NSYMTYPES] = {	/* !! index = symbol type !! */
 	0,
 	9,	/* 1- note / rest */
 	3,	/* 2- space */
-	2,	/* 3- bar */
+	4,	/* 3- bar */
 	1,	/* 4- clef */
-	5,	/* 5- timesig */
-	4,	/* 6- keysig */
+	6,	/* 5- timesig */
+	5,	/* 6- keysig */
 	0,	/* 7- tempo */
 	0,	/* 8- staves */
 	9,	/* 9- mrest */
 	0,	/* 10- part */
 	3,	/* 11- grace */
 	0,	/* 12- fmtchg */
-	7,	/* 13- tuplet */
-	6,	/* 14- stbrk */
-	6	/* 15- custos */
+	8,	/* 13- tuplet */
+	7,	/* 14- stbrk */
+	7	/* 15- custos */
 };
 
 /* key signature transposition tables */

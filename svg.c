@@ -1489,7 +1489,7 @@ static void arp_ltr(char type)
 		fprintf(fout, "</g>\n");
 }
 
-// glissendo with squiggly line
+// glissando with squiggly line
 static void glisq(void)
 {
 	float x1, y1, x2, y2, a;
@@ -1497,11 +1497,11 @@ static void glisq(void)
 
 	def_use(D_ltr);
 	y1 = gcur.yoffs - pop_free_val();
-	x1 = gcur.xoffs + pop_free_val() + 12;
+	x1 = gcur.xoffs + pop_free_val() + 8;
 	y2 = gcur.yoffs - pop_free_val();
 	x2 = gcur.xoffs + pop_free_val();
 	a = atan((y2 - y1) / (x2 - x1)) / M_PI * 180;
-	n = (x2 - x1) / 6;
+	n = (x2 - x1 + 3) / 6;
 	fprintf(fout,
 		"<g transform=\"translate(%.2f,%.2f) rotate(%.2f)\">\n",
 		x1, y1, a);

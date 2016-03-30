@@ -1,3 +1,13 @@
+---- Version 8.11.2 - 16/03/23 ----
+
+Fix bad length of ties when at end of line and notes in an other voice
+	(reported by David Lacroix)
+Fix crash when long decoration without any note/rest in the music line
+Fix bad glissendos when notes with accidental
+	(reported by Manavasu)
+Add source annotations for multi-rests
+	(asked by Jan Wybren de Jong)
+
 ---- Version 8.11.1 - 16/02/25 ----
 
 Decorations !-(!, !-)!, !~(! and !~)! added

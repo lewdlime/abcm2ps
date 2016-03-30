@@ -388,10 +388,10 @@ static char ps_head[] =
 	/* h x ylow arp - arpeggio */
 	"/arp{gsave 90 rotate exch neg ltr grestore}!\n"
 
-	/* x2 y2 x1 y1 gliss - line glissendo */
+	/* x2 y2 x1 y1 gliss - line glissando */
 	"/gliss{	M 10 0 RM L 1 SLW stroke}!\n"
 
-	/* x2 y2 x1 y1 glisq - squiggly glissendo */
+	/* x2 y2 x1 y1 glisq - squiggly glissando */
 	"/glisq{	gsave exch 13 add exch 2 copy T 0 0 M\n"
 		"exch 4 -1 roll exch sub 3 1 roll sub\n" // dx dy
 		"2 copy exch atan dup rotate\n"		// dx dy alpha

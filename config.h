@@ -12,5 +12,5 @@
 /* default directory to search for format files */
 #define DEFAULT_FDIR "/usr/local/share/abcm2ps"
 
-#define VERSION "8.11.1"
-#define VDATE "February 25, 2016"
+#define VERSION "8.11.2"
+#define VDATE "March 23, 2016"

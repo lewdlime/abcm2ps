@@ -47,7 +47,8 @@ static struct deco_elt {
 } *deco_head, *deco_tail;
 
 typedef void draw_f(struct deco_elt *de);
-static draw_f d_arp, d_cresc, d_near, d_slide, d_upstaff, d_pf, d_trill;
+static draw_f d_arp, d_cresc, d_gliss, d_near, d_slide, d_upstaff,
+		d_pf, d_trill;
 
 /* decoration table */
 /* !! don't change the order of the numbered items !! */
@@ -68,7 +69,7 @@ static draw_f *func_tb[] = {
 	d_slide,	/* 1 */
 	d_arp,		/* 2 */
 	d_upstaff,	/* 3 - tied to note */
-	d_upstaff,	/* 4 (below the staff) */
+	d_gliss,	/* 4 - glissendo */
 	d_trill,	/* 5 */
 	d_pf,		/* 6 - tied to staff (dynamic marks) */
 	d_cresc,	/* 7 */
@@ -147,10 +148,10 @@ static char *std_deco_tb[] = {
 	"diminuendo) 7 dim 18 0 0",
 	">( 7 dim 18 0 0",
 	">) 7 dim 18 0 0",
-	"-( 1 gliss 0 0 0",
-	"-) 1 gliss 0 0 0",
-	"~( 1 glisq 0 0 0",
-	"~) 1 glisq 0 0 0",
+	"-( 4 gliss 0 0 0",
+	"-) 4 gliss 0 0 0",
+	"~( 4 glisq 0 0 0",
+	"~) 4 glisq 0 0 0",
 	"invisible 32 0 0 0 0",
 	"beamon 33 0 0 0 0",
 	"trem1 34 0 0 0 0",
@@ -292,7 +293,7 @@ static int up_p(struct SYMBOL *s, int pos)
 }
 
 /* -- drawing functions -- */
-/* special case for arpeggio */
+/* 2: special case for arpeggio */
 static void d_arp(struct deco_elt *de)
 {
 	struct SYMBOL *s;
@@ -331,7 +332,7 @@ static void d_arp(struct deco_elt *de)
 	de->y = (float) (3 * (s->pits[0] - 18)) - 3;
 }
 
-/* special case for crescendo/diminuendo */
+/* 7: special case for crescendo/diminuendo */
 static void d_cresc(struct deco_elt *de)
 {
 	struct SYMBOL *s, *s2;
@@ -348,6 +349,12 @@ static void d_cresc(struct deco_elt *de)
 		s = de1->s;
 		x = s->x + 3;
 	} else {			/* end without start */
+		if (!first_note) {
+			dd = &deco_def_tb[de->t];
+			error(1, s2, "No start of deco !%s!", dd->name);
+			de->t = 0;
+			return;
+		}
 		s = first_note;
 		x = s->x - s->wl - 4;
 	}
@@ -394,14 +401,49 @@ static void d_cresc(struct deco_elt *de)
 
 	de->v = dx;
 	de->x = x;
-	dd = &deco_def_tb[de->t];
 	de->y = y_get(de->staff, up, x, dx);
-	if (!up)
+	if (!up) {
+		dd = &deco_def_tb[de->t];
 		de->y -= dd->h;
+	}
 	/* (y_set is done later in draw_deco_staff) */
 }
 
-/* near the note (dot, tenuto) */
+/* 4: special case for glissendo */
+static void d_gliss(struct deco_elt *de2)
+{
+	struct deco_elt *de1;
+	struct deco_def_s *dd;
+	struct SYMBOL *s1, *s2;
+
+	if (de2->flags & DE_LDST)
+		return;			// start treated later
+
+	s2 = de2->s;
+	de1 = de2->start;
+
+	if (!de1 || (de1->defl & DEF_NOEN)) {
+		dd = &deco_def_tb[de2->t];
+		error(1, s2, "No start or stop of deco !%s!", dd->name);
+		de2->t = 0;
+		return;
+	}
+
+	s1 = de1->s;
+
+	de1->x = s1->x + s1->xmx;
+	de2->x = s2->x - s2->wl;
+
+	if (s1->y > s2->y) {
+		de1->y = s1->y - 2;
+		de2->y = s2->y + 2;
+	} else if (s1->y < s2->y) {
+		de1->y = s1->y + 2;
+		de2->y = s2->y - 2;
+	}
+}
+
+/* 0: near the note (dot, tenuto) */
 static void d_near(struct deco_elt *de)
 {
 	struct SYMBOL *s;
@@ -449,7 +491,7 @@ static void d_near(struct deco_elt *de)
 	}
 }
 
-/* special case for piano/forte indications */
+/* 6: dynamic marks */
 static void d_pf(struct deco_elt *de)
 {
 	struct SYMBOL *s;
@@ -508,7 +550,7 @@ static void d_pf(struct deco_elt *de)
 	/* (y_set is done later in draw_deco_staff) */
 }
 
-/* special case for slide and tremolo */
+/* 1: special case for slide */
 static void d_slide(struct deco_elt *de)
 {
 	struct SYMBOL *s;
@@ -539,7 +581,7 @@ static void d_slide(struct deco_elt *de)
 	de->y = (float) (3 * (yc - 18));
 }
 
-/* special case for long trill */
+/* 5: special case for long trill */
 static void d_trill(struct deco_elt *de)
 {
 	struct SYMBOL *s, *s2;
@@ -558,6 +600,12 @@ static void d_trill(struct deco_elt *de)
 		 && s->u.note.dc.n > 1)
 			x += 10;
 	} else {			/* end without start */
+		if (!first_note) {
+			dd = &deco_def_tb[de->t];
+			error(1, s2, "No start of deco !%s!", dd->name);
+			de->t = 0;
+			return;
+		}
 		s = first_note;
 		x = s->x - s->wl - 4;
 	}
@@ -612,7 +660,7 @@ static void d_trill(struct deco_elt *de)
 		s->ymn = s2->ymn = y;
 }
 
-/* 3, 4: above (or below) the staff */
+/* 3: outside the staff */
 static void d_upstaff(struct deco_elt *de)
 {
 	struct SYMBOL *s;
@@ -632,32 +680,16 @@ static void d_upstaff(struct deco_elt *de)
 	staffb = staff_tb[s->staff].botbar - 2;
 
 	up = -1;			// undefined
-	if (dd->func == 4) {		// upstaff below
+	switch (s->posit.orn) {
+	case SL_ABOVE:
+		up = 1;
+		break;
+	case SL_BELOW:
 		up = 0;
-	} else {
-		switch (s->posit.orn) {
-		case SL_ABOVE:
-			up = 1;
-			break;
-		case SL_BELOW:
-			up = 0;
-			break;
-//		default:
-//			if (s->multi > 0)
-//				up = 1;
-//			else if (s->multi < 0)
-//				up = 0;
-//			else
-//				up = s->stem < 0;
-//			break;
-		}
+		break;
 	}
 
 	ps_name = ps_func_tb[dd->ps_func];
-//	if (strcmp(dd->name, ">") == 0
-//	 || strcmp(dd->name, "accent") == 0
-//	 || strcmp(dd->name, "emphasis") == 0
-//	 || strcmp(dd->name, "roll") == 0) {
 	if (strcmp(ps_name, "accent") == 0
 	 || strcmp(ps_name, "cpu") == 0) {
 		if (!up
@@ -678,10 +710,6 @@ static void d_upstaff(struct deco_elt *de)
 			y_set(s->staff, 1, s->x - dd->wl, w, yc + dd->h);
 			s->ymx = yc + dd->h;
 		}
-//	} else if (strcmp(dd->name, "breath") == 0
-//		|| strcmp(dd->name, "longphrase") == 0
-//		|| strcmp(dd->name, "mediumphrase") == 0
-//		|| strcmp(dd->name, "shortphrase") == 0) {
 	} else if (strcmp(ps_name, "brth") == 0
 		|| strcmp(ps_name, "lphr") == 0
 		|| strcmp(ps_name, "mphr") == 0
@@ -1020,7 +1048,7 @@ void deco_cnv(struct decos *dc,
 		/* special decorations */
 		dd = &deco_def_tb[ideco];
 		switch (dd->func) {
-		default:
+		case 0:			// near
 			if (strncmp(dd->name, "head-", 5) == 0
 			 && dc->tm[i].m == 255) {	// apply !head-xx! to each head
 //				if (s->type != NOTEREST) {
@@ -1040,7 +1068,32 @@ void deco_cnv(struct decos *dc,
 					dc->tm[k++].m = j;
 				}
 				dc->n = k;
+				continue;
 			}
+			// fall thru
+		case 1:			// slide
+		case 2:			// arp
+			if (s->abc_type != ABC_T_NOTE
+			 && s->abc_type != ABC_T_REST) {
+				error(1, s,
+					"!%s! must be on a note or a rest",
+					dd->name);
+				break;
+			}
+			continue;
+		case 4:			// gliss
+			if (s->abc_type != ABC_T_NOTE) {
+				error(1, s,
+					"!%s! must be on a note",
+					dd->name);
+				break;
+			}
+			continue;
+		default:
+//		case 3:			// out staff
+//		case 5:			// long trill
+//		case 6:			// dynamic
+//		case 7:			// cresc
 			continue;
 		case 32:		/* 32 = invisible */
 			s->flags |= ABC_F_INVIS;
@@ -1187,6 +1240,8 @@ void draw_all_deco(void)
 	}
 
 	for (de = deco_head; de; de = de->next) {
+		if (de->t == 0)			// deleted
+			continue;
 		dd = &deco_def_tb[de->t];
 		if ((dd->flags & DE_LDST) && dd->ld_end != 0)
 			continue;		// start of full long decoration
@@ -1417,10 +1472,10 @@ static void deco_create(struct SYMBOL *s,
 		/* check if hidden */
 		switch (dd->func) {
 		default:
+//		case 4:
 			posit = 0;
 			break;
 		case 3:				/* d_upstaff */
-		case 4:
 //fixme:trill does not work yet
 		case 5:				/* trill */
 			posit = s->posit.orn;
@@ -1470,12 +1525,12 @@ static void deco_create(struct SYMBOL *s,
 
 		if (dd->func >= 3)	/* if not near the note */
 			continue;
-		if (s->abc_type != ABC_T_NOTE) {
-			error(1, s,
-				"Cannot have !%s! on a rest or a bar",
-				dd->name);
-			continue;
-		}
+//		if (s->abc_type != ABC_T_NOTE) {
+//			error(1, s,
+//				"Cannot have !%s! on a rest or a bar",
+//				dd->name);
+//			continue;
+//		}
 		func_tb[dd->func](de);
 	}
 }

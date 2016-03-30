@@ -442,7 +442,7 @@ static void display_version(int full)
 static void usage(void)
 {
 	display_version(0);
-	printf(	"ABC to Postscript translator.\n"
+	printf(	"ABC to Postscript/SVG translator.\n"
 		"Usage: abcm2ps [options] file [file_options] ..\n"
 		"where:\n"
 		" file        input ABC file, or '-'\n"

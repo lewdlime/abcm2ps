@@ -3104,9 +3104,11 @@ static void draw_note_ties(struct SYMBOL *k1,
 					x2 -= k2->wl;
 			} else {
 				struct SYMBOL *k;
+				int time;
 
-				for (k = k2->ts_next; k; k = k->ts_next)
-					if (k->sflags & (S_NEW_SY | S_SEQST))
+				time = k1->time + k1->dur;
+				for (k = k1->ts_next; k; k = k->ts_next)
+					if (k->time > time)
 						break;
 				if (!k)
 					x2 = realwidth;
@@ -4801,6 +4803,8 @@ static void draw_symbols(struct VOICE_S *p_voice)
 			a2b("(%d)", s->u.bar.len);
 			putxy(x, staff_tb[s->staff].y);
 			a2b("mrest\n");
+			if (annotate)
+				anno_out(s, 'Z');
 			break;
 		case GRACE:
 			set_v_color(p_voice - voice_tb);

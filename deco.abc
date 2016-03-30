@@ -92,7 +92,7 @@
 %
 % -- pedal off glyph
 % (from CMN http://ccrma-www.stanford.edu/software/cmn/cmn/cmn.html)
-/pedoff{	% usage: str x y ped
+/pedoff{	% usage: str x y pedoff
 	gsave 4 add exch -5 add exch T 26 dup scale
 	0.219 0.198 moveto
 	0.231 0.172 0.195 0.138 0.162 0.173 curveto

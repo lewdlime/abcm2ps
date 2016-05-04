@@ -1450,18 +1450,20 @@ static char *parse_bar(char *p)
 	if (bar_type == B_COL) {
 		bar_type = B_BAR;
 		s->u.bar.dotted = 1;
-	} else if ((bar_type & 0x0f) == B_COL) {	/* left repeat bar */
-		s->flags |= ABC_F_RBSTOP;
-		s->sflags |= S_RBSTOP;
-	} else if (*q == ':') {				/* right repeat bar */
-		s->flags |= ABC_F_RBSTOP;
-		s->sflags |= S_RRBAR | S_RBSTOP;
-	} else if (*q == ']') {				/* repeat bar stop */
-		i = p - q - 1;
-		if (i > 0)				/* remove the starting ']' */
-			s->u.bar.type &= (1 << (i * 4)) - 1;
-		s->flags |= ABC_F_RBSTOP;
-		s->sflags |= S_RRBAR | S_RBSTOP;
+	} else {
+		if (*q == ']') {		/* repeat bar stop */
+			i = p - q - 1;
+			if (i > 0)		/* remove the starting ']' */
+				s->u.bar.type &= (1 << (i * 4)) - 1;
+			s->flags |= ABC_F_RBSTOP;
+			s->sflags |= S_RBSTOP;
+		} else if ((bar_type & 0x0f) == B_COL	/* left or */
+			|| *q == ':') {			/* right repeat bar */
+			s->flags |= ABC_F_RBSTOP;
+			s->sflags |= S_RBSTOP;
+			if (*q == ':')		/* right repeat bar */
+				s->sflags |= S_RRBAR;
+		}
 	}
 
 	s->u.bar.type = bar_type;
@@ -1992,6 +1994,8 @@ static int parse_line(char *p)
 			if (!(flags & ABC_F_GRACE))
 				goto bad_char;
 			parse.last_sym->flags |= ABC_F_GR_END;
+			if (dc.n != 0)
+				syntax("Decoration ignored", p);
 			curvoice->last_note = last_note_sav;
 			memcpy(&dc, &dc_sav, sizeof dc);
 			flags = flags_sav;

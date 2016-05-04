@@ -1,3 +1,46 @@
+---- Version 8.11.5 - 16/05/01 ----
+
+Adjust the endpoints of the glissendo
+Fix loss of tie on new repeat when previous note is tied
+Fix bad end of repeat bracket after %%score with change of voice role 
+Fix bad colors when %%voicecolor and %%voicescale
+	(reported by Guido Gonzato)
+Fix array overflow in draw_keysig()
+	(reported by Hanno Böck)
+New command line option '-p'
+	(patch from Stephen Beitzel)
+
+---- Version 8.11.4 - 16/04/10 ----
+
+Fix bad glissendo
+Fix bad generation of "::" when at end of source line since 8.10.1
+	(reported by Rob Lindauer)
+
+---- Version 8.11.3 - 16/04/09 ----
+
+Fix loss of measure bars when %%score with less staves
+		further in the music line
+Set back the decoration function '4' and move the glissendo under '8'
+	(reported by Gerhard Schacherl)
+Don't scale the decorations on grace notes
+	(reported by Manavasu)
+Fix bad position of P: when on a combined rest
+	(reported by Atte Jensen)
+Fix bad key signature when defined between two measure bars
+	(reported by Stu)
+Change the PS squiggly glissando to the same as the SVG one
+	(reported by Manavasu)
+
+---- Version 8.11.2 - 16/03/23 ----
+
+Fix bad length of ties when at end of line and notes in an other voice
+	(reported by David Lacroix)
+Fix crash when long decoration without any note/rest in the music line
+Fix bad glissendos when notes with accidental
+	(reported by Manavasu)
+Add source annotations for multi-rests
+	(asked by Jan Wybren de Jong)
+
 ---- Version 8.11.1 - 16/02/25 ----
 
 Decorations !-(!, !-)!, !~(! and !~)! added

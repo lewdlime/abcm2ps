@@ -2614,12 +2614,19 @@ static void set_global_def(void)
 	for (i = MAXVOICE, p_voice = voice_tb;
 	     --i >= 0;
 	     p_voice++) {
-		if (p_voice->key.instr == 0)
-			p_voice->transpose = cfmt.transpose;
-		else if ((p_voice->key.instr == K_HP
-		       || p_voice->key.instr == K_Hp)
-		      && p_voice->posit.std == 0)
-			p_voice->posit.std = SL_BELOW;
+		switch (p_voice->key.instr) {
+		case 0:
+			if (!pipeformat) {
+				p_voice->transpose = cfmt.transpose;
+				break;
+			}
+			//fall thru
+		case K_HP:
+		case K_Hp:
+			if (p_voice->posit.std == 0)
+				p_voice->posit.std = SL_BELOW;
+			break;
+		}
 //		if (p_voice->key.empty)
 //			p_voice->key.sf = 0;
 		if (!cfmt.autoclef
@@ -3140,7 +3147,8 @@ static void get_bar(struct SYMBOL *s)
 	/* link the bar in the voice */
 	/* the bar must appear before a key signature */
 //	s2 = curvoice->last_sym;
-	if (s2 && s2->type == KEYSIG) {
+	if (s2 && s2->type == KEYSIG
+	 && (!s2->prev || s2->prev->type != BAR)) {
 		curvoice->last_sym = s2->prev;
 		if (!curvoice->last_sym)
 			curvoice->sym = NULL;
@@ -3844,12 +3852,19 @@ static void get_key(struct SYMBOL *s)
 					sizeof curvoice->ckey);
 		memcpy(&curvoice->okey, &okey,
 					sizeof curvoice->okey);
-		if (curvoice->key.instr == 0)
-			curvoice->transpose = cfmt.transpose;
-		else if ((curvoice->key.instr == K_HP
-		       || curvoice->key.instr == K_Hp)
-		      && curvoice->posit.std == 0)
-			curvoice->posit.std = SL_BELOW;
+		switch (curvoice->key.instr) {
+		case 0:
+			if (!pipeformat) {
+				curvoice->transpose = cfmt.transpose;
+				break;
+			}
+			//fall thru
+		case K_HP:
+		case K_Hp:
+			if (curvoice->posit.std == 0)
+				curvoice->posit.std = SL_BELOW;
+			break;
+		}
 		if (curvoice->key.empty)
 			curvoice->key.sf = 0;
 		return;
@@ -4174,7 +4189,8 @@ static void get_note(struct SYMBOL *s)
 		int div;
 
 		if (curvoice->key.instr != K_HP
-		 && curvoice->key.instr != K_Hp) {
+		 && curvoice->key.instr != K_Hp
+		 && !pipeformat) {
 			div = 2;
 			if (!prev
 			 || !(prev->flags & ABC_F_GRACE)) {

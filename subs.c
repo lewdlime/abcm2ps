@@ -1694,7 +1694,8 @@ void write_heading(void)
 	/* rhythm, composer, origin */
 	down1 = cfmt.composerspace + cfmt.font_tb[COMPOSERFONT].size;
 	rhythm = ((first_voice->key.instr == K_HP
-		|| first_voice->key.instr == K_Hp)
+		|| first_voice->key.instr == K_Hp
+		|| pipeformat)
 			&& !cfmt.infoline
 			&& (cfmt.fields[0] & (1 << ('R' - 'A'))))
 					? info['R' - 'A'] : NULL;

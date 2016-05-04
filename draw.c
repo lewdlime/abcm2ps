@@ -1007,12 +1007,13 @@ static void draw_keysig(struct VOICE_S *p_voice,
 	int i, clef_ix, shift;
 	const signed char *p_seq;
 
-	static const char sharp_cl[7] = {24, 9, 15, 21, 6, 12, 18};
-	static const char flat_cl[7] = {12, 18, 24, 9, 15, 21, 6};
-	static const signed char sharp1[6] = {-9, 12, -9, -9, 12, -9};
-	static const signed char sharp2[6] = {12, -9, 12, -9, 12, -9};
-	static const signed char flat1[6] = {9, -12, 9, -12, 9, -12};
-	static const signed char flat2[6] = {-12, 9, -12, 9, -12, 9};
+	static const char sharp_cl[] = {24, 9, 15, 21, 6, 12, 18};
+	static const char flat_cl[] = {12, 18, 24, 9, 15, 21, 6};
+	// (the ending 0 is needed to avoid array overflow)
+	static const signed char sharp1[] = {-9, 12, -9, -9, 12, -9, 0};
+	static const signed char sharp2[] = {12, -9, 12, -9, 12, -9, 0};
+	static const signed char flat1[] = {9, -12, 9, -12, 9, -12, 0};
+	static const signed char flat2[] = {-12, 9, -12, 9, -12, 9, 0};
 
 	clef_ix = s->u.key.clef_delta;
 	if (clef_ix & 1)
@@ -1445,6 +1446,7 @@ static void draw_gracenotes(struct SYMBOL *s)
 	/* slur */
 	if (voice_tb[s->voice].key.instr == K_HP	/* no slur when bagpipe */
 	 || voice_tb[s->voice].key.instr == K_Hp
+	 || pipeformat
 	 || !cfmt.graceslurs
 	 || s->u.note.slur_st		/* explicit slur */
 	 || !s->next
@@ -3357,7 +3359,8 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 				break;
 			}
 			memcpy(&tie, rtie, sizeof tie);
-			tie.x = s1->x + s1->wr;
+//			tie.x = s1->x + s1->wr;
+			tie.x = s1->x;
 			tie.next = s2;
 			tie.staff = s2->staff;
 			tie.time = s2->time - tie.dur;
@@ -3366,12 +3369,18 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 		if (!s1)
 			break;
 
-		/* search the ending note of the tie
+		/* search the end of the tie
 		 * and notice the clef changes (may occur in an other voice) */
 		time = s1->time + s1->dur;
 		for (s2 = s1->next; s2; s2 = s2->next) {
 			if (s2->dur != 0)
 				break;
+			if (s2->u.bar.repeat_bar
+			 && s2->text) {
+				if (s2->text[0] != '1')
+					break;
+				rtie = s1;	/* 1st repeat bar */
+			}
 		}
 		if (!s2) {
 			for (s4 = s1->ts_next; s4; s4 = s4->ts_next) {
@@ -3392,7 +3401,8 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 				break;
 			}
 		} else {
-			if (s2->abc_type != ABC_T_NOTE) {
+			if (s2->abc_type != ABC_T_NOTE
+			 && s2->abc_type != ABC_T_BAR) {
 				error(1, s1, "Bad tie");
 				continue;
 			}
@@ -3410,6 +3420,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 				clef_chg = 1;
 				continue;
 			}
+#if 0
 			if (s3->type == BAR) {
 //				if ((s3->sflags & S_RRBAR)
 //				 || s3->u.bar.type == B_THIN_THICK
@@ -3426,6 +3437,7 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 				}
 				rtie = s1;		/* 1st repeat bar */
 			}
+#endif
 		}
 
 		/* ties with clef or staff change */
@@ -4828,6 +4840,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 	set_scale(p_voice->sym);
 	set_v_color(p_voice - voice_tb);
 	draw_all_ties(p_voice);
+	set_sscale(-1);
 	set_v_color(-1);
 }
 

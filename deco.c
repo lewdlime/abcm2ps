@@ -35,7 +35,7 @@ static struct deco_elt {
 #define DE_VAL	0x01		/* put extra value if 1 */
 #define DE_UP	0x02		/* above the staff */
 #define DE_BELOW 0x08		/* below the staff */
-#define DE_GRACE 0x10		/* in grace note */
+//#define DE_GRACE 0x10		/* in grace note */
 #define DE_INV 0x20		/* invert the glyph */
 #define DE_LDST 0x40		/* start of long decoration */
 #define DE_LDEN 0x80		/* end of long decoration */
@@ -69,11 +69,15 @@ static draw_f *func_tb[] = {
 	d_slide,	/* 1 */
 	d_arp,		/* 2 */
 	d_upstaff,	/* 3 - tied to note */
-	d_gliss,	/* 4 - glissendo */
+	d_upstaff,	/* 4 (below the staff) */
 	d_trill,	/* 5 */
 	d_pf,		/* 6 - tied to staff (dynamic marks) */
 	d_cresc,	/* 7 */
+	d_gliss,	/* 8 - glissendo */
 };
+static const short f_near = (1 << 0) | (1 << 1) | (1 << 2);
+static const short f_note = (1 << 3) | (1 << 4) | (1 << 5) | (1 << 8);
+static const short f_staff = (1 << 6) | (1 << 7);
 
 /* postscript function table */
 static char *ps_func_tb[128];
@@ -148,10 +152,10 @@ static char *std_deco_tb[] = {
 	"diminuendo) 7 dim 18 0 0",
 	">( 7 dim 18 0 0",
 	">) 7 dim 18 0 0",
-	"-( 4 gliss 0 0 0",
-	"-) 4 gliss 0 0 0",
-	"~( 4 glisq 0 0 0",
-	"~) 4 glisq 0 0 0",
+	"-( 8 gliss 0 0 0",
+	"-) 8 gliss 0 0 0",
+	"~( 8 glisq 0 0 0",
+	"~) 8 glisq 0 0 0",
 	"invisible 32 0 0 0 0",
 	"beamon 33 0 0 0 0",
 	"trem1 34 0 0 0 0",
@@ -369,7 +373,7 @@ static void d_cresc(struct deco_elt *de)
 	if (de1 && de1->prev && de1->prev->s == s
 	 && ((de->flags ^ de1->prev->flags) & DE_UP) == 0) {
 		dd2 = &deco_def_tb[de1->prev->t];
-		if (dd2->func >= 6) {
+		if (f_staff & (1 << dd2->func)) {
 			x2 = de1->prev->x + de1->prev->v + 4;
 			if (x2 > x)
 				x = x2;
@@ -387,7 +391,7 @@ static void d_cresc(struct deco_elt *de)
 		if (de->next && de->next->s == s
 		 && ((de->flags ^ de->next->flags) & DE_UP) == 0) {
 			dd2 = &deco_def_tb[de->next->t];
-			if (dd2->func >= 6)	/* if dynamic mark */
+			if (f_staff & (1 << dd2->func))	/* if dynamic mark */
 				x2 -= 5;
 		}
 		dx = x2 - x - 4;
@@ -409,7 +413,7 @@ static void d_cresc(struct deco_elt *de)
 	/* (y_set is done later in draw_deco_staff) */
 }
 
-/* 4: special case for glissendo */
+/* 8: special case for glissendo */
 static void d_gliss(struct deco_elt *de2)
 {
 	struct deco_elt *de1;
@@ -432,14 +436,19 @@ static void d_gliss(struct deco_elt *de2)
 	s1 = de1->s;
 
 	de1->x = s1->x + s1->xmx;
-	de2->x = s2->x - s2->wl;
+	if (s1->dots)
+		de1->x += 3;
+//	de2->x = s2->x - (s2->wl != 0 ? s2->wl : 5);	// no wl for grace notes
+	de2->x = s2->x - 2 -
+		(s2->u.note.notes[0].shac ?
+			(s2->u.note.notes[0].shac + 3) : hw_tb[s2->head]);
 
 	if (s1->y > s2->y) {
-		de1->y = s1->y - 2;
-		de2->y = s2->y + 2;
+		de1->y = s1->y - 1;
+		de2->y = s2->y + 1;
 	} else if (s1->y < s2->y) {
-		de1->y = s1->y + 2;
-		de2->y = s2->y - 2;
+		de1->y = s1->y + 1;
+		de2->y = s2->y - 1;
 	}
 }
 
@@ -513,7 +522,7 @@ static void d_pf(struct deco_elt *de)
 	if (de->prev && de->prev->s == s
 	 && ((de->flags ^ de->prev->flags) & DE_UP) == 0) {
 		dd2 = &deco_def_tb[de->prev->t];
-		if (dd2->func >= 6) {	/* if dynamic mark */
+		if (f_staff & (1 << dd2->func)) {	/* if dynamic mark */
 			x2 = de->prev->x + de->prev->v + 4;
 			if (x2 > x)
 				x = x2;
@@ -660,7 +669,7 @@ static void d_trill(struct deco_elt *de)
 		s->ymn = s2->ymn = y;
 }
 
-/* 3: outside the staff */
+/* 3, 4: above (or below) the staff */
 static void d_upstaff(struct deco_elt *de)
 {
 	struct SYMBOL *s;
@@ -680,13 +689,17 @@ static void d_upstaff(struct deco_elt *de)
 	staffb = staff_tb[s->staff].botbar - 2;
 
 	up = -1;			// undefined
-	switch (s->posit.orn) {
-	case SL_ABOVE:
-		up = 1;
-		break;
-	case SL_BELOW:
+	if (dd->func == 4) {		// upstaff below
 		up = 0;
-		break;
+	} else {
+		switch (s->posit.orn) {
+		case SL_ABOVE:
+			up = 1;
+			break;
+		case SL_BELOW:
+			up = 0;
+			break;
+		}
 	}
 
 	ps_name = ps_func_tb[dd->ps_func];
@@ -1081,7 +1094,7 @@ void deco_cnv(struct decos *dc,
 				break;
 			}
 			continue;
-		case 4:			// gliss
+		case 8:			// gliss
 			if (s->abc_type != ABC_T_NOTE) {
 				error(1, s,
 					"!%s! must be on a note",
@@ -1090,10 +1103,6 @@ void deco_cnv(struct decos *dc,
 			}
 			continue;
 		default:
-//		case 3:			// out staff
-//		case 5:			// long trill
-//		case 6:			// dynamic
-//		case 7:			// cresc
 			continue;
 		case 32:		/* 32 = invisible */
 			s->flags |= ABC_F_INVIS;
@@ -1267,7 +1276,8 @@ void draw_all_deco(void)
 
 		/* center the dynamic marks between two staves */
 /*fixme: KO when deco on other voice and same direction*/
-		if (dd->func >= 6 && !cfmt.dynalign
+		if ((f_staff & (1 << dd->func))
+		 && !cfmt.dynalign
 		 && (((de->flags & DE_UP) && staff > 0)
 		  || (!(de->flags & DE_UP) && staff < nstaff))) {
 			if (de->flags & DE_UP)
@@ -1307,7 +1317,8 @@ void draw_all_deco(void)
 		set_scale(de->s);
 		set_defl(de->defl);
 		if (de->flags & DE_VAL) {
-			if (dd->func != 2 || voice_tb[de->s->voice].scale != 1)
+			if (dd->func != 2
+			 || voice_tb[de->s->voice].scale != 1)
 				putx(de->v);
 			else
 				putf(de->v);
@@ -1354,20 +1365,20 @@ void draw_all_deco(void)
 				x = de->x - 20;
 			putxy(x, y);
 		}
-		if (de->flags & DE_GRACE) {
-			if (de->flags & DE_INV)
-				a2b("gsave T 0.7 -0.7 scale 0 0 %.*s grestore\n",
-						l, gl);
-			else
-				a2b("gsave T 0.7 dup scale 0 0 %.*s grestore\n",
-						l, gl);
-		} else {
+//		if (de->flags & DE_GRACE) {
+//			if (de->flags & DE_INV)
+//				a2b("gsave T 0.7 -0.7 scale 0 0 %.*s grestore\n",
+//						l, gl);
+//			else
+//				a2b("gsave T 0.7 dup scale 0 0 %.*s grestore\n",
+//						l, gl);
+//		} else {
 			if (de->flags & DE_INV)
 				a2b("gsave 1 -1 scale neg %.*s grestore\n",
 						l, gl);
 			else
 				a2b("%.*s\n", l, gl);
-		}
+//		}
 	}
 	set_sscale(-1);			/* restore the scale */
 	set_v_color(-1);
@@ -1449,7 +1460,7 @@ static void deco_create(struct SYMBOL *s,
 		if ((ideco = dc->tm[k].t) == 0)
 			continue;
 		dd = &deco_def_tb[ideco];
-		if (dd->func < 3) {		/* if near the note */
+		if (f_near & (1 << dd->func)) {	/* if near the note */
 			if (s->multi > 0
 			 || (s->multi == 0 && s->stem < 0)) {
 				d_tb[--j] = dd;
@@ -1472,10 +1483,10 @@ static void deco_create(struct SYMBOL *s,
 		/* check if hidden */
 		switch (dd->func) {
 		default:
-//		case 4:
 			posit = 0;
 			break;
 		case 3:				/* d_upstaff */
+		case 4:
 //fixme:trill does not work yet
 		case 5:				/* trill */
 			posit = s->posit.orn;
@@ -1512,8 +1523,8 @@ static void deco_create(struct SYMBOL *s,
 		de->s = s;
 		de->t = dd - deco_def_tb;
 		de->staff = s->staff;
-		if (s->flags & ABC_F_GRACE)
-			de->flags = DE_GRACE;
+//		if (s->flags & ABC_F_GRACE)
+//			de->flags = DE_GRACE;
 		if (dd->flags & DE_LDST) {
 			de->flags |= DE_LDST;
 		} else if (dd->flags & DE_LDEN) {
@@ -1523,7 +1534,7 @@ static void deco_create(struct SYMBOL *s,
 		if (cfmt.setdefl && s->stem >= 0)
 			de->defl |= DEF_STEMUP;
 
-		if (dd->func >= 3)	/* if not near the note */
+		if (!(f_near & (1 << dd->func))) /* if not near the note */
 			continue;
 //		if (s->abc_type != ABC_T_NOTE) {
 //			error(1, s,
@@ -1643,7 +1654,7 @@ void draw_deco_note(void)
 			de2->defl &= ~DEF_NOST;
 		}
 		f = dd->func;
-		if (f < 3 || f >= 6)
+		if (!(f_note & (1 << f)))
 			continue;	/* not tied to the note */
 		if (f == 4)
 			de->flags |= DE_BELOW;
@@ -1871,7 +1882,7 @@ void draw_deco_staff(void)
 		struct deco_def_s *dd;
 
 		dd = &deco_def_tb[de->t];
-		if (dd->func < 6)		/* if not tied to the staff */
+		if (!(f_staff & (1 << dd->func))) /* if not tied to the staff */
 			continue;
 		func_tb[dd->func](de);
 		if (dd->ps_func < 0)
@@ -1893,7 +1904,7 @@ void draw_deco_staff(void)
 
 		dd = &deco_def_tb[de->t];
 		if (dd->ps_func < 0
-		 || dd->func < 6)
+		 || !(f_staff & (1 << dd->func)))
 			continue;
 		if (cfmt.dynalign) {
 			if (de->flags & DE_UP)

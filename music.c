@@ -32,6 +32,8 @@ float space_tb[NFLAGS_SZ] = {
 	40,				/* crotchet */
 	56.6, 80, 113, 150
 };
+// width of note heads indexed by s->head
+float hw_tb[] = {4.5, 5, 6, 8};
 static int smallest_duration;
 
 /* upper and lower space needed by rests */
@@ -325,35 +327,45 @@ static void set_acc_shft(void)
 /* -- unlink a symbol -- */
 void unlksym(struct SYMBOL *s)
 {
-	if (!s->next) {
-		if (s->extra) {
-			s->type = FMTCHG;
-			s->aux = -1;
-			return;
-		}
-	} else {
+//	if (!s->next) {
+//		if (s->extra) {
+//			s->type = FMTCHG;
+//			s->aux = -1;
+//			return;
+//		}
+//	} else {
+	if (s->next) {
 		s->next->prev = s->prev;
-//		if (s->type == NOTEREST
-//		 && !(s->sflags & S_BEAM_END))
-//			s->next->sflags |= S_BEAM_ST;
-		if (s->extra) {
-			struct SYMBOL *g;
-
-			g = s->next->extra;
-			if (!g) {
-				s->next->extra = s->extra;
-			} else {
-				for (; g->next; g = g->next)
-					;
-				g->next = s->extra;
-			}
-		}
+//		if (s->extra) {
+//			struct SYMBOL *g;
+//
+//			g = s->next->extra;
+//			if (!g) {
+//				s->next->extra = s->extra;
+//			} else {
+//				for (; g->next; g = g->next)
+//					;
+//				g->next = s->extra;
+//			}
+//		}
 	}
 	if (s->prev)
 		s->prev->next = s->next;
 	else
 		voice_tb[s->voice].sym = s->next;
 	if (s->ts_next) {
+		if (s->extra) {
+			struct SYMBOL *g;
+
+			g = s->ts_next->extra;
+			if (!g) {
+				s->ts_next->extra = s->extra;
+			} else {
+				for (; g->next; g = g->next)
+					;
+				g->next = s->extra;
+			}
+		}
 		if ((s->sflags & S_SEQST)
 		 && !(s->ts_next->sflags & S_SEQST)) {
 			s->ts_next->sflags |= S_SEQST;
@@ -1006,21 +1018,7 @@ static void set_width(struct SYMBOL *s)
 	case NOTEREST:
 
 		/* set the note widths */
-		switch (s->head) {
-		case H_SQUARE:
-			wlnote = 8;
-			break;
-		case H_OVAL:
-			wlnote = 6;
-			break;
-		case H_EMPTY:
-			wlnote = 5;
-			break;
-		default:
-			wlnote = 4.5;
-			break;
-		}
-		s->wr = wlnote;
+		s->wr = wlnote = hw_tb[s->head];
 
 		/* room for shifted heads and accidental signs */
 		if (s->xmx > 0)
@@ -3374,7 +3372,8 @@ static void set_rb(struct VOICE_S *p_voice)
 
 	s = p_voice->sym;
 	while (s) {
-		if (s->type != BAR || !(s->sflags & S_RBSTART)) {
+		if (s->type != BAR || !(s->sflags & S_RBSTART)
+		 || (s->sflags & S_NOREPBRA)) {
 			s = s->next;
 			continue;
 		}
@@ -3512,7 +3511,7 @@ static void set_global(void)
 	/* set the pitches, the words (beams) and the repeat brackets */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		set_words(p_voice);
-		if (!p_voice->second && !p_voice->norepbra)
+//		if (!p_voice->second && !p_voice->norepbra)
 			set_rb(p_voice);
 	}
 
@@ -4505,7 +4504,7 @@ static void set_piece(void)
 	struct VOICE_S *p_voice;
 	struct STAFF_S *p_staff;
 	int staff;
-	char empty[MAXSTAFF];
+	char empty[MAXSTAFF], empty_gl[MAXSTAFF];
 
 	/* reset the staves */
 	sy = cursys;
@@ -4521,6 +4520,7 @@ static void set_piece(void)
 	 * and flag the empty staves
 	 */
 	memset(empty, 1, sizeof empty);
+	memset(empty_gl, 1, sizeof empty_gl);
 	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->sflags & S_NL)
 			break;
@@ -4545,30 +4545,31 @@ static void set_piece(void)
 			continue;
 		switch (s->type) {
 		case GRACE:
-			empty[s->staff] = 0;
+			empty_gl[s->staff] = empty[s->staff] = 0;
 			break;
 		case NOTEREST:
 		case SPACE:
 		case MREST:
 			if (cfmt.staffnonote > 1) {
-				empty[s->staff] = 0;
+				empty_gl[s->staff] = empty[s->staff] = 0;
 			} else if (!(s->flags & ABC_F_INVIS)) {
 				if (s->abc_type == ABC_T_NOTE
 				 || cfmt.staffnonote != 0)
-					empty[s->staff] = 0;
+					empty_gl[s->staff] = empty[s->staff] = 0;
 			}
 			break;
 		}
 	}
 	tsnext = s;
 
-	/* set the last empty staves and
-	 * define the offsets of the measure bars */
+	/* set the last empty staves */
 	for (staff = 0; staff <= nstaff; staff++)
 		sy->staff[staff].empty = empty[staff];
 	set_empty(sy);
+
+	/* define the offsets of the measure bars */
 	for (staff = 0; staff <= nstaff; staff++) {
-		if (sy->staff[staff].empty)
+		if (empty_gl[staff])
 			continue;
 
 		p_staff = &staff_tb[staff];

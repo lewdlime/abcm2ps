@@ -1,5 +1,5 @@
-		abcm2ps command line options
-		============================
+abcm2ps command line options
+============================
 
 The list of the command line options may be known running:
 	'abcm2ps -h'
@@ -154,6 +154,10 @@ List of the options
 	source file (not for '-z').
 	If <name> is '-', the result is output to stdout (not for EPS).
 	'+O' resets the output file directory and name to their defaults.
+
+  -p
+	Bagpipe format.
+	When present, format output for bagpipe regardless of key.
 
   -q
 	Quiet mode.

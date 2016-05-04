@@ -2,7 +2,7 @@
  * abcm2ps: a program to typeset tunes written in ABC format
  *	using PostScript or SVG
  *
- * Copyright (C) 1998-2015 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 1998-2016 Jean-François Moine (http://moinejf.free.fr)
  *
  * Adapted from abc2ps-1.2.5:
  *  Copyright (C) 1996,1997  Michael Methfessel (msm@ihp-ffo.de)
@@ -44,6 +44,7 @@ int pagenumbers;		/* write page numbers */
 int epsf;			/* 1: EPSF, 2: SVG, 3: embedded ABC */
 int svg;			/* 1: SVG, 2: XHTML */
 int showerror;			/* show the errors */
+int pipeformat = 0;		/* format for bagpipes regardless of key */
 
 char outfn[FILENAME_MAX];	/* output file name */
 int file_initialized;		/* for output file */
@@ -465,6 +466,7 @@ static void usage(void)
 		"     -a xx   set max shrinkage to xx (between 0 and 1)\n"
 		"     -F foo  read format file \"foo.fmt\"\n"
 		"     -D bar  look for format files in directory \"bar\"\n"
+		"     -p      format for bagpipes regardless of key\n"
 		"  .output options:\n"
 		"     -l      landscape mode\n"
 		"     -I xx   indent 1st line (cm/in/pt)\n"
@@ -605,6 +607,9 @@ int main(int argc, char **argv)
 				break;
 			case 'h':
 				usage();	/* no return */
+			case 'p':
+				pipeformat = 1;	/* format for bagpipe regardless of key */
+				break;
 			case 'q':
 				quiet = 1;
 				break;
@@ -615,7 +620,7 @@ int main(int argc, char **argv)
 				display_version(1);
 				return EXIT_SUCCESS;
 			case 'v':
-				svg = 1;	/* SVG one file per pagee */
+				svg = 1;	/* SVG one file per page */
 				epsf = 0;
 				break;
 			case 'X':

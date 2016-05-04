@@ -576,6 +576,7 @@ extern int pagenumbers; 	/* write page numbers */
 extern int epsf;		/* 1: EPSF, 2: SVG, 3: embedded ABC */
 extern int svg;			/* 1: SVG, 2: XHTML */
 extern int showerror;		/* show the errors */
+extern int pipeformat;		/* format for bagpipes */
 
 extern char outfn[FILENAME_MAX]; /* output file name */
 extern char *in_fname;		/* current input file name */
@@ -684,6 +685,7 @@ extern float realwidth;		/* real staff width while generating */
 #define NFLAGS_SZ 10		/* size of note flags tables */
 #define C_XFLAGS 5		/* index of crotchet in flags tables */
 extern float space_tb[NFLAGS_SZ]; /* note spacing */
+extern float hw_tb[];		// width of note heads
 
 struct SYSTEM {			/* staff system */
 	struct SYSTEM *next;

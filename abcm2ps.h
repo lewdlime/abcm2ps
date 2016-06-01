@@ -524,8 +524,8 @@ struct FORMAT { 		/* struct for page layout */
 	int abc2pscompat, alignbars, aligncomposer, autoclef;
 	int barsperstaff, breakoneoln, bstemdown, cancelkey;
 	int combinevoices, contbarnb, continueall, custos;
-	int dblrepbar, decoerr, dynalign, flatbeams;
-	int infoline, gchordbox, graceslurs, gracespace, hyphencont;
+	int dblrepbar, decoerr, dynalign, flatbeams, infoline;
+	int gchordbox, graceslurs, graceword,gracespace, hyphencont;
 	int keywarn, landscape, linewarn;
 	int measurebox, measurefirst, measurenb, micronewps;
 	int oneperpage;
@@ -533,7 +533,7 @@ struct FORMAT { 		/* struct for page layout */
 	int pango;
 #endif
 	int partsbox, pdfmark;
-	int rbmax, rbmin;
+	int rbdbstop, rbmax, rbmin;
 	int setdefl, shiftunison, splittune, squarebreve;
 	int staffnonote, straightflags, stretchstaff;
 	int textoption, titlecaps, titleleft, titletrim;

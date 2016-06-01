@@ -390,7 +390,7 @@ static void sort_all(void)
 static void voice_compress(void)
 {
 	struct VOICE_S *p_voice;
-	struct SYMBOL *s, *s2, *ns;
+	struct SYMBOL *s, *s2, *s3, *ns;
 
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 //8.7.0 - for fmt at end of music line
@@ -472,10 +472,25 @@ static void voice_compress(void)
 				s2->type = GRACE;
 				s2->dur = 0;
 				s2->next = s->next;
-				if (s2->next)
+				if (s2->next) {
 					s2->next->prev = s2;
-				else
+					if (cfmt.graceword) {
+						for (s3 = s2->next; s3; s3 = s3->next) {
+							switch (s3->type) {
+							case SPACE:
+								continue;
+							case NOTEREST:
+								s2->ly = s3->ly;
+								s3->ly = NULL;
+							default:
+								break;
+							}
+							break;
+						}
+					}
+				} else {
 					p_voice->last_sym = s2;
+				}
 				s2->prev = s;
 				s->next = s2;
 				s = s2;
@@ -3171,6 +3186,14 @@ static void get_bar(struct SYMBOL *s)
 	case (B_COL << 12) + (B_BAR << 8) + (B_BAR << 4) + B_COL:
 		bar_type = (B_COL << 4) + B_COL;	/* :|: and :||: -> :: */
 		s->u.bar.type = bar_type;
+		break;
+	case (B_BAR << 4) + B_BAR:
+		if (!cfmt.rbdbstop)
+			break;
+	case (B_OBRA << 4) + B_BAR:
+	case (B_BAR << 4) + B_CBRA:
+		s->flags |= ABC_F_RBSTOP;
+		s->sflags |= S_RBSTOP;
 		break;
 	}
 

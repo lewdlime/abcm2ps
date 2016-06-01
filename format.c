@@ -70,6 +70,7 @@ static struct format {
 	{"gchordbox", &cfmt.gchordbox, FORMAT_B, 0},
 	{"gchordfont", &cfmt.font_tb[GCHORDFONT], FORMAT_F, 3},
 	{"graceslurs", &cfmt.graceslurs, FORMAT_B, 0},
+	{"graceword", &cfmt.graceword, FORMAT_B, 0},
 	{"gracespace", &cfmt.gracespace, FORMAT_I, 5},
 	{"header", &cfmt.header, FORMAT_S, 0},
 	{"headerfont", &cfmt.font_tb[HEADERFONT], FORMAT_F, 0},
@@ -106,6 +107,7 @@ static struct format {
 	{"partsfont", &cfmt.font_tb[PARTSFONT], FORMAT_F, 1},
 	{"partsspace", &cfmt.partsspace, FORMAT_U, 0},
 	{"pdfmark", &cfmt.pdfmark, FORMAT_I, 0},
+	{"rbdbstop", &cfmt.rbdbstop, FORMAT_B, 0},
 	{"rbmax", &cfmt.rbmax, FORMAT_I, 0},
 	{"rbmin", &cfmt.rbmin, FORMAT_I, 0},
 	{"repeatfont", &cfmt.font_tb[REPEATFONT], FORMAT_F, 0},
@@ -388,6 +390,7 @@ void set_format(void)
 	else
 		lock_fmt(&cfmt.pango);	/* SVG output does not use panga */
 #endif
+	f->rbdbstop = 1;
 	f->rbmax = 4;
 	f->rbmin = 2;
 	f->staffnonote = 1;

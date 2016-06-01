@@ -920,7 +920,9 @@ static float ly_width(struct SYMBOL *s, float wlw)
 		w = lyl->w;
 		swfac = lyl->f->swfac;
 		xx = w + 2 * cwid(' ') * swfac;
-		if ((isdigit((unsigned char) *p) && strlen(p) > 2)
+		if (s->type == GRACE) {			// %%graceword
+			shift = s->wl;
+		} else if ((isdigit((unsigned char) *p) && strlen(p) > 2)
 		 || p[1] == ':'
 //		 || p[1] == '(' || p[1] == ')') {
 		 || *p == '(' || *p == ')') {
@@ -1274,6 +1276,8 @@ static void set_width(struct SYMBOL *s)
 		break;
 	case GRACE:
 		s->wl = set_graceoffs(s);
+		if (s->ly)
+			ly_width(s, 0);
 		break;
 	case STBRK:
 		if (s->next && s->next->type == CLEF) {
@@ -3842,30 +3846,32 @@ static void unison_acc(struct SYMBOL *s1,
 }
 
 #define MAXPIT (48 * 2)
+
 /* set the left space of a note/chord */
 static void set_left(struct SYMBOL *s, float *left)
 {
 	int m, i, j;
 	float w_base, w, shift;
 
-	w_base = w_note[s->head];
 	for (i = 0; i < MAXPIT; i++)
 		left[i] = -100;
 
 	/* stem */
-	w = w_base;
-	if (s->stem > 0) {
-		w = -w;
-		i = s->pits[0] * 2;
-		j = ((int) ((s->ymx - 2) / 3) + 18) * 2;
-	} else {
-		i = ((int) ((s->ymn + 2) / 3) + 18) * 2;
-		j = s->pits[s->nhd] * 2;
+	w = w_base = w_note[s->head];
+	if (s->nflags > -2) {
+		if (s->stem > 0) {
+			w = -w;
+			i = s->pits[0] * 2;
+			j = ((int) ((s->ymx - 2) / 3) + 18) * 2;
+		} else {
+			i = ((int) ((s->ymn + 2) / 3) + 18) * 2;
+			j = s->pits[s->nhd] * 2;
+		}
+		if (i < 0)
+			i = 0;
+		for (; i < MAXPIT && i <= j; i++)
+			left[i] = w;
 	}
-	if (i < 0)
-		i = 0;
-	for (; i < MAXPIT && i <= j; i++)
-		left[i] = w;
 
 	/* notes */
 	if (s->stem > 0)
@@ -3896,7 +3902,6 @@ static void set_right(struct SYMBOL *s, float *right)
 	int m, i, j, k, flags;
 	float w_base, w, shift;
 
-	w_base = w_note[s->head];
 	for (i = 0; i < MAXPIT; i++)
 		right[i] = -100;
 
@@ -3904,21 +3909,24 @@ static void set_right(struct SYMBOL *s, float *right)
 	flags = s->nflags > 0
 	     && (s->sflags & (S_BEAM_ST | S_BEAM_END))
 			== (S_BEAM_ST | S_BEAM_END);
-	w = w_base;
-	if (s->stem < 0) {
-		w = -w;
-		i = ((int) ((s->ymn + 2) / 3) + 18) * 2;
-		j = s->pits[s->nhd] * 2;
-		k = i + 4;
-	} else {
-		i = s->pits[0] * 2;
-		j = ((int) ((s->ymx - 2) / 3) + 18) * 2;
-		k = i;				// (have gcc happy)
+	w = w_base = w_note[s->head];
+	if (s->nflags > -2) {
+		if (s->stem < 0) {
+			w = -w;
+			i = ((int) ((s->ymn + 2) / 3) + 18) * 2;
+			j = s->pits[s->nhd] * 2;
+			k = i + 4;
+		} else {
+			i = s->pits[0] * 2;
+			j = ((int) ((s->ymx - 2) / 3) + 18) * 2;
+			k = i;				// (have gcc happy)
+		}
+		if (i < 0)
+			i = 0;
+		for ( ; i < MAXPIT && i < j; i++)
+			right[i] = w;
 	}
-	if (i < 0)
-		i = 0;
-	for ( ; i < MAXPIT && i < j; i++)
-		right[i] = w;
+
 	if (flags) {
 		if (s->stem > 0) {
 			if (s->xmx == 0)
@@ -3966,11 +3974,11 @@ static void set_right(struct SYMBOL *s, float *right)
 /* this routine is called only once per tune */
 static void set_overlap(void)
 {
-	struct SYMBOL *s, *s1, *s2;
+	struct SYMBOL *s, *s1, *s2, *s3;
 	int i, i1, i2, m, sd, t, dp;
 	float d, d2, dr, dr2, dx;
 	float left1[MAXPIT], right1[MAXPIT], left2[MAXPIT], right2[MAXPIT];
-	float *pl, *pr;
+	float right3[MAXPIT], *pl, *pr;
 
 	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->abc_type != ABC_T_NOTE
@@ -4024,6 +4032,20 @@ static void set_overlap(void)
 		/* compute the minimum space for 's1 s2' and 's2 s1' */
 		set_right(s1, right1);
 		set_left(s2, left2);
+
+		s3 = s1->ts_prev;
+		if (s3 && s3->time == s1->time
+		 && s3->staff == s1->staff
+		 && s3->abc_type == ABC_T_NOTE
+		 && !(s3->flags & ABC_F_INVIS)) {
+			set_right(s3, right3);
+			for (i = 0; i < MAXPIT; i++) {
+				if (right3[i] > right1[i])
+					right1[i] = right3[i];
+			}
+		} else {
+			s3 = NULL;
+		}
 		d = -100;
 		for (i = 0; i < MAXPIT; i++) {
 			if (left2[i] + right1[i] > d)
@@ -4033,14 +4055,20 @@ static void set_overlap(void)
 			if (!s1->dots || !s2->dots
 			 || s2->doty >= 0
 			 || s1->stem > 0 || s2->stem < 0
-			 || s1->pits[s1->nhd] + 2 !=
-					s2->pits[0]
+			 || s1->pits[s1->nhd] + 2 != s2->pits[0]
 			 || (s2->pits[0] & 1))
 				continue;
 		}
 
 		set_right(s2, right2);
 		set_left(s1, left1);
+		if (s3) {
+			set_left(s3, right3);
+			for (i = 0; i < MAXPIT; i++) {
+				if (right3[i] > left1[i])
+					left1[i] = right3[i];
+			}
+		}
 		d2 = dr = dr2 = -100;
 		for (i = 0; i < MAXPIT; i++) {
 			if (left1[i] + right2[i] > d2)
@@ -4123,7 +4151,7 @@ static void set_overlap(void)
 			if (d2 + dr < d + dr2)
 				sd = 1;			/* align the dots */
 		}
-		if (d2 + dr < d + dr2) {
+		if (!s3 && d2 + dr < d + dr2) {
 			s1 = s2;			/* invert the voices */
 			s2 = s;
 			d = d2;
@@ -4450,19 +4478,24 @@ static void check_bar(struct SYMBOL *s)
 }
 
 /* -- move the symbols of an empty staff to the next one -- */
-static void sym_staff_move(int staff,
-			struct SYMBOL *s,
-			struct SYSTEM *sy)
+static void sym_staff_move(int staff)
+//			struct SYMBOL *s,
+//			struct SYSTEM *sy)
 {
-	for (;;) {
+	struct SYMBOL *s;
+
+//	for (;;) {
+	for (s = tsfirst; s; s = s->ts_next) {
+		if (s->sflags & S_NL)
+			break;
 		if (s->staff == staff
 		 && s->type != CLEF) {
 			s->staff++;
 			s->flags |= ABC_F_INVIS;
 		}
-		s = s->ts_next;
-		if (s == tsnext || s->sflags & S_NEW_SY)
-			break;
+//		s = s->ts_next;
+//		if (s == tsnext || s->sflags & S_NEW_SY)
+//			break;
 	}
 }
 
@@ -4586,8 +4619,12 @@ static void set_piece(void)
 	}
 
 	/* move the symbols of the empty staves to the next staff */
-	sy = cursys;
+//	sy = cursys;
 	for (staff = 0; staff < nstaff; staff++) {
+#if 1
+		if (empty_gl[staff])
+			sym_staff_move(staff);
+#else
 		if (sy->staff[staff].empty)
 			sym_staff_move(staff, tsfirst, sy);
 	}
@@ -4605,6 +4642,7 @@ static void set_piece(void)
 					break;
 			}
 		}
+#endif
 	}
 
 	/* initialize the music line */

@@ -1,3 +1,17 @@
+---- Version 8.11.6 - 2016-05-30 ----
+
+%%rbdbstop added
+	(asked by Hudson Lacerda)
+Stop back again the repeat brackets on ||, [| and |]
+	(asked by Bernhard Weichel)
+Don't move the symbols of an empty staff if the staff is displayed
+		elsewhere in the music line
+Don't shift whole notes on voice overlap
+%%graceword added
+	(asked by Manavasu)
+Fix clash of notes of 1st and 3rd voices when on a same staff
+	(reported by David Lacroix)
+
 ---- Version 8.11.5 - 16/05/01 ----
 
 Adjust the endpoints of the glissendo

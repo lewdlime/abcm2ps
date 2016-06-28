@@ -197,8 +197,8 @@ void abc_parse(char *p, char *fname, int ln)
 /* treat the end of file */
 void abc_eof(void)
 {
-	if (parse.abc_state == ABC_S_HEAD)
-		severity = 1;
+//	if (parse.abc_state == ABC_S_HEAD)
+//		severity = 1;
 	do_tune();
 	parse.first_sym = parse.last_sym = NULL;
 	if (parse.abc_state != ABC_S_GLOBAL) {

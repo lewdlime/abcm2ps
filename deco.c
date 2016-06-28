@@ -609,13 +609,13 @@ static void d_trill(struct deco_elt *de)
 		 && s->u.note.dc.n > 1)
 			x += 10;
 	} else {			/* end without start */
-		if (!first_note) {
+		s = first_note;
+		if (!s) {
 			dd = &deco_def_tb[de->t];
 			error(1, s2, "No start of deco !%s!", dd->name);
 			de->t = 0;
 			return;
 		}
-		s = first_note;
 		x = s->x - s->wl - 4;
 	}
 	de->staff = staff = s2->staff;
@@ -1596,7 +1596,8 @@ void draw_deco_note(void)
 {
 	struct deco_elt *de, *de2;
 	struct deco_def_s *dd;
-	int f, t, staff, voice;
+	int f, t, voice;
+//	int staff;
 
 	for (de = deco_head; de; de = de->next) {
 		t = de->t;
@@ -1631,12 +1632,15 @@ void draw_deco_note(void)
 			for (de2 = de->next; de2; de2 = de2->next)
 				if (de2->t == t && de2->s->voice == voice)
 					break;
+#if 0
+// KO when same long decorations in 2 voices of the same staff
 			if (!de2) {		/* search in the staff */
 				staff = de->s->staff;
 				for (de2 = de->next; de2; de2 = de2->next)
 					if (de2->t == t && de2->s->staff == staff)
 						break;
 			}
+#endif
 			if (!de2) {		/* no end, insert one */
 				de2 = (struct deco_elt *) getarena(sizeof *de2);
 				memset(de2, 0, sizeof *de2);

@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2011-2015 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 2011-2016 Jean-François Moine (http://moinejf.free.fr)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ static int offset, size;
 static unsigned char *selection;
 static int latin, skip;
 static char prefix[4] = {'%'};
+static int state;
 
 /*
  * translation table from the ABC draft version 2
@@ -475,14 +476,14 @@ void frontend(unsigned char *s,
 		int linenum)
 {
 	unsigned char *p, *q, c, *begin_end, sep;
-	int i, l, state, str_cnv_p, histo, end_len;
+	int i, l, str_cnv_p, histo, end_len;
 	char prefix_sav[4];
 	int latin_sav = 0;		/* have C compiler happy */
 
 	begin_end = NULL;
 	end_len = 0;
 	histo = 0;
-	state = 0;
+//	state = 0;
 
 	if (ftype == FE_ABC
 	 && strncmp((char *) s, "%abc-", 5) == 0) {
@@ -597,6 +598,8 @@ void frontend(unsigned char *s,
 			l--;
 
 		if (l == 0) {			/* empty line */
+			if (ftype == FE_FMT)
+				goto next_eol;
 			switch (state) {
 			default:
 				goto ignore;
@@ -884,13 +887,15 @@ next_eol:
 ignore:
 		s = p;
 	}
-	if (state == 1)
-		fprintf(stderr,
-			"Line %d: Unexpected EOF in header definition\n",
-			linenum);
 	if (begin_end)
 		fprintf(stderr,
 			"Line %d: No %%%%end after %%%%begin\n",
+			linenum);
+	if (ftype == FE_FMT)
+		return;
+	if (state == 1)
+		fprintf(stderr,
+			"Line %d: Unexpected EOF in header definition\n",
 			linenum);
 	abc_eof();
 }

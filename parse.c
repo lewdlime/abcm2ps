@@ -1636,7 +1636,7 @@ static struct SYMBOL *get_lyric(struct SYMBOL *s)
 	s2 = s1 = NULL;				// have gcc happy
 	for (;;) {
 		if (!cont) {
-			if (ln >= MAXLY) {
+			if (ln >= MAXLY- 1) {
 				error(1, s, "Too many lyric lines");
 				ln--;
 			}
@@ -1928,6 +1928,7 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 		p_voice2->posit = p_voice->posit;
 		p_voice2->staff = p_voice->staff;
 		p_voice2->cstaff = p_voice->cstaff;
+		p_voice2->map_name = p_voice->map_name;
 		range = parsys->voice[p_voice - voice_tb].range;
 		for (voice = 0; voice < MAXVOICE; voice++) {
 			if (parsys->voice[voice].range > range)

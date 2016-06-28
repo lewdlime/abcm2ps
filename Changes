@@ -1,3 +1,15 @@
+---- Version 8.11.7 - 2016-06-24 ----
+
+Loss of decoration when same long decorations
+		in 2 voices of the same staff
+	(reported by Hudson Lacerda)
+Do the overlay voice inherit of the note map (%%voicemap)
+	(reported by Gerhard Schacherl)
+Crash when more than 16 lyric lines (w:)
+	(reported by Eric Reinbold)
+Accept %%format in tune headers
+	(reported by Timm Reasbeck)
+
 ---- Version 8.11.6 - 2016-05-30 ----
 
 %%rbdbstop added

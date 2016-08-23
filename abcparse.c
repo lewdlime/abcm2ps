@@ -1634,7 +1634,7 @@ static char *parse_basic_note(char *p,
 /* -- parse the decorations of notes and bars -- */
 char *parse_deco(char *p,
 		 struct decos *deco,
-		 int m)			/* note index */
+		 int m)			/* note index / -1 */
 {
 	int n;
 	unsigned char t;
@@ -1744,7 +1744,7 @@ static char *parse_decoline(char *p)
 				syntax("Too many decorations for the note", p);
 			} else if (t != 0) {
 				is->u.note.dc.tm[n].t = t;
-				is->u.note.dc.tm[n].m = 255;
+				is->u.note.dc.tm[n].m = -1;
 				is->u.note.dc.n = ++n;
 			}
 		}
@@ -2019,7 +2019,7 @@ static int parse_line(char *p)
 					break;
 				}
 			}
-			p = parse_deco(p - 1, &dc, 255);
+			p = parse_deco(p - 1, &dc, -1);
 			break;
 		case CHAR_LINEBREAK:
 			s = abc_new(ABC_T_EOLN, NULL);

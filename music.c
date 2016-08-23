@@ -464,7 +464,7 @@ again:
 		int n;
 
 		for (i = 0; i < s2->u.note.dc.n; i++) {
-			if (s2->u.note.dc.tm[i].m != 255)
+			if (s2->u.note.dc.tm[i].m >= 0)
 				s2->u.note.dc.tm[i].m += nhd + 1;
 		}
 		n = s->u.note.dc.n;

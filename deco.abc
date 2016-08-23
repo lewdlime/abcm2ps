@@ -132,19 +132,6 @@
 	0.138 0.297 0.116 0.275 0.144 0.242 curveto
 	fill pop grestore}!
 %
-% -- glissendo
-/gliss{	% usage: x2 y2 x1 y1 gliss
-	gsave exch 13 add exch 2 copy T 0 0 M
-	exch 4 -1 roll exch sub 3 1 roll sub	% dx dy
-	2 copy exch atan dup rotate	% dx dy alpha
-	exch pop cos div		% len
-% 	9 sub 0 RL			% simple line
-	9 sub 0 8 3 -1 roll{		% squiggly line
-		2 -1.15 2.30 150 30 arcn 4 0 T
-		2 1.15 2.30 -150 -30 arc 4 0 T pop
-	}for
-	1 SLW stroke grestore}!
-%
 % -- upper glissendo
 /glissup{	% usage: x y glissup
 	gsave T 5 0 T
@@ -320,8 +307,6 @@
 % ...
 %
 % -- glissendo
-%%deco -( 1 - 0 0 0
-%%deco -) 1 gliss 0 0 0
 %%deco - 1 glissup 0 2 10
 %
 % -- note decorations

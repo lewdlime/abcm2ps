@@ -133,7 +133,7 @@ struct decos {		/* decorations */
 	char n;			/* whole number of decorations */
 	struct {
 		unsigned char t;	/* decoration index */
-		unsigned char m;	/* index in chord when note */
+		signed char m;		/* index in chord when note / -1 */
 	} tm[MAXDC];
 };
 
@@ -166,6 +166,7 @@ struct note {		/* note head */
 	char sl2;		/* number of slur ends */
 	char ti1;		/* flag to start tie here */
 	char hlen;		/* length of the head string */
+	char invisible;		/* alternate note head */
 	float shhd;		/* horizontal head shift (#pts if space) */
 	float shac;		/* horizontal accidental shift */
 	char *head;		/* head */
@@ -769,7 +770,7 @@ void deco_cnv(struct decos *dc, struct SYMBOL *s, struct SYMBOL *prev);
 void deco_update(struct SYMBOL *s, float dx);
 float deco_width(struct SYMBOL *s);
 void draw_all_deco(void);
-int draw_deco_head(int deco, float x, float y, int stem);
+//int draw_deco_head(int deco, float x, float y, int stem);
 void draw_deco_near(void);
 void draw_deco_note(void);
 void draw_deco_staff(void);

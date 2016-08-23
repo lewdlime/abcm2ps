@@ -1250,7 +1250,8 @@ static void draw_bar(struct SYMBOL *s, float bot, float h)
 /* (the staves are defined) */
 static void draw_rest(struct SYMBOL *s)
 {
-	int i, y, no_head;
+	int i, y;
+//	int no_head;
 	float x, dotx, staffb;
 	static char *rest_tb[NFLAGS_SZ] = {
 		"r128", "r64", "r32", "r16", "r8",
@@ -1314,24 +1315,14 @@ static void draw_rest(struct SYMBOL *s)
 
 	y = s->y;
 
-	no_head = 0;
-	for (i = 0; i < s->u.note.dc.n; i++) {
-		if (s->u.note.dc.tm[i].m == 0)
-			no_head |= draw_deco_head(s->u.note.dc.tm[i].t,
-						  x,
-						  y + staffb,
-						  s->stem);
-	}
-	if (no_head)
-		return;
-
 	i = C_XFLAGS - s->nflags;		/* rest_tb index */
 	if (i == 7 && y == 12
 	 && staff_tb[s->staff].stafflines <= 2)
 		y -= 6;				/* semibreve a bit lower */
 
 	putxy(x, y + staffb);				/* rest */
-	a2b("%s ", rest_tb[i]);
+	a2b("%s ", s->u.note.notes[0].head ?
+			s->u.note.notes[0].head : rest_tb[i]);
 
 	/* output ledger line(s) when greater than minim */
 	if (i >= 6) {
@@ -1596,25 +1587,17 @@ static void draw_basic_note(float x,
 			    signed char *y_tb)
 {
 	struct note *note = &s->u.note.notes[m];
-	int i, y, no_head, head, dots, nflags, acc;
+	int y, head, dots, nflags, acc;
+//	int no_head;
 	int old_color = -1;
 	float staffb, shhd;
 	char *p;
 	char hd[32];
 
 	staffb = staff_tb[s->staff].y;		/* bottom of staff */
-	y = 3 * (s->pits[m] - 18);	/* note height on staff */
+	y = 3 * (s->pits[m] - 18);		/* note height on staff */
 	shhd = note->shhd * cur_scale;
 
-	/* draw the decorations of the note heads */
-	no_head = 0;
-	for (i = 0; i < s->u.note.dc.n; i++) {
-		if (s->u.note.dc.tm[i].m == m)
-			no_head |= draw_deco_head(s->u.note.dc.tm[i].t,
-						  x + shhd,
-						  y + staffb,
-						  s->stem);
-	}
 	if (s->flags & ABC_F_INVIS)
 		return;
 
@@ -1654,7 +1637,7 @@ static void draw_basic_note(float x,
 	}
 
 	/* draw the head */
-	if (no_head) {
+	if (note->invisible) {
 		p = "xydef";
 	} else if ((p = note->head) != NULL) {
 		snprintf(hd, sizeof hd, "%.*s", note->hlen, p);
@@ -3131,8 +3114,9 @@ static void draw_note_ties(struct SYMBOL *k1,
 		}
 
 		y = 3 * (p - 18);
-		if (p & 1)
-			y += 2 * s;
+//fixme: clash when 2 ties on second interval chord
+//		if (p & 1)
+//			y += 2 * s;
 		if (job != 1 && job != 3) {
 			if (s > 0) {
 //				if (k1->nflags > -2 && k1->stem > 0
@@ -3375,7 +3359,8 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 		for (s2 = s1->next; s2; s2 = s2->next) {
 			if (s2->dur != 0)
 				break;
-			if (s2->u.bar.repeat_bar
+			if (s2->type == BAR
+			 && s2->u.bar.repeat_bar
 			 && s2->text) {
 				if (s2->text[0] != '1')
 					break;

@@ -2651,6 +2651,7 @@ curveto:
 		if (strcmp(op, "gliss") == 0) {
 			float x2, y2;
 
+			setg(1);
 			y = gcur.yoffs - pop_free_val();
 			x = gcur.xoffs + pop_free_val() + 10;
 			y2 = gcur.yoffs - pop_free_val();

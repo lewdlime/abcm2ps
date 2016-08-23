@@ -3199,7 +3199,7 @@ static void get_bar(struct SYMBOL *s)
 	}
 
 	if (s->u.bar.dc.n > 0)
-		deco_cnv(&s->u.bar.dc, s, 0); /* convert the decorations */
+		deco_cnv(&s->u.bar.dc, s, NULL); /* convert the decorations */
 
 	/* build the gch */
 gch_build:
@@ -3415,7 +3415,7 @@ void do_tune(void)
 			if (s1->text)
 				gch_build(s1);	/* build the guitar chords */
 			if (s1->u.bar.dc.n > 0)
-				deco_cnv(&s1->u.bar.dc, s, 0);
+				deco_cnv(&s1->u.bar.dc, s, NULL);
 			break;
 		    }
 		case ABC_T_MREP: {
@@ -4123,7 +4123,7 @@ void sort_pitch(struct SYMBOL *s)
 			inv_order[new_order[i]] = i;
 		for (i = 0; i <= s->u.note.dc.n; i++) {
 			k = s->u.note.dc.tm[i].m;
-			if (k != 255)
+			if (k >= 0)
 				s->u.note.dc.tm[i].m = inv_order[k];
 		}
 	}

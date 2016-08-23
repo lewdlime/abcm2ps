@@ -1,3 +1,18 @@
+---- Version 8.12.1 - 2016-08-05 ----
+
+Fix bad alternate heads since 8.12.0
+
+---- Version 8.12.0 - 2016-08-05 ----
+
+Handle glissendo on chords
+	(reported by Timm Reasbeck)
+Fix bad SVG output when text decoration before glissendo
+Fix bad note head replacement when defined as a string since 8.5.0
+Fix bad tie error when crossing a meter change
+	(reported by David Lacroix and Jean-Luc Zins)
+Clash of ties on second interval chord
+	(reported by David Lacroix)
+
 ---- Version 8.11.7 - 2016-06-24 ----
 
 Loss of decoration when same long decorations

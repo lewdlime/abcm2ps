@@ -520,7 +520,7 @@ struct FORMAT { 		/* struct for page layout */
 	float topspace, wordsspace, titlespace, subtitlespace, partsspace;
 	float composerspace, musicspace, vocalspace, textspace;
 	float breaklimit, maxshrink, lineskipfac, parskipfac, stemheight;
-	float indent, infospace, slurheight, notespacingfactor, scale;
+	float gutter, indent, infospace, slurheight, notespacingfactor, scale;
 	float staffsep, sysstaffsep, maxstaffsep, maxsysstaffsep, stretchlast;
 	int abc2pscompat, alignbars, aligncomposer, autoclef;
 	int barsperstaff, breakoneoln, bstemdown, cancelkey;
@@ -797,6 +797,7 @@ void draw_sym_near(void);
 void draw_all_symb(void);
 float draw_systems(float indent);
 void output_ps(struct SYMBOL *s, int color);
+struct SYMBOL *prev_scut(struct SYMBOL *s);
 void putf(float f);
 void putx(float x);
 void puty(float y);

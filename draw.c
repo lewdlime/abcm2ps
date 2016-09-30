@@ -1870,7 +1870,7 @@ static struct SYMBOL *next_scut(struct SYMBOL *s)
 	return prev;
 }
 
-static struct SYMBOL *prev_scut(struct SYMBOL *s)
+struct SYMBOL *prev_scut(struct SYMBOL *s)
 {
 	while (s->prev) {
 		s = s->prev;
@@ -2563,17 +2563,17 @@ static void draw_slurs(struct SYMBOL *first,
 
 /* -- draw a tuplet -- */
 /* (the staves are not yet defined) */
-/* See 'tuplets' in http://moinejf.free.fr/abcm2ps-doc/index.html
- * about the value of 'u' */
+/* See http://moinejf.free.fr/abcm2ps-doc/tuplets.xhtml
+ * about the value of 'aux' */
 static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 				  struct SYMBOL *s)	/* main note */
 {
 	struct SYMBOL *s1, *s2, *sy, *next, *g;
-	int r, upstaff, nb_only, some_slur;
+	int r, upstaff, nb_only, some_slur, dir;
 	float x1, x2, y1, y2, xm, ym, a, s0, yy, yx, dy;
 
 	next = s;
-	if ((t->aux & 0x0f00) == 0x100)		/* if 'when' == never */
+	if ((t->aux & 0xf000) == 0x1000)	/* if 'when' == never */
 		return next;
 
 	/* treat the nested tuplets starting on this symbol */
@@ -2629,35 +2629,19 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	if (s2->time > next->time)
 		next = s2;
 
-#if 0
-	/* draw the slurs when inside the tuplet */
-	if (some_slur) {
-		draw_slurs(s1, s2);
-		if (s1->u.note.slur_st
-		 || (s1->sflags & S_SL1))
-			return next;
-		for (sy = s1->next; sy != s2; sy = sy->next) {
-			if (sy->u.note.slur_st		/* if slur start/end */
-			 || sy->u.note.slur_end
-			 || (sy->sflags & (S_SL1 | S_SL2)))
-				return next;		/* don't draw now */
-		}
-		if (s2->u.note.slur_end
-		 || (s2->sflags & S_SL2))
-			return next;
-	}
-#endif
+	dir = t->aux & 0x000f;
+	if (!dir)
+		dir = s1->stem > 0 ? SL_ABOVE : SL_BELOW;
 
 	if (s1 == s2) {				/* tuplet with 1 note (!) */
 		nb_only = 1;
-	} else if ((t->aux & 0x0f0) == 0x10) {	/* 'what' == slur */
+	} else if ((t->aux & 0x0f00) == 0x0100) {	/* 'what' == slur */
 		nb_only = 1;
-		draw_slur(s1, s2, -1, -1, 
-			  s1->stem > 0 ? SL_ABOVE : SL_BELOW);
+		draw_slur(s1, s2, -1, -1, dir);
 	} else {
 
 		/* search if a bracket is needed */
-		if ((t->aux & 0x0f00) == 0x200	/* if 'when' == always */
+		if ((t->aux & 0xf000) == 0x2000	/* if 'when' == always */
 		 || s1->abc_type != ABC_T_NOTE || s2->abc_type != ABC_T_NOTE) {
 			nb_only = 0;
 		} else {
@@ -2704,7 +2688,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	if (nb_only) {
 		float a, b;
 
-		if ((t->aux & 0x0f) == 1)		/* if 'value' == none */
+		if ((t->aux & 0x00f0) == 0x0010) /* if 'which' == none */
 			return next;
 		xm = (s2->x + s1->x) * .5;
 		if (s1 == s2)			/* tuplet with 1 note */
@@ -2713,7 +2697,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			a = (s2->ys - s1->ys) / (s2->x - s1->x);
 		b = s1->ys - a * s1->x;
 		yy = a * xm + b;
-		if (s1->stem > 0) {
+		if (dir == SL_ABOVE) {
 			ym = y_get(s1->staff, 1, xm - 3, 6);
 			if (ym > yy)
 				b += ym - yy;
@@ -2735,15 +2719,14 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 				xm -= GSTEM_XOFF;
 		}
 		ym = a * xm + b;
-		if ((t->aux & 0x0f) == 0)		/* if 'value' == number */
+		if ((t->aux & 0x00f0) == 0)	/* if 'which' == number */
 			a2b("(%d)", t->u.tuplet.p_plet);
 		else
-			a2b("(%d:%d)", t->u.tuplet.p_plet,
-			     t->u.tuplet.q_plet);
+			a2b("(%d:%d)", t->u.tuplet.p_plet, t->u.tuplet.q_plet);
 		putxy(xm, ym);
 		a2b("y%d bnum\n", s1->staff);
 
-		if (s1->stem > 0) {
+		if (dir == SL_ABOVE) {
 			ym += 8;
 			if (sy->ymx < ym)
 				sy->ymx = (short) ym;
@@ -2757,7 +2740,6 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		return next;
 	}
 
-#if 1
 	/* draw the slurs when inside the tuplet */
 	if (some_slur) {
 		draw_slurs(s1, s2);
@@ -2776,13 +2758,16 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		 || (s2->sflags & S_SL2))
 			return next;
 	}
-#endif
-	if ((t->aux & 0x0f0) != 0)	/* if 'what' != square */
+
+	if ((t->aux & 0x0f00) != 0)		/* if 'what' != square */
 		fprintf(stderr, "'what' value of %%%%tuplets not yet coded\n");
 
 /*fixme: two staves not treated*/
 /*fixme: to optimize*/
-    if (s1->multi >= 0) {
+	dir = t->aux & 0x000f;			/* 'where' */
+	if (!dir)
+		dir = s1->multi >= 0 ? SL_ABOVE : SL_BELOW;
+    if (dir == SL_ABOVE) {
 
 	/* sole or upper voice: the bracket is above the staff */
 	x1 = s1->x - 4;
@@ -2814,7 +2799,6 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	}
 
 	/* end the backet according to the last note duration */
-#if 1
 	if (s2->dur > s2->prev->dur) {
 		if (s2->next)
 			x2 = s2->next->x - s2->next->wl - 5;
@@ -2829,12 +2813,6 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		 && s2->stem > 0)
 			x2 += 3.5;
 	}
-#else
-	if (s2->next)
-		x2 += (s2->next->x - s2->next->wl - s2->x - s2->wr) * 0.5;
-	else
-		x2 += (realwidth - s2->x) * 0.5;
-#endif
 
 	xm = .5 * (x1 + x2);
 	ym = .5 * (y1 + y2);
@@ -2899,7 +2877,6 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 /*fixme: think to all that again..*/
 	x1 = s1->x - 7;
 
-#if 1
 	if (s2->dur > s2->prev->dur) {
 		if (s2->next)
 			x2 = s2->next->x - s2->next->wl - 8;
@@ -2910,12 +2887,6 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		if (s2->u.note.notes[s2->nhd].shhd > 0)
 			x2 += s2->u.note.notes[s2->nhd].shhd;
 	}
-#else
-	if (s2->next)
-		x2 += (s2->next->x - s2->next->wl - s2->x - s2->wr) * 0.5;
-	else
-		x2 += (realwidth - s2->x) * 0.5;
-#endif
 
 	if (s1->staff == upstaff) {
 		sy = s1;
@@ -2999,16 +2970,15 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	}
     } /* lower voice */
 
-	if ((t->aux & 0x0f) == 1) {	/* if 'value' == none */
+	if ((t->aux & 0x00f0) == 0x10) {	/* if 'which' == none */
 		s->sflags &= ~S_IN_TUPLET;
 		return next;
 	}
 	yy = .5 * (y1 + y2);
-	if ((t->aux & 0x0f) == 0)		/* if 'value' == number */
+	if ((t->aux & 0x00f0) == 0)		/* if 'which' == number */
 		a2b("(%d)", t->u.tuplet.p_plet);
 	else
-		a2b("(%d:%d)", t->u.tuplet.p_plet,
-		     t->u.tuplet.q_plet);
+		a2b("(%d:%d)", t->u.tuplet.p_plet, t->u.tuplet.q_plet);
 	putxy(xm, yy);
 	a2b("y%d bnumb\n", upstaff);
 	s->sflags &= ~S_IN_TUPLET;

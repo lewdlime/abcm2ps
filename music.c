@@ -2844,7 +2844,7 @@ if (staff > nst) {
 			if (u->sflags & S_XSTEM) {
 				if (u->ts_prev->staff != staff - 1
 				 || u->ts_prev->abc_type != ABC_T_NOTE) {
-					error(1, s, "Bad +xstem+");
+					error(1, s, "Bad !xstem!");
 					u->sflags &= ~S_XSTEM;
 /*fixme:nflags KO*/
 				} else {

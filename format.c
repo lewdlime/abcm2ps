@@ -72,6 +72,7 @@ static struct format {
 	{"graceslurs", &cfmt.graceslurs, FORMAT_B, 0},
 	{"graceword", &cfmt.graceword, FORMAT_B, 0},
 	{"gracespace", &cfmt.gracespace, FORMAT_I, 5},
+	{"gutter", &cfmt.gutter, FORMAT_U, 0},
 	{"header", &cfmt.header, FORMAT_S, 0},
 	{"headerfont", &cfmt.font_tb[HEADERFONT], FORMAT_F, 0},
 	{"historyfont", &cfmt.font_tb[HISTORYFONT], FORMAT_F, 0},
@@ -186,15 +187,22 @@ static int get_font(const char *fname, int encoding)
 		error(1, NULL, "Too many fonts");
 		return 0;
 	}
-	if (file_initialized> 0
-	 && (epsf <= 1 && !svg))
-		error(1, NULL,
-		      "Cannot have a new font when the output file is opened");
+	if (epsf <= 1 && !svg) {
+		if (file_initialized > 0)
+			error(1, NULL,
+			      "Cannot have a new font when the output file is opened");
+		if (strchr(fname, ' ') != NULL) {
+			error(1, NULL,
+				"PostScript fonts cannot have names with spaces");
+			return 0;
+		}
+	}
 	fnum = nfontnames++;
 	fontnames[fnum] = strdup(fname);
 	if (encoding < 0)
 		encoding = 0;
 	font_enc[fnum] = encoding;
+
 	return fnum;
 }
 
@@ -529,8 +537,9 @@ static char *yn[2] = {"no","yes"};
 				break;
 			    }
 			case 3:			/* tuplets */
-				printf("%d %d %d\n",
-					cfmt.tuplets >> 8,
+				printf("%d %d %d %d\n",
+					cfmt.tuplets >> 12,
+					(cfmt.tuplets >> 8) & 0x0f,
 					(cfmt.tuplets >> 4) & 0x0f,
 					cfmt.tuplets & 0x0f);
 				break;
@@ -1110,6 +1119,12 @@ void interpret_fmt_line(char *w,		/* keyword */
 			return;
 		}
 		if (strcmp(w, "scale") == 0) {
+			for (fd = format_tb; fd->name; fd++)
+				if (strcmp("pagescale", fd->name) == 0)
+					break;
+			if (fd->lock)
+				return;
+			fd->lock = lock;
 			f = strtod(p, &q);
 			if (*q != '\0' && *q != ' ')
 				goto bad;
@@ -1145,7 +1160,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 	for (fd = format_tb; fd->name; fd++)
 		if (strcmp(w, fd->name) == 0)
 			break;
-	if (fd->name == 0)
+	if (!fd->name)
 		return;
 
 	i = strlen(p);
@@ -1153,6 +1168,7 @@ void interpret_fmt_line(char *w,		/* keyword */
 		p[i - 5] = '\0';
 		lock = 1;
 	}
+
 	if (lock)
 		fd->lock = 1;
 	else if (fd->lock)
@@ -1213,12 +1229,14 @@ void interpret_fmt_line(char *w,		/* keyword */
 		break;
 	case FORMAT_I:
 		if (fd->subtype == 3) {		/* tuplets */
-			unsigned i1, i2, i3;
+			unsigned i1, i2, i3, i4 = 0;
 
 			if (sscanf(p, "%d %d %d", &i1, &i2, &i3) != 3
-			 || i1 > 2 || i2 > 2 || i3 > 2)
+			 && sscanf(p, "%d %d %d %d", &i1, &i2, &i3, &i4) != 4)
 				goto bad;
-			cfmt.tuplets = (i1 << 8) | (i2 << 4) | i3;
+			if (i1 > 2 || i2 > 2 || i3 > 2 || i4 > 2)
+				goto bad;
+			cfmt.tuplets = (i1 << 12) | (i2 << 8) | (i3 << 4) | i4;
 			break;
 		}
 		if (fd->subtype == 5) {		/* gracespace */

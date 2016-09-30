@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2015 Jean-François Moine
+ * Copyright (C) 1998-2016 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -206,7 +206,6 @@ static void init_ps(char *str)
 		"/SLW/setlinewidth load def\n"
 		"/defl 0 def\n"	/* decoration flags - see deco.c for values */
 		"/dlw{0.7 SLW}!\n"
-
 		"%s\n", version);
 	define_symbols();
 	output = fprintf;
@@ -538,6 +537,7 @@ static void init_page(void)
 			define_svg_symbols(in_fname, nbpages,
 				cfmt.landscape ? p_fmt->pageheight : p_fmt->pagewidth,
 				cfmt.landscape ? p_fmt->pagewidth : p_fmt->pageheight);
+			user_ps_write();
 			file_initialized = 1;
 			output = svg_output;
 		} else {
@@ -545,7 +545,6 @@ static void init_page(void)
 				cfmt.landscape ? p_fmt->pageheight : p_fmt->pagewidth,
 				cfmt.landscape ? p_fmt->pagewidth : p_fmt->pageheight);
 		}
-		user_ps_write();
 	} else if (file_initialized <= 0) {
 		init_ps(in_fname);
 	}
@@ -576,6 +575,9 @@ static void init_page(void)
 			"%% --- width %.1f\n",		/* for index */
 			(pwidth - cfmt.leftmargin - cfmt.rightmargin) /
 					cfmt.scale);
+	if (cfmt.gutter != 0)
+		output(fout, "%.1f 0 T\n", (pagenum & 1) ?
+					cfmt.gutter : -cfmt.gutter);
 
 	remy = maxy = pheight - cfmt.topmargin - cfmt.botmargin;
 

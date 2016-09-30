@@ -60,6 +60,7 @@ static struct deco_def_s {
 	unsigned char h;	/* height */
 	unsigned char wl, wr;	/* left and right widths */
 	unsigned char strx;	/* string index - 255=deco name */
+	unsigned char ld_start;	/* index of start of long decoration */
 	unsigned char ld_end;	/* index of end of long decoration */
 	unsigned char flags;	/* only DE_LDST and DE_LDEN */
 } deco_def_tb[128];
@@ -76,7 +77,7 @@ static draw_f *func_tb[] = {
 	d_cresc,	/* 7 */
 };
 static const short f_near = (1 << 0) | (1 << 1) | (1 << 2);
-static const short f_note = (1 << 3) | (1 << 4) | (1 << 5) | (1 << 8);
+static const short f_note = (1 << 3) | (1 << 4) | (1 << 5);
 static const short f_staff = (1 << 6) | (1 << 7);
 
 /* postscript function table */
@@ -182,8 +183,9 @@ static struct u_deco {
 	char text[2];
 } *user_deco;
 
-static struct SYMBOL *first_note;	/* first note/rest of the line */
+//static struct SYMBOL *first_note;	/* first note/rest of the line */
 
+static unsigned char deco_define(char *name);
 static void draw_gchord(struct SYMBOL *s, float gchy_min, float gchy_max);
 
 /* -- get the max/min vertical offset -- */
@@ -308,22 +310,20 @@ static void d_arp(struct deco_elt *de)
 	s = de->s;
 	dd = &deco_def_tb[de->t];
 	xc = 0;
-	if (s->type == NOTEREST) {
-		for (m = 0; m <= s->nhd; m++) {
-			if (s->u.note.notes[m].acc) {
-				dx = 5 + s->u.note.notes[m].shac;
-			} else {
-				dx = 6 - s->u.note.notes[m].shhd;
-				switch (s->head) {
-				case H_SQUARE:
-				case H_OVAL:
-					dx += 2.5;
-					break;
-				}
+	for (m = 0; m <= s->nhd; m++) {
+		if (s->u.note.notes[m].acc) {
+			dx = 5 + s->u.note.notes[m].shac;
+		} else {
+			dx = 6 - s->u.note.notes[m].shhd;
+			switch (s->head) {
+			case H_SQUARE:
+			case H_OVAL:
+				dx += 2.5;
+				break;
 			}
-			if (dx > xc)
-				xc = dx;
 		}
+		if (dx > xc)
+			xc = dx;
 	}
 	h = 3 * (s->pits[s->nhd] - s->pits[0]) + 4;
 	m = dd->h;		/* minimum height */
@@ -349,19 +349,19 @@ static void d_cresc(struct deco_elt *de)
 		return;
 	s2 = de->s;
 	de1 = de->start;		/* start of the deco */
-	if (de1) {
+//	if (de1) {
 		s = de1->s;
 		x = s->x + 3;
-	} else {			/* end without start */
-		if (!first_note) {
-			dd = &deco_def_tb[de->t];
-			error(1, s2, "No start of deco !%s!", dd->name);
-			de->t = 0;
-			return;
-		}
-		s = first_note;
-		x = s->x - s->wl - 4;
-	}
+//	} else {			/* end without start */
+//		if (!first_note) {
+//			dd = &deco_def_tb[de->t];
+//			error(1, s2, "No start of deco !%s!", dd->name);
+//			de->t = 0;
+//			return;
+//		}
+//		s = first_note;
+//		x = s->x - s->wl - 4;
+//	}
 	de->staff = s2->staff;
 	de->flags &= ~DE_LDEN;		/* old behaviour */
 	de->flags |= DE_VAL;
@@ -397,8 +397,8 @@ static void d_cresc(struct deco_elt *de)
 		dx = x2 - x - 4;
 		if (dx < 20) {
 			x -= (20 - dx) * 0.5;
-			if (!de->start)
-				x -= (20 - dx) * 0.5;
+//			if (!de->start)
+//				x -= (20 - dx) * 0.5;
 			dx = 20;
 		}
 	}
@@ -424,7 +424,10 @@ static void d_gliss(struct deco_elt *de2)
 
 	s1 = de1->s;
 
-	de1->x += s1->xmx;
+	if (s1->xmx != 0)
+		de1->x += s1->xmx;
+	else
+		de1->x += 8;
 //	if (s1->dots)
 //		de1->x += 3;
 	de1->x += 3 * s1->dots;
@@ -591,22 +594,22 @@ static void d_trill(struct deco_elt *de)
 		return;
 	s2 = de->s;
 
-	if (de->start) {		/* deco start */
+//	if (de->start) {		/* deco start */
 		s = de->start->s;
 		x = s->x;
 		if (s->abc_type == ABC_T_NOTE
 		 && s->u.note.dc.n > 1)
 			x += 10;
-	} else {			/* end without start */
-		s = first_note;
-		if (!s) {
-			dd = &deco_def_tb[de->t];
-			error(1, s2, "No start of deco !%s!", dd->name);
-			de->t = 0;
-			return;
-		}
-		x = s->x - s->wl - 4;
-	}
+//	} else {			/* end without start */
+//		s = first_note;
+//		if (!s) {
+//			dd = &deco_def_tb[de->t];
+//			error(1, s2, "No start of deco !%s!", dd->name);
+//			de->t = 0;
+//			return;
+//		}
+//		x = s->x - s->wl - 4;
+//	}
 	de->staff = staff = s2->staff;
 
 	up = s2->multi >= 0;
@@ -622,8 +625,8 @@ static void d_trill(struct deco_elt *de)
 			w -= 6;
 		if (w < 20) {
 			x -= (20 - w) * 0.5;
-			if (!de->start)
-				x -= (20 - w) * 0.5;
+//			if (!de->start)
+//				x -= (20 - w) * 0.5;
 			w = 20;
 		}
 	}
@@ -872,7 +875,7 @@ static unsigned char deco_build(char *name, char *text)
 
 	/* set the values */
 	if (!dd->name)
-		dd->name = name;		/* new decoration */
+		dd->name = name;	/* new decoration */
 	dd->func = strncmp(dd->name, "head-", 5) == 0 ? 9 : c_func;
 	if (!ps_func_tb[ps_x]) {
 		if (ps_func[0] == '-' && ps_func[1] == '\0')
@@ -895,27 +898,31 @@ static unsigned char deco_build(char *name, char *text)
 	 || (name[l] == ')' && !strchr(name, '('))) {
 		struct deco_def_s *ddo;
 
-		if (name[l] == '(')
+		strcpy(name2, name);
+		if (name[l] == '(') {
 			dd->flags = DE_LDST;
-		else
+			name2[l] = ')';
+		} else {
 			dd->flags = DE_LDEN;
+			name2[l] = '(';
+		}
 		for (o = 1, ddo = &deco_def_tb[1]; o < 128; o++, ddo++) {
 			if (!ddo->name)
 				break;
-			if (strlen(ddo->name) == l + 1
-			 && strncmp(ddo->name, name, l) == 0) {
-				if (name[l] == '('
-				 && ddo->name[l] == ')') {
+			if (strcmp(ddo->name, name2) == 0) {
+				if (name[l] == '(') {
+					ddo->ld_start = ideco;
 					dd->ld_end = o;
-					break;
-				}
-				if (name[l] == ')'
-				 && ddo->name[l] == '(') {
+				} else {
+					dd->ld_start = o;
 					ddo->ld_end = ideco;
-					break;
 				}
+				break;
 			}
 		}
+		if (o >= 128 || !ddo->name)
+//fixme: memory leak...
+			deco_define(strdup(name2));
 	}
 	return ideco;
 }
@@ -967,10 +974,11 @@ static void set_feathered_beam(struct SYMBOL *s1,
 	s2->dur = tt - t;
 }
 
-/* -- define a user decoration -- */
-static unsigned char user_deco_define(char *name)
+/* -- define a decoration -- */
+static unsigned char deco_define(char *name)
 {
 	struct u_deco *d;
+	unsigned char ideco;
 	int l;
 
 	l = strlen(name);
@@ -979,24 +987,14 @@ static unsigned char user_deco_define(char *name)
 		 && d->text[l] == ' ')
 			return deco_build(name, d->text);
 	}
-	return 128;
-}
-
-/* -- define a standard decoration -- */
-static unsigned char deco_define(char *name)
-{
-	unsigned char ideco;
-	int l;
-
-	l = strlen(name);
 	for (ideco = 0; ; ideco++) {
 		if (!std_deco_tb[ideco])
-			return 128;
+			break;
 		if (strncmp(std_deco_tb[ideco], name, l) == 0
 		 && std_deco_tb[ideco][l] == ' ')
-			break;
+			return deco_build(name, std_deco_tb[ideco]);
 	}
-	return deco_build(name, std_deco_tb[ideco]);
+	return 128;
 }
 
 /* -- convert the external deco number to the internal one -- */
@@ -1016,9 +1014,7 @@ static unsigned char deco_intern(unsigned char ideco,
 	}
 	for (ideco = 1; ideco < 128; ideco++) {
 		if (!deco_def_tb[ideco].name) {
-			ideco = user_deco_define(name);	/* try a user decoration */
-			if (ideco == 128)		/* try a standard decoration */
-				ideco = deco_define(name);
+			ideco = deco_define(name);
 			break;
 		}
 		if (strcmp(deco_def_tb[ideco].name, name) == 0)
@@ -1050,12 +1046,20 @@ void deco_cnv(struct decos *dc,
 		if (ideco == 0)
 			continue;
 		dd = &deco_def_tb[ideco];
+		m = dc->tm[i].m;
 
 		/* special decorations */
 		switch (dd->func) {
+		case 2:			// arp
+			if (m >= 0) {
+				error(1, s,
+					"!%s! cannot be on a head (function 2)",
+					dd->name);
+				break;
+			}
+			/* fall thru */
 		case 0:			// near
 		case 1:			// slide
-		case 2:			// arp
 			if (s->abc_type != ABC_T_NOTE
 			 && s->abc_type != ABC_T_REST) {
 				error(1, s,
@@ -1070,7 +1074,7 @@ void deco_cnv(struct decos *dc,
 							dd->name);
 				break;
 			}
-			if (dc->tm[i].m < 0)
+			if (m < 0)
 				dc->tm[i].m = s->nhd;
 			continue;
 		case 9:		// move the alternate head of the chord to the notes
@@ -1081,7 +1085,6 @@ void deco_cnv(struct decos *dc,
 					dd->name);
 				break;
 			}
-			m = dc->tm[i].m;
 			if (m < 0) {		// apply !head-xx! to each head
 				dc->tm[i].m = 0;
 				n = dc->n;
@@ -1248,8 +1251,9 @@ void draw_all_deco(void)
 		if (de->t == 0)			// deleted
 			continue;
 		dd = &deco_def_tb[de->t];
-		if ((dd->flags & DE_LDST) && dd->ld_end != 0)
-			continue;		// start of full long decoration
+//		if ((dd->flags & DE_LDST) && dd->ld_end != 0)
+		if (dd->ld_end != 0)
+			continue;		// start of long decoration
 		if ((f = dd->ps_func) < 0)
 			continue;		// old behaviour
 
@@ -1367,12 +1371,12 @@ void draw_all_deco(void)
 		}
 		putxy(x, y);
 		if (de->flags & DE_LDEN) {
-			if (de->start) {
+//			if (de->start) {
 				x = de->start->x;
 				y = de->start->y + staff_tb[de->start->staff].y;
-			} else {
-				x = first_note->x - first_note->wl - 4;
-			}
+//			} else {
+//				x = first_note->x - first_note->wl - 4;
+//			}
 			if (x > de->x - 20)
 				x = de->x - 20;
 			putxy(x, y);
@@ -1465,17 +1469,25 @@ static void deco_create(struct SYMBOL *s,
 // link the long decorations
 static void ll_deco(void)
 {
-	struct deco_elt *de, *de2;
+	struct deco_elt *de, *de2, *tail;
 	struct deco_def_s *dd;
-	int t, voice;
+	int t, voice, staff;
 
-	for (de = deco_head; de; de = de->next) {
+	// add ending decorations
+	tail = deco_tail;
+	if (!tail)
+		return;
+	for (de = deco_head; ; de = de->next) {
 		t = de->t;
 		dd = &deco_def_tb[t];
 
-		if (!(de->flags & DE_LDST))
+		if (!(de->flags & DE_LDST)) {
+			if (de == tail)
+				break;
 			continue;
+		}
 		t = dd->ld_end;
+#if 0
 		if (t == 0) {		// if long deco has no end
 			int l;		// create one
 			char *name;
@@ -1498,11 +1510,19 @@ static void ll_deco(void)
 				t = 0;
 			}
 		}
-		voice = de->s->voice;	/* search in the voice */
+#endif
+		voice = de->s->voice;	/* search later in the voice */
 		for (de2 = de->next; de2; de2 = de2->next)
 			if (!de2->start
 			 && de2->t == t && de2->s->voice == voice)
 				break;
+		if (!de2) {		/* no end, search in the staff */
+			staff = de->s->staff;
+			for (de2 = de->next; de2; de2 = de2->next)
+				if (!de2->start
+				 && de2->t == t && de2->s->staff == staff)
+					break;
+		}
 		if (!de2) {		/* no end, insert one */
 			de2 = (struct deco_elt *) getarena(sizeof *de2);
 			memset(de2, 0, sizeof *de2);
@@ -1521,6 +1541,36 @@ static void ll_deco(void)
 		de2->defl &= ~DEF_NOST;
 		if (dd->func == 8)
 			d_gliss(de2);
+		if (de == tail)
+			break;
+	}
+
+	// add starting decorations
+	for (de2 = deco_head; ; de2 = de2->next) {
+		if (!(de2->flags & DE_LDEN) // not the end of long decoration
+		 || de2->start) {		// start already found
+			if (de2 == tail)
+				break;
+			continue;
+		}
+		t = de2->t;
+		dd = &deco_def_tb[t];
+		de = (struct deco_elt *) getarena(sizeof *de);
+		memset(de, 0, sizeof *de);
+		de->prev = deco_tail;
+		deco_tail->next = de;
+		deco_tail = de;
+		de->s = prev_scut(de2->s);
+		de->t = dd->ld_start;
+		de->flags = DE_LDST;
+		de->defl = DEF_NOST;
+		de->x = de->s->x;	//de2->s->x - de2->s->wl - 4;
+		de->y = de2->s->y;
+		de->m = de2->m;
+		de2->start = de;
+//		de2->defl &= ~DEF_NOST;
+		if (de2 == tail)
+			break;
 	}
 }
 
@@ -1531,10 +1581,10 @@ void draw_deco_near(void)
 {
 	struct SYMBOL *s, *g;
 	struct decos *dc;
-	struct SYMBOL *first;
+//	struct SYMBOL *first;
 
 	deco_head = deco_tail = NULL;
-	first = NULL;
+//	first = NULL;
 	for (s = tsfirst; s; s = s->ts_next) {
 		switch (s->type) {
 		case BAR:
@@ -1545,8 +1595,8 @@ void draw_deco_near(void)
 			break;
 		case NOTEREST:
 		case SPACE:
-			if (!first)
-				first = s;
+//			if (!first)
+//				first = s;
 			if (s->u.note.dc.n == 0)
 				continue;
 			dc = &s->u.note.dc;
@@ -1565,7 +1615,7 @@ void draw_deco_near(void)
 		}
 		deco_create(s, dc);
 	}
-	first_note = first;
+//	first_note = first;
 
 	ll_deco();			// link the long decorations
 }

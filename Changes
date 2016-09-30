@@ -1,3 +1,35 @@
+---- Version 8.12.4 - 2016-09-25 ----
+
+%%gutter added
+	(asked by Paul Hardy)
+Check if spaces in PostScript font names
+	(reported by Dave Marcus)
+Fix loss of computed PostScript values on page break with SVG output
+	(reported by David Lacroix)
+Fix 'ghosts' at bottom of page when justified or centered text in page
+	(reported by Hudson Lacerda)
+
+---- Version 8.12.3 - 2016-08-25 ----
+
+Fix bad shape of cresc/dimin on next line after continuation
+	(reported by David Lacroix)
+Fix bad scan of %%tuplets
+	(reported by David Lacroix)
+
+---- Version 8.12.2 - 2016-08-24 ----
+
+Handle long decorations on second repeats
+	(reported by Timm Reasbeck)
+Add 4th parameter to %%tuplets ('where')
+	(asked by Ben)
+Treat back the long decorations in overlayed voices ending
+		on a measure bar
+	(reported by David Lacroix)
+Fix 'ghosts' at top of page when justified or centered text in page
+	(fixed by Hudson Lacerda)
+Fix bad scale with '-s' when %%scale inside ABC
+	(reported by Hudson Lacerda)
+
 ---- Version 8.12.1 - 2016-08-05 ----
 
 Fix bad alternate heads since 8.12.0

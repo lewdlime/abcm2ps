@@ -389,10 +389,10 @@ static char ps_head[] =
 	"/arp{gsave 90 rotate exch neg ltr grestore}!\n"
 
 	/* x2 y2 x1 y1 gliss - line glissando */
-	"/gliss{	M 10 0 RM L 1 SLW stroke}!\n"
+	"/gliss{	M 2 0 RM L 1 SLW stroke}!\n"
 
 	/* x2 y2 x1 y1 glisq - squiggly glissando */
-	"/glisq{	gsave exch 13 add exch 2 copy T\n"
+	"/glisq{	gsave exch 7 add exch 2 copy T\n"
 //		" 0 0 M\n"
 		"exch 4 -1 roll exch sub 3 1 roll sub\n" // dx dy
 		"2 copy exch atan dup rotate\n"		// dx dy alpha
@@ -402,7 +402,7 @@ static char ps_head[] =
 //		"	2 1.15 2.30 -150 -30 arc 4 0 T pop\n"
 //		"}for\n"
 //		"1 SLW stroke"
-		"-6 -4 ltr "
+		"-5 -3 ltr "
 		"grestore}!\n"
 
 	/* x y wedge - wedge */
@@ -714,7 +714,7 @@ static char ps_head[] =
 	"/dSL{	M [4] 0 setdash .8 SLW RC stroke [] 0 setdash}!\n"
 
 	/* -- text -- */
-	"/strw{	gsave 0 1000 M/strop/show load def 1 setgray str\n"
+	"/strw{	gsave 0 -2000 M/strop/show load def 1 setgray str\n"
 	"	0 setgray currentpoint pop/w exch def grestore}!\n"
 	"/jshow{w 0 32 4 -1 roll widthshow}!\n"
 	"/strop/show load def\n"

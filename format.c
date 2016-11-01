@@ -239,8 +239,10 @@ static void fontspec(struct FONTSPEC *f,
 	f->swfac = size;
 	if (swfac_font[f->fnum] != 0) {
 		f->swfac *= swfac_font[f->fnum];
-	} else if (strncmp(name, times, 5) == 0) {
-		if (strcmp(name, times_bold) == 0)
+	} else if (strncmp(name, times, 5) == 0
+		|| strncmp(name, serif, 5) == 0) {
+		if (strcmp(name, times_bold) == 0
+		 || strcmp(name, serif_bold) == 0)
 			f->swfac *= 1.05;
 	} else if (strcmp(name, "Helvetica-Bold") == 0) {
 		f->swfac *= 1.15;

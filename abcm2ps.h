@@ -91,8 +91,8 @@ enum accidentals {
 #define BEAM_SLOPE	0.5	/* max slope of a beam */
 #define BEAM_STUB	6.0	/* length of stub for flag under beam */ 
 #define SLUR_SLOPE	1.0	/* max slope of a slur */
-#define GSTEM		14	/* grace note stem length */
-#define GSTEM_XOFF	1.6	/* x offset for grace note stem */
+#define GSTEM		15	/* grace note stem length */
+#define GSTEM_XOFF	2.3	/* x offset for grace note stem */
 
 #define BETA_C		0.1	/* max expansion for flag -c */
 #define BETA_X		1.0	/* max expansion before complaining */
@@ -405,8 +405,10 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 		} meter;
 		struct {		/* Q: info */
 			char *str1;		/* string before */
-			short length[4];	/* up to 4 note lengths */
-			char *value;		/* tempo value */
+			short beats[4];		/* up to 4 beats */
+			char circa;		/* "ca. " */
+			char tempo;		/* number of beats per mn or */
+			short new_beat;
 			char *str2;		/* string after */
 		} tempo;
 		struct {		/* V: info */

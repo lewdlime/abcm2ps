@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2015 Jean-François Moine
+ * Copyright (C) 1998-2016 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -28,14 +28,13 @@
 char tex_buf[TEX_BUF_SZ];	/* result of tex_str() */
 int outft = -1;			/* last font in the output file */
 
-static char *strop;		/* current string output operation */
+static int stropx;		/* index current string output operation */
 static float strlw;		/* line width */
 static int curft;		/* current (wanted) font */
 static int defft;		/* default font */
 static char strtx;		/* PostScript text outputing (bits) */
 #define TX_STR 1			/* string started */
 #define TX_ARR 2			/* glyph/string array started */
-#define TX_EXT 4			/* glyph/string array needed */
 
 /* width of characters according to the encoding */
 /* these are the widths for Times-Roman, extracted from the 'a2ps' package */
@@ -747,6 +746,16 @@ void set_str_font(int cft, int dft)
 	defft = dft;
 }
 
+static char *strop_tb[] = {	/* index = action (A_xxxx) * 2 */
+	"show",   "arrayshow",
+	"showc",  "arrayshow",
+	"showr",  "arrayshow",
+	"lyshow", "alyshow",
+	"gcshow", "agcshow",
+	"anshow", "aanshow",
+	"gxshow", "arrayshow",
+};
+
 /* close a string */
 static void str_end(int end)
 {
@@ -754,17 +763,14 @@ static void str_end(int end)
 		a2b(")");
 		strtx &= ~TX_STR;
 		if (!(strtx & TX_ARR)) {
-			a2b("%s", strop);
+			a2b("%s", strop_tb[stropx]);
 			return;
 		}
 	}
 	if (!end || !(strtx & TX_ARR))
 		return;
 	strtx &= ~TX_ARR;
-//fixme:showarray - removed
-	a2b("]arrayshow");
-////fixme: does not work for gxshow
-//	a2b("]%s", strop);
+	a2b("]%s", strop_tb[stropx + 1]);
 }
 
 /* check if some non ASCII characters */
@@ -792,16 +798,6 @@ static void str_ft_out1(char *p, int l)
 	a2b("%.*s", l, p);
 }
 
-static char *strop_tb[] = {	/* index = action (A_xxxx) */
-	"show",
-	"showc",
-	"showr",
-	"lyshow",
-	"gcshow",
-	"anshow",
-	"gxshow",
-};
-
 /* -- output a string handling the font changes -- */
 static void str_ft_out(char *p, int end)
 {
@@ -824,15 +820,10 @@ static void str_ft_out(char *p, int end)
 	}
 	q = p;
 	while (*p != '\0') {
-		if ((unsigned char) *p >= 0xc2
+		if ((signed char) *p < 0
 		 && use_glyph) {
-			if (p > q) {
+			if (p > q)
 				str_ft_out1(q, p - q);
-//			} else if (curft != outft) {
-//				str_end(1);
-//				a2b(" ");
-//				set_font(curft);
-			}
 			str_end(0);
 			if (curft != outft) {
 				str_end(1);
@@ -846,7 +837,7 @@ static void str_ft_out(char *p, int end)
 			q = p = glyph_out(p);
 			continue;
 		}
-		switch ((unsigned char) *p) {
+		switch (*p) {
 		case '$':
 			if (isdigit((unsigned char) p[1])
 			 && (unsigned) (p[1] - '0') < FONT_UMAX) {
@@ -913,10 +904,11 @@ void str_out(char *p, int action)
 	}
 #endif
 
+	stropx = action * 2;
+
 	/* direct output if no font change and only ASCII characters */
 	if (!strchr(p, '$')
 	 && !non_ascii_p(p)) {
-		strop = strop_tb[action];
 		str_ft_out(p, 1);		/* output the string */
 		return;
 	}
@@ -928,12 +920,12 @@ void str_out(char *p, int action)
 		if (!svg && epsf <= 1) {
 			a2b("/str{");
 			outft = -1;
-			strop = "strop";
-			break;
+			stropx = 0;
 		}
 		/* fall thru */
-	default:
-		strop = strop_tb[action];
+//	default:
+//		if (!svg && epsf <= 1)		/* if not SVG */
+//			stropx++;
 		break;
 	}
 
@@ -1085,7 +1077,7 @@ void write_text(char *cmd, char *s, int job)
 //	curft = defft;
 	nw = 0;					/* number of words */
 	strw = 0;				/* have gcc happy */
-	strop = job == T_FILL ? "show" : "strop";
+	stropx = job == T_FILL ? 0 : 1;
 	while (*s != '\0') {
 		float lw;
 

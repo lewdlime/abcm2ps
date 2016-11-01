@@ -86,8 +86,8 @@ static float b_pos(int grace,
 	float d1, d2, shift, depth;
 	float top, bot;
 
-	shift = !grace ? BEAM_SHIFT : 3;
-	depth = !grace ? BEAM_DEPTH : 1.7;
+	shift = !grace ? BEAM_SHIFT : 3.5;
+	depth = !grace ? BEAM_DEPTH : 1.8;
 	if (stem > 0) {
 		bot = b - (flags - 1) * shift - depth;
 		if (bot > 26)
@@ -320,7 +320,7 @@ if (s1->xs == s2->xs)
 		if (!(s1->flags & ABC_F_GRACE))
 			ys = BEAM_SHIFT;
 		else
-			ys = 3;
+			ys = 3.5;
 		ys *= (nflags - 1);
 		ys += BEAM_DEPTH;
 		ys *= .5;
@@ -617,10 +617,10 @@ static void draw_beams(struct BEAM *bm)
 		shift = .34;		/* (half width of the stem) */
 		bh = BEAM_DEPTH;
 	} else {
-		bshift = 3;
+		bshift = 3.5;
 		bstub = 3.2;
 		shift = .29;
-		bh = 1.6;
+		bh = 1.8;
 	}
 
 /*fixme: quick hack for stubs at end of beam and different stem directions*/
@@ -2972,6 +2972,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 
 	if ((t->aux & 0x00f0) == 0x10) {	/* if 'which' == none */
 		s->sflags &= ~S_IN_TUPLET;
+		a2b("\n");
 		return next;
 	}
 	yy = .5 * (y1 + y2);

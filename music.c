@@ -1718,13 +1718,14 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 		if (s2->sflags & S_SEQST)
 			s2->space = set_space(s2);
 		s3 = s2->next;
-		s2 = s3->next;
-		for (;;) {
-			if (s2->type == BAR || s2->type == CLEF)
+		for (s2 = s3->ts_next; ;s2 = s2->ts_next) {
+			if (s2->staff != staff)
+				continue;
+			if (s2->voice == voice
+			 && s2->type == BAR)
 				break;
 			s2->extra = NULL;
 			unlksym(s2);
-			s2 = s2->next;
 		}
 		to_rest(s3);
 		s3->dur = s3->u.note.notes[0].len = dur;
@@ -3193,7 +3194,7 @@ static void init_music_line(void)
 			last_s->sflags &= ~S_SEQST;
 //		if (cursys->voice[voice].second)
 //			s->sflags |= S_SECOND;
-		if (voice_tb[voice].s_clef->u.clef.invis
+		if (staff_tb[staff].s_clef->u.clef.invis
 		 || cursys->staff[staff].empty)
 			s->flags |= ABC_F_INVIS;
 //		set_yval(s);

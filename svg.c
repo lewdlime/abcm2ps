@@ -210,9 +210,9 @@ static struct {
 	"	<path d=\"m-6 5v-10m12 0v16\"/>\n"
 	"</g>\n"},
 #define D_ghd 17
-{	"<path id=\"ghd\" class=\"fill\" d=\"m1.7 -1\n"
-	"	c-1 -1.7 -4.5 0.2 -3.4 2\n"
-	"	1 1.7 4.5 -0.2 3.4 -2\"/>\n"},
+{	"<path id=\"ghd\" class=\"fill\" d=\"m2.2 -1.5\n"
+	"	c-1.32 -2.31 -5.94 0.33 -4.62 2.64\n"
+	"	1.32 2.31 5.94 -0.33 4.62 -2.64\"/>\n"},
 #define D_r00 18
 {	"<rect id=\"r00\" class=\"fill\"\n"
 	"	x=\"-1.6\" y=\"-6\" width=\"3\" height=\"12\"/>\n"},
@@ -449,7 +449,7 @@ static struct {
 #define D_hl2 54
 {	"<path id=\"hl2\" class=\"stroke\" d=\"m-9 0h18\"/>\n"},
 #define D_ghl 55
-{	"<path id=\"ghl\" class=\"stroke\" d=\"m-3 0h6\"/>\n"},
+{	"<path id=\"ghl\" class=\"stroke\" d=\"m-3.5 0h7\"/>\n"},
 #define D_rdots 56
 {	"<g id=\"rdots\" class=\"fill\">\n"
 	"	<circle cx=\"0\" cy=\"-9\" r=\"1.2\"/>\n"
@@ -1135,7 +1135,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 	s = strdup("/defl 0 def\n"
 		   "/svg 1 def\n"
 		   "/dlw{0.7 SLW}def\n"
-		   "/gsc{gsave y T .7 dup scale 0 0}def\n");
+		   "/gsc{gsave y T .8 dup scale 0 0}def\n");
 	svg_write(s, strlen(s));
 	free(s);
 }
@@ -1526,7 +1526,7 @@ static void stem(char *op)
 	if (op[0] == 's')
 		dx = 3.5;
 	else
-		dx = 1.6;
+		dx = GSTEM_XOFF;
 	if (op[1] == 'd')
 		dx = -dx;
 	sym = ps_sym_lookup("x");
@@ -3690,7 +3690,7 @@ rmoveto:
 			h = pop_free_val();
 			n = pop_free_val();
 			sym = ps_sym_lookup("x");
-			x = gcur.xoffs + sym->e->u.v + 1.6;
+			x = gcur.xoffs + sym->e->u.v + GSTEM_XOFF;
 			sym = ps_sym_lookup("y");
 			y = gcur.yoffs - sym->e->u.v;
 			fprintf(fout,
@@ -3721,7 +3721,7 @@ rmoveto:
 			h = pop_free_val();
 			n = pop_free_val();
 			sym = ps_sym_lookup("x");
-			x = gcur.xoffs + sym->e->u.v - 1.6;
+			x = gcur.xoffs + sym->e->u.v - GSTEM_XOFF;
 			sym = ps_sym_lookup("y");
 			y = gcur.yoffs - sym->e->u.v;
 			fprintf(fout,
@@ -3752,7 +3752,7 @@ rmoveto:
 			h = pop_free_val();
 			n = pop_free_val();
 			sym = ps_sym_lookup("x");
-			x = gcur.xoffs + sym->e->u.v + 1.6;
+			x = gcur.xoffs + sym->e->u.v + GSTEM_XOFF;
 			sym = ps_sym_lookup("y");
 			y = gcur.yoffs - sym->e->u.v;
 			fprintf(fout,

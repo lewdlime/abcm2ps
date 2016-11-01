@@ -1047,8 +1047,8 @@ char *get_str(char *d,		/* destination */
 static char *parse_tempo(char *p,
 			 struct SYMBOL *s)
 {
-	int l;
-	char *q, str[80];
+	char c, str[80];
+	int i, l, n, top, bot;
 
 	/* string before */
 	if (*p == '"') {
@@ -1060,57 +1060,67 @@ static char *parse_tempo(char *p,
 	/* beat */
 	if (*p == 'C' || *p == 'c'
 	 || *p == 'L' || *p == 'l') {
-		int len;
-
-		p++;
-		if (*p != '=')
-			goto inval;
-		p = parse_len(p + 1, &len);
-		if (len <= 0)
-			goto inval;
-		s->u.tempo.length[0] = len * ulen / BASE_LEN;
-		while (isspace((unsigned char) *p))
-			p++;
+		s->u.tempo.beats[0] = ulen;
 		if (parse.abc_vers >= (2 << 16))
 			syntax("Deprecated Q: value", p);
-	} else if (isdigit((unsigned char) *p) && strchr(p, '/') != 0) {
-		unsigned i;
-
-		i = 0;
-		while (isdigit((unsigned char) *p)) {
-			int top, bot, n;
-
-			if (sscanf(p, "%d /%d%n", &top, &bot, &n) != 2
-			 || bot <= 0)
-				goto inval;
-			l = (BASE_LEN * top) / bot;
-			if (l <= 0
-			 || i >= sizeof s->u.tempo.length
-					/ sizeof s->u.tempo.length[0])
-				goto inval;
-			s->u.tempo.length[i++] = l;
-			p += n;
-			while (isspace((unsigned char) *p))
-				p++;
-		}
-	}
-
-	/* tempo value ('Q:beat=value' or 'Q:value') */
-	if (*p == '=') {
 		p++;
 		while (isspace((unsigned char) *p))
 			p++;
-	}
-	if (*p != '\0' && *p != '"') {
-		q = p;
-		while (*p != '"' && *p != '\0')
-			p++;
-		while (isspace((unsigned char) p[-1]))
+		if (*p != '=')
+			goto inval;
+		c = '=';
+		p--;
+	} else if (isdigit((unsigned char) *p)) {
+		if (strchr(p, '/') != NULL) {
+			i = 0;
+			while (isdigit((unsigned char) *p)) {
+				if (sscanf(p, "%d/%d%n", &top, &bot, &n) != 2
+				 || bot <= 0)
+					goto inval;
+				l = (BASE_LEN * top) / bot;
+				if (l <= 0
+				 || i >= sizeof s->u.tempo.beats
+						/ sizeof s->u.tempo.beats[0])
+					goto inval;
+				s->u.tempo.beats[i++] = l;
+				p += n;
+				while (isspace((unsigned char) *p))
+					p++;
+			}
+			c = *p;
+			if (c != '=')
+				goto inval;
+		} else {
+			s->u.tempo.beats[0] = ulen;
+			if (parse.abc_vers >= (2 << 16))
+				syntax("Deprecated Q: value", p);
+			c = '=';
 			p--;
-		l = p - q;
-		s->u.tempo.value = getarena(l + 1);
-		strncpy(s->u.tempo.value, q, l);
-		s->u.tempo.value[l] = '\0';
+		}
+	} else {
+		c = '\0';
+	}
+
+	/* tempo value */
+	if (c == '=') {
+		p++;
+		if (strncmp(p, "ca. ", 4) == 0) {
+			s->u.tempo.circa = 1;
+			p += 4;
+		}
+		if (sscanf(p, "%d/%d%n", &top, &bot, &n) == 2) {
+			if (bot <= 0)
+				goto inval;
+			l = (BASE_LEN * top) / bot;
+			if (l <= 0)
+				goto inval;
+			s->u.tempo.new_beat = l;
+		} else {
+			if (sscanf(p, "%d%n", &top, &n) != 1)
+				goto inval;
+			s->u.tempo.tempo = top;
+		}
+		p += n;
 		while (isspace((unsigned char) *p))
 			p++;
 	}
@@ -1122,13 +1132,6 @@ static char *parse_tempo(char *p,
 		strcpy(s->u.tempo.str2, str);
 	}
 
-	if (!s->u.tempo.str1 && !s->u.tempo.str2
-	 && s->u.tempo.length[0] == 0) {
-		if (s->u.tempo.value == 0)
-			return "Empty tempo";
-		if (parse.abc_vers >= (2 << 16))
-			syntax("Deprecated Q: value", p);
-	}
 	return 0;
 inval:
 	return "Invalid tempo";

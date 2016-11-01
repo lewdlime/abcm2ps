@@ -20,11 +20,6 @@ static char ps_head[] =
 	"/xydef{/y exch def/x exch def}!\n"
 	"/xymove{/x 2 index def/y 1 index def M}!\n"
 
-	/* redefine show to handle array of {strings, glyphs} */
-//fixme:showarray - removed
-//	"/showorig/show load def"
-//	"/show{dup type/arraytype eq{arrayshow}{showorig}ifelse}!"
-
 	/* str showc - center at current pt */
 	"/showc{dup stringwidth pop .5 mul neg 0 RM show}!\n"
 
@@ -544,7 +539,7 @@ static char ps_head[] =
 	/* x y dft0 - double flat sign */
 	"/dft0{	gsave T -4 -3.5 T .018 dup scale udbleflat ufill grestore}!\n"
 	/* ancillary function for grace note accidentals */
-	"/gsc{gsave y T .7 dup scale 0 0}!\n"
+	"/gsc{gsave y T .8 dup scale 0 0}!\n"
 
 	/* some microtone accidentals */
 	/* 1/4 ton sharp */
@@ -577,39 +572,6 @@ static char ps_head[] =
 	"/sh4{sh4tb exch get cvx exec}!\n"
 	"/ft4tb[/.notdef/ft1/ft0/ft513/dft0]def\n"
 	"/ft4{ft4tb exch get cvx exec}!\n"
-
-	/* str gcshow - guitar chord */
-	"/gcshow{show}!\n"
-	/* x y w h box - draw a box */
-	"/box{.6 SLW rectstroke}!\n"
-	/* set the end of a box */
-	"/boxend{currentpoint pop/x exch def}!\n"
-	/* mark the right most  end of a box */
-	"/boxmark{currentpoint pop dup x gt\n"
-	"	{/x exch def}{pop}ifelse}!\n"
-	/* x y dy boxdraw - draw a box around a guitar chord */
-	"/boxdraw{x 3 index sub 2 add exch box}!\n"
-	/* w str gxshow - expand a guitar chord */
-	"/gxshow{0 9 3 -1 roll widthshow}!\n"
-
-	/* str anshow - annotation */
-	"/anshow{show}!\n"
-
-	/* -- lyrics under notes -- */
-	/* w x y wln - underscore line */
-	"/wln{M .8 SLW 0 RL stroke}!\n"
-	/* w x y hyph - hyphen */
-	"/hyph{	.8 SLW 3 add M\n"
-	"	dup cvi 20 idiv 3 mul 25 add\n"	/* w d */
-	"	1 index cvi exch idiv 1 add "	/* w n */
-		"exch "				/* n w */
-		"1 index div\n"			/* n dx */
-	"	dup 4 sub "			/* n dx (dx-4) */
-		"3 1 roll "			/* (dx-4) n dx */
-		".5 mul 2 sub 0 RM\n"		/* (dx / 2 - 4) rmoveto */
-	"	{4 0 RL dup 0 RM}repeat stroke pop}!\n"
-	/* str lyshow - lyrics */
-	"/lyshow{show}!\n"
 
 	/* -- bars -- */
 	/* h x y bar - thin bar */
@@ -720,6 +682,42 @@ static char ps_head[] =
 	"/strop/show load def\n"
 	"/arrayshow{{dup type/stringtype eq{strop}{glyphshow}ifelse}forall}def\n"
 
+	/* str gcshow - guitar chord */
+	"/gcshow{show}!\n"
+	"/agcshow{arrayshow}!\n"
+	/* x y w h box - draw a box */
+	"/box{.6 SLW rectstroke}!\n"
+	/* set the end of a box */
+	"/boxend{currentpoint pop/x exch def}!\n"
+	/* mark the right most  end of a box */
+	"/boxmark{currentpoint pop dup x gt\n"
+	"	{/x exch def}{pop}ifelse}!\n"
+	/* x y dy boxdraw - draw a box around a guitar chord */
+	"/boxdraw{x 3 index sub 2 add exch box}!\n"
+	/* w str gxshow - expand a guitar chord */
+	"/gxshow{0 9 3 -1 roll widthshow}!\n"
+
+	/* str anshow - annotation */
+	"/anshow{show}!\n"
+	"/aanshow{arrayshow}!\n"
+
+	/* -- lyrics under notes -- */
+	/* w x y wln - underscore line */
+	"/wln{M .8 SLW 0 RL stroke}!\n"
+	/* w x y hyph - hyphen */
+	"/hyph{	.8 SLW 3 add M\n"
+	"	dup cvi 20 idiv 3 mul 25 add\n"	/* w d */
+	"	1 index cvi exch idiv 1 add "	/* w n */
+		"exch "				/* n w */
+		"1 index div\n"			/* n dx */
+	"	dup 4 sub "			/* n dx (dx-4) */
+		"3 1 roll "			/* (dx-4) n dx */
+		".5 mul 2 sub 0 RM\n"		/* (dx / 2 - 4) rmoveto */
+	"	{4 0 RL dup 0 RM}repeat stroke pop}!\n"
+	/* str lyshow - lyrics */
+	"/lyshow{show}!\n"
+	"/alyshow{arrayshow}!\n"
+
 	/* -- note heads -- */
 	/* x y hd - full head */
 	"/uhd{{	100 -270 640 280\n"
@@ -776,16 +774,16 @@ static char ps_head[] =
 
 	/* x y ghd - grace note head */
 	"/ghd{	xymove\n"
-	"	1.7 1 RM\n"
-	"	-1 1.7 -4.5 -0.2 -3.4 -2 RC\n"
-	"	1 -1.7 4.5 0.2 3.4 2 RC fill}!\n"
+	"	1.7 1.5 RM\n"
+	"	-1.32 2.31 -5.94 -0.33 -4.62 -2.64 RC\n"
+	"	1.32 -2.31 5.94 0.33 4.62 2.64 RC fill}!\n"
 
 	/* dx dy gua / gda - acciaccatura */
 	"/gua{x y M -1 4 RM RL stroke}!\n"
 	"/gda{x y M -5 -4 RM RL stroke}!\n"
 
 	/* x y ghl - grace note ledger line */
-	"/ghl{	.6 SLW M -3 0 RM 6 0 RL stroke}!\n"
+	"/ghl{	.6 SLW M -3.5 0 RM 7 0 RL stroke}!\n"
 
 	/* x1 y2 x2 y2 x3 y3 x0 y0 gsl - grace note slur */
 	"/gsl{dlw M RC stroke}!\n"

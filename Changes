@@ -1,3 +1,48 @@
+---- Version 8.12.8 - 2016-11-01 ----
+
+Fix bad PS output when centered text with non-ASCII characters
+		since 8.12.5
+	(reported by David Lacroix)
+
+---- Version 8.12.7 - 2016-10-31 ----
+
+Fix bad PS output when grace notes since 8.12.6
+	(from by David Lacroix)
+Fix random error on Q:"text"
+	(reported by David Lacroix)
+
+---- Version 8.12.6 - 2016-10-31 ----
+
+Fix bad PS output when centered texts with non-ASCII characters
+		since 8.12.5
+Adjust the grace notes offsets and helper lines
+	(from David Lacroix)
+Bad parse of Q: since 8.12.5
+	(reported by David Lacroix)
+
+---- Version 8.12.5 - 2016-10-30 ----
+
+Bigger grace notes
+	(asked by David Lacroix)
+Loss of '%%clef none' at start of lines when %%clef inside tune
+	(reported by Guido Gonzato)
+Bad display of measure repeat when 2 voices on the staff
+	(reported by Chuck Boody)
+Bad display of repeat measure bars when multi-voices and
+		symbol between ':|' and '|:' in one voice
+	(reported by Heinz Färber)
+Add more checks on the Q: syntax
+	(reported by Manavasu)
+Fix some bad PS outputs when %%tuplet with 'which' = 'no value'
+	(reported by Hudson Lacerda)
+Add PS functions and permit special treatments on the chord symbols,
+		annotations and lyrics
+	(asked by Frédéric Aupépin)
+DESTDIR support in Makefile for some distributions
+	(patch adapted from Thomas Klausner)
+Bad string width computation on SVG output
+	(reported by Martin Tarenskeen)
+
 ---- Version 8.12.4 - 2016-09-25 ----
 
 %%gutter added

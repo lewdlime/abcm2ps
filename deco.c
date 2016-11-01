@@ -2280,11 +2280,13 @@ float tempo_width(struct SYMBOL *s)
 	w = 0;
 	if (s->u.tempo.str1)
 		w += tex_str(s->u.tempo.str1);
-	if (s->u.tempo.value != 0) {
+	if (s->u.tempo.beats[0] != 0) {
+		if (s->u.tempo.circa)
+			w += tex_str("ca. ");
 		i = 1;
-		while (i < sizeof s->u.tempo.length
-				/ sizeof s->u.tempo.length[0]
-		       && s->u.tempo.length[i] > 0) {
+		while (i < sizeof s->u.tempo.beats
+				/ sizeof s->u.tempo.beats[0]
+		       && s->u.tempo.beats[i] != 0) {
 			w += 10;
 			i++;
 		}
@@ -2301,32 +2303,30 @@ void write_tempo(struct SYMBOL *s,
 		 int beat,
 		 float sc)
 {
-	int top, bot;
-	unsigned j;
+	unsigned i;
+	char tmp[16];
 
 	if (s->u.tempo.str1)
 		put_str(s->u.tempo.str1, A_LEFT);
-	if (s->u.tempo.value != 0) {
+	if (s->u.tempo.beats[0] != 0) {
 		sc *= 0.7 * cfmt.font_tb[TEMPOFONT].size / 15.0;
 						/*fixme: 15.0 = initial tempofont*/
-		if (s->u.tempo.length[0] == 0) {
-			if (beat == 0)
-				beat = get_beat(&voice_tb[cursys->top_voice].meter);
-			s->u.tempo.length[0] = beat;
-		}
-		for (j = 0;
-		     j < sizeof s->u.tempo.length
-				/ sizeof s->u.tempo.length[0]
-			&& s->u.tempo.length[j] > 0;
-		     j++) {
-			draw_notempo(s, s->u.tempo.length[j], sc);
+		for (i = 0;
+		     i < sizeof s->u.tempo.beats
+				/ sizeof s->u.tempo.beats[0]
+			&& s->u.tempo.beats[i] != 0;
+		     i++) {
+			draw_notempo(s, s->u.tempo.beats[i], sc);
 		}
 		put_str("= ", A_LEFT);
-		if (sscanf(s->u.tempo.value, "%d/%d", &top, &bot) == 2
-		 && bot > 0)
-			draw_notempo(s, top * BASE_LEN / bot, sc);
-		else
-			put_str(s->u.tempo.value, A_LEFT);
+		if (s->u.tempo.tempo != 0) {
+			if (s->u.tempo.circa)
+				put_str("ca. ", A_LEFT);
+			snprintf(tmp, sizeof tmp, "%d", s->u.tempo.tempo);
+			put_str(tmp, A_LEFT);
+		} else {
+			draw_notempo(s, s->u.tempo.new_beat, sc);
+		}
 	}
 	if (s->u.tempo.str2)
 		put_str(s->u.tempo.str2, A_LEFT);

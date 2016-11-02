@@ -747,13 +747,14 @@ void set_str_font(int cft, int dft)
 }
 
 static char *strop_tb[] = {	/* index = action (A_xxxx) * 2 */
-	"show",   "arrayshow",
-	"showc",  "arrayshow",
-	"showr",  "arrayshow",
-	"lyshow", "alyshow",
-	"gcshow", "agcshow",
-	"anshow", "aanshow",
-	"gxshow", "arrayshow",
+	"show",   "arrayshow",	// left
+	"showc",  "arrayshow",	// center
+	"showr",  "arrayshow",	// right
+	"lyshow", "alyshow",	// lyric
+	"gcshow", "agcshow",	// gchord
+	"anshow", "aanshow",	// annot
+	"gxshow", "arrayshow",	// gchexp
+	"strop",  "arrayshow",	// (7 = justify)
 };
 
 /* close a string */
@@ -1077,7 +1078,7 @@ void write_text(char *cmd, char *s, int job)
 //	curft = defft;
 	nw = 0;					/* number of words */
 	strw = 0;				/* have gcc happy */
-	stropx = job == T_FILL ? 0 : 1;
+	stropx = (job == T_FILL ? A_LEFT : 7) * 2;
 	while (*s != '\0') {
 		float lw;
 

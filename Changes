@@ -1,6 +1,11 @@
+---- Version 8.12.9 - 2016-11-02 ----
+
+Fix bad PS output when justified text since 8.12.5
+	(reported by Guido Gonzato)
+
 ---- Version 8.12.8 - 2016-11-01 ----
 
-Fix bad PS output when centered text with non-ASCII characters
+Fix again bad PS output when centered text with non-ASCII characters
 		since 8.12.5
 	(reported by David Lacroix)
 

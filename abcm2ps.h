@@ -32,6 +32,15 @@ enum accidentals {
 #define B_CBRA 3	/* ] */
 #define B_COL 4		/* : */
 
+#define B_SINGLE 0x01		/* |	single bar */
+#define B_DOUBLE 0x11		/* ||	thin double bar */
+#define B_THIN_THICK 0x13	/* |]	thick at section end  */
+#define B_THICK_THIN 0x21	/* [|	thick at section start */
+#define B_LREP 0x14		/* |:	left repeat bar */
+#define B_RREP 0x41		/* :|	right repeat bar */
+#define B_DREP 0x44		/* ::	double repeat bar */
+#define B_DASH 0x04		/* :	dashed bar */
+
 /* slur/tie types (4 bits) */
 #define SL_ABOVE 0x01
 #define SL_BELOW 0x02
@@ -407,7 +416,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 			char *str1;		/* string before */
 			short beats[4];		/* up to 4 beats */
 			char circa;		/* "ca. " */
-			char tempo;		/* number of beats per mn or */
+			unsigned char tempo;	/* number of beats per mn or */
 			short new_beat;
 			char *str2;		/* string after */
 		} tempo;
@@ -471,16 +480,6 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 		} tuplet;
 	} u;
 };
-
-/* bar types !tied to abcparse.h! */
-#define B_SINGLE B_BAR		/* |	single bar */
-#define B_DOUBLE 0x11		/* ||	thin double bar */
-#define B_THIN_THICK 0x13	/* |]	thick at section end  */
-#define B_THICK_THIN 0x21	/* [|	thick at section start */
-#define B_LREP 0x14		/* |:	left repeat bar */
-#define B_RREP 0x41		/* :|	right repeat bar */
-#define B_DREP 0x44		/* ::	double repeat bar */
-#define B_DASH 0x04		/* :	dashed bar */
 
 /* parse definition */
 struct {

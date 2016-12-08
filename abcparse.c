@@ -2287,6 +2287,7 @@ static int parse_line(char *p)
 	if (p[-1] == '\\'
 	 || char_tb['\n'] != CHAR_LINEBREAK)
 		s->u.eoln.type = 1;		/* no break */
+
 	return 0;
 }
 

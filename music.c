@@ -826,9 +826,9 @@ static float gchord_width(struct SYMBOL *s,
 	struct SYMBOL *s2;
 	struct gch *gch;
 	int ix;
-	float lspc, rspc, w;
+	float lspc, rspc, w, alspc, arspc;
 
-	lspc = rspc = 0;
+	lspc = rspc = alspc = arspc = 0;
 	for (ix = 0, gch = s->gch; ix < MAXGCH; ix++, gch++) {
 		if (gch->type == '\0')
 			break;
@@ -846,39 +846,47 @@ static float gchord_width(struct SYMBOL *s,
 		    }
 		case '<':		/* left */
 			w = gch->w + wlnote;
-			if (w > lspc)
-				lspc = w;
+			if (w > alspc)
+				alspc = w;
 			break;
 		case '>':		/* right */
 			w = gch->w + s->wr;
-			if (w > rspc)
-				rspc = w;
+			if (w > arspc)
+				arspc = w;
 			break;
 		}
 	}
 
 	/* adjust width for no clash */
 	s2 = s->prev;
-	if (s2 && s2->gch) {
-		for (s2 = s->ts_prev; ; s2 = s2->ts_prev) {
-			if (s2 == s->prev) {
-				AT_LEAST(wlw, lspc);
-				break;
+	if (s2) {
+		if (s2->gch) {
+			for (s2 = s->ts_prev; ; s2 = s2->ts_prev) {
+				if (s2 == s->prev) {
+					AT_LEAST(wlw, lspc);
+					break;
+				}
+				if (s2->sflags & S_SEQST)
+					lspc -= s2->shrink;
 			}
-			if (s2->sflags & S_SEQST)
-				lspc -= s2->shrink;
 		}
+		if (alspc != 0)
+			AT_LEAST(wlw, alspc);
 	}
 	s2 = s->next;
-	if (s2 && s2->gch) {
-		for (s2 = s->ts_next; ; s2 = s2->ts_next) {
-			if (s2 == s->next) {
-				AT_LEAST(s->wr, rspc);
-				break;
+	if (s2) {
+		if (s2->gch) {
+			for (s2 = s->ts_next; ; s2 = s2->ts_next) {
+				if (s2 == s->next) {
+					AT_LEAST(s->wr, rspc);
+					break;
+				}
+				if (s2->sflags & S_SEQST)
+					rspc -= 8;
 			}
-			if (s2->sflags & S_SEQST)
-				rspc -= 8;
 		}
+		if (arspc != 0)
+			AT_LEAST(s->wr, arspc);
 	}
 	return wlw;
 }
@@ -900,7 +908,7 @@ static float ly_width(struct SYMBOL *s, float wlw)
 			continue;
 		if (tblt->pitch == 0) {		/* yes, no width */
 			for (i = 0; i < MAXLY; i++) {
-				if ((lyl = ly->lyl[i]) == 0)
+				if ((lyl = ly->lyl[i]) == NULL)
 					continue;
 				lyl->s = 0;
 			}
@@ -924,13 +932,10 @@ static float ly_width(struct SYMBOL *s, float wlw)
 			shift = s->wl;
 		} else if ((isdigit((unsigned char) *p) && strlen(p) > 2)
 		 || p[1] == ':'
-//		 || p[1] == '(' || p[1] == ')') {
 		 || *p == '(' || *p == ')') {
 			float sz;
 
-//			if (p[1] == '(')
 			if (*p == '(') {
-//				sz = cwid((unsigned char) p[1]);
 				sz = cwid((unsigned char) *p);
 			} else {
 				sz = 0;
@@ -1118,7 +1123,7 @@ static void set_width(struct SYMBOL *s)
 			}
 		}
 
-		/* leave room for guitar chord */
+		/* leave room for guitar chord and annotations */
 		if (s->gch)
 			wlw = gchord_width(s, wlnote, wlw);
 
@@ -4437,6 +4442,11 @@ static void check_bar(struct SYMBOL *s)
 	if ((bar_type & 0x0f) != B_COL)		/* if not left repeat bar */
 		return;
 	if (!(s->sflags & S_RRBAR)) {		/* 'xx:' (not ':xx:') */
+		if (bar_type == ((B_SINGLE << 8) | B_LREP)) {
+			p_voice->bar_start = B_LREP;
+			s->u.bar.type = B_DOUBLE;
+			return;
+		}
 		p_voice->bar_start = bar_type & 0x0fff;
 		if (s->flags & ABC_F_INVIS)
 			p_voice->bar_start |= 0x8000;
@@ -4472,10 +4482,10 @@ static void check_bar(struct SYMBOL *s)
 		p_voice->bar_start |= 0x8000;
 	if (s->sflags & S_NOREPBRA)
 		p_voice->bar_start |= 0x4000;
-		if (s->flags & ABC_F_RBSTART)
-			p_voice->bar_start |= 0x2000;
-		if (s->sflags & S_RBSTART)
-			p_voice->bar_start |= 0x1000;
+	if (s->flags & ABC_F_RBSTART)
+		p_voice->bar_start |= 0x2000;
+	if (s->sflags & S_RBSTART)
+		p_voice->bar_start |= 0x1000;
 }
 
 /* -- move the symbols of an empty staff to the next one -- */

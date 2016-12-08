@@ -1,3 +1,22 @@
+---- Version 8.13.0 - 2016-12-06 ----
+
+Accept "||:" as either simple left repeat bar ("|:"), or double bar
+		and left repeat bar when on 2 music lines
+	(asked by Jean-Luc Zins)
+Fix bad horizontal offset of word starting with a font change in w:
+Change default value of %%vocalspace (23pt -> 10pt) !!compatibility!!
+Fix bad vertical offset of lyrics (w:)
+Don't scale the lyrics (w:) with %%staffscale value !!compatibility!!
+	(reported by Lionel Coates)
+Output the lyrics (w:) after the decorations !!compatibility!!
+Fix some clashes of left/right annotations with notes
+	(reported by Timm Reasbeck)
+Fix bad tempo value when >= 128
+	(reported by Jean-Luc Zins)
+Do more check about the values of %%pos
+Fix loss of beam breaks when %%breakoneoln and EOL followed by grace notes
+	(reported by Timm Reasbeck)
+
 ---- Version 8.12.9 - 2016-11-02 ----
 
 Fix bad PS output when justified text since 8.12.5

@@ -1147,8 +1147,9 @@ static int bar_cnv(int bar_type)
 	case (B_CBRA << 4) + B_BAR:
 		return B_BAR;
 #endif
+	case (B_SINGLE << 8) | B_LREP:
 	case (B_BAR << 4) + B_COL:
-		bar_type |= (B_OBRA << 8);		/* |: -> [|: */
+		bar_type |= (B_OBRA << 8);		/* ||: and |: -> [|: */
 		break;
 	case (B_BAR << 8) + (B_COL << 4) + B_COL:
 		bar_type |= (B_OBRA << 12);		/* |:: -> [|:: */
@@ -3563,7 +3564,7 @@ static void draw_tblt_w(struct VOICE_S *p_voice,
 	char *p;
 	int j, l;
 
-	a2b("/y{%.1f y%d}def ", y, p_voice->staff);
+	a2b("/y{%.1f yns%d}def ", y, p_voice->staff);
 	set_font(VOCALFONT);
 	a2b("%.1f 0 y %d %s\n", realwidth, nly, tblt->head);
 	for (j = 0; j < nly ; j++) {
@@ -3682,18 +3683,152 @@ static void draw_tblt_p(struct VOICE_S *p_voice,
 
 /* -- draw the lyrics under (or above) notes -- */
 /* !! this routine is tied to set_width() !! */
+static void draw_lyric_line(struct VOICE_S *p_voice,
+			    int j)
+{
+	struct SYMBOL *s;
+	struct lyrics *ly;
+	struct lyl *lyl;
+	int hyflag, l, lflag;
+	int ft, curft, defft;
+	char *p;
+	float lastx, w;
+	float x0, shift;
+
+	hyflag = lflag = 0;
+	if (p_voice->hy_st & (1 << j)) {
+		hyflag = 1;
+		p_voice->hy_st &= ~(1 << j);
+	}
+	for (s = p_voice->sym; /*s*/; s = s->next)
+		if (s->type != CLEF
+		 && s->type != KEYSIG && s->type != TIMESIG)
+			break;
+	if (s->prev)
+		lastx = s->prev->x;
+	else
+		lastx = tsfirst->x;
+	x0 = 0;
+	for ( ; s; s = s->next) {
+		ly = s->ly;
+		if (!ly
+		 || (lyl = ly->lyl[j]) == NULL) {
+			switch (s->type) {
+			case NOTEREST:
+				if (s->abc_type == ABC_T_NOTE)
+					break;
+				/* fall thru */
+			case MREST:
+				if (lflag) {
+					putx(x0 - lastx);
+					putx(lastx + 3);
+					a2b("y wln ");
+					lflag = 0;
+					lastx = s->x + s->wr;
+				}
+			}
+			continue;
+		}
+#if 1
+		ft = lyl->f - cfmt.font_tb;
+		get_str_font(&curft, &defft);
+		if (ft != curft) {
+			set_str_font(ft, defft);
+		}
+#else
+		if (lyl->f != f) {		/* font change */
+			f = lyl->f;
+			str_font(f - cfmt.font_tb);
+			if (lskip < f->size * 1.1)
+				lskip = f->size * 1.1;
+		}
+#endif
+		p = lyl->t;
+		w = lyl->w;
+		shift = lyl->s;
+		if (hyflag) {
+			if (*p == LY_UNDER) {		/* '_' */
+				*p = LY_HYPH;
+			} else if (*p != LY_HYPH) {	/* not '-' */
+				putx(s->x - shift - lastx);
+				putx(lastx);
+				a2b("y hyph ");
+				hyflag = 0;
+				lastx = s->x + s->wr;
+			}
+		}
+		if (lflag
+		 && *p != LY_UNDER) {		/* not '_' */
+			putx(x0 - lastx + 3);
+			putx(lastx + 3);
+			a2b("y wln ");
+			lflag = 0;
+			lastx = s->x + s->wr;
+		}
+		if (*p == LY_HYPH		/* '-' */
+		 || *p == LY_UNDER) {		/* '_' */
+			if (x0 == 0 && lastx > s->x - 18)
+				lastx = s->x - 18;
+			if (*p == LY_HYPH)
+				hyflag = 1;
+			else
+				lflag = 1;
+			x0 = s->x - shift;
+			continue;
+		}
+		x0 = s->x - shift;
+		l = strlen(p) - 1;
+		if (p[l] == LY_HYPH) {		/* '-' at end */
+			p[l] = '\0';
+			hyflag = 1;
+		}
+		putx(x0);
+		a2b("y M ");
+		put_str(p, A_LYRIC);
+		lastx = x0 + w;
+	}
+	if (hyflag) {
+		x0 = realwidth - 10;
+		if (x0 < lastx + 10)
+			x0 = lastx + 10;
+		putx(x0 - lastx);
+		putx(lastx);
+		a2b("y hyph ");
+		if (cfmt.hyphencont)
+			p_voice->hy_st |= (1 << j);
+	}
+
+	/* see if any underscore in the next line */
+	for (s = tsnext; s; s = s->ts_next)
+		if (s->voice == p_voice - voice_tb)
+			break;
+	for ( ; s; s = s->next) {
+		if (s->abc_type == ABC_T_NOTE) {
+			if (s->ly && s->ly->lyl[j]
+			 && s->ly->lyl[j]->t[0] == LY_UNDER) {
+				lflag = 1;
+				x0 = realwidth - 15;
+				if (x0 < lastx + 12)
+					x0 = lastx + 12;
+			}
+			break;
+		}
+	}
+	if (lflag) {
+		putx(x0 - lastx + 3);
+		putx(lastx + 3);
+		a2b("y wln");
+	}
+	a2b("\n");
+}
+
 static float draw_lyrics(struct VOICE_S *p_voice,
 			 int nly,
+			 float *h,
 			 float y,
 			 int incr)	/* 1: below, -1: above */
 {
-	int hyflag, l, j, lflag, ft, curft, defft;
-	char *p;
-	float lastx, w, lskip, desc;
-	struct SYMBOL *s;
-//	struct FONTSPEC *f;
-	struct lyrics *ly;
-	struct lyl *lyl;
+	int j, top;
 
 	/* check if the lyrics contain tablatures */
 	if (p_voice->tblts[0]) {
@@ -3704,169 +3839,32 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 			return y;		/* yes */
 	}
 
+	str_font(VOCALFONT);
 	outft = -1;				/* force font output */
-	lskip = 0;				/* (compiler warning) */
-//	f = NULL;				/* (force new font) */
 	if (incr > 0) {				/* under the staff */
-		j = 0;
-/*fixme: may not be the current font*/
-		y -= cfmt.font_tb[VOCALFONT].size;
 		if (y > -cfmt.vocalspace)
 			y = -cfmt.vocalspace;
-	} else {
-		int top;
-
-		top = staff_tb[p_voice->staff].topbar;
-		j = nly - 1;
-		nly = -1;
-		if (y < top + cfmt.vocalspace - cfmt.font_tb[VOCALFONT].size)
-			y = top + cfmt.vocalspace - cfmt.font_tb[VOCALFONT].size;
+		y += h[0] / 6;			// descent
+		y *= staff_tb[p_voice->staff].staffscale;
+		for (j = 0; j < nly; j++) {
+			y -= h[j] * 1.1;
+			a2b("/y{%.1f yns%d}! ", y, p_voice->staff);
+			draw_lyric_line(p_voice, j);
+		}
+		return y;
 	}
-/*fixme: may not be the current font*/
-	desc = cfmt.font_tb[VOCALFONT].size * .25;	/* descent */
-	str_font(VOCALFONT);
-	ft = -1;
-	for (; j != nly ; j += incr) {
-		float x0, shift;
 
-		a2b("/y{%.1f y%d}! ", y + desc, p_voice->staff);
-		hyflag = lflag = 0;
-		if (p_voice->hy_st & (1 << j)) {
-			hyflag = 1;
-			p_voice->hy_st &= ~(1 << j);
-		}
-		for (s = p_voice->sym; /*s*/; s = s->next)
-			if (s->type != CLEF
-			 && s->type != KEYSIG && s->type != TIMESIG)
-				break;
-		if (s->prev)
-			lastx = s->prev->x;
-		else
-//			lastx = 0;
-			lastx = tsfirst->x;
-		x0 = 0;
-//		if (f)
-//			lskip = f->size * 1.1;
-		for ( ; s; s = s->next) {
-			ly = s->ly;
-			if (!ly
-			 || (lyl = ly->lyl[j]) == NULL) {
-				switch (s->type) {
-				case NOTEREST:
-					if (s->abc_type == ABC_T_NOTE)
-						break;
-					/* fall thru */
-				case MREST:
-					if (lflag) {
-						putx(x0 - lastx);
-						putx(lastx + 3);
-						a2b("y wln ");
-						lflag = 0;
-						lastx = s->x + s->wr;
-					}
-				}
-				continue;
-			}
-#if 1
-			ft = lyl->f - cfmt.font_tb;
-			get_str_font(&curft, &defft);
-			if (ft != curft) {
-				set_str_font(ft, defft);
-				if (lskip < lyl->f->size * 1.1)
-					lskip = lyl->f->size * 1.1;
-			}
-#else
-			if (lyl->f != f) {		/* font change */
-				f = lyl->f;
-				str_font(f - cfmt.font_tb);
-				if (lskip < f->size * 1.1)
-					lskip = f->size * 1.1;
-			}
-#endif
-			p = lyl->t;
-			w = lyl->w;
-			shift = lyl->s;
-			if (hyflag) {
-				if (*p == LY_UNDER) {		/* '_' */
-					*p = LY_HYPH;
-				} else if (*p != LY_HYPH) {	/* not '-' */
-					putx(s->x - shift - lastx);
-					putx(lastx);
-					a2b("y hyph ");
-					hyflag = 0;
-					lastx = s->x + s->wr;
-				}
-			}
-			if (lflag
-			 && *p != LY_UNDER) {		/* not '_' */
-				putx(x0 - lastx + 3);
-				putx(lastx + 3);
-				a2b("y wln ");
-				lflag = 0;
-				lastx = s->x + s->wr;
-			}
-			if (*p == LY_HYPH		/* '-' */
-			 || *p == LY_UNDER) {		/* '_' */
-				if (x0 == 0 && lastx > s->x - 18)
-					lastx = s->x - 18;
-				if (*p == LY_HYPH)
-					hyflag = 1;
-				else
-					lflag = 1;
-				x0 = s->x - shift;
-				continue;
-			}
-			x0 = s->x - shift;
-			l = strlen(p) - 1;
-			if (p[l] == LY_HYPH) {		/* '-' at end */
-				p[l] = '\0';
-				hyflag = 1;
-			}
-			putx(x0);
-			a2b("y M ");
-			put_str(p, A_LYRIC);
-			lastx = x0 + w;
-		}
-		if (hyflag) {
-			x0 = realwidth - 10;
-			if (x0 < lastx + 10)
-				x0 = lastx + 10;
-			putx(x0 - lastx);
-			putx(lastx);
-			a2b("y hyph ");
-			if (cfmt.hyphencont)
-				p_voice->hy_st |= (1 << j);
-		}
-
-		/* see if any underscore in the next line */
-		for (s = tsnext; s; s = s->ts_next)
-			if (s->voice == p_voice - voice_tb)
-				break;
-		for ( ; s; s = s->next) {
-			if (s->abc_type == ABC_T_NOTE) {
-				if (s->ly && s->ly->lyl[j] != 0
-				 && s->ly->lyl[j]->t[0] == LY_UNDER) {
-					lflag = 1;
-					x0 = realwidth - 15;
-					if (x0 < lastx + 12)
-						x0 = lastx + 12;
-				}
-				break;
-			}
-		}
-		if (lflag) {
-			putx(x0 - lastx + 3);
-			putx(lastx + 3);
-			a2b("y wln");
-		}
-		a2b("\n");
-		if (incr > 0)
-			y -= lskip;
-		else
-			y += lskip;
+	/* above the staff */
+	top = staff_tb[p_voice->staff].topbar + cfmt.vocalspace;
+	if (y < top)
+		y = top;
+	y += h[nly - 1] / 6;			// descent
+	y *= staff_tb[p_voice->staff].staffscale;
+	for (j = nly; --j >= 0; ) {
+		a2b("/y{%.1f yns%d}! ", y, p_voice->staff);
+		draw_lyric_line(p_voice, j);
+		y += h[j] * 1.1;
 	}
-	if (incr > 0)
-		y += lskip;
 	return y;
 }
 
@@ -3881,7 +3879,10 @@ static void draw_all_lyrics(void)
 		short a, b;
 		float top, bot;
 	} lyst_tb[MAXSTAFF];
-	char nly_tb[MAXVOICE];
+	struct {
+		int nly;
+		float h[MAXLY];
+	} lyvo_tb[MAXVOICE];
 	char above_tb[MAXVOICE];
 	char rv_tb[MAXVOICE];
 	float top, bot, y;
@@ -3898,7 +3899,7 @@ static void draw_all_lyrics(void)
 	/* compute the number of lyrics per voice - staff
 	 * and their y offset on the staff */
 	memset(above_tb, 0, sizeof above_tb);
-	memset(nly_tb, 0, sizeof nly_tb);
+	memset(lyvo_tb, 0, sizeof lyvo_tb);
 	memset(lyst_tb, 0, sizeof lyst_tb);
 	staff = -1;
 	top = bot = 0;
@@ -3922,7 +3923,7 @@ static void draw_all_lyrics(void)
 					continue;
 /*fixme:should get the real width*/
 				x = s->x;
-				if (ly->lyl[0] != 0) {
+				if (ly->lyl[0]) {
 					x -= ly->lyl[0]->s;
 					w = ly->lyl[0]->w;
 				} else {
@@ -3934,12 +3935,24 @@ static void draw_all_lyrics(void)
 				y = y_get(p_voice->staff, 0, x, w);
 				if (bot > y)
 					bot = y;
+#if 0
 				for (i = MAXLY; --i >= 0; )
-					if (ly->lyl[i] != 0)
+					if (ly->lyl[i])
 						break;
 				i++;
 				if (i > nly)
 					nly = i;
+#else
+				for (i = 0; i < MAXLY; i++) {
+					if (!ly->lyl[i])
+						continue;
+					if (i > nly)
+						nly = i;
+					if (lyvo_tb[voice].h[i] < ly->lyl[i]->f->size)
+						lyvo_tb[voice].h[i] =
+							ly->lyl[i]->f->size;
+				}
+#endif
 			}
 		} else {
 			y = y_get(p_voice->staff, 1, 0, realwidth);
@@ -3953,7 +3966,7 @@ static void draw_all_lyrics(void)
 		lyst_tb[staff].bot = bot;
 		if (nly == 0)
 			continue;
-		nly_tb[voice] = nly;
+		lyvo_tb[voice].nly = nly;
 		if (p_voice->posit.voc != 0)
 			above_tb[voice] = p_voice->posit.voc == SL_ABOVE;
 		else if (p_voice->next
@@ -3983,9 +3996,9 @@ static void draw_all_lyrics(void)
 			continue;
 		}
 		staff = p_voice->staff;
-		set_sscale(staff);
-		if (nly_tb[voice] > 0)
-			lyst_tb[staff].bot = draw_lyrics(p_voice, nly_tb[voice],
+		if (lyvo_tb[voice].nly > 0)
+			lyst_tb[staff].bot = draw_lyrics(p_voice, lyvo_tb[voice].nly,
+							 lyvo_tb[voice].h,
 							 lyst_tb[staff].bot, 1);
 		for (nly = 0; nly < 2; nly++) {
 			if ((tblt = p_voice->tblts[nly]) == NULL)
@@ -3995,11 +4008,11 @@ static void draw_all_lyrics(void)
 				lyst_tb[staff].b = 1;
 			}
 			if (tblt->pitch == 0)
-				draw_tblt_w(p_voice, nly_tb[voice],
-					lyst_tb[staff].bot, tblt);
+				draw_tblt_w(p_voice, lyvo_tb[voice].nly,
+						lyst_tb[staff].bot, tblt);
 			else
 				draw_tblt_p(p_voice, lyst_tb[staff].bot,
-					tblt);
+						tblt);
 			if (tblt->ha != 0) {
 				lyst_tb[staff].top += tblt->ha;
 				lyst_tb[staff].a = 1;
@@ -4012,8 +4025,8 @@ static void draw_all_lyrics(void)
 		voice = rv_tb[i];
 		p_voice = &voice_tb[voice];
 		staff = p_voice->staff;
-		set_sscale(staff);
-		lyst_tb[staff].top = draw_lyrics(p_voice, nly_tb[voice],
+		lyst_tb[staff].top = draw_lyrics(p_voice, lyvo_tb[voice].nly,
+						 lyvo_tb[voice].h,
 						 lyst_tb[staff].top, -1);
 	}
 
@@ -4022,7 +4035,6 @@ static void draw_all_lyrics(void)
 		if (!p_voice->sym)
 			continue;
 		staff = p_voice->staff;
-		set_sscale(staff);
 		if (lyst_tb[staff].a) {
 			top = lyst_tb[staff].top + 2;
 			for (s = p_voice->sym; s; s = s->next) {
@@ -4035,7 +4047,7 @@ static void draw_all_lyrics(void)
 		}
 		if (lyst_tb[staff].b) {
 			bot = lyst_tb[staff].bot - 2;
-			if (nly_tb[p_voice - voice_tb] > 0) {
+			if (lyvo_tb[p_voice - voice_tb].nly > 0) {
 				for (s = p_voice->sym; s; s = s->next) {
 					if (s->ly) {
 /*fixme:should set the real width*/
@@ -4202,9 +4214,9 @@ void draw_sym_near(void)
 			}
 		}
 	}
-	draw_all_lyrics();
 	draw_deco_staff();
 	set_sscale(-1);		/* restore the scale parameters */
+	draw_all_lyrics();
 }
 
 /* -- draw the name/subname of the voices -- */
@@ -4434,6 +4446,7 @@ static float set_staff(void)
 			a2b("/scst%d{gsave 0 %.2f T %.2f dup scale}!\n",
 			     staff, dy, staff_tb[staff].staffscale);
 			a2b("/y%d{}!\n", staff);
+			a2b("/yns%d{%.1f add}!\n", staff, dy);
 		} else {
 			a2b("/y%d{%.1f add}!\n", staff, dy);
 		}

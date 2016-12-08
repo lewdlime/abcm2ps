@@ -1782,10 +1782,9 @@ static struct SYMBOL *get_lyric(struct SYMBOL *s)
 					s1->ly = (struct lyrics *) getarena(sizeof (struct lyrics));
 					memset(s1->ly, 0, sizeof (struct lyrics));
 				}
-				w = tex_str(word);
 
 				/* handle the font change at start of text */
-				q = tex_buf;
+				q = word;
 				if (*q == '$' && isdigit((unsigned char) q[1])
 				 && (unsigned) (q[1] - '0') < FONT_UMAX) {
 					int ft;
@@ -1797,6 +1796,8 @@ static struct SYMBOL *get_lyric(struct SYMBOL *s)
 					str_font(ft);
 					q += 2;
 				}
+				w = tex_str(q);
+				q = tex_buf;
 				lyl = (struct lyl *) getarena(sizeof *s1->ly->lyl[0]
 							    + strlen(q));
 				s1->ly->lyl[ln] = lyl;
@@ -3168,12 +3169,19 @@ static void get_bar(struct SYMBOL *s)
 		}
 
 		/* merge back-to-back repeat bars */
-		if (bar_type == B_LREP && !s->text
-		 && s2->u.bar.type == B_RREP) {
-			s2->u.bar.type = B_DREP;
-			s2->flags |= ABC_F_RBSTOP;
-			s2->sflags |= S_RBSTOP;
-			return;
+		if (bar_type == B_LREP && !s->text) {
+			if (s2->u.bar.type == B_RREP) {
+				s2->u.bar.type = B_DREP;
+				s2->flags |= ABC_F_RBSTOP;
+				s2->sflags |= S_RBSTOP;
+				return;
+			}
+			if (s2->u.bar.type == B_DOUBLE) {
+				s2->u.bar.type = (B_SINGLE << 8) | B_LREP;
+				s2->flags |= ABC_F_RBSTOP;
+				s2->sflags |= S_RBSTOP;
+				return;
+			}
 		}
 	}
 
@@ -3361,7 +3369,8 @@ void do_tune(void)
 			break;
 		case ABC_T_NOTE:
 		case ABC_T_REST:
-			if (curvoice->space) {
+			if (curvoice->space
+			 && !(s->flags & ABC_F_GRACE)) {
 				curvoice->space = 0;
 				s1->flags |= ABC_F_SPACE;
 			}

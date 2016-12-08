@@ -372,7 +372,7 @@ void set_format(void)
 	f->sysstaffsep = 34.0 PT;
 	f->maxstaffsep = 2000.0 PT;
 	f->maxsysstaffsep = 2000.0 PT;
-	f->vocalspace = 23.0 PT;
+	f->vocalspace = 10 PT;
 	f->textspace = 14 PT;
 	f->scale = 1.0;
 	f->slurheight = 1.0;
@@ -639,7 +639,9 @@ static int get_posit(char *p)
 	if (strcmp(p, "hidden") == 0
 	 || strcmp(p, "opposite") == 0)
 		return SL_HIDDEN;
-	return 0;			/* auto (!= SL_AUTO) */
+	if (strcmp(p, "auto") == 0)
+		return 0;		/* auto (!= SL_AUTO) */
+	return -1;
 }
 
 /* -- get the option for text -- */
@@ -951,10 +953,10 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 	for (vpar = vpar_tb; vpar->name; vpar++) {
 		if (strncmp(w, vpar->name, l))
 			continue;
-		if (!isdigit(*p))
+//		if (!isdigit(*p))
 			val = get_posit(p);
-		else
-			val = strtol(p, NULL, 10);
+//		else
+//			val = strtol(p, NULL, 10);
 		if ((unsigned) val > vpar->max)
 			goto err;
 		break;

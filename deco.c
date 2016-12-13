@@ -1272,7 +1272,7 @@ void draw_all_deco(void)
 		}
 
 		s = de->s;
-		set_v_color(s->voice);
+		set_color(s->color);
 		set_scale(s);
 
 		staff = de->staff;
@@ -1388,7 +1388,7 @@ void draw_all_deco(void)
 			a2b("%.*s\n", l, gl);
 	}
 	set_sscale(-1);			/* restore the scale */
-	set_v_color(-1);
+	set_color(0);
 }
 
 /* -- create the deco elements, and treat the near ones -- */

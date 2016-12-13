@@ -75,6 +75,28 @@ float multicol_start;			/* (for multicol) */
 static float multicol_max;
 static float lmarg, rmarg;
 
+static struct {
+	char *name;
+	int color;
+} col_tb[] = {
+	{ "aqua",	0x00ffff },
+	{ "black",	0x000000 },
+	{ "blue",	0x0000ff },
+	{ "fuchsia",	0xff00ff },
+	{ "gray",	0x808080 },
+	{ "green",	0x008000 },
+	{ "lime",	0x00ff00 },
+	{ "maroon",	0x800000 },
+	{ "navy",	0x000080 },
+	{ "olive",	0x808000 },
+	{ "purple",	0x800080 },
+	{ "red",	0xff0000 },
+	{ "silver",	0xc0c0c0 },
+	{ "teal",	0x008080 },
+	{ "white",	0xffffff },
+	{ "yellow",	0xffff00 },
+};
+
 static void get_clef(struct SYMBOL *s);
 static struct SYMBOL *get_info(struct SYMBOL *s);
 static void get_key(struct SYMBOL *s);
@@ -1946,6 +1968,7 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 		p_voice2->posit = p_voice->posit;
 		p_voice2->staff = p_voice->staff;
 		p_voice2->cstaff = p_voice->cstaff;
+		p_voice2->color = p_voice->color;
 		p_voice2->map_name = p_voice->map_name;
 		range = parsys->voice[p_voice - voice_tb].range;
 		for (voice = 0; voice < MAXVOICE; voice++) {
@@ -4222,7 +4245,15 @@ static void get_note(struct SYMBOL *s)
 			s->pits[i] += delta;
 		}
 	}
+	if (curvoice->octave) {
+		delta = curvoice->octave * 7;
+		for (i = 0; i <= m; i++) {
+			s->u.note.notes[i].pit += delta;
+			s->pits[i] += delta;
+		}
+	}
 	s->combine = curvoice->combine;
+	s->color = curvoice->color;
 
 	if (curvoice->perc)
 		s->sflags |= S_PERC;
@@ -5701,14 +5732,27 @@ center:
 		if (strcmp(w, "voicecolor") == 0) {
 			int color;
 
-			if (sscanf(p, "#%06x", &color) != 1
-			 || (unsigned) color > 0x00ffffff) {
-				error(1, s, "Bad color in %%%%voicecolor");
-				return s;
+			if (*p == '#') {
+				if (sscanf(p, "#%06x", &color) != 1
+				 || (unsigned) color > 0x00ffffff) {
+					error(1, s, "Bad color in %%%%voicecolor");
+					return s;
+				}
+			} else {
+				int i;
+
+				for (i = sizeof col_tb / sizeof col_tb[0]; --i >= 0; ) {
+					if (strcmp(p, col_tb[i].name) == 0)
+						break;
+				}
+				if (i < 0) {
+					error(1, s, "Unknown color in %%%%voicecolor");
+					return s;
+				}
+				color = col_tb[i].color;
 			}
-			sym_link(s, FMTCHG);
-			s->aux = VOICE_COLOR;
-			s->u.length.base_length = color;	// ugly!
+			if (curvoice)
+				curvoice->color = color;
 			return s;
 		}
 		if (strcmp(w, "voicecombine") == 0) {

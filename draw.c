@@ -38,20 +38,19 @@ static void draw_note(float x,
 		      int fl);
 static void set_tie_room(void);
 
-/* set the voice color */
-void set_v_color(int v)
-{
-	int old_color = cur_color;
+// set the symbol color
 
-	if (v < 0)
-		cur_color = 0;
-	else
-		cur_color = voice_tb[v].color;
-	if (cur_color != old_color)
-		a2b("%.2f %.2f %.2f setrgbcolor ",
-			(float) (cur_color >> 16) / 255,
-			(float) ((cur_color >> 8) & 0xff) / 255,
-			(float) (cur_color & 0xff) / 255);
+
+/* set the voice color */
+void set_color(int new_color)
+{
+	if (new_color == cur_color)
+		return;
+	cur_color = new_color;
+	a2b("%.2f %.2f %.2f setrgbcolor ",
+		(float) (cur_color >> 16) / 255,
+		(float) ((cur_color >> 8) & 0xff) / 255,
+		(float) (cur_color & 0xff) / 255);
 }
 
 /* output debug annotations */
@@ -1679,15 +1678,8 @@ static void draw_basic_note(float x,
 		}
 	}
 	if (note->color >= 0) {
-		int new_color = note->color;
-
-		if (new_color != cur_color) {
-			old_color = cur_color;
-			a2b("%.2f %.2f %.2f setrgbcolor ",
-				(float) (new_color >> 16) / 255,
-				(float) ((new_color >> 8) & 0xff) / 255,
-				(float) (new_color & 0xff) / 255);
-		}
+		old_color = cur_color;
+		set_color(note->color);
 	}
 	a2b("%s", p);
 
@@ -1719,10 +1711,7 @@ static void draw_basic_note(float x,
 	}
 
 	if (old_color >= 0)
-		a2b(" %.2f %.2f %.2f setrgbcolor",
-			(float) (old_color >> 16) / 255,
-			(float) ((old_color >> 8) & 0xff) / 255,
-			(float) (old_color & 0xff) / 255);
+		set_color(old_color);
 }
 
 /* -- draw a note or a chord -- */
@@ -3841,7 +3830,9 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 
 	str_font(VOCALFONT);
 	outft = -1;				/* force font output */
-	if (incr > 0) {				/* under the staff */
+
+	/* under the staff */
+	if (incr > 0) {
 		if (y > -cfmt.vocalspace)
 			y = -cfmt.vocalspace;
 		y += h[0] / 6;			// descent
@@ -3912,7 +3903,7 @@ static void draw_all_lyrics(void)
 			bot = 0;
 			staff = p_voice->staff;
 		}
-		nly = 0;
+		nly = -1;
 		if (p_voice->have_ly) {
 			for (s = p_voice->sym; s; s = s->next) {
 				struct lyrics *ly;
@@ -3935,14 +3926,6 @@ static void draw_all_lyrics(void)
 				y = y_get(p_voice->staff, 0, x, w);
 				if (bot > y)
 					bot = y;
-#if 0
-				for (i = MAXLY; --i >= 0; )
-					if (ly->lyl[i])
-						break;
-				i++;
-				if (i > nly)
-					nly = i;
-#else
 				for (i = 0; i < MAXLY; i++) {
 					if (!ly->lyl[i])
 						continue;
@@ -3952,7 +3935,6 @@ static void draw_all_lyrics(void)
 						lyvo_tb[voice].h[i] =
 							ly->lyl[i]->f->size;
 				}
-#endif
 			}
 		} else {
 			y = y_get(p_voice->staff, 1, 0, realwidth);
@@ -3964,8 +3946,9 @@ static void draw_all_lyrics(void)
 		}
 		lyst_tb[staff].top = top;
 		lyst_tb[staff].bot = bot;
-		if (nly == 0)
+		if (nly < 0)
 			continue;
+		nly++;
 		lyvo_tb[voice].nly = nly;
 		if (p_voice->posit.voc != 0)
 			above_tb[voice] = p_voice->posit.voc == SL_ABOVE;
@@ -4168,9 +4151,8 @@ void draw_sym_near(void)
 		s = p_voice->sym;
 		if (!s)
 			continue;
-//fixme: KO: the voice has no color yet
-//		set_v_color(s.voice);
-//		set_sscale(cursys->voice[p_voice - voice_tb].staff);
+//color
+		set_color(s->color);
 		set_sscale(p_voice->staff);
 
 		/* draw the tuplets near the notes */
@@ -4446,10 +4428,10 @@ static float set_staff(void)
 			a2b("/scst%d{gsave 0 %.2f T %.2f dup scale}!\n",
 			     staff, dy, staff_tb[staff].staffscale);
 			a2b("/y%d{}!\n", staff);
-			a2b("/yns%d{%.1f add}!\n", staff, dy);
 		} else {
 			a2b("/y%d{%.1f add}!\n", staff, dy);
 		}
+		a2b("/yns%d{%.1f add}!\n", staff, dy);
 	}
 
 	if (mbot == 0) {
@@ -4643,12 +4625,6 @@ void output_ps(struct SYMBOL *s, int color)
 				else
 					g2->next = g->next;
 				continue;
-			case VOICE_COLOR:
-				voice_tb[s->voice].color =
-					g->u.length.base_length;
-				if (color)
-					set_v_color(s->voice);
-				break;
 			}
 		}
 		g2 = g;
@@ -4687,10 +4663,10 @@ static void draw_symbols(struct VOICE_S *p_voice)
 		if ((s->flags & ABC_F_INVIS)
 		 && s->type != NOTEREST && s->type != GRACE)
 			continue;
+		set_color(s->color);
 		x = s->x;
 		switch (s->type) {
 		case NOTEREST:
-			set_v_color(p_voice - voice_tb);
 			set_scale(s);
 			if (s->abc_type == ABC_T_NOTE) {
 				if ((s->sflags & (S_BEAM_ST | S_BEAM_END)) == S_BEAM_ST
@@ -4727,7 +4703,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 			if ((s->flags & ABC_F_INVIS)
 			 || staff_tb[staff].empty)
 				break;
-			set_v_color(-1);
+			set_color(0);
 			set_sscale(staff);
 			y = staff_tb[staff].y;
 			x -= 10;		/* clef shift - see set_width() */
@@ -4759,7 +4735,7 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				break;
 			if (cfmt.alignbars && s->staff != 0)
 				break;
-			set_v_color(-1);
+			set_color(0);
 			set_sscale(s->staff);
 			draw_timesig(x, s);
 			if (annotate)
@@ -4772,14 +4748,13 @@ static void draw_symbols(struct VOICE_S *p_voice)
 			if ((s->sflags & S_SECOND)
 			 || staff_tb[s->staff].empty)
 				break;
-			set_v_color(-1);
+			set_color(0);
 			set_sscale(s->staff);
 			draw_keysig(p_voice, x, s);
 			if (annotate)
 				anno_out(s, 'K');
 			break;
 		case MREST:
-			set_v_color(p_voice - voice_tb);
 			set_scale(s);
 			a2b("(%d)", s->u.bar.len);
 			putxy(x, staff_tb[s->staff].y);
@@ -4788,7 +4763,6 @@ static void draw_symbols(struct VOICE_S *p_voice)
 				anno_out(s, 'Z');
 			break;
 		case GRACE:
-			set_v_color(p_voice - voice_tb);
 			set_scale(s);
 			draw_gracenotes(s);
 			break;
@@ -4797,7 +4771,6 @@ static void draw_symbols(struct VOICE_S *p_voice)
 		case FMTCHG:
 			break;			/* nothing */
 		case CUSTOS:
-			set_v_color(p_voice - voice_tb);
 			set_scale(s);
 			s->sflags |= ABC_F_STEMLESS;
 			draw_note(x, s, 0);
@@ -4807,10 +4780,9 @@ static void draw_symbols(struct VOICE_S *p_voice)
 		}
 	}
 	set_scale(p_voice->sym);
-	set_v_color(p_voice - voice_tb);
 	draw_all_ties(p_voice);
 	set_sscale(-1);
-	set_v_color(-1);
+	set_color(0);
 }
 
 /* -- draw all symbols -- */

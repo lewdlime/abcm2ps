@@ -341,7 +341,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 					 *	doty: # measures if > 0
 					 *	      # notes/rests if < 0
 					 *	nohdi1: # repeat */
-#define VOICE_COLOR 3			/* color in as.u.length.base_length */
+	int color;
 	float x;		/* x offset */
 	signed char y;		/* y offset of note head */
 	signed char ymn, ymx, yav; /* min, max, avg note head y offset */
@@ -805,8 +805,7 @@ void puty(float y);
 void putxy(float x, float y);
 void set_scale(struct SYMBOL *s);
 void set_sscale(int staff);
-void set_st_color(int st);
-void set_v_color(int v);
+void set_color(int color);
 /* format.c */
 void define_fonts(void);
 int get_textopt(char *p);

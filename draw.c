@@ -872,12 +872,13 @@ static void draw_timesig(float x,
 {
 	unsigned i, staff, l, l2;
 	char *f, meter[64];
-	float dx;
+	float dx, y;
 
 	if (s->u.meter.nmeter == 0)
 		return;
 	staff = s->staff;
 	x -= s->wl;
+	y = staff_tb[staff].y;
 	for (i = 0; i < s->u.meter.nmeter; i++) {
 		l = strlen(s->u.meter.meter[i].top);
 		if (l > sizeof s->u.meter.meter[i].top)
@@ -901,6 +902,8 @@ static void draw_timesig(float x,
 					l--;
 				}
 				meter[0] = '\0';
+				x -= 5;
+				y += 12;
 				break;
 			case 'c':
 				if (s->u.meter.meter[i].top[1] != '.') {
@@ -935,7 +938,7 @@ static void draw_timesig(float x,
 		if (meter[0] != '\0')
 			a2b("%s ", meter);
 		dx = (float) (13 * l);
-		putxy(x + dx * .5, staff_tb[staff].y);
+		putxy(x + dx * .5, y);
 		a2b("%s\n", f);
 		x += dx;
 	}
@@ -1188,10 +1191,10 @@ static void draw_bar(struct SYMBOL *s, float bot, float h)
 		if (s->u.bar.len == 1) {
 			for (s2 = s->prev; s2->abc_type != ABC_T_REST; s2 = s2->prev)
 				;
-			putxy(s2->x, yb);
+			putxy(s2->x, yb + 12);
 			a2b("mrep\n");
 		} else {
-			putxy(x, yb);
+			putxy(x, yb + 12);
 			a2b("mrep2\n");
 			if (s->voice == cursys->top_voice) {
 /*fixme				set_font(s->gcf); */
@@ -1297,7 +1300,7 @@ static void draw_rest(struct SYMBOL *s)
 	staffb = staff_tb[s->staff].y;		/* bottom of staff */
 
 	if (s->sflags & S_REPEAT) {
-		putxy(x, staffb);
+		putxy(x, staffb + 12);
 		if (s->doty < 0) {
 			a2b("srep\n");
 		} else {
@@ -1603,12 +1606,12 @@ static void draw_basic_note(float x,
 
 	putxy(x + shhd, y + staffb);		/* output x and y */
 
-	/* special case when no head */
-	if (s->nohdi1 >= 0
-	 && m >= s->nohdi1 && m < s->nohdi2) {
-		a2b("xydef");			/* set x y */
-		return;
-	}
+//	/* special case when no head */
+//	if (s->nohdi1 >= 0
+//	 && m >= s->nohdi1 && m < s->nohdi2) {
+//		a2b("xydef");			/* set x y */
+//		return;
+//	}
 
 	identify_note(s, note->len, &head, &dots, &nflags);
 	acc = note->acc;
@@ -1710,8 +1713,10 @@ static void draw_basic_note(float x,
 			a2b(" grestore");
 	}
 
-	if (old_color >= 0)
+	if (old_color >= 0) {
+		a2b("\n");
 		set_color(old_color);
+	}
 }
 
 /* -- draw a note or a chord -- */
@@ -3818,6 +3823,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 			 int incr)	/* 1: below, -1: above */
 {
 	int j, top;
+	float sc;
 
 	/* check if the lyrics contain tablatures */
 	if (p_voice->tblts[0]) {
@@ -3830,19 +3836,20 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 
 	str_font(VOCALFONT);
 	outft = -1;				/* force font output */
+	sc = staff_tb[p_voice->staff].staffscale;
 
 	/* under the staff */
 	if (incr > 0) {
 		if (y > -cfmt.vocalspace)
 			y = -cfmt.vocalspace;
 		y += h[0] / 6;			// descent
-		y *= staff_tb[p_voice->staff].staffscale;
+		y *= sc;
 		for (j = 0; j < nly; j++) {
 			y -= h[j] * 1.1;
 			a2b("/y{%.1f yns%d}! ", y, p_voice->staff);
 			draw_lyric_line(p_voice, j);
 		}
-		return y;
+		return y / sc;
 	}
 
 	/* above the staff */
@@ -3850,13 +3857,13 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 	if (y < top)
 		y = top;
 	y += h[nly - 1] / 6;			// descent
-	y *= staff_tb[p_voice->staff].staffscale;
+	y *= sc;
 	for (j = nly; --j >= 0; ) {
 		a2b("/y{%.1f yns%d}! ", y, p_voice->staff);
 		draw_lyric_line(p_voice, j);
 		y += h[j] * 1.1;
 	}
-	return y;
+	return y / sc;
 }
 
 /* -- draw all the lyrics and the tablatures -- */
@@ -4357,6 +4364,7 @@ static float set_staff(void)
 	if (empty[staff])
 		return y;
 
+	y *= staff_tb[staff].staffscale;
 	staffsep = cfmt.staffsep * 0.5 +
 			staff_tb[staff].topbar * staff_tb[staff].staffscale;
 	if (y < staffsep)
@@ -4756,9 +4764,11 @@ static void draw_symbols(struct VOICE_S *p_voice)
 			break;
 		case MREST:
 			set_scale(s);
-			a2b("(%d)", s->u.bar.len);
-			putxy(x, staff_tb[s->staff].y);
-			a2b("mrest\n");
+			putxy(x, staff_tb[s->staff].y + 12);
+			a2b("mrest(%d)/Times-Bold 15 selectfont ",
+				s->u.bar.len);
+			putxy(x, staff_tb[s->staff].y + 28);
+			a2b("M showc\n");
 			if (annotate)
 				anno_out(s, 'Z');
 			break;

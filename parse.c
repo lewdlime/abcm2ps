@@ -75,28 +75,6 @@ float multicol_start;			/* (for multicol) */
 static float multicol_max;
 static float lmarg, rmarg;
 
-static struct {
-	char *name;
-	int color;
-} col_tb[] = {
-	{ "aqua",	0x00ffff },
-	{ "black",	0x000000 },
-	{ "blue",	0x0000ff },
-	{ "fuchsia",	0xff00ff },
-	{ "gray",	0x808080 },
-	{ "green",	0x008000 },
-	{ "lime",	0x00ff00 },
-	{ "maroon",	0x800000 },
-	{ "navy",	0x000080 },
-	{ "olive",	0x808000 },
-	{ "purple",	0x800080 },
-	{ "red",	0xff0000 },
-	{ "silver",	0xc0c0c0 },
-	{ "teal",	0x008080 },
-	{ "white",	0xffffff },
-	{ "yellow",	0xffff00 },
-};
-
 static void get_clef(struct SYMBOL *s);
 static struct SYMBOL *get_info(struct SYMBOL *s);
 static void get_key(struct SYMBOL *s);
@@ -4245,13 +4223,6 @@ static void get_note(struct SYMBOL *s)
 			s->pits[i] += delta;
 		}
 	}
-	if (curvoice->octave) {
-		delta = curvoice->octave * 7;
-		for (i = 0; i <= m; i++) {
-			s->u.note.notes[i].pit += delta;
-			s->pits[i] += delta;
-		}
-	}
 	s->combine = curvoice->combine;
 	s->color = curvoice->color;
 
@@ -4650,6 +4621,47 @@ static void free_voice_opt(struct voice_opt_s *opt)
 	}
 }
 
+// get a color
+static int get_color(char *p)
+{
+	int i, color;
+	static const struct {
+		char *name;
+		int color;
+	} col_tb[] = {
+		{ "aqua",	0x00ffff },
+		{ "black",	0x000000 },
+		{ "blue",	0x0000ff },
+		{ "fuchsia",	0xff00ff },
+		{ "gray",	0x808080 },
+		{ "green",	0x008000 },
+		{ "lime",	0x00ff00 },
+		{ "maroon",	0x800000 },
+		{ "navy",	0x000080 },
+		{ "olive",	0x808000 },
+		{ "purple",	0x800080 },
+		{ "red",	0xff0000 },
+		{ "silver",	0xc0c0c0 },
+		{ "teal",	0x008080 },
+		{ "white",	0xffffff },
+		{ "yellow",	0xffff00 },
+	};
+
+	if (*p == '#') {
+		if (sscanf(p, "#%06x", &color) != 1
+		 || (unsigned) color > 0x00ffffff)
+			return -1;
+		return color;
+	}
+	for (i = sizeof col_tb / sizeof col_tb[0]; --i >= 0; ) {
+		if (strncasecmp(p, col_tb[i].name,
+				strlen(col_tb[i].name)) == 0)
+			break;
+	}
+	if (i < 0)
+		return -1;
+	return col_tb[i].color;
+}
 /* get a transposition */
 static int get_transpose(char *p)
 {
@@ -4879,9 +4891,8 @@ static void get_map(char *p)
 		} else if (strncmp(p, "color=", 6) == 0) {
 			int color;
 
-			p += 6;
-			if (sscanf(p, "#%06x", &color) != 1
-			 || (unsigned) color > 0x00ffffff) {
+			color = get_color(p + 6);
+			if (color < 0) {
 				error(1, NULL, "Bad color in %%%%map");
 				return;
 			}
@@ -5732,26 +5743,13 @@ center:
 		if (strcmp(w, "voicecolor") == 0) {
 			int color;
 
-			if (*p == '#') {
-				if (sscanf(p, "#%06x", &color) != 1
-				 || (unsigned) color > 0x00ffffff) {
-					error(1, s, "Bad color in %%%%voicecolor");
-					return s;
-				}
-			} else {
-				int i;
+			if (!curvoice)
+				return s;
 
-				for (i = sizeof col_tb / sizeof col_tb[0]; --i >= 0; ) {
-					if (strcmp(p, col_tb[i].name) == 0)
-						break;
-				}
-				if (i < 0) {
-					error(1, s, "Unknown color in %%%%voicecolor");
-					return s;
-				}
-				color = col_tb[i].color;
-			}
-			if (curvoice)
+			color = get_color(p);
+			if (color < 0)
+				error(1, s, "Bad color in %%%%voicecolor");
+			else
 				curvoice->color = color;
 			return s;
 		}

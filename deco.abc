@@ -289,7 +289,7 @@
 %
 % -- who asked for a Pedal indication ?
 %%deco ped 6 ped 20 0 0
-%%deco ped-end 6 pedoff 20 0 0
+%%deco ped-up 6 pedoff 20 0 0
 %
 % -- optional note
 %%deco () 0 @ 0 0 0 "@-8,-3$3(   )"
@@ -355,7 +355,7 @@ K:C treble-8
 !mp!"G"G!t2ta!G !(p)!A!t3b!c T!b!!(pp)!A2 P!#!!(f)!B2|M!=!!(ff)!c8|
 %
 K: clef=treble
-!8(!!riten!EF !-!G2 !ped!GA!ped-end!B!8)!c|!8b(!!bigb!C2[!()l!_E2] !tr(!G3!tr)!!8b)!c!alcoda!|\
+!8(!!riten!EF !-!G2 !ped!GA!ped-up!B!8)!c|!8b(!!bigb!C2[!()l!_E2] !tr(!G3!tr)!!8b)!c!alcoda!|\
 CE!-(!G2!-)!C2c2|
 %
 "Dm"!Dm!e3/d/ d6 | "Bb"!Bb!z2 d/d3/ "C7"!C7!cB/A/- AG |\

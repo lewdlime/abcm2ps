@@ -2,8 +2,8 @@
 
 % definitions for tablature
 %%beginps
-/hn{	currentgray 1.0 setgray 1 SLW
-	2 index 2 sub 2 index M 8 0 RL stroke setgray
+/hn{	1 1 1 setrgbcolor 1 SLW
+	1 index 2 sub 1 index M 8 0 RL stroke 0 0 0 setrgbcolor
 	3 sub M /Helvetica-Bold 8 selectfont show}!
 %%endps
 %%deco head-3 3 hn 0 0 0 3

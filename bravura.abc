@@ -5,7 +5,7 @@
 <style type="text/css">
 	@font-face {
 	    font-family: 'Bravura';
-	    src: url(/usr/share/fonts/truetype/Bravura.otf);
+	    src: url(/home/jef/abcm2ps-devel/bravura/woff/Bravura.woff);
 	    font-weight: normal;
 	    font-style: normal;
 	}

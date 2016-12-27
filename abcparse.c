@@ -458,6 +458,7 @@ static void parse_clef(struct SYMBOL *s,
 			break;
 		case 'P':
 			clef = PERC;
+			clef_line = 3;
 			break;
 		}
 		if (clef >= 0) {
@@ -494,6 +495,7 @@ static void parse_clef(struct SYMBOL *s,
 				name += 5;
 		} else if (!strncmp(name, "perc", 4)) {
 			clef = PERC;
+			clef_line = 3;
 			name += 4;
 		} else if (!strncmp(name, "auto", 4)) {
 			clef = AUTOCLEF;

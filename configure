@@ -12,8 +12,8 @@ if test -f ./custom; then
 	. ./custom
 fi
 
-VERSION=8.13.1
-VDATE='December 10, 2016'
+VERSION=8.13.2
+VDATE='December 23, 2016'
 
 for c in $@; do
  case "$c" in
@@ -35,9 +35,6 @@ if test "x$exec_prefix" = x; then
 fi
 if test "x$bindir" = x; then
 	bindir='${exec_prefix}/bin'
-fi
-if test "x$libdir" = x; then
-	libdir='${exec_prefix}/lib'
 fi
 if test "x$datarootdir" = x; then
 	datarootdir='${prefix}/share'
@@ -77,7 +74,6 @@ s+@prefix@+$prefix+
 s+@exec_prefix@+$exec_prefix+
 s+@srcdir@+$srcdir+
 s+@bindir@+$bindir+
-s+@libdir@+$libdir+
 s+@datarootdir@+$datarootdir+
 s+@docdir@+$docdir+
 s+@VERSION@+$VERSION+" Makefile.in > Makefile

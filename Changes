@@ -1,3 +1,21 @@
+---- Version 8.13.2 - 2016-12-23 ----
+
+Replace 'xlm:space="preserve"' by style 'white-space: pre'
+Adjust some glyph offsets for use of music fonts
+Change !ped-end! to !ped-up! in deco.abc
+Fix bad colors in SVG output
+Accept HTML4 colors in 'color=' of %%map
+Fix bad vertical offsets and clashes when %%staffscale
+	(reported by Lionel Coates)
+Fix bad octave with 'octave=' since some time
+	(reported by Jean-Luc Zins)
+Fix loss of dot when voice unison
+	(reported by Reinier Maliepaard)
+Simplify Makefile
+	(adapted from lemmi - VoidLinux)
+Fix bad output when color on notes
+	(reported by David Lacroix)
+
 ---- Version 8.13.1 - 2016-12-10 ----
 
 Add HTML4 colors

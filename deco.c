@@ -1273,13 +1273,19 @@ void draw_all_deco(void)
 
 		s = de->s;
 		set_color(s->color);
-		set_scale(s);
+
+		// no scale if staff decoration
+		if (f_staff & (1 << dd->func))
+			set_sscale(-1);
+		else
+			set_scale(s);
 
 		staff = de->staff;
 		x = de->x;
+//		y = de->y + staff_tb[staff].y / staff_tb[staff].staffscale;
 		y = de->y + staff_tb[staff].y;
 
-		/* set the coordinates if a head decoration */
+		/* update the coordinates if head decoration */
 		if (de->m >= 0) {
 			x += s->u.note.notes[de->m].shhd *
 						staff_tb[staff].staffscale;
@@ -1690,7 +1696,9 @@ static void draw_repbra(struct VOICE_S *p_voice)
 	s = first_repeat;
 	if (!s)
 		return;
-	set_sscale(p_voice->staff);
+//	set_sscale(p_voice->staff);
+//temporary
+	set_sscale(-1);
 	set_font(REPEATFONT);
 	for ( ; s; s = s->next) {
 		char *p;
@@ -1754,8 +1762,8 @@ static void draw_repbra(struct VOICE_S *p_voice)
 		a2b("(%s)-%.1f %d ",
 			p, cfmt.font_tb[REPEATFONT].size * 0.8 + 1, i);
 		putx(w);
-		putxy(x, y);
-		a2b("y%d repbra\n", s1->staff);
+		putxy(x, y * staff_tb[s1->staff].staffscale);
+		a2b("yns%d repbra\n", s1->staff);
 		y_set(s1->staff, 1, x, w, y + 2);
 		if (s->u.bar.repeat_bar)
 			s = s->prev;
@@ -1943,7 +1951,9 @@ static void draw_gchord(struct SYMBOL *s,
 
 	str_font(s->gch->font);
 	set_font(s->gch->font);			/* needed if scaled staff */
-	set_sscale(s->staff);
+//	set_sscale(s->staff);
+//temporary
+	set_sscale(-1);
 //	action = A_GCHORD;
 	xboxl = s->x;
 	yboxh = -100;
@@ -2040,8 +2050,9 @@ static void draw_gchord(struct SYMBOL *s,
 			y = s->yav + gch->y;
 			break;
 		}
-		putxy(x, y + h * 0.2);		/* (descent) */
-		a2b("y%d M ", s->staff);
+		putxy(x, (y  + h * 0.2) *		/* (descent) */
+				staff_tb[s->staff].staffscale);
+		a2b("yns%d M ", s->staff);
 		if (action == A_GCHEXP)
 			a2b("%.2f ", expdx);
 		str_out(tex_buf, action);
@@ -2057,8 +2068,8 @@ static void draw_gchord(struct SYMBOL *s,
 	/* draw the box around the guitar chords */
 	if (box) {
 		xboxl -= 2;
-		putxy(xboxl, yboxl - 1);
-		a2b("y%d %.1f boxdraw\n", s->staff, yboxh - yboxl + 3);
+		putxy(xboxl, (yboxl - 1) * staff_tb[s->staff].staffscale);
+		a2b("yns%d %.1f boxdraw\n", s->staff, yboxh - yboxl + 3);
 	}
 }
 
@@ -2459,7 +2470,7 @@ float draw_partempo(int staff, float top)
 		a2b("\n");
 	}
 out:
-	return dy * staff_tb[staff].staffscale;
+	return dy;
 }
 
 /* -- initialize the default decorations -- */

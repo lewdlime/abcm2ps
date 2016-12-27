@@ -116,10 +116,10 @@ static struct {
 	"	86 -65 29 -192 -80 -176\n"
 	"	-71 12 -105 67 -59 124\"/>\n"},
 #define D_tclef 2
-{	"<use id=\"tclef\" transform=\"scale(0.045)\"\n"
+{	"<use id=\"tclef\" transform=\"translate(0,6) scale(0.045)\"\n"
 	"	xlink:href=\"#utclef\"/>\n", D_utclef},
 #define D_stclef 3
-{	"<use id=\"stclef\" transform=\"translate(0,-0.6) scale(0.037)\"\n"
+{	"<use id=\"stclef\" transform=\"translate(0,5.4) scale(0.037)\"\n"
 	"	xlink:href=\"#utclef\"/>\n", D_utclef},
 #define D_ubclef 4
 {	"<path id=\"ubclef\" class=\"fill\" d=\"m-200 -87\n"
@@ -136,10 +136,10 @@ static struct {
 	"	c0 -36 51 -34 51 0\n"
 	"	0 38 -51 37 -51 0\"/>\n"},
 #define D_bclef 5
-{	"<use id=\"bclef\" transform=\"scale(0.045)\"\n"
+{	"<use id=\"bclef\" transform=\"translate(0,18) scale(0.045)\"\n"
 	"	xlink:href=\"#ubclef\"/>\n", D_ubclef},
 #define D_sbclef 6
-{	"<use id=\"sbclef\" transform=\"translate(0,-3.5) scale(0.037)\"\n"
+{	"<use id=\"sbclef\" transform=\"translate(0,14.5) scale(0.037)\"\n"
 	"	xlink:href=\"#ubclef\"/>\n", D_ubclef},
 #define D_ucclef 7
 {	"<path id=\"ucclef\" class=\"fill\" d=\"\n"
@@ -168,13 +168,13 @@ static struct {
 	"	h-57\n"
 	"	v-529\"/>\n"},
 #define D_cclef 8
-{	"<use id=\"cclef\" transform=\"scale(0.045)\"\n"
+{	"<use id=\"cclef\" transform=\"translate(0,12) scale(0.045)\"\n"
 	"	xlink:href=\"#ucclef\"/>\n", D_ucclef},
 #define D_scclef 9
-{	"<use id=\"scclef\" transform=\"translate(0,-2) scale(0.037)\"\n"
+{	"<use id=\"scclef\" transform=\"translate(0,9.5) scale(0.037)\"\n"
 	"	xlink:href=\"#ucclef\"/>\n", D_ucclef},
 #define D_pclef 10
-{	"<path id=\"pclef\" d=\"m-2.7 -2h5.4v-20h-5.4v20\" class=\"stroke\" stroke-width=\"1.4\"/>\n"},
+{	"<path id=\"pclef\" d=\"m-2.7 9h5.4v-18h-5.4v18\" class=\"stroke\" stroke-width=\"1.4\"/>\n"},
 #define D_hd 11
 {	"<ellipse id=\"hd\" rx=\"4.1\" ry=\"2.9\"\n"
 	"	transform=\"rotate(-20)\" class=\"fill\"/>\n"},
@@ -273,8 +273,8 @@ static struct {
 	"</g>\n", D_r8e},
 #define D_mrest 29
 {	"<g id=\"mrest\" class=\"stroke\">\n"
-	"	<path d=\"m-20 -6v-12m40 0v12\"/>\n"
-	"	<path d=\"m-20 -12h40\" stroke-width=\"5\"/>\n"
+	"	<path d=\"m-20 6v-12m40 0v12\"/>\n"
+	"	<path d=\"m-20 0h40\" stroke-width=\"5\"/>\n"
 	"</g>\n"},
 #define D_usharp 30
 {	"<path id=\"usharp\" class=\"fill\" d=\"\n"
@@ -413,7 +413,7 @@ static struct {
 	"</g>\n", D_dsh0},
 #define D_csig 46
 {	"<path id=\"csig\" class=\"fill\" d=\"\n"
-	"	m1 -17.3\n"
+	"	m6 -5.3\n"
 	"	c0.9 0 2.3 0.7 2.4 2.2\n"
 	"	-1.2 -2 -3.6 0.1 -1.6 1.7\n"
 	"	2 1 3.8 -3.5 -0.8 -4.7\n"
@@ -424,7 +424,7 @@ static struct {
 #define D_ctsig 47
 {	"<g id=\"ctsig\">\n"
 	"	<use xlink:href=\"#csig\"/>\n"
-	"	<path d=\"m0 -4v-16\" class=\"stroke\"/>\n"
+	"	<path d=\"m0 8v-16\" class=\"stroke\"/>\n"
 	"</g>\n", D_csig},
 #define D_pmsig 48
 {	"<path id=\"pmsig\" class=\"stroke\" stroke-width=\".8\"\n"
@@ -456,17 +456,17 @@ static struct {
 	"	<circle cx=\"0\" cy=\"-15\" r=\"1.2\"/>\n"
 	"</g>\n"},
 #define D_srep 57
-{	"<path id=\"srep\" class=\"fill\" d=\"M-1 -6l11 -12h3l-11 12h-3\"/>\n"},
+{	"<path id=\"srep\" class=\"fill\" d=\"M-1 6l11 -12h3l-11 12h-3\"/>\n"},
 #define D_mrep 58
 {	"<path id=\"mrep\" class=\"fill\"\n"
-	"    d=\"M-5 -16.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\n"
-	"	M4.5 -10a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\n"
-	"	M-7 -6l11 -12h3l-11 12h-3\"/>\n"},
+	"    d=\"M-5 -4.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\n"
+	"	M4.5 2a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\n"
+	"	M-7 6l11 -12h3l-11 12h-3\"/>\n"},
 #define D_mrep2 59
 {	"<g id=\"mrep2\" class=\"fill\">\n"
-	"	<path d=\"M-5.5 -19.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\n"
-	"		M5 -7.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\"/>\n"
-	"	<path d=\"M-7 -4l14 -10m-14 4l14 -10\" class=\"stroke\" stroke-width=\"1.8\"/>\n"
+	"	<path d=\"M-5.5 -7.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\n"
+	"		M5 4.5a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 -3\"/>\n"
+	"	<path d=\"M-7 8l14 -10m-14 4l14 -10\" class=\"stroke\" stroke-width=\"1.8\"/>\n"
 	"</g>\n"},
 #define D_accent 60
 {	"<g id=\"accent\" class=\"stroke\" stroke-width=\"1.2\">\n"
@@ -1032,11 +1032,12 @@ void define_svg_symbols(char *title, int num, float w, float h)
 	static const char *svg_head1 =
 		"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\"\n"
 		"\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
-		"\txml:space='preserve' color=\"black\"\n"
+		"\tcolor=\"black\"\n"
 		"\twidth=\"%.2fpx\" height=\"%.2fpx\">\n"
 		"<style type=\"text/css\">\n"
 		".fill {fill: currentColor}\n"
-		".stroke {stroke: currentColor; fill: none;}\n"
+		".stroke {stroke: currentColor; fill: none}\n"
+		"text{white-space: pre}\n"
 		"</style>\n"
 		"<title>";
 	static const char *svg_head2 =
@@ -1064,10 +1065,10 @@ void define_svg_symbols(char *title, int num, float w, float h)
 						cfmt.bgcolor);
 			fprintf(fout,
 				"}\n"
-				"\t@page {margin:0;}\n"
+				"\t@page {margin: 0}\n"
 //				"\tdiv.nobrk {page-break-inside: avoid}\n"
-				"\ttext {white-space:pre; fill:currentColor}\n"
-				"\tsvg {display:block}\n"
+				"\ttext {white-space: pre; fill:currentColor}\n"
+				"\tsvg {display: block}\n"
 //				"\tmedia print {div.newpage {page-break-before: always}}\n"
 				"</style>\n"
 				"<title>%s</title>\n"
@@ -2989,6 +2990,10 @@ moveto:
 			return;
 		}
 		if (strcmp(op, "mrest") == 0) {
+#if 1
+			xysym(op, D_mrest);
+			return;
+#else
 			def_use(D_mrest);
 			y = gcur.yoffs - pop_free_val();
 			x = gcur.xoffs + pop_free_val();
@@ -3003,6 +3008,7 @@ moveto:
 				"	x=\"%.2f\" y=\"%.2f\" text-anchor=\"middle\">%s</text>\n",
 				x, y, x, y - 28, s + 1);
 			free(s);
+#endif
 			return;
 		}
 		if (strcmp(op, "mul") == 0) {
@@ -3821,8 +3827,8 @@ rmoveto:
 			int rgb;
 
 			rgb = pop_free_val() * 255;
-			rgb += pop_free_val() * 255 * 256;
-			rgb += pop_free_val() * 255 * 256 * 256;
+			rgb += (int) (pop_free_val() * 255) << 8;
+			rgb += (int) (pop_free_val() * 255) << 16;
 			gcur.rgb = rgb;
 			return;
 		}

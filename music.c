@@ -2224,32 +2224,43 @@ static void set_yval(struct SYMBOL *s)
 			s->ymx = s->ymn = 12;
 			break;
 		}
+		s->y = (s->u.clef.line - 1) * 6;
 		switch (s->u.clef.type) {
 		default:			/* treble / perc */
-			s->y = -2 * 6;
-			s->ymx = 24 + 12;
-			s->ymn = -9;
+//			s->y = -2 * 6;
+//			s->ymx = 24 + 12;
+//			s->ymn = -9;
+			s->ymx = s->y + 28;
+			s->ymn = s->y - 14;
 			break;
 		case ALTO:
-			s->y = -3 * 6;
-			s->ymx = 24 + 2;
-			s->ymn = -1;
+//			s->y = -3 * 6;
+//			s->ymx = 24 + 2;
+//			s->ymn = -1;
+			s->ymx = s->y + 13;
+			s->ymn = s->y - 11;
 			break;
 		case BASS:
-			s->y = -4 * 6;
-			s->ymx = 24 + 2;
-			s->ymn = 2;
+//			s->y = -4 * 6;
+//			s->ymx = 24 + 2;
+//			s->ymn = 2;
+			s->ymx = s->y + 7;
+			s->ymn = s->y - 12;
 			break;
 		}
 		if (s->aux) {			// small clef
 			s->ymx -= 2;
 			s->ymn += 2;
 		}
-		s->y += s->u.clef.line * 6;
-		if (s->y > 0)
-			s->ymx += s->y;
-		else if (s->y < 0)
-			s->ymn += s->y;
+		if (s->ymx < 26)
+			s->ymx = 26;
+		if (s->ymn > -1)
+			s->ymn = -1;
+//		s->y += s->u.clef.line * 6;
+//		if (s->y > 0)
+//			s->ymx += s->y;
+//		else if (s->y < 0)
+//			s->ymn += s->y;
 		if (s->u.clef.octave > 0)
 			s->ymx += 9;
 		else if (s->u.clef.octave < 0)
@@ -3796,18 +3807,22 @@ same_head:
 	if (voice_tb[s1->voice].scale < voice_tb[s2->voice].scale)
 		goto head_2;
 head_1:
-	s2->nohdi1 = i21;	/* keep heads of 1st voice */
-	s2->nohdi2 = i22;
-	for (i2 = i21; i2 < i22; i2++)
+//	s2->nohdi1 = i21;	/* keep heads of 1st voice */
+//	s2->nohdi2 = i22;
+	for (i2 = i21; i2 < i22; i2++) {
+		s2->u.note.notes[i2].invisible = 1;
 		s2->u.note.notes[i2].acc = 0;
+	}
 	for (i2 = 0; i2 <= s2->nhd; i2++)
 		s2->u.note.notes[i2].shhd += sh1;
 	return 1;
 head_2:
-	s1->nohdi1 = i11;	/* keep heads of 2nd voice */
-	s1->nohdi2 = i12;
-	for (i1 = i11; i1 < i12; i1++)
+//	s1->nohdi1 = i11;	/* keep heads of 2nd voice */
+//	s1->nohdi2 = i12;
+	for (i1 = i11; i1 < i12; i1++) {
+		s1->u.note.notes[i1].invisible = 1;
 		s1->u.note.notes[i1].acc = 0;
+	}
 	for (i1 = 0; i1 <= s1->nhd; i1++)
 		s1->u.note.notes[i1].shhd += sh2;
 	return 1;

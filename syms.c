@@ -57,8 +57,8 @@ static char ps_head[] =
 	"	018d0063015400e200e700d2\n"
 	"	00a000c6007e008f00ac0056\n"
 	"	><0b000132050a>}cvlit def\n"
-	"/tclef{gsave T -10 0 T .045 dup scale utclef ufill grestore}!\n"
-	"/stclef{gsave T -10 0 T .037 dup scale utclef ufill grestore}!\n"
+	"/tclef{gsave T -10 -6 T .045 dup scale utclef ufill grestore}!\n"
+	"/stclef{gsave T -10 -6 T .037 dup scale utclef ufill grestore}!\n"
 
 	/* x y oct - upper/lower clef '8' */
 	"/oct{/Times-Roman 12 selectfont M(8)show}!\n"
@@ -85,8 +85,8 @@ static char ps_head[] =
 	"	016401f6019701f4019701d2\n"
 	"	019701ac016401ad016401d2\n"
 	"	><0b000126050a0122050a0122050a>}cvlit def\n"
-	"/bclef{gsave T -10 0 T .045 dup scale ubclef ufill grestore}!\n"
-	"/sbclef{gsave T -10 3 T .037 dup scale ubclef ufill grestore}!\n"
+	"/bclef{gsave T -10 -18 T .045 dup scale ubclef ufill grestore}!\n"
+	"/sbclef{gsave T -10 -15 T .037 dup scale ubclef ufill grestore}!\n"
 
 	/* x y cclef */
 	"/ucclef{<95200066\n"
@@ -117,11 +117,11 @@ static char ps_head[] =
 	"	006e0002\n"
 	"	006e0213\n"
 	"	><0b000125032605220326050a0124030a>}cvlit def\n"
-	"/cclef{gsave T -12 0 T .045 dup scale ucclef ufill grestore}!\n"
-	"/scclef{gsave T -12 2 T .037 dup scale ucclef ufill grestore}!\n"
+	"/cclef{gsave T -12 -12 T .045 dup scale ucclef ufill grestore}!\n"
+	"/scclef{gsave T -12 -10 T .037 dup scale ucclef ufill grestore}!\n"
 
 	/* x y pclef */
-	"/pclef{	exch 2.7 sub exch 2 add 5.4 20 1.4 SLW rectstroke}!\n"
+	"/pclef{	exch 2.7 sub exch -9 add 5.4 18 1.4 SLW rectstroke}!\n"
 	"/spclef{pclef}!\n"
 
 	/* t dx dy x y bm - beam, depth t */
@@ -586,7 +586,7 @@ static char ps_head[] =
 
 	/* x y csig - C timesig */
 	"/csig{	M\n"
-	"	1 17.3 RM\n"
+	"	6 5.3 RM\n"
 	"	0.9 0 2.3 -0.7 2.4 -2.2 RC\n"
 	"	-1.2 2 -3.6 -0.1 -1.6 -1.7 RC\n"
 	"	2 -1 3.8 3.5 -0.8 4.7 RC\n"
@@ -597,7 +597,7 @@ static char ps_head[] =
 	"	fill}!\n"
 
 	/* x y ctsig - C| timesig */
-	"/ctsig{dlw 2 copy csig 4 add M 0 16 RL stroke}!\n"
+	"/ctsig{dlw 2 copy csig 8 sub M 0 16 RL stroke}!\n"
 
 	/* x y xxsig - old time signatures ('o', 'o.', 'c' 'c.') */
 	"/pmsig{0.3 SLW 12 add M currentpoint 5 0 360 arc stroke}!\n"
@@ -641,27 +641,26 @@ static char ps_head[] =
 	"	10.5 1 12 -4.5 12 -3.5 RC\n"
 	"	0 1 -3.5 5.5 -8.5 5.5 RC fill}!\n"
 
-	/* nb_measures x y mrest */
-	"/mrest{	gsave T 1 SLW\n"
-	"	-20 6 M 0 12 RL 20 6 M 0 12 RL stroke\n"
-	"	5 SLW -20 12 M 40 0 RL stroke\n"
-	"	/Times-Bold 15 selectfont 0 28 M showc grestore}!\n"
+	/* x y mrest */
+	"/mrest{	M currentpoint 1 SLW\n"
+	"	-20 -6 RM 0 12 RL 40 0 RM 0 -12 RL stroke\n"
+	"	M 5 SLW -20 0 RM 40 0 RL stroke}!\n"
 
 	/* x y mrep - measure repeat */
 	"/mrep{	2 copy 2 copy\n"
-	"	M -5 15 RM currentpoint 1.4 0 360 arc\n"
-	"	M 5 9 RM currentpoint 1.4 0 360 arc\n"
-	"	M -7 6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL fill}!\n"
+	"	M -5 3 RM currentpoint 1.4 0 360 arc\n"
+	"	M 5 -3 RM currentpoint 1.4 0 360 arc\n"
+	"	M -7 -6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL fill}!\n"
 
 	/* x y mrep2 - measure repeat 2 times */
 	"/mrep2{	2 copy 2 copy\n"
-	"	M -5 18 RM currentpoint 1.4 0 360 arc\n"
-	"	M 5 6 RM currentpoint 1.4 0 360 arc fill\n"
+	"	M -5 6 RM currentpoint 1.4 0 360 arc\n"
+	"	M 5 -6 RM currentpoint 1.4 0 360 arc fill\n"
 	"	M 1.8 SLW\n"
-	"	-7 4 RM 14 10 RL -14 -4 RM 14 10 RL stroke}!\n"
+	"	-7 -8 RM 14 10 RL -14 -4 RM 14 10 RL stroke}!\n"
 
 	/* x y srep - sequence repeat */
-	"/srep{	M -1 6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL fill}!\n"
+	"/srep{	M -1 -6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL fill}!\n"
 
 	/* str dy bracket_type dx x y repbra - repeat bracket */
 	"/repbra{gsave dlw T 0 -20 M\n"

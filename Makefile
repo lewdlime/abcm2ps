@@ -1,6 +1,6 @@
 # Makefile source for abcm2ps
 
-VERSION = 8.13.1
+VERSION = 8.13.2
 
 CC = gcc
 INSTALL = /usr/bin/install -c
@@ -18,7 +18,6 @@ exec_prefix = ${prefix}
 srcdir = .
 VPATH = .
 bindir = ${exec_prefix}/bin
-libdir = ${exec_prefix}/lib
 datadir = ${prefix}/share
 docdir = ${prefix}/doc
 

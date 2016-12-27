@@ -76,7 +76,6 @@ $RECYCLE.BIN/
 /autoscan-*.log
 /autoscan.log
 /compile
-/config.h.in
 /configure.scan
 /depcomp
 /install-sh
@@ -87,7 +86,6 @@ $RECYCLE.BIN/
 Desktop.ini
 ehthumbs.db
 Icon
-Makefile.in
 Network Trash Folder
 [sS]ession.vim
 sftp-config.json

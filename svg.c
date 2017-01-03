@@ -424,7 +424,7 @@ static struct {
 #define D_ctsig 47
 {	"<g id=\"ctsig\">\n"
 	"	<use xlink:href=\"#csig\"/>\n"
-	"	<path d=\"m0 8v-16\" class=\"stroke\"/>\n"
+	"	<path d=\"m5 8v-16\" class=\"stroke\"/>\n"
 	"</g>\n", D_csig},
 #define D_pmsig 48
 {	"<path id=\"pmsig\" class=\"stroke\" stroke-width=\".8\"\n"
@@ -610,7 +610,122 @@ static struct {
 	"	x=\"-2\" y=\"-4\">tr</text>\n"},
 #define D_marcato 88
 {	"<path id=\"marcato\" d=\"m-3 0l3 -7l3 7l-1.5 0l-1.8 -4.2l-1.7 4.2\"/>\n"},
+#define D_ped 89
+{	"<text id=\"ped\" font-family=\"serif\" font-size=\"16\" font-style=\"italic\"\n"
+	"	x=\"-2\" y=\"-4\">Ped</text>\n"},
+#define D_pedoff 90
+{	"<text id=\"ped\" font-family=\"serif\" font-size=\"16\" font-style=\"italic\"\n"
+	"	x=\"-2\" y=\"-4\">*</text>\n"},
 };
+
+static struct {
+	int index;
+	char *def;
+} font_gl[] = {
+ {D_brace,
+	"<text id=\"brace\" class=\"music\" x=\"-3\" y=\"0\"\n"
+	"	transform=\"scale(3,-4.2)\">&#xe000;</text>\n"},
+ {D_sgno,
+	"<text id=\"sgno\" class=\"music\" x=\"-6\" y=\"-4\">&#xe047;</text>\n"},
+ {D_coda,
+	"<text id=\"coda\" class=\"music\" x=\"-12\" y=\"-6\">&#xe048;</text>\n"},
+ {D_tclef,
+	"<text id=\"tclef\" class=\"music\" x=\"-8\" y=\"0\">&#xe050;</text>\n"},
+ {D_cclef,
+	"<text id=\"cclef\" class=\"music\" x=\"-7\" y=\"0\">&#xe05c;</text>\n"},
+ {D_bclef,
+	"<text id=\"bclef\" class=\"music\" x=\"-7\" y=\"0\">&#xe062;</text>\n"},
+ {D_pclef,
+	"<text id=\"pclef\" class=\"music\" x=\"-6\" y=\"0\">&#xe069;</text>\n"},
+ {D_stclef,
+	"<text id=\"stclef\" class=\"music\" x=\"-8\" y=\"0\">&#xe07a;</text>\n"},
+ {D_scclef,
+	"<text id=\"scclef\" class=\"music\" x=\"-8\" y=\"0\">&#xe07b;</text>\n"},
+ {D_sbclef,
+	"<text id=\"sbclef\" class=\"music\" x=\"-7\" y=\"0\">&#xe07c;</text>\n"},
+ {D_csig,
+	"<text id=\"csig\" class=\"music\" x=\"0\" y=\"0\">&#xe08a;</text>\n"},
+ {D_ctsig,
+	"<text id=\"ctsig\" class=\"music\" x=\"0\" y=\"0\">&#xe08b;</text>\n"},
+ {D_HDD,
+	"<text id=\"HDD\" class=\"music\" x=\"-7\" y=\"0\">&#xe0a0;</text>\n"},
+ {D_breve,
+	"<text id=\"breve\" class=\"music\" x=\"-6\" y=\"0\">&#xe0a1;</text>\n"},
+ {D_HD,
+	"<text id=\"HD\" class=\"music\" x=\"-5.2\" y=\"0\">&#xe0a2;</text>\n"},
+ {D_Hd,
+	"<text id=\"Hd\" class=\"music\" x=\"-3.8\" y=\"0\">&#xe0a3;</text>\n"},
+ {D_hd,
+	"<text id=\"hd\" class=\"music\" x=\"-3.7\" y=\"0\">&#xe0a4;</text>\n"},
+ {D_ft0,
+	"<text id=\"ft0\" class=\"music\" x=\"-3\" y=\"0\">&#xe260;</text>\n"},
+ {D_nt0,
+	"<text id=\"nt0\" class=\"music\" x=\"-2\" y=\"0\">&#xe261;</text>\n"},
+ {D_sh0,
+	"<text id=\"sh0\" class=\"music\" x=\"-3\" y=\"0\">&#xe262;</text>\n"},
+ {D_dsh0,
+	"<text id=\"dsh0\" class=\"music\" x=\"-3\" y=\"0\">&#xe263;</text>\n"},
+ {D_pshhd,
+	"<text id=\"pshhd\" class=\"music\" x=\"-3\" y=\"0\">&#xe263;</text>\n"},
+ {D_dft0,
+	"<text id=\"dft0\" class=\"music\" x=\"-3\" y=\"0\">&#xe264;</text>\n"},
+ {D_accent,
+	"<text id=\"accent\" class=\"music\" x=\"-3\" y=\"0\">&#xe4a0;</text>\n"},
+ {D_marcato,
+	"<text id=\"marcato\" class=\"music\" x=\"-3\" y=\"0\">&#xe4ac;</text>\n"},
+ {D_hld,
+	"<text id=\"hld\" class=\"music\" x=\"-7\" y=\"0\">&#xe4c0;</text>\n"},
+ {D_r00,
+	"<text id=\"r00\" class=\"music\" x=\"-1.5\" y=\"0\">&#xe4e1;</text>\n"},
+ {D_r0,
+	"<text id=\"r0\" class=\"music\" x=\"-1.5\" y=\"0\">&#xe4e2;</text>\n"},
+ {D_r1,
+	"<text id=\"r1\" class=\"music\" x=\"-3.5\" y=\"-6\">&#xe4e3;</text>\n"},
+ {D_r2,
+	"<text id=\"r2\" class=\"music\" x=\"-3.2\" y=\"0\">&#xe4e4;</text>\n"},
+ {D_r4,
+	"<text id=\"r4\" class=\"music\" x=\"-3\" y=\"0\">&#xe4e5;</text>\n"},
+ {D_r8,
+	"<text id=\"r8\" class=\"music\" x=\"-3\" y=\"0\">&#xe4e6;</text>\n"},
+ {D_r16,
+	"<text id=\"r16\" class=\"music\" x=\"-4\" y=\"0\">&#xe4e7;</text>\n"},
+ {D_r32,
+	"<text id=\"r32\" class=\"music\" x=\"-4\" y=\"0\">&#xe4e8;</text>\n"},
+ {D_r64,
+	"<text id=\"r64\" class=\"music\" x=\"-4\" y=\"0\">&#xe4e9;</text>\n"},
+ {D_r128,
+	"<text id=\"r128\" class=\"music\" x=\"-4\" y=\"0\">&#xe4ea;</text>\n"},
+ {D_mrest,
+	"<text id=\"mrest\" class=\"music\" x=\"-10\" y=\"0\">&#xe4ee;</text>\n"},
+ {D_mrep,
+	"<text id=\"mrep\" class=\"music\" x=\"-6\" y=\"0\">&#xe500;</text>\n"},
+ {D_mrep2,
+	"<text id=\"mrep2\" class=\"music\" x=\"-9\" y=\"0\">&#xe501;</text>\n"},
+ {D_turn,
+	"<text id=\"turn\" class=\"music\" x=\"-4\" y=\"0\">&#xe567;</text>\n"},
+ {D_umrd,
+	"<text id=\"umrd\" class=\"music\" x=\"-7\" y=\"-2\">&#xe56c;</text>\n"},
+ {D_lmrd,
+	"<text id=\"lmrd\" class=\"music\" x=\"-7\" y=\"-2\">&#xe56d;</text>\n"},
+ {D_ped,
+	"<text id=\"ped\" class=\"music\" x=\"-10\" y=\"0\">&#xe650;</text>\n"},
+ {D_pedoff,
+	"<text id=\"pedoff\" class=\"music\" x=\"-6\" y=\"0\">&#xe655;</text>\n"},
+ {D_longa,
+	"<text id=\"longa\" class=\"music\" x=\"-6\" y=\"0\">&#xe95c;</text>\n"},
+};
+
+// switch to a music font
+void svg_font_switch(void)
+{
+	int i, j;
+
+	for (i = 0; i < sizeof font_gl / sizeof font_gl[0]; i++) {
+		j = font_gl[i].index;
+		def_tb[j].def = font_gl[i].def;
+		def_tb[j].use = 0;
+	}
+}
 
 /* PS functions */
 static void ps_exec(char *op);
@@ -1029,7 +1144,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 {
 	char *s;
 	unsigned i;
-	static const char *svg_head1 =
+	static const char svg_head1[] =
 		"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\"\n"
 		"\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
 		"\tcolor=\"black\"\n"
@@ -1037,10 +1152,19 @@ void define_svg_symbols(char *title, int num, float w, float h)
 		"<style type=\"text/css\">\n"
 		".fill {fill: currentColor}\n"
 		".stroke {stroke: currentColor; fill: none}\n"
-		"text{white-space: pre}\n"
+		"text{white-space: pre}\n";
+	static const char svg_font_style[] =
+		"@font-face {\n"
+		"	font-family: 'music';\n"
+		"	src: url(%s);\n"
+		"	font-weight: normal; font-style: normal}\n"
+		".music {font-family: music; font-size: 24px;\n"
+		"	font-weight: normal; font-style: normal;\n"
+		"	fill: currentColor}\n";
+	static const char svg_head2[] =
 		"</style>\n"
 		"<title>";
-	static const char *svg_head2 =
+	static const char svg_head3[] =
 		" %s %d</title>\n";
 
 	if (svg == 2) {			/* if XHTML */
@@ -1080,8 +1204,11 @@ void define_svg_symbols(char *title, int num, float w, float h)
 		}
 //		fputs("<p>\n", fout);
 		fprintf(fout, svg_head1, w, h);
+		if (cfmt.musicfont)
+			fprintf(fout, svg_font_style, cfmt.musicfont);
+		fputs(svg_head2, fout);
 		xml_str_out(title);
-		fprintf(fout, svg_head2, "page", num);
+		fprintf(fout, svg_head3, "page", num);
 //		if (cfmt.bgcolor && cfmt.bgcolor[0] != '\0')
 //			fprintf(fout,
 //				"<rect width=\"100%%\" height=\"100%%\" fill=\"%s\"/>\n",
@@ -1097,8 +1224,11 @@ void define_svg_symbols(char *title, int num, float w, float h)
 //				fputs("<p>\n", fout);
 		}
 		fprintf(fout, svg_head1, w, h);
+		if (cfmt.musicfont)
+			fprintf(fout, svg_font_style, cfmt.musicfont);
+		fputs(svg_head2, fout);
 		xml_str_out(title);
-		fprintf(fout, svg_head2, epsf ? "tune" : "page", num);
+		fprintf(fout, svg_head3, epsf ? "tune" : "page", num);
 		fputs("<!-- Creator: abcm2ps-" VERSION " -->\n", fout);
 		gen_info();
 		if (cfmt.bgcolor && cfmt.bgcolor[0] != '\0')

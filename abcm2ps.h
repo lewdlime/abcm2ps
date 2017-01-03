@@ -541,6 +541,7 @@ struct FORMAT { 		/* struct for page layout */
 	int textoption, titlecaps, titleleft, titletrim;
 	int timewarn, transpose, tuplets;
 	char *bgcolor, *dateformat, *header, *footer, *titleformat;
+	char *musicfont;
 	struct FONTSPEC font_tb[FONT_MAX];
 	char ndfont;		/* current index of dynamic fonts */
 	unsigned char gcf, anf, vof;	/* fonts for guitar chords,
@@ -884,6 +885,7 @@ void write_text(char *cmd, char *s, int job);
 /* svg.c */
 void define_svg_symbols(char *title, int num, float w, float h);
 void svg_def_id(char *id, int idsz);
+void svg_font_switch(void);
 int svg_output(FILE *out, const char *fmt, ...)
 #ifdef __GNUC__
 	__attribute__ ((format (printf, 2, 3)))

@@ -1,3 +1,16 @@
+---- Version 8.13.3 - 2016-12-31 ----
+
+Fix bad placement of space or grace notes when after a bar and multi-voices
+	(reported by David Lacroix)
+Don't put a repeat bracket at start of line when the line starts with a bar
+	(reported by Timm Reasbeck)
+Add abc2svg.ttf in the tarball and install
+%%musicfont added
+Remove colors on decorations
+	(asked by David Lacroix)
+Fix bad glyph for cut time meter since 8.13.2
+	(reported by Timm Reasbeck)
+
 ---- Version 8.13.2 - 2016-12-23 ----
 
 Replace 'xlm:space="preserve"' by style 'white-space: pre'

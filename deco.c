@@ -137,6 +137,8 @@ static char *std_deco_tb[] = {
 	"pppp 6 pf 18 10 25",
 	"pralltriller 3 umrd 10 2 2",
 	"sfz 6 sfz 18 4 10",
+	"ped 4 ped 20 0 0",
+	"ped-up 4 pedoff 20 0 0",
 	"turn 3 turn 10 0 5",
 	"wedge 3 wedge 8 1 1",
 	"turnx 3 turnx 10 0 5",
@@ -1272,7 +1274,8 @@ void draw_all_deco(void)
 		}
 
 		s = de->s;
-		set_color(s->color);
+// David Lacroix - 16-12-28
+//		set_color(s->color);
 
 		// no scale if staff decoration
 		if (f_staff & (1 << dd->func))

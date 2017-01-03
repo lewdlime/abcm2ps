@@ -34,32 +34,6 @@ static char ps_head[] =
 	"	currentfont/ScaleMatrix get 0 get .8 mul\n"
 	"	4 add rectstroke}!\n"
 
-	/* x y tclef - treble clef */
-	"/utclef{<95200072\n"
-	"	0000ff2e01c2030c\n"
-	"	00ac0056\n"
-	"	0064007f006400f400e00112\n"
-	"	0176011c01bc0056013a0012\n"
-	"	00c8ffde002700120015009a\n"
-	"	0006014f0072017f00f101e8\n"
-	"	0149023f0140026d012f02ba\n"
-	"	00fc029900d1025100d60200\n"
-	"	00e700f500fa008a0107ffc2\n"
-	"	010dff6200f4ff3c00baff3b\n"
-	"	006aff3a003cff98007dffc0\n"
-	"	00d2ffe90102ff5b009cff57\n"
-	"	00b3ff4600f8ff3200f6ffb3\n"
-	"	00ec009200cf010900c4021c\n"
-	"	00c4027600c402be01240304\n"
-	"	015c02bc0163021e013a01e3\n"
-	"	00f001790039013b003b00a7\n"
-	"	0044000e00cfffee01370022\n"
-	"	018d0063015400e200e700d2\n"
-	"	00a000c6007e008f00ac0056\n"
-	"	><0b000132050a>}cvlit def\n"
-	"/tclef{gsave T -10 -6 T .045 dup scale utclef ufill grestore}!\n"
-	"/stclef{gsave T -10 -6 T .037 dup scale utclef ufill grestore}!\n"
-
 	/* x y oct - upper/lower clef '8' */
 	"/oct{/Times-Roman 12 selectfont M(8)show}!\n"
 
@@ -67,62 +41,6 @@ static char ps_head[] =
 	"/octu{oct}!\n"
 	/* x y octl - lower '8'  - compatibility */
 	"/octl{oct}!\n"
-
-	/* x y bclef - bass clef */
-	"/ubclef{<95200046\n"
-	"	00000050019a0244\n"
-	"	00010057\n"
-	"	007d007a00df00a500ff0143\n"
-	"	012a022700580239003f01aa\n"
-	"	007a01fa00dc0194009b015c\n"
-	"	005d012d00280172003101b4\n"
-	"	00460241013f023c01430180\n"
-	"	014200d100d9007800010057\n"
-	"	01660151\n"
-	"	016601750199017301990151\n"
-	"	0199012c0166012d01660151\n"
-	"	016401d2\n"
-	"	016401f6019701f4019701d2\n"
-	"	019701ac016401ad016401d2\n"
-	"	><0b000126050a0122050a0122050a>}cvlit def\n"
-	"/bclef{gsave T -10 -18 T .045 dup scale ubclef ufill grestore}!\n"
-	"/sbclef{gsave T -10 -15 T .037 dup scale ubclef ufill grestore}!\n"
-
-	/* x y cclef */
-	"/ucclef{<95200066\n"
-	"	006effbe01e70256\n"
-	"	00d10108\n"
-	"	00d10002\n"
-	"	00c40002\n"
-	"	00c40213\n"
-	"	00d10213\n"
-	"	00d10113\n"
-	"	00ea012700fa013701100180\n"
-	"	011e0161011d014d0148013a\n"
-	"	01a2011801a80244011f01f3\n"
-	"	015301e0013a01a3011401a6\n"
-	"	00ba01cc01350256019f01eb\n"
-	"	01e7019c01a000fa01190131\n"
-	"	0109010a\n"
-	"	011900e4\n"
-	"	01a0011b01e70079019f002a\n"
-	"	0135ffbe00ba00490114006f\n"
-	"	013a007201530035011f0022\n"
-	"	01a8ffd101a200fd014800db\n"
-	"	011d00c8011b00bd0110009b\n"
-	"	00fa00e400ea00f400d10108\n"
-	"	006e0213\n"
-	"	00a70213\n"
-	"	00a70002\n"
-	"	006e0002\n"
-	"	006e0213\n"
-	"	><0b000125032605220326050a0124030a>}cvlit def\n"
-	"/cclef{gsave T -12 -12 T .045 dup scale ucclef ufill grestore}!\n"
-	"/scclef{gsave T -12 -10 T .037 dup scale ucclef ufill grestore}!\n"
-
-	/* x y pclef */
-	"/pclef{	exch 2.7 sub exch -9 add 5.4 18 1.4 SLW rectstroke}!\n"
-	"/spclef{pclef}!\n"
 
 	/* t dx dy x y bm - beam, depth t */
 	"/bm{	M 3 copy RL neg 0 exch RL neg exch neg exch RL 0 exch RL fill}!\n"
@@ -139,87 +57,8 @@ static char ps_head[] =
 	"/tubr{3 sub M 0 3 RL RL 0 -3 RL dlw stroke}!\n"
 	"/tubrl{3 add M 0 -3 RL RL 0 3 RL dlw stroke}!\n"
 
-	/* x y r00 - longa rest */
-	"/r00{	xymove -1.5 -6 RM currentpoint 3 12 rectfill}!\n"
-
-	/* x y r0 - breve rest */
-	"/r0{	xymove -1.5 0 RM currentpoint 3 6 rectfill}!\n"
-
-	/* x y r1 - rest */
-	"/r1{	xymove -3.5 3 RM currentpoint 7 3 rectfill}!\n"
-
-	/* x y r2 - half rest */
-	"/r2{	xymove -3.5 0 RM currentpoint 7 3 rectfill}!\n"
-
-	/* x y r4 - quarter rest */
-	"/r4{	xymove\n"
-	"	-1 8.5 RM\n"
-	"	3.6 -5.1 RL\n"
-	"	-2.1 -5.2 RL\n"
-	"	2.2 -4.3 RL\n"
-	"	-2.6 2.3 -5.1 0 -2.4 -2.6 RC\n"
-	"	-4.8 3 -1.5 6.9 1.4 4.1 RC\n"
-	"	-3.1 4.5 RL\n"
-	"	1.9 5.1 RL\n"
-	"	-1.5 3.5 RL\n"
-	"	fill}!\n"
-
-	/* 1/8 .. 1/64 rest element */
-	"/r8e{	-1.5 -1.5 -2.4 -2 -3.6 -2 RC\n"
-	"	2.4 2.8 -2.8 4 -2.8 1.2 RC\n"
-	"	0 -2.7 4.3 -2.4 5.9 -0.6 RC\n"
-	"	fill}!\n"
-
-	/* x y r8 - eighth rest */
-	"/r8{	xymove\n"
-	"	.5 SLW 3.3 4 RM\n"
-	"	-3.4 -9.6 RL stroke\n"
-	"	x y M 3.4 4 RM r8e}!\n"
-
-	/* x y r16 - 16th rest */
-	"/r16{	xymove\n"
-	"	.5 SLW 3.3 4 RM\n"
-	"	-4 -15.6 RL stroke\n"
-	"	x y M 3.4 4 RM r8e\n"
-	"	x y M 1.9 -2 RM r8e}!\n"
-
-	/* x y r32 - 32th rest */
-	"/r32{	xymove\n"
-	"	.5 SLW 4.8 10 RM\n"
-	"	-5.5 -21.6 RL stroke\n"
-	"	x y M 4.9 10 RM r8e\n"
-	"	x y M 3.4 4 RM r8e\n"
-	"	x y M 1.9 -2 RM r8e}!\n"
-
-	/* x y r64 - 64th rest */
-	"/r64{	xymove\n"
-	"	.5 SLW 4.8 10 RM\n"
-	"	-7 -27.6 RL stroke\n"
-	"	x y M 4.9 10 RM r8e\n"
-	"	x y M 3.4 4 RM r8e\n"
-	"	x y M 1.9 -2 RM r8e\n"
-	"	x y M 0.4 -8 RM r8e}!\n"
-
-	/* x y r128 - 128th rest */
-	"/r128{	xymove\n"
-	"	.5 SLW 5.8 16 RM\n"
-	"	-8.5 -33.6 RL stroke\n"
-	"	x y M 5.9 16 RM r8e\n"
-	"	x y M 4.4 10 RM r8e\n"
-	"	x y M 2.9 4 RM r8e\n"
-	"	x y M 1.4 -2 RM r8e\n"
-	"	x y M -0.1 -8 RM r8e}!\n"
-
 	/* dx dy dt - dot relative to head */
 	"/dt{x y M RM currentpoint 1.2 0 360 arc fill}!\n"
-
-	/* x y hld - fermata */
-	"/hld{	1.5 add 2 copy 1.5 add M currentpoint 1.3 0 360 arc\n"
-	"	M -7.5 0 RM\n"
-	"	0 11.5 15 11.5 15 0 RC\n"
-	"	-0.25 0 RL\n"
-	"	-1.25 9 -13.25 9 -14.5 0 RC\n"
-	"	fill}!\n"
 
 	/* x y dnb - down bow */
 	"/dnb{	dlw M -3.2 2 RM\n"
@@ -263,16 +102,6 @@ static char ps_head[] =
 	/* x y trl - trill sign */
 	"/trl{	/Times-BoldItalic 16 selectfont M -4 2 RM(tr)show}!\n"
 
-	/* x y umrd - upper mordent */
-	"/umrd{	4 add M\n"
-	"	2.2 2.2 RL 2.1 -2.9 RL 0.7 0.7 RL\n"
-	"	-2.2 -2.2 RL -2.1 2.9 RL -0.7 -0.7 RL\n"
-	"	-2.2 -2.2 RL -2.1 2.9 RL -0.7 -0.7 RL\n"
-	"	2.2 2.2 RL 2.1 -2.9 RL 0.7 0.7 RL fill}!\n"
-
-	/* x y lmrd - lower mordent */
-	"/lmrd{	2 copy umrd M .6 SLW 0 8 RL stroke}!\n"
-
 	/* str x y fng - finger (0-5) */
 	"/fng{/Bookman-Demi 8 selectfont M -3 1 RM show}!\n"
 
@@ -294,26 +123,6 @@ static char ps_head[] =
 	"	/Times-BoldItalic 16 selectfont(f)show\n"
 	"	/Times-Italic 14 selectfont(z)show}!\n"
 
-	/* x y coda - coda */
-	"/coda{	1 SLW 2 add 2 copy M 0 20 RL\n"
-	"	2 copy M -10 10 RM 20 0 RL stroke\n"
-	"	10 add 6 0 360 arc 1.7 SLW stroke}!\n"
-
-	/* x y sgno - segno */
-	"/sgno{	3 add M currentpoint currentpoint currentpoint\n"
-	"	1.5 -1.7 6.4 0.3 3 3.7 RC\n"
-	"	-10.4 7.8 -8 10.6 -6.5 11.9 RC\n"
-	"	4 1.9 5.9 -1.7 4.2 -2.6 RC\n"
-	"	-1.3 -0.7 -2.9 1.3 -0.7 2 RC\n"
-	"	-1.5 1.7 -6.4 -0.3 -3 -3.7 RC\n"
-	"	10.4 -7.8 8 -10.6 6.5 -11.9 RC\n"
-	"	-4 -1.9 -5.9 1.7 -4.2 2.6 RC\n"
-	"	1.3 0.7 2.9 -1.3 0.7 -2 RC\n"
-	"	fill\n"
-	"	M 0.8 SLW -6 1.2 RM 12.6 12.6 RL stroke\n"
-	"	7 add exch 6 sub exch 1.2 0 360 arc fill\n"
-	"	8 add exch 6 add exch 1.2 0 360 arc fill}!\n"
-
 	/* w x y cresc - crescendo */
 	"/cresc{	1 SLW M dup 5 RM\n"
 	"	defl 1 and 0 eq\n"
@@ -330,26 +139,6 @@ static char ps_head[] =
 
 	/* x y dplus - plus */
 	"/dplus{	1.2 SLW 0.5 add M 0 6 RL -3 -3 RM 6 0 RL stroke}!\n"
-
-	/* x y accent - accent */
-	"/accent{1.2 SLW M -4 1 RM 8 2 RL -8 2 RL stroke}!\n"
-
-	/* x y marcato - accent */
-	"/marcato{M -3 0 RM 3 7 RL 3 -7 RL -1.5 0 RL -1.8 4.2 RL -1.7 -4.2 RL fill}!\n"
-
-	/* x y turn - turn */
-	"/turn{	M 5.2 8 RM\n"
-	"	1.4 -0.5 0.9 -4.8 -2.2 -2.8 RC\n"
-	"	-4.8 3.5 RL\n"
-	"	-3 2 -5.8 -1.8 -3.6 -4.4 RC\n"
-	"	1 -1.1 2 -0.8 2.1 0.1 RC\n"
-	"	0.1 0.9 -0.7 1.2 -1.9 0.6 RC\n"
-	"	-1.4 0.5 -0.9 4.8 2.2 2.8 RC\n"
-	"	4.8 -3.5 RL\n"
-	"	3 -2 5.8 1.8 3.6 4.4 RC\n"
-	"	-1 1.1 -2 0.8 -2.1 -0.1 RC\n"
-	"	-0.1 -0.9 0.7 -1.2 1.9 -0.6 RC\n"
-	"	fill}!\n"
 
 	/* x y trnx - turn with line through it */
 	"/turnx{	2 copy turn .6 SLW 1.5 add M 0 9 RL stroke}!\n"
@@ -432,27 +221,10 @@ static char ps_head[] =
 	/* x y hl2 - more longer ledger line */
 	"/hl2{	.7 SLW M -9 0 RM 18 0 RL stroke}!\n"
 
-	/* -- accidentals -- */
-	/* glyphs 1000 */
-	"/usharp{<95200024\n"		/* width 460 */
-	"	003cff42019a02ee\n"
-	"	008802be\n"
-	"	0088ff44\n"
-	"	00a8ff44\n"
-	"	00a802be\n"
-	"	0128ff76\n"
-	"	0148ff76\n"
-	"	014802ee\n"
-	"	012802ee\n"
-	"	004001d0\n"
-	"	0040015c\n"
-	"	019201bc\n"
-	"	01920230\n"
-	"	00400076\n"
-	"	00400002\n"
-	"	01920064\n"
-	"	019200d6\n"
-	"	><0b000123030a0123030a0123030a0123030a>}cvlit def\n"
+	/* ancillary function for grace note accidentals */
+	"/gsc{gsave y T .8 dup scale 0 0}!\n"
+
+	// accidentals for text
 	"/uflat{<95200028\n"		/* width 400 */
 	"	0064000001b802ee\n"
 	"	006402ea\n"
@@ -484,6 +256,25 @@ static char ps_head[] =
 	"	01160190\n"
 	"	011600d4\n"
 	"	><0b00012a030a0123030a>}cvlit def\n"
+	"/usharp{<95200024\n"		/* width 460 */
+	"	003cff42019a02ee\n"
+	"	008802be\n"
+	"	0088ff44\n"
+	"	00a8ff44\n"
+	"	00a802be\n"
+	"	0128ff76\n"
+	"	0148ff76\n"
+	"	014802ee\n"
+	"	012802ee\n"
+	"	004001d0\n"
+	"	0040015c\n"
+	"	019201bc\n"
+	"	01920230\n"
+	"	00400076\n"
+	"	00400002\n"
+	"	01920064\n"
+	"	019200d6\n"
+	"	><0b000123030a0123030a0123030a0123030a>}cvlit def\n"
 	"/udblesharp{<95200046\n"	/* width 460 */
 	"	003c006e019001c2\n"
 	"	00f0011a\n"
@@ -528,19 +319,6 @@ static char ps_head[] =
 	"	016201860126014e01260128\n"
 	"	><0b000123030a0105050105050a0123030a0105050105050a>}cvlit def\n"
 
-	/* x y sh0 - sharp sign */
-	"/sh0{	gsave T -4 -5 T .018 dup scale usharp ufill grestore}!\n"
-	/* x y ft0 - flat sign */
-	"/ft0{	gsave T -3.5 -3.5 T .018 dup scale uflat ufill grestore}!\n"
-	/* x y nt0 - natural sign */
-	"/nt0{	gsave T -3 -5 T .018 dup scale unat ufill grestore}!\n"
-	/* x y dsh0 - double sharp */
-	"/dsh0{	gsave T -4 -5 T .018 dup scale udblesharp ufill grestore}!\n"
-	/* x y dft0 - double flat sign */
-	"/dft0{	gsave T -4 -3.5 T .018 dup scale udbleflat ufill grestore}!\n"
-	/* ancillary function for grace note accidentals */
-	"/gsc{gsave y T .8 dup scale 0 0}!\n"
-
 	/* some microtone accidentals */
 	/* 1/4 ton sharp */
 	"/sh1{	gsave T .9 SLW\n"
@@ -584,21 +362,6 @@ static char ps_head[] =
 	"/rdots{	2 copy 9 add M currentpoint 1.2 0 360 arc\n"
 	"	15 add M currentpoint 1.2 0 360 arc fill}!\n"
 
-	/* x y csig - C timesig */
-	"/csig{	M\n"
-	"	6 5.3 RM\n"
-	"	0.9 0 2.3 -0.7 2.4 -2.2 RC\n"
-	"	-1.2 2 -3.6 -0.1 -1.6 -1.7 RC\n"
-	"	2 -1 3.8 3.5 -0.8 4.7 RC\n"
-	"	-2 0.4 -6.4 -1.3 -5.8 -7 RC\n"
-	"	0.4 -6.4 7.9 -6.8 9.1 -0.7 RC\n"
-	"	-2.3 -5.6 -6.7 -5.1 -6.8 0 RC\n"
-	"	-0.5 4.4 0.7 7.5 3.5 6.9 RC\n"
-	"	fill}!\n"
-
-	/* x y ctsig - C| timesig */
-	"/ctsig{dlw 2 copy csig 8 sub M 0 16 RL stroke}!\n"
-
 	/* x y xxsig - old time signatures ('o', 'o.', 'c' 'c.') */
 	"/pmsig{0.3 SLW 12 add M currentpoint 5 0 360 arc stroke}!\n"
 	"/pMsig{2 copy pmsig 12 add M currentpoint 1.3 0 360 arc fill}!\n"
@@ -621,16 +384,6 @@ static char ps_head[] =
 	/* l x sep0 - hline separator */
 	"/sep0{	dlw 0 M 0 RL stroke}!\n"
 
-	"/hbrce{	-2.5 1 RM\n"
-	"	-4.5 -4.6 -7.5 -12.2 -4.4 -26.8 RC\n"
-	"	3.5 -14.3 3.2 -21.7 -2.1 -24.2 RC\n"
-	"	7.4 2.4 7.3 14.2 3.5 29.5 RC\n"
-	"	-2.7 9.5 -1.5 16.2 3 21.5 RC\n"
-	"	fill}!\n"
-	/* h x y brace */
-	"/brace{	gsave T 0 0 M .01 mul 1 exch scale hbrce\n"
-	"	0 -100 M 1 -1 scale hbrce grestore}!\n"
-
 	/* h x y bracket */
 	"/bracket{M -5 2 RM currentpoint\n"
 	"	-1.7 2 RM 10.5 -1 12 4.5 12 3.5 RC\n"
@@ -640,24 +393,6 @@ static char ps_head[] =
 	"	M -1.7 0 RM\n"
 	"	10.5 1 12 -4.5 12 -3.5 RC\n"
 	"	0 1 -3.5 5.5 -8.5 5.5 RC fill}!\n"
-
-	/* x y mrest */
-	"/mrest{	M currentpoint 1 SLW\n"
-	"	-20 -6 RM 0 12 RL 40 0 RM 0 -12 RL stroke\n"
-	"	M 5 SLW -20 0 RM 40 0 RL stroke}!\n"
-
-	/* x y mrep - measure repeat */
-	"/mrep{	2 copy 2 copy\n"
-	"	M -5 3 RM currentpoint 1.4 0 360 arc\n"
-	"	M 5 -3 RM currentpoint 1.4 0 360 arc\n"
-	"	M -7 -6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL fill}!\n"
-
-	/* x y mrep2 - measure repeat 2 times */
-	"/mrep2{	2 copy 2 copy\n"
-	"	M -5 6 RM currentpoint 1.4 0 360 arc\n"
-	"	M 5 -6 RM currentpoint 1.4 0 360 arc fill\n"
-	"	M 1.8 SLW\n"
-	"	-7 -8 RM 14 10 RL -14 -4 RM 14 10 RL stroke}!\n"
 
 	/* x y srep - sequence repeat */
 	"/srep{	M -1 -6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL fill}!\n"
@@ -717,53 +452,7 @@ static char ps_head[] =
 	"/lyshow{show}!\n"
 	"/alyshow{arrayshow}!\n"
 
-	/* -- note heads -- */
-	/* x y hd - full head */
-	"/uhd{{	100 -270 640 280\n"
-	"	560 82\n"
-	"	474 267 105 105 186 -80\n"
-	"	267 -265 636 -102 555 82\n"
-	"	}<0b000122050a>}cvlit def\n"
-	"/hd{	/x 2 index def/y 1 index def\n"
-	"	gsave T -7.4 0 T .02 dup scale uhd ufill grestore}!\n"
-	/* x y Hd - open head for half */
-	"/Hd{	xymove\n"
-	"	3 1.6 RM\n"
-	"	-1 1.8 -7 -1.4 -6 -3.2 RC\n"
-	"	1 -1.8 7 1.4 6 3.2 RC\n"
-	"	0.5 0.3 RM\n"
-	"	2 -3.8 -5 -7.6 -7 -3.8 RC\n"
-	"	-2 3.8 5 7.6 7 3.8 RC fill}!\n"
-	/* x y HD - open head for whole */
-	"/HD{	xymove\n"
-	"	-2.7 1.4 RM\n"
-	"	1.5 2.8 6.9 0 5.3 -2.7 RC\n"
-	"	-1.5 -2.8 -6.9 0 -5.3 2.7 RC\n"
-	"	8.3 -1.4 RM\n"
-	"	0 1.5 -2.2 3 -5.6 3 RC\n"
-	"	-3.4 0 -5.6 -1.5 -5.6 -3 RC\n"
-	"	0 -1.5 2.2 -3 5.6 -3 RC\n"
-	"	3.4 0 5.6 1.5 5.6 3 RC fill}!\n"
-	/* x y HDD - round breve */
-	"/HDD{	dlw HD\n"
-	"	x y M -6 -4 RM 0 8 RL\n"
-	"	12 0 RM 0 -8 RL stroke}!\n"
-	/* x y breve - square breve */
-	"/breve{	xymove\n"
-	"	2.5 SLW -6 -2.7 RM 12 0 RL\n"
-	"	0 5.4 RM -12 0 RL stroke\n"
-	"	dlw x y M -6 -5 RM 0 10 RL\n"
-	"	12 0 RM 0 -10 RL stroke}!\n"
-	/* x y longa */
-	"/longa{	xymove\n"
-	"	2.5 SLW -6 -2.7 RM 12 0 RL\n"
-	"	0 5.4 RM -12 0 RL stroke\n"
-	"	dlw x y M -6 -5 RM 0 10 RL\n"
-	"	12 0 RM 0 -16 RL stroke}!\n"
-
 	/* -- default percussion heads -- */
-	/* x y pshhd - percussion sharp head */
-	"/pshhd{/x 2 index def/y 1 index def dsh0}!\n"
 	/* x y pfthd - percussion flat head */
 	"/pfthd{/x 2 index def/y 1 index def dsh0\n"
 	"	.7 SLW x y M x y 4 0 360 arc stroke}!\n"
@@ -804,6 +493,342 @@ static char ps_head[] =
 
 	"0 setlinecap 0 setlinejoin\n";
 
+/* PS direct glyphs */
+static char psdgl[] = 
+	"/hbrce{	-2.5 1 RM\n"
+	"	-4.5 -4.6 -7.5 -12.2 -4.4 -26.8 RC\n"
+	"	3.5 -14.3 3.2 -21.7 -2.1 -24.2 RC\n"
+	"	7.4 2.4 7.3 14.2 3.5 29.5 RC\n"
+	"	-2.7 9.5 -1.5 16.2 3 21.5 RC\n"
+	"	fill}!\n"
+	/* h x y brace */
+	"/brace{	gsave T 0 0 M .01 mul 1 exch scale hbrce\n"
+	"	0 -100 M 1 -1 scale hbrce grestore}!\n"
+	/* x y sgno - segno */
+	"/sgno{	3 add M currentpoint currentpoint currentpoint\n"
+	"	1.5 -1.7 6.4 0.3 3 3.7 RC\n"
+	"	-10.4 7.8 -8 10.6 -6.5 11.9 RC\n"
+	"	4 1.9 5.9 -1.7 4.2 -2.6 RC\n"
+	"	-1.3 -0.7 -2.9 1.3 -0.7 2 RC\n"
+	"	-1.5 1.7 -6.4 -0.3 -3 -3.7 RC\n"
+	"	10.4 -7.8 8 -10.6 6.5 -11.9 RC\n"
+	"	-4 -1.9 -5.9 1.7 -4.2 2.6 RC\n"
+	"	1.3 0.7 2.9 -1.3 0.7 -2 RC\n"
+	"	fill\n"
+	"	M 0.8 SLW -6 1.2 RM 12.6 12.6 RL stroke\n"
+	"	7 add exch 6 sub exch 1.2 0 360 arc fill\n"
+	"	8 add exch 6 add exch 1.2 0 360 arc fill}!\n"
+	/* x y coda - coda */
+	"/coda{	1 SLW 2 add 2 copy M 0 20 RL\n"
+	"	2 copy M -10 10 RM 20 0 RL stroke\n"
+	"	10 add 6 0 360 arc 1.7 SLW stroke}!\n"
+	/* x y tclef - treble clef */
+	"/utclef{<95200072\n"
+	"	0000ff2e01c2030c\n"
+	"	00ac0056\n"
+	"	0064007f006400f400e00112\n"
+	"	0176011c01bc0056013a0012\n"
+	"	00c8ffde002700120015009a\n"
+	"	0006014f0072017f00f101e8\n"
+	"	0149023f0140026d012f02ba\n"
+	"	00fc029900d1025100d60200\n"
+	"	00e700f500fa008a0107ffc2\n"
+	"	010dff6200f4ff3c00baff3b\n"
+	"	006aff3a003cff98007dffc0\n"
+	"	00d2ffe90102ff5b009cff57\n"
+	"	00b3ff4600f8ff3200f6ffb3\n"
+	"	00ec009200cf010900c4021c\n"
+	"	00c4027600c402be01240304\n"
+	"	015c02bc0163021e013a01e3\n"
+	"	00f001790039013b003b00a7\n"
+	"	0044000e00cfffee01370022\n"
+	"	018d0063015400e200e700d2\n"
+	"	00a000c6007e008f00ac0056\n"
+	"	><0b000132050a>}cvlit def\n"
+	"/tclef{gsave T -10 -6 T .045 dup scale utclef ufill grestore}!\n"
+	/* x y cclef */
+	"/ucclef{<95200066\n"
+	"	006effbe01e70256\n"
+	"	00d10108\n"
+	"	00d10002\n"
+	"	00c40002\n"
+	"	00c40213\n"
+	"	00d10213\n"
+	"	00d10113\n"
+	"	00ea012700fa013701100180\n"
+	"	011e0161011d014d0148013a\n"
+	"	01a2011801a80244011f01f3\n"
+	"	015301e0013a01a3011401a6\n"
+	"	00ba01cc01350256019f01eb\n"
+	"	01e7019c01a000fa01190131\n"
+	"	0109010a\n"
+	"	011900e4\n"
+	"	01a0011b01e70079019f002a\n"
+	"	0135ffbe00ba00490114006f\n"
+	"	013a007201530035011f0022\n"
+	"	01a8ffd101a200fd014800db\n"
+	"	011d00c8011b00bd0110009b\n"
+	"	00fa00e400ea00f400d10108\n"
+	"	006e0213\n"
+	"	00a70213\n"
+	"	00a70002\n"
+	"	006e0002\n"
+	"	006e0213\n"
+	"	><0b000125032605220326050a0124030a>}cvlit def\n"
+	"/cclef{gsave T -12 -12 T .045 dup scale ucclef ufill grestore}!\n"
+	/* x y bclef - bass clef */
+	"/ubclef{<95200046\n"
+	"	00000050019a0244\n"
+	"	00010057\n"
+	"	007d007a00df00a500ff0143\n"
+	"	012a022700580239003f01aa\n"
+	"	007a01fa00dc0194009b015c\n"
+	"	005d012d00280172003101b4\n"
+	"	00460241013f023c01430180\n"
+	"	014200d100d9007800010057\n"
+	"	01660151\n"
+	"	016601750199017301990151\n"
+	"	0199012c0166012d01660151\n"
+	"	016401d2\n"
+	"	016401f6019701f4019701d2\n"
+	"	019701ac016401ad016401d2\n"
+	"	><0b000126050a0122050a0122050a>}cvlit def\n"
+	"/bclef{gsave T -10 -18 T .045 dup scale ubclef ufill grestore}!\n"
+	/* x y pclef */
+	"/pclef{	exch 2.7 sub exch -9 add 5.4 18 1.4 SLW rectstroke}!\n"
+	"/spclef{pclef}!\n"
+	"/stclef{gsave T -10 -6 T .037 dup scale utclef ufill grestore}!\n"
+	"/scclef{gsave T -12 -10 T .037 dup scale ucclef ufill grestore}!\n"
+	"/sbclef{gsave T -10 -15 T .037 dup scale ubclef ufill grestore}!\n"
+	/* x y csig - C timesig */
+	"/csig{	M\n"
+	"	6 5.3 RM\n"
+	"	0.9 0 2.3 -0.7 2.4 -2.2 RC\n"
+	"	-1.2 2 -3.6 -0.1 -1.6 -1.7 RC\n"
+	"	2 -1 3.8 3.5 -0.8 4.7 RC\n"
+	"	-2 0.4 -6.4 -1.3 -5.8 -7 RC\n"
+	"	0.4 -6.4 7.9 -6.8 9.1 -0.7 RC\n"
+	"	-2.3 -5.6 -6.7 -5.1 -6.8 0 RC\n"
+	"	-0.5 4.4 0.7 7.5 3.5 6.9 RC\n"
+	"	fill}!\n"
+	/* x y ctsig - C| timesig */
+	"/ctsig{dlw 2 copy csig 8 sub M 5 16 RL stroke}!\n"
+	/* x y HDD - round breve */
+	"/HDD{	dlw HD\n"
+	"	x y M -6 -4 RM 0 8 RL\n"
+	"	12 0 RM 0 -8 RL stroke}!\n"
+	/* x y breve - square breve */
+	"/breve{	xymove\n"
+	"	2.5 SLW -6 -2.7 RM 12 0 RL\n"
+	"	0 5.4 RM -12 0 RL stroke\n"
+	"	dlw x y M -6 -5 RM 0 10 RL\n"
+	"	12 0 RM 0 -10 RL stroke}!\n"
+	/* x y HD - open head for whole */
+	"/HD{	xymove\n"
+	"	-2.7 1.4 RM\n"
+	"	1.5 2.8 6.9 0 5.3 -2.7 RC\n"
+	"	-1.5 -2.8 -6.9 0 -5.3 2.7 RC\n"
+	"	8.3 -1.4 RM\n"
+	"	0 1.5 -2.2 3 -5.6 3 RC\n"
+	"	-3.4 0 -5.6 -1.5 -5.6 -3 RC\n"
+	"	0 -1.5 2.2 -3 5.6 -3 RC\n"
+	"	3.4 0 5.6 1.5 5.6 3 RC fill}!\n"
+	/* x y Hd - open head for half */
+	"/Hd{	xymove\n"
+	"	3 1.6 RM\n"
+	"	-1 1.8 -7 -1.4 -6 -3.2 RC\n"
+	"	1 -1.8 7 1.4 6 3.2 RC\n"
+	"	0.5 0.3 RM\n"
+	"	2 -3.8 -5 -7.6 -7 -3.8 RC\n"
+	"	-2 3.8 5 7.6 7 3.8 RC fill}!\n"
+	/* x y hd - full head */
+	"/uhd{{	100 -270 640 280\n"
+	"	560 82\n"
+	"	474 267 105 105 186 -80\n"
+	"	267 -265 636 -102 555 82\n"
+	"	}<0b000122050a>}cvlit def\n"
+	"/hd{	/x 2 index def/y 1 index def\n"
+	"	gsave T -7.4 0 T .02 dup scale uhd ufill grestore}!\n"
+	/* x y ft0 - flat sign */
+	"/ft0{	gsave T -3.5 -3.5 T .018 dup scale uflat ufill grestore}!\n"
+	/* x y nt0 - natural sign */
+	"/nt0{	gsave T -3 -5 T .018 dup scale unat ufill grestore}!\n"
+	/* x y sh0 - sharp sign */
+	"/sh0{	gsave T -4 -5 T .018 dup scale usharp ufill grestore}!\n"
+	/* x y dsh0 - double sharp */
+	"/dsh0{	gsave T -4 -5 T .018 dup scale udblesharp ufill grestore}!\n"
+	/* x y pshhd - percussion sharp head */
+	"/pshhd{/x 2 index def/y 1 index def dsh0}!\n"
+	/* x y dft0 - double flat sign */
+	"/dft0{	gsave T -4 -3.5 T .018 dup scale udbleflat ufill grestore}!\n"
+	/* x y accent - accent */
+	"/accent{1.2 SLW M -4 1 RM 8 2 RL -8 2 RL stroke}!\n"
+	/* x y marcato - accent */
+	"/marcato{M -3 0 RM 3 7 RL 3 -7 RL -1.5 0 RL -1.8 4.2 RL -1.7 -4.2 RL fill}!\n"
+	/* x y hld - fermata */
+	"/hld{	1.5 add 2 copy 1.5 add M currentpoint 1.3 0 360 arc\n"
+	"	M -7.5 0 RM\n"
+	"	0 11.5 15 11.5 15 0 RC\n"
+	"	-0.25 0 RL\n"
+	"	-1.25 9 -13.25 9 -14.5 0 RC\n"
+	"	fill}!\n"
+	/* x y r00 - longa rest */
+	"/r00{	xymove -1.5 -6 RM currentpoint 3 12 rectfill}!\n"
+	/* x y r0 - breve rest */
+	"/r0{	xymove -1.5 0 RM currentpoint 3 6 rectfill}!\n"
+	/* x y r1 - rest */
+	"/r1{	xymove -3.5 3 RM currentpoint 7 3 rectfill}!\n"
+	/* x y r2 - half rest */
+	"/r2{	xymove -3.5 0 RM currentpoint 7 3 rectfill}!\n"
+	/* x y r4 - quarter rest */
+	"/r4{	xymove\n"
+	"	-1 8.5 RM\n"
+	"	3.6 -5.1 RL\n"
+	"	-2.1 -5.2 RL\n"
+	"	2.2 -4.3 RL\n"
+	"	-2.6 2.3 -5.1 0 -2.4 -2.6 RC\n"
+	"	-4.8 3 -1.5 6.9 1.4 4.1 RC\n"
+	"	-3.1 4.5 RL\n"
+	"	1.9 5.1 RL\n"
+	"	-1.5 3.5 RL\n"
+	"	fill}!\n"
+	/* 1/8 .. 1/64 rest element */
+	"/r8e{	-1.5 -1.5 -2.4 -2 -3.6 -2 RC\n"
+	"	2.4 2.8 -2.8 4 -2.8 1.2 RC\n"
+	"	0 -2.7 4.3 -2.4 5.9 -0.6 RC\n"
+	"	fill}!\n"
+	/* x y r8 - eighth rest */
+	"/r8{	xymove\n"
+	"	.5 SLW 3.3 4 RM\n"
+	"	-3.4 -9.6 RL stroke\n"
+	"	x y M 3.4 4 RM r8e}!\n"
+	/* x y r16 - 16th rest */
+	"/r16{	xymove\n"
+	"	.5 SLW 3.3 4 RM\n"
+	"	-4 -15.6 RL stroke\n"
+	"	x y M 3.4 4 RM r8e\n"
+	"	x y M 1.9 -2 RM r8e}!\n"
+	/* x y r32 - 32th rest */
+	"/r32{	xymove\n"
+	"	.5 SLW 4.8 10 RM\n"
+	"	-5.5 -21.6 RL stroke\n"
+	"	x y M 4.9 10 RM r8e\n"
+	"	x y M 3.4 4 RM r8e\n"
+	"	x y M 1.9 -2 RM r8e}!\n"
+	/* x y r64 - 64th rest */
+	"/r64{	xymove\n"
+	"	.5 SLW 4.8 10 RM\n"
+	"	-7 -27.6 RL stroke\n"
+	"	x y M 4.9 10 RM r8e\n"
+	"	x y M 3.4 4 RM r8e\n"
+	"	x y M 1.9 -2 RM r8e\n"
+	"	x y M 0.4 -8 RM r8e}!\n"
+	/* x y r128 - 128th rest */
+	"/r128{	xymove\n"
+	"	.5 SLW 5.8 16 RM\n"
+	"	-8.5 -33.6 RL stroke\n"
+	"	x y M 5.9 16 RM r8e\n"
+	"	x y M 4.4 10 RM r8e\n"
+	"	x y M 2.9 4 RM r8e\n"
+	"	x y M 1.4 -2 RM r8e\n"
+	"	x y M -0.1 -8 RM r8e}!\n"
+	/* x y mrest */
+	"/mrest{	M currentpoint 1 SLW\n"
+	"	-20 -6 RM 0 12 RL 40 0 RM 0 -12 RL stroke\n"
+	"	M 5 SLW -20 0 RM 40 0 RL stroke}!\n"
+	/* x y mrep - measure repeat */
+	"/mrep{	2 copy 2 copy\n"
+	"	M -5 3 RM currentpoint 1.4 0 360 arc\n"
+	"	M 5 -3 RM currentpoint 1.4 0 360 arc\n"
+	"	M -7 -6 RM 11 12 RL 3 0 RL -11 -12 RL -3 0 RL fill}!\n"
+	/* x y mrep2 - measure repeat 2 times */
+	"/mrep2{	2 copy 2 copy\n"
+	"	M -5 6 RM currentpoint 1.4 0 360 arc\n"
+	"	M 5 -6 RM currentpoint 1.4 0 360 arc fill\n"
+	"	M 1.8 SLW\n"
+	"	-7 -8 RM 14 10 RL -14 -4 RM 14 10 RL stroke}!\n"
+	/* x y turn - turn */
+	"/turn{	M 5.2 8 RM\n"
+	"	1.4 -0.5 0.9 -4.8 -2.2 -2.8 RC\n"
+	"	-4.8 3.5 RL\n"
+	"	-3 2 -5.8 -1.8 -3.6 -4.4 RC\n"
+	"	1 -1.1 2 -0.8 2.1 0.1 RC\n"
+	"	0.1 0.9 -0.7 1.2 -1.9 0.6 RC\n"
+	"	-1.4 0.5 -0.9 4.8 2.2 2.8 RC\n"
+	"	4.8 -3.5 RL\n"
+	"	3 -2 5.8 1.8 3.6 4.4 RC\n"
+	"	-1 1.1 -2 0.8 -2.1 -0.1 RC\n"
+	"	-0.1 -0.9 0.7 -1.2 1.9 -0.6 RC\n"
+	"	fill}!\n"
+	/* x y umrd - upper mordent */
+	"/umrd{	4 add M\n"
+	"	2.2 2.2 RL 2.1 -2.9 RL 0.7 0.7 RL\n"
+	"	-2.2 -2.2 RL -2.1 2.9 RL -0.7 -0.7 RL\n"
+	"	-2.2 -2.2 RL -2.1 2.9 RL -0.7 -0.7 RL\n"
+	"	2.2 2.2 RL 2.1 -2.9 RL 0.7 0.7 RL fill}!\n"
+	/* x y lmrd - lower mordent */
+	"/lmrd{	2 copy umrd M .6 SLW 0 8 RL stroke}!\n"
+	// dummy !ped! and !ped-up!
+	"/ped{	/Times-BoldItalic 16 selectfont M -4 2 RM(Ped)show}!\n"
+	"/pedoff{	/Times-BoldItalic 16 selectfont M -4 2 RM(*)show}!\n"
+	/* x y longa */
+	"/longa{	xymove\n"
+	"	2.5 SLW -6 -2.7 RM 12 0 RL\n"
+	"	0 5.4 RM -12 0 RL stroke\n"
+	"	dlw x y M -6 -5 RM 0 10 RL\n"
+	"	12 0 RM 0 -16 RL stroke}!\n";
+
+/* PS font glyphs */
+static char psfgl[] =
+	"/musgly{music 24 selectfont glyphshow}!\n"
+	"/brace{gsave\n"
+	"	T -7.5 0 M -.042 mul 3 exch scale/uniE000 musgly\n"
+	"	grestore}!\n"
+	"/sgno{	M -6 4 RM/uniE047 musgly}!\n"
+	"/coda{	M -12 6 RM/uniE048 musgly}!\n"
+	"/tclef{M -8 0 RM/uniE050 musgly}!\n"
+	"/cclef{M -8 0 RM/uniE05C musgly}!\n"
+	"/bclef{M -8 0 RM/uniE062 musgly}!\n"
+	"/pclef{M -6 0 RM/uniE069 musgly}!\n"
+	"/stclef{M -8 0 RM/uniE07A musgly}!\n"
+	"/scclef{M -8 0 RM/uniE07B musgly}!\n"
+	"/sbclef{M -7 0 RM/uniE07C musgly}!\n"
+	"/csig{	M 0 0 RM/uniE08A musgly}!\n"
+	"/ctsig{M 0 0 RM/uniE08B musgly}!\n"
+	"/HDD{	xymove -7 0 RM/uniE0A0 musgly}!\n"
+	"/breve{xymove -6 0 RM/uniE0A1 musgly}!\n"
+	"/HD{	xymove -5.2 0 RM/uniE0A2 musgly}!\n"
+	"/Hd{	xymove -3.8 0 RM/uniE0A3 musgly}!\n"
+	"/hd{	xymove -3.7 0 RM/uniE0A4 musgly}!\n"
+	"/ft0{	M -3 0 RM/uniE260 musgly}!\n"
+	"/nt0{	M -2 0 RM/uniE261 musgly}!\n"
+	"/sh0{	M -3 0 RM/uniE262 musgly}!\n"
+	"/dsh0{	M -3 0 RM/uniE263 musgly}!\n"
+	"/pshhd{xymove -3 0 RM/uniE263 musgly}!\n"
+	"/dft0{	M -3 0 RM/uniE264 musgly}!\n"
+	"/accent{M -3 0 RM/uniE4A0 musgly}!\n"
+	"/marcato{M -3 0 RM/uniE4AC musgly}!\n"
+	"/hld{	M -7 0 RM/uniE4C0 musgly}!\n"
+	"/r00{	xymove -1.5 0 RM/uniE4E1 musgly}!\n"
+	"/r0{	xymove -1.5 0 RM/uniE4E2 musgly}!\n"
+	"/r1{	xymove -3.5 6 RM/uniE4E3 musgly}!\n"
+	"/r2{	xymove -3.2 0 RM/uniE4E4 musgly}!\n"
+	"/r4{	xymove -3 0 RM/uniE4E5 musgly}!\n"
+	"/r8{	xymove -3 0 RM/uniE4E6 musgly}!\n"
+	"/r16{	xymove -4 0 RM/uniE4E7 musgly}!\n"
+	"/r32{	xymove -4 0 RM/uniE4E8 musgly}!\n"
+	"/r64{	xymove -4 0 RM/uniE4E9 musgly}!\n"
+	"/r128{	xymove -4 0 RM/uniE4EA musgly}!\n"
+	"/mrest{M -10 0 RM/uniE4EE musgly}!\n"
+	"/mrep{	M -6 0 RM/uniE500 musgly}!\n"
+	"/mrep2{M -9 0 RM/uniE501 musgly}!\n"
+	"/turn{	M -4 0 RM/uniE567 musgly}!\n"
+	"/umrd{	M -7 2 RM/uniE56C musgly}!\n"
+	"/lmrd{	M -7 2 RM/uniE56D musgly}!\n"
+	"/ped{	M -10 0 RM/uniE650 musgly}!\n"
+	"/pedoff{M -6 0 RM/uniE655 musgly}!\n"
+	"/longa{xymove -6 0 RM/uniE95C musgly}!\n";
+
 /* -- define a font -- */
 void define_font(char name[],
 		 int num,
@@ -820,7 +845,26 @@ void define_font(char name[],
 /* -- output the symbol definitions -- */
 void define_symbols(void)
 {
+	char *p, *q, *r;
+
+	p = cfmt.musicfont;
 	fputs(ps_head, fout);
+	fputs(p ? psfgl : psdgl, fout);
+
+	// if a music font, give it a name
+	if (p) {
+		r = strchr(p, '.');	// remove the file type
+		if (!r) {
+			fprintf(fout, "/music/%s def\n", p);
+		} else {
+			q = strrchr(p, DIRSEP);
+			if (q)
+				q++;
+			else
+				q = p;
+			fprintf(fout, "/music/%.*s def\n", r - q, q);
+		}
+	}
 
 	/* len su - up stem */
 	fprintf(fout, "/su{dlw x y M %.1f %.1f RM %.1f sub 0 exch RL stroke}!\n",

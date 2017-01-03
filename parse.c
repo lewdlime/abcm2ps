@@ -92,7 +92,7 @@ static char w_tb[NSYMTYPES] = {	/* !! index = symbol type !! */
 	0,
 	9,	/* 1- note / rest */
 	3,	/* 2- space */
-	4,	/* 3- bar */
+	2,	/* 3- bar */
 	1,	/* 4- clef */
 	6,	/* 5- timesig */
 	5,	/* 6- keysig */
@@ -494,6 +494,12 @@ static void voice_compress(void)
 				s2->prev = s;
 				s->next = s2;
 				s = s2;
+
+				// with w_tb[BAR] = 2,
+				// the grace notes go after the bar
+				// if before a bar, change the grace time
+				if (s->next && s->next->type == BAR)
+					s->time--;
 			}
 			if (!ns)
 				continue;
@@ -3152,7 +3158,9 @@ static void get_bar(struct SYMBOL *s)
 
 	bar_type = s->u.bar.type;
 	s2 = curvoice->last_sym;
-	if (s2 && s2->type == BAR) {
+	if (s2 && s2->type == SPACE) {
+		s2->time--;		// keep the space at the right place
+	} else if (s2 && s2->type == BAR) {
 
 		/* remove the invisible repeat bars when no shift is needed */
 		if (bar_type == B_OBRA
@@ -3188,7 +3196,6 @@ static void get_bar(struct SYMBOL *s)
 
 	/* link the bar in the voice */
 	/* the bar must appear before a key signature */
-//	s2 = curvoice->last_sym;
 	if (s2 && s2->type == KEYSIG
 	 && (!s2->prev || s2->prev->type != BAR)) {
 		curvoice->last_sym = s2->prev;

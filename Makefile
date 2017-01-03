@@ -1,6 +1,6 @@
 # Makefile source for abcm2ps
 
-VERSION = 8.13.2
+VERSION = 8.13.3
 
 CC = gcc
 INSTALL = /usr/bin/install -c
@@ -40,7 +40,8 @@ install: abcm2ps
 	mkdir -p $(bindir); \
 	mkdir -p $(datadir)/abcm2ps; \
 	mkdir -p $(docdir)/abcm2ps; \
-	$(INSTALL_PROGRAM) abcm2ps $(bindir)
+	$(INSTALL_PROGRAM) abcm2ps $(bindir);\
+	$(INSTALL_DATA) abc2svg.ttf $(datadir)/abcm2ps
 	for f in $(srcdir)/*.fmt; do \
 		$(INSTALL_DATA) $$f $(datadir)/abcm2ps; \
 	done
@@ -60,6 +61,7 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/Makefile \
 	abcm2ps-$(VERSION)/Makefile.in \
 	abcm2ps-$(VERSION)/README \
+	abcm2ps-$(VERSION)/abc2svg.ttf \
 	abcm2ps-$(VERSION)/abcm2ps.c \
 	abcm2ps-$(VERSION)/abcm2ps.h \
 	abcm2ps-$(VERSION)/abcparse.c \

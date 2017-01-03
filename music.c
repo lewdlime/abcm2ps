@@ -3259,32 +3259,42 @@ static void init_music_line(void)
 		}
 	}
 
-	/* add bar if needed */
+	/* add bar if needed (for repeat bracket) */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
-		if (!p_voice->bar_start)
+		int bar_start;
+
+		bar_start = p_voice->bar_start;
+		if (!bar_start)
 			continue;
+		p_voice->bar_start = 0;
+
 		voice = p_voice - voice_tb;
 		if (cursys->voice[voice].range < 0
 		 || cursys->voice[voice].second
 		 || cursys->staff[cursys->voice[voice].staff].empty)
 			continue;
 
+		// if bar already, ignore
+		if (last_s->voice == voice && last_s->type == BAR) {
+			p_voice->last_sym = last_s;
+			last_s = last_s->ts_next;
+			continue;
+		}
 		s = sym_new(BAR, p_voice, last_s);
-		s->u.bar.type = p_voice->bar_start & 0x0fff;
-		if (p_voice->bar_start & 0x8000)
+		s->u.bar.type = bar_start & 0x0fff;
+		if (bar_start & 0x8000)
 			s->flags |= ABC_F_INVIS;
-		if (p_voice->bar_start & 0x4000)
+		if (bar_start & 0x4000)
 			s->sflags |= S_NOREPBRA;
-		if (p_voice->bar_start & 0x2000)
+		if (bar_start & 0x2000)
 			s->flags |= ABC_F_RBSTART;
-		if (p_voice->bar_start & 0x1000)
+		if (bar_start & 0x1000)
 			s->sflags |= S_RBSTART;
 		s->text = p_voice->bar_text;
 		s->gch = p_voice->bar_gch;
 		if (p_voice->bar_repeat)
 			s->u.bar.repeat_bar = p_voice->bar_repeat;
 
-		p_voice->bar_start = 0;
 		p_voice->bar_repeat = 0;
 		p_voice->bar_text = NULL;
 		p_voice->bar_gch = NULL;
@@ -4426,8 +4436,8 @@ static void check_bar(struct SYMBOL *s)
 	/* search the last bar */
 	while (s->type == CLEF || s->type == KEYSIG || s->type == TIMESIG) {
 		if (s->type == TIMESIG
-		 && s->time > p_voice->sym->time)	/* if not empty voice */
-			insert_meter |= 1;	/* meter in the next line */
+		 && s->time > p_voice->sym->time) /* if not empty voice */
+			insert_meter |= 1;	  /* meter in the next line */
 		if ((s = s->prev) == NULL)
 			return;
 	}

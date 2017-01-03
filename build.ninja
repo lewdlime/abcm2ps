@@ -1,6 +1,6 @@
 # rules for ninja (ninja-build)
 
-VERSION = 8.13.2
+VERSION = 8.13.3
 
 cc=musl-gcc
 #cc=gcc
@@ -45,6 +45,7 @@ rule dist_tar
   abcm2ps-$VERSION/Makefile $
   abcm2ps-$VERSION/Makefile.in $
   abcm2ps-$VERSION/README $
+  abcm2ps-$VERSION/abc2svg.ttf $
   abcm2ps-$VERSION/abcm2ps.c $
   abcm2ps-$VERSION/abcm2ps.h $
   abcm2ps-$VERSION/abcparse.c $

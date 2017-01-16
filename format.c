@@ -1352,8 +1352,17 @@ void interpret_fmt_line(char *w,		/* keyword */
 			get_str(*((char **) fd->v), p, i);
 		else
 			strcpy(*((char **) fd->v), p);
-		if (fd->subtype == 1)			// musicfont
+		if (fd->subtype == 1) {			// musicfont
+			if ((strncmp(p, "url(", 4)
+			  && strncmp(p, "local(", 4))
+			 || p[strlen(p) - 1] != ')') {
+				cfmt.musicfont = NULL;
+				error(1, NULL,
+					"%s can be only url(..) or local(..)", w);
+				return;
+			}
 			svg_font_switch();
+		}
 		break;
 	}
 	return;

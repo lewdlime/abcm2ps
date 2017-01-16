@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2016 Jean-François Moine
+ * Copyright (C) 1998-2017 Jean-François Moine
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1156,7 +1156,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 	static const char svg_font_style[] =
 		"@font-face {\n"
 		"	font-family: 'music';\n"
-		"	src: url(%s);\n"
+		"	src: %s;\n"
 		"	font-weight: normal; font-style: normal}\n"
 		".music {font-family: music; font-size: 24px;\n"
 		"	font-weight: normal; font-style: normal;\n"
@@ -1848,7 +1848,8 @@ stack_dump();
 	sym = ps_sym_lookup(op);
 	if (sym) {
 		if (++sym->exec > 2) {
-			fprintf(stderr, "svg: Too many recursions\n");
+			fprintf(stderr, "svg: Too many recursions of '%s'\n",
+				op);
 			ps_error = 1;
 			return;
 		}

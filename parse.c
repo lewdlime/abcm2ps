@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2016 Jean-François Moine
+ * Copyright (C) 1998-2017 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -2658,7 +2658,7 @@ static void set_global_def(void)
 		switch (p_voice->key.instr) {
 		case 0:
 			if (!pipeformat) {
-				p_voice->transpose = cfmt.transpose;
+//				p_voice->transpose = cfmt.transpose;
 				break;
 			}
 			//fall thru
@@ -3837,8 +3837,13 @@ static void get_key(struct SYMBOL *s)
 		set_k_acc(s);
 
 	memcpy(&okey, &s->u.key, sizeof okey);
-	if (s->state == ABC_S_HEAD)		/* if first K: (start of tune) */
-		curvoice->transpose = cfmt.transpose;
+	if (s->state == ABC_S_HEAD) {		/* if first K: (start of tune) */
+		for (i = MAXVOICE, p_voice = voice_tb;
+		     --i >= 0;
+		     p_voice++)
+			p_voice->transpose = cfmt.transpose;
+//		curvoice->transpose = cfmt.transpose;
+	}
 	if (curvoice->transpose != 0) {
 		key_transpose(&s->u.key);
 
@@ -3913,7 +3918,7 @@ static void get_key(struct SYMBOL *s)
 		switch (curvoice->key.instr) {
 		case 0:
 			if (!pipeformat) {
-				curvoice->transpose = cfmt.transpose;
+//				curvoice->transpose = cfmt.transpose;
 				break;
 			}
 			//fall thru
@@ -4433,12 +4438,11 @@ static void parse_path(char *p, char *q, char *id, int idsz)
 			npar = 2;
 			break;
 //		case 'H':
-//fixme: do macros RH
 //			op = "H";
 //			npar = 1;
 //			break;
 		case 'h':
-			op = "RH";
+			op = "h";
 			npar = 1;
 			break;
 //		case 'V':
@@ -4484,6 +4488,11 @@ static void parse_path(char *p, char *q, char *id, int idsz)
 			    || *p == '-' || *p == '.')
 				*r++ = *p++;
 			*r++ = ' ';
+		}
+		if (*op == 'h') {
+			*r++ = '0';
+			*r++ = ' ';
+			op = "RL";
 		}
 		strcpy(r, op);
 		r += strlen(r);
@@ -5492,8 +5501,9 @@ center:
 			return s;
 		}
 		if (strcmp(w, "transpose") == 0) {
+			struct VOICE_S *p_voice;
 			struct SYMBOL *s2;
-			int val;
+			int i, val;
 
 			val = get_transpose(p);
 			switch (s->state) {
@@ -5501,9 +5511,6 @@ center:
 				cfmt.transpose = val;
 				return s;
 			case ABC_S_HEAD: {
-				struct VOICE_S *p_voice;
-				int i;
-
 				cfmt.transpose += val;
 				for (i = MAXVOICE, p_voice = voice_tb;
 				     --i >= 0;

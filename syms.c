@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2016 Jean-François Moine
+ * Copyright (C) 1998-2017 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -612,7 +612,7 @@ static char psdgl[] =
 	"	-0.5 4.4 0.7 7.5 3.5 6.9 RC\n"
 	"	fill}!\n"
 	/* x y ctsig - C| timesig */
-	"/ctsig{dlw 2 copy csig 8 sub M 5 16 RL stroke}!\n"
+	"/ctsig{dlw 2 copy csig M 5 -8 RM 0 16 RL stroke}!\n"
 	/* x y HDD - round breve */
 	"/HDD{	dlw HD\n"
 	"	x y M -6 -4 RM 0 8 RL\n"
@@ -853,17 +853,14 @@ void define_symbols(void)
 
 	// if a music font, give it a name
 	if (p) {
-		r = strchr(p, '.');	// remove the file type
-		if (!r) {
-			fprintf(fout, "/music/%s def\n", p);
-		} else {
-			q = strrchr(p, DIRSEP);
-			if (q)
-				q++;
-			else
-				q = p;
-			fprintf(fout, "/music/%.*s def\n", r - q, q);
-		}
+		r = strrchr(p, '.');	// remove the file type
+		if (!r)
+			r = p + strlen(p) - 1;		// ')'
+		q = strrchr(p, DIRSEP);
+		if (!q)
+			q = strchr(p, '(');
+		q++;
+		fprintf(fout, "/music/%.*s def\n", (int) (r - q), q);
 	}
 
 	/* len su - up stem */

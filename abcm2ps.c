@@ -2,7 +2,7 @@
  * abcm2ps: a program to typeset tunes written in ABC format
  *	using PostScript or SVG
  *
- * Copyright (C) 1998-2016 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 1998-2017 Jean-François Moine (http://moinejf.free.fr)
  *
  * Adapted from abc2ps-1.2.5:
  *  Copyright (C) 1996,1997  Michael Methfessel (msm@ihp-ffo.de)
@@ -138,7 +138,7 @@ FILE *open_file(char *fn,	/* file name */
 }
 
 /* -- read a whole input file -- */
-/* the real/full file name is put in tex_buf[] */
+/* return the real/full file name in tex_buf[] */
 static char *read_file(char *fn, char *ext)
 {
 	size_t fsize;
@@ -218,11 +218,14 @@ static void treat_file(char *fn, char *ext)
 	int file_type, l;
 
 	/* initialize if not already done */
-	if (!fout)
+	if (!fout) {
 		read_def_format();
+		if (strcmp(fn, tex_buf) == 0)
+			return;		// if xx.default.fmt, done
+	}
 
 	/* read the file into memory */
-	/* the real/full file name is in tex_buf[] */
+	/* the real/full file name is put in tex_buf[] */
 	if ((file = read_file(fn, ext)) == NULL) {
 		if (strcmp(fn, "default.fmt") != 0) {
 			error(1, NULL, "Cannot read the input file '%s'", fn);
@@ -715,7 +718,7 @@ int main(int argc, char **argv)
 			if (p[1] == '\0') {		/* '-' alone */
 				if (in_fname) {
 					treat_abc_file(in_fname);
-					frontend((unsigned char *) "select\n", FE_ABC,
+					frontend((unsigned char *) "select\n", FE_FMT,
 							"cmd_line", 0);
 				}
 				in_fname = "";		/* read from stdin */
@@ -1023,7 +1026,7 @@ int main(int argc, char **argv)
 
 		if (in_fname) {
 			treat_abc_file(in_fname);
-			frontend((unsigned char *) "select\n", FE_ABC,
+			frontend((unsigned char *) "select\n", FE_FMT,
 						"cmd_line", 0);
 		}
 		in_fname = p;

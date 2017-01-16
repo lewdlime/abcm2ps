@@ -1443,7 +1443,7 @@ void write_title(struct SYMBOL *s)
 		a2b("%.1f",
 		     0.5 * ((cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 			- cfmt.leftmargin - cfmt.rightmargin) / cfmt.scale);
-	a2b(" %.1f M", sz * 0.2);
+	a2b(" %.1f M ", sz * 0.2);
 	p = trim_title(p, s);
 	put_str(p, cfmt.titleleft ? A_LEFT : A_CENTER);
 }

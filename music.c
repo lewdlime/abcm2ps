@@ -1896,14 +1896,17 @@ normal:
 			break;
 		switch (s->type) {
 		case BAR:
-			if (done
-			 || (s->aux == 0	/* incomplete measure */
-			  && s->next		/* not at end of tune */
-			  && (s->u.bar.type & 0x0f) == B_COL
-			  && !(s->sflags & S_RRBAR)))
-						/* 'xx:' (not ':xx:') */
-				goto cut_here;
-			done = 1;
+//fixme: fixes |ccc||$|:c|
+//fixme: raises which problem?
+//			if (done
+//			 || (s->aux == 0	/* incomplete measure */
+//			  && s->next		/* not at end of tune */
+//			  && (s->u.bar.type & 0x0f) == B_COL
+//			  && !(s->sflags & S_RRBAR)))
+//						/* 'xx:' (not ':xx:') */
+//				goto cut_here;
+			if (!done)
+				done = 1;
 			break;
 		case STBRK:
 			if (s->doty == 0) {	/* if not forced */

@@ -1620,26 +1620,34 @@ static void arp_ltr(char type)
 		fprintf(fout, "</g>\n");
 }
 
-// glissando with squiggly line
-static void glisq(void)
+// glissando
+static void gliss(int squiggle)
 {
-	float x1, y1, x2, y2, a;
+	float x1, y1, x2, y2, ar, a, len;
 	int n;
 
-	def_use(D_ltr);
+	if (squiggle)
+		def_use(D_ltr);
 	y1 = gcur.yoffs - pop_free_val();
-	x1 = gcur.xoffs + pop_free_val() + 1;
+	x1 = gcur.xoffs + pop_free_val();
 	y2 = gcur.yoffs - pop_free_val();
 	x2 = gcur.xoffs + pop_free_val();
-	a = atan((y2 - y1) / (x2 - x1)) / M_PI * 180;
-	n = (x2 - x1 + 3) / 6;
+	ar = atan((y2 - y1) / (x2 - x1));
+	a = ar / M_PI * 180;
+	len = (x2 - x1 - 14) / cos(ar);
 	fprintf(fout,
 		"<g transform=\"translate(%.2f,%.2f) rotate(%.2f)\">\n",
 		x1, y1, a);
-	x1 = 0;
-	while (--n >= 0) {
-		fprintf(fout, "<use x=\"%.2f\" xlink:href=\"#ltr\"/>\n", x1);
-		x1 += 6;
+	if (squiggle) {
+		n = (len + 2) / 6;
+		x1 = 8;
+		while (--n >= 0) {
+			fprintf(fout, "<use x=\"%.2f\" xlink:href=\"#ltr\"/>\n", x1);
+			x1 += 6;
+		}
+	} else {
+		fprintf(fout, "<path class=\"stroke\" stroke-width=\"1\"\n"
+			"	d=\"M8 0l%.2f 0\"/>\n", len);
 	}
 	fprintf(fout, "</g>\n");
 }
@@ -2776,21 +2784,9 @@ curveto:
 			xysym(op, D_ghl);
 			return;
 		}
-		if (strcmp(op, "glisq") == 0) {
-			glisq();
-			return;
-		}
-		if (strcmp(op, "gliss") == 0) {
-			float x2, y2;
-
-			setg(1);
-			y = gcur.yoffs - pop_free_val();
-			x = gcur.xoffs + pop_free_val() + 2;
-			y2 = gcur.yoffs - pop_free_val();
-			x2 = gcur.xoffs + pop_free_val();
-			fprintf(fout, "<path class=\"stroke\" stroke-width=\"1\"\n"
-				"	d=\"M%.2f %.2fL%.2f %.2f\"/>\n",
-				x, y, x2, y2);
+		if (strcmp(op, "glisq") == 0
+		 || strcmp(op, "gliss") == 0) {
+			gliss(op[4] == 'q');
 			return;
 		}
 		if (strcmp(op, "gt") == 0) {

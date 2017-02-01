@@ -1,3 +1,14 @@
+---- Version 8.13.5 - 2017-01-31 ----
+
+Fix clash of dot and glissendi
+	(reported by Manavasu)
+Fix lack of double bar at end of line with "|ccc||$|:c|"
+	(reported by Timm Reasbeck)
+Fix lack of stem when some invisible note heads in chord
+Better glissendi
+Fix random bad offset of helper lines
+	(reported by David Lacroix)
+
 ---- Version 8.13.4 - 2017-01-16 ----
 
 Fix bad note transposition after generation restart

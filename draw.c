@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2016 Jean-François Moine
+ * Copyright (C) 1998-2017 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -965,7 +965,7 @@ static void draw_acc(int acc, int microscale)
 }
 
 // draw helper lines
-static void draw_hl(float x, int staffb, int up,
+static void draw_hl(float x, float staffb, int up,
 		int y, int stafflines, char *hltype)
 {
 	int i;

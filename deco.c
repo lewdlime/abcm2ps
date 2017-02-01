@@ -421,29 +421,13 @@ static void d_gliss(struct deco_elt *de2)
 	struct deco_elt *de1;
 	struct SYMBOL *s1, *s2;
 
-	s2 = de2->s;
 	de1 = de2->start;
-
 	s1 = de1->s;
-
-	if (s1->xmx != 0)
-		de1->x += s1->xmx;
-	else
-		de1->x += 8;
-//	if (s1->dots)
-//		de1->x += 3;
-	de1->x += 3 * s1->dots;
-//	de2->x = s2->x - (s2->wl != 0 ? s2->wl : 5);	// no wl for grace notes
-	de2->x -= 2 + (s2->u.note.notes[0].shac ?
-			(s2->u.note.notes[0].shac + 3) : hw_tb[s2->head]);
-
-	if (s1->y > s2->y + 6) {
-		de1->y -= 2;
-		de2->y += 2;
-	} else if (s1->y < s2->y - 6) {
-		de1->y += 2;
-		de2->y -= 2;
-	}
+	if (s1->dots)
+		de1->x += 5 + s1->xmx;
+	s2 = de2->s;
+	de2->x -= 2 + s2->u.note.notes[0].shac ?
+			(s2->u.note.notes[0].shac + 3) : hw_tb[s2->head];
 }
 
 /* 0: near the note (dot, tenuto) */
@@ -1105,7 +1089,10 @@ void deco_cnv(struct decos *dc,
 		default:
 			continue;
 		case 32:		/* invisible */
-			s->flags |= ABC_F_INVIS;
+			if (m < 0)
+				s->flags |= ABC_F_INVIS;
+			else
+				s->u.note.notes[m].invisible = 1;
 			break;
 		case 33:		/* beamon */
 			s->sflags |= S_BEAM_ON;
@@ -1465,8 +1452,8 @@ static void deco_create(struct SYMBOL *s,
 		if (m >= 0) {			/* head decoration */
 			de->x = s->x;
 			de->y = 3 * (s->pits[m] - 18);
-			if (dd->func == 9)	/* alternate note head */
-				s->u.note.notes[m].invisible = 1;
+//			if (dd->func == 9)	/* alternate note head */
+//				s->u.note.notes[m].invisible = 1;
 			continue;
 		}
 		if (!(f_near & (1 << dd->func))) /* if not near the note */

@@ -612,10 +612,10 @@ static struct {
 {	"<path id=\"marcato\" d=\"m-3 0l3 -7l3 7l-1.5 0l-1.8 -4.2l-1.7 4.2\"/>\n"},
 #define D_ped 89
 {	"<text id=\"ped\" font-family=\"serif\" font-size=\"16\" font-style=\"italic\"\n"
-	"	x=\"-2\" y=\"-4\">Ped</text>\n"},
+	"	x=\"-10\" y=\"-4\">Ped</text>\n"},
 #define D_pedoff 90
-{	"<text id=\"ped\" font-family=\"serif\" font-size=\"16\" font-style=\"italic\"\n"
-	"	x=\"-2\" y=\"-4\">*</text>\n"},
+{	"<text id=\"pedoff\" font-family=\"serif\" font-size=\"16\" font-style=\"italic\"\n"
+	"	x=\"-5\" y=\"-4\">*</text>\n"},
 };
 
 static struct {
@@ -1190,10 +1190,8 @@ void define_svg_symbols(char *title, int num, float w, float h)
 			fprintf(fout,
 				"}\n"
 				"\t@page {margin: 0}\n"
-//				"\tdiv.nobrk {page-break-inside: avoid}\n"
 				"\ttext {white-space: pre; fill:currentColor}\n"
 				"\tsvg {display: block}\n"
-//				"\tmedia print {div.newpage {page-break-before: always}}\n"
 				"</style>\n"
 				"<title>%s</title>\n"
 				"</head>\n"
@@ -1202,7 +1200,6 @@ void define_svg_symbols(char *title, int num, float w, float h)
 		} else {
 			fputs("<br/>\n", fout);
 		}
-//		fputs("<p>\n", fout);
 		fprintf(fout, svg_head1, w, h);
 		if (cfmt.musicfont)
 			fprintf(fout, svg_font_style, cfmt.musicfont);
@@ -3174,6 +3171,65 @@ moveto:
 		}
 		break;
 	case 'o':
+		if (strcmp(op, "o8va") == 0) {
+			setg(1);
+			y = gcur.yoffs - pop_free_val() - 5;
+			x = gcur.xoffs + pop_free_val();
+			w = pop_free_val();
+			sym = ps_sym_lookup("defl");
+			if (!((int) sym->e->u.v & 1)) {
+				fprintf(fout,
+					"<text x=\"%.2f\" y=\"%.2f\""
+					" style=\"font:italic bold 12px serif\">8"
+					"<tspan dy=\"-4\""
+					" style=\"font-size:10px\">va</tspan></text>\n",
+					x - 5, y);
+				x += 14;
+				w -= 14;
+			} else {
+				w -= 5;
+			}
+			y -= 6;
+			fprintf(fout,
+				"<path class=\"stroke\" stroke-dasharray=\"6,6\""
+				" d=\"M%.2f %.2fh%.2f\"/>\n",
+				x, y, w);
+			if (!((int) sym->e->u.v & 2))
+				fprintf(fout, "<path class=\"stroke\""
+					" d=\"m%.2f %.2fv6\"/>\n",
+					x + w, y);
+
+			return;
+		}
+		if (strcmp(op, "o8vb") == 0) {
+			setg(1);
+			y = gcur.yoffs - pop_free_val() - 5;
+			x = gcur.xoffs + pop_free_val();
+			w = pop_free_val();
+			sym = ps_sym_lookup("defl");
+			if (!((int) sym->e->u.v & 1)) {
+				fprintf(fout,
+					"<text x=\"%.2f\" y=\"%.2f\""
+					" style=\"font:italic bold 12px serif\">8"
+					"<tspan dy=\"-4\""
+					" style=\"font-size:10px\">vb</tspan></text>\n",
+					x - 5, y);
+				x += 8;
+				w -= 8;
+			} else {
+				w -= 5;
+			}
+			fprintf(fout,
+				"<path class=\"stroke\" stroke-dasharray=\"6,6\""
+				" d=\"M%.2f %.2fh%.2f\"/>\n",
+				x, y, w);
+			if (!((int) sym->e->u.v & 2))
+				fprintf(fout, "<path class=\"stroke\""
+					" d=\"m%.2f %.2fv-6\"/>\n",
+					x + w, y);
+
+			return;
+		}
 		if (strcmp(op, "oct") == 0) {
 			setg(1);
 			y = gcur.yoffs - pop_free_val();
@@ -3201,6 +3257,14 @@ moveto:
 	case 'p':
 		if (strcmp(op, "pclef") == 0) {
 			xysym(op, D_pclef);
+			return;
+		}
+		if (strcmp(op, "ped") == 0) {
+			xysym(op, D_ped);
+			return;
+		}
+		if (strcmp(op, "pedoff") == 0) {
+			xysym(op, D_pedoff);
 			return;
 		}
 		if (strcmp(op, "pf") == 0) {
@@ -3957,25 +4021,6 @@ rmoveto:
 			rgb += (int) (pop_free_val() * 255) << 8;
 			rgb += (int) (pop_free_val() * 255) << 16;
 			gcur.rgb = rgb;
-			return;
-		}
-		if (strcmp(op, "staff") == 0) {
-			ps_exec("dlw");
-			setg(1);
-			y = gcur.yoffs - pop_free_val();
-			x = gcur.xoffs + pop_free_val();
-			n = pop_free_val();
-			w = pop_free_val();
-			fprintf(fout,
-				"<path class=\"stroke\"\n"
-				"	d=\"M%.2f %.2f", x, y);
-			for (;;) {
-				fprintf(fout, "h%.2f", w);
-				if (--n <= 0)
-					break;
-				fprintf(fout, "m-%.2f -6", w);
-			}
-			fprintf(fout, "\"/>\n");
 			return;
 		}
 		if (strcmp(op, "stc") == 0) {

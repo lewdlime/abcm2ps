@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2016 Jean-François Moine
+ * Copyright (C) 1998-2017 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -925,16 +925,15 @@ F_SET_PAR(gsd)
 struct vpar {
 	char *name;
 	void (*f)(struct VOICE_S *p_voice, int val);
-	int max;
 };
 static const struct vpar vpar_tb[] = {
-	{"dynamic", set_dyn, 3},	/* 0 */
-	{"gchord", set_gch, 3},		/* 1 */
-	{"gstemdir", set_gsd, 3},	/* 2 */
-	{"ornament", set_orn, 3},	/* 3 */
-	{"stemdir", set_std, 2},	/* 4 */
-	{"vocal", set_voc, 3},		/* 5 */
-	{"volume", set_vol, 3},		/* 6 */
+	{"dynamic", set_dyn},	/* 0 */
+	{"gchord", set_gch},	/* 1 */
+	{"gstemdir", set_gsd},	/* 2 */
+	{"ornament", set_orn},	/* 3 */
+	{"stemdir", set_std},	/* 4 */
+	{"vocal", set_voc},	/* 5 */
+	{"volume", set_vol},	/* 6 */
 #ifndef WIN32
 	{}
 #else
@@ -958,8 +957,8 @@ void set_voice_param(struct VOICE_S *p_voice,	/* current voice */
 			val = get_posit(p);
 //		else
 //			val = strtol(p, NULL, 10);
-		if ((unsigned) val > vpar->max)
-			goto err;
+//		if ((unsigned) val > vpar->max)
+//			goto err;
 		break;
 	}
 	if (!vpar->name) {	/* compatibility with previous versions */

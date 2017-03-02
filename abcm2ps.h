@@ -392,9 +392,9 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 			signed char octave;	/* 'octave=' */
 #define NO_OCTAVE 10				/* no 'octave=' */
 			unsigned char microscale; /* microtone denominator - 1 */
-			signed char stafflines;
 			char clef_delta;	/* clef delta */
 			char key_delta;		// tonic base
+			char *stafflines;
 			float staffscale;
 			signed char pits[8];
 			unsigned char accs[8];
@@ -415,9 +415,9 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 		struct {		/* Q: info */
 			char *str1;		/* string before */
 			short beats[4];		/* up to 4 beats */
-			char circa;		/* "ca. " */
-			unsigned char tempo;	/* number of beats per mn or */
-			short new_beat;
+			short circa;		/* "ca. " */
+			short tempo;		/* number of beats per mn or */
+			short new_beat;		/* old beat */
 			char *str2;		/* string after */
 		} tempo;
 		struct {		/* V: info */
@@ -434,7 +434,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 			signed char lyrics;	/* have lyrics above or below the staff */
 			signed char gchord;	/* have gchord above or below the staff */
 			signed char cue;	/* cue voice (scale 0.7) */
-			signed char stafflines;
+			char *stafflines;
 			float staffscale;
 		} voice;
 		struct {		/* bar, mrest or mrep */
@@ -616,7 +616,7 @@ extern char **s_argv;
 struct STAFF_S {
 	struct SYMBOL *s_clef;	/* clef at start of music line */
 	char empty;		/* no symbol on this staff */
-	signed char stafflines;
+	char *stafflines;
 	float staffscale;
 	short botbar, topbar;	/* bottom and top of bar */
 	float y;		/* y position */
@@ -662,14 +662,15 @@ struct VOICE_S {
 	short bar_start;	/* bar type at start of staff / 0 */
 	struct posit_s posit;	/* positions / directions */
 	signed char octave;	/* octave (parsing) */
+	signed char ottava;	/* !8va(! ... (parsing) */
 	signed char clone;	/* duplicate from this voice number */
 	signed char over;	/* overlay of this voice number */
 	unsigned char staff;	/* staff (0..n-1) */
 	unsigned char cstaff;	/* staff (parsing) */
 	unsigned char slur_st;	/* slurs at start of staff */
-	signed char stafflines;
 	signed char combine;	/* voice combine */
 	int color;
+	char *stafflines;
 	float staffscale;
 							/* parsing */
 	struct SYMBOL *last_note;	/* last note or rest */
@@ -678,6 +679,7 @@ struct VOICE_S {
 	unsigned char microscale;	/* microtone scale */
 	unsigned char mvoice;		/* main voice when voice overlay */
 };
+extern struct VOICE_S *curvoice;	/* current voice while parsing */
 extern struct VOICE_S voice_tb[MAXVOICE]; /* voice table */
 extern struct VOICE_S *first_voice; /* first_voice */
 
@@ -710,7 +712,7 @@ struct SYSTEM {			/* staff system */
 #define CLOSE_BRACKET2 0x0800
 #define MASTER_VOICE 0x1000
 		char empty;
-		signed char stafflines;
+		char *stafflines;
 		float staffscale;
 //		struct clef_s clef;
 		float sep, maxsep;

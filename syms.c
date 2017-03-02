@@ -137,6 +137,28 @@ static char ps_head[] =
 	"	{dup 2.2 RL 0 3.6 RM neg 2.2 RL}\n"
 	"	ifelse stroke}!\n"
 
+	// w x y o8va - ottava
+	"/o8va{	M\n"
+	"	defl 1 and 0 eq\n"
+	"	{14 sub currentpoint\n"
+	"	-5 0 RM /Times-BoldItalic 12 selectfont(8)show\n"
+	"	0 4 RM /Times-BoldItalic 10 selectfont(va)show\n"
+	"	M 14 0 RM}if 0 6 RM\n"
+	"	[6] 0 setdash 5 sub 0 RL currentpoint stroke [] 0 setdash\n"
+	"	M defl 2 and 0 eq\n"
+	"	{0 -6 RL stroke}if}!\n"
+
+	// w x y o8vb - ottava bassa
+	"/o8vb{	M\n"
+	"	defl 1 and 0 eq\n"
+	"	{8 sub currentpoint\n"
+	"	-5 0 RM /Times-BoldItalic 12 selectfont(8)show\n"
+	"	0 4 RM /Times-BoldItalic 10 selectfont(vb)show\n"
+	"	M 8 0 RM}if\n"
+	"	[6] 0 setdash 5 sub 0 RL currentpoint stroke [] 0 setdash\n"
+	"	M defl 2 and 0 eq\n"
+	"	{0 6 RL stroke}if}!\n"
+
 	/* x y dplus - plus */
 	"/dplus{	1.2 SLW 0.5 add M 0 6 RL -3 -3 RM 6 0 RL stroke}!\n"
 
@@ -375,10 +397,6 @@ static char ps_head[] =
 	/* (meter) x y stsig - single time signature */
 	"/stsig{	7 add M gsave/Times-Bold 18 selectfont 1.2 1 scale\n"
 	"	showc grestore}!\n"
-
-	/* width n x y staff - staff with n lines*/
-	"/staff{	dlw M{dup 0 RL dup neg 6 RM}repeat\n"
-	"	pop stroke}!\n"
 
 	/* l x sep0 - hline separator */
 	"/sep0{	dlw 0 M 0 RL stroke}!\n"
@@ -768,7 +786,7 @@ static char psdgl[] =
 	/* x y lmrd - lower mordent */
 	"/lmrd{	2 copy umrd M .6 SLW 0 8 RL stroke}!\n"
 	// dummy !ped! and !ped-up!
-	"/ped{	/Times-BoldItalic 16 selectfont M -4 2 RM(Ped)show}!\n"
+	"/ped{	/Times-BoldItalic 16 selectfont M -10 2 RM(Ped)show}!\n"
 	"/pedoff{	/Times-BoldItalic 16 selectfont M -4 2 RM(*)show}!\n"
 	/* x y longa */
 	"/longa{	xymove\n"

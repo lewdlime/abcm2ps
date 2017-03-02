@@ -45,7 +45,6 @@ int nstaff;				/* (0..MAXSTAFF-1) */
 struct SYMBOL *tsfirst;			/* first symbol in the time sorted list */
 
 struct VOICE_S voice_tb[MAXVOICE];	/* voice table */
-static struct VOICE_S *curvoice;	/* current voice while parsing */
 struct VOICE_S *first_voice;		/* first voice */
 struct SYSTEM *cursys;			/* current system */
 static struct SYSTEM *parsys;		/* current system while parsing */
@@ -621,7 +620,7 @@ static void system_new(void)
 			new_sy->voice[voice].range = -1;
 		}
 		for (staff = 0; staff < MAXSTAFF; staff++) {
-			new_sy->staff[staff].stafflines = 5;
+			new_sy->staff[staff].stafflines = "|||||";
 			new_sy->staff[staff].staffscale = 1;
 		}
 		cursys = new_sy;
@@ -633,7 +632,7 @@ static void system_new(void)
 //			 || parsys->voice[voice].second)
 //				continue;
 			staff = parsys->voice[voice].staff;
-			if (voice_tb[voice].stafflines >= 0)
+			if (voice_tb[voice].stafflines)
 				parsys->staff[staff].stafflines =
 						voice_tb[voice].stafflines;
 			if (voice_tb[voice].staffscale != 0)
@@ -1241,7 +1240,7 @@ static void gch_tr1(struct SYMBOL *s, int i)
 		break;
 	case 'D':
 		if (p[1] == 'o') {
-			latin = 1;
+			latin++;
 			n = 0;		/* Do */
 			break;
 		}
@@ -1249,31 +1248,34 @@ static void gch_tr1(struct SYMBOL *s, int i)
 		break;
 	case 'F':
 		if (p[1] == 'a')
-			latin = 1;	/* Fa */
+			latin++;	/* Fa */
 		n = 3;
 		break;
 	case 'L':
-		latin = 1;		/* La */
+		latin++;		/* La */
 		n = 5;
 		break;
 	case 'M':
-		latin = 1;		/* Mi */
+		latin++;		/* Mi */
 		n = 2;
 		break;
 	case 'R':
-		latin = 1;
+		latin++;
 		if (p[1] != 'e')
 			latin++;	/* Ré */
 		n = 1;			/* Re */
 		break;
 	case 'S':
-		latin = 1;
+		latin++;
 		if (p[1] == 'o') {
 			latin++;
 			n = 4;		/* Sol */
 		} else {
 			n = 6;		/* Si */
 		}
+		break;
+	case '/':			// bass only
+		latin--;
 		break;
 	default:
 		return;
@@ -1289,37 +1291,39 @@ static void gch_tr1(struct SYMBOL *s, int i)
 	p = q;
 
 	i2 = curvoice->ckey.sf - curvoice->okey.sf;
-	i1 = cde2fcg[n];			/* fcgdaeb */
-	a = 0;
-	if (*p == '#') {
-		a++;
-		p++;
+	if (latin >= 0) {			// if some chord
+		i1 = cde2fcg[n];		/* fcgdaeb */
+		a = 0;
 		if (*p == '#') {
 			a++;
 			p++;
-		}
-	} else if (*p == 'b') {
-		a--;
-		p++;
-		if (*p == 'b') {
+			if (*p == '#') {
+				a++;
+				p++;
+			}
+		} else if (*p == 'b') {
 			a--;
 			p++;
+			if (*p == 'b') {
+				a--;
+				p++;
+			}
+		} else if (*p == '=') {
+			p++;
 		}
-	} else if (*p == '=') {
-		p++;
+		i3 = i1 + i2 + a * 7;
+		i4 = cgd2cde[(unsigned) ((i3 + 16 * 7) % 7)];
+		if (latin == 0)
+			*new_txt++ = note_names[i4];
+		else
+			new_txt += sprintf(new_txt, "%s", latin_names[i4]);
+		i1 = ((i3 + 1 + 21) / 7 + 2 - 3 + 32 * 5) % 5;
+							/* accidental */
+		new_txt += sprintf(new_txt, "%s", acc_name[i1]);
 	}
-	i3 = i1 + i2 + a * 7;
-	i4 = cgd2cde[(unsigned) ((i3 + 16 * 7) % 7)];
-	if (!latin)
-		*new_txt++ = note_names[i4];
-	else
-		new_txt += sprintf(new_txt, "%s", latin_names[i4]);
-	i1 = ((i3 + 1 + 21) / 7 + 2 - 3 + 32 * 5) % 5;
-						/* accidental */
-	new_txt += sprintf(new_txt, "%s", acc_name[i1]);
 
 	/* bass */
-	while (*p != '\0' && *p != '\n' && *p != '/')
+	while (*p != '\0' && *p != '\n' && *p != '/')	// skip 'm'/'dim'..
 		*new_txt++ = *p++;
 	if (*p == '/') {
 		*new_txt++ = *p++;
@@ -2237,8 +2241,8 @@ static void get_staves(struct SYMBOL *s)
 		 * link the staves in a voice which is seen from
 		 * the previous system - see sort_all
 		 */
-		p_voice = curvoice;
-		if (parsys->voice[p_voice - voice_tb].range < 0) {
+//		p_voice = curvoice;
+		if (parsys->voice[curvoice - voice_tb].range < 0) {
 			for (voice = 0; voice < MAXVOICE; voice++) {
 				if (parsys->voice[voice].range >= 0) {
 					curvoice = &voice_tb[voice];
@@ -3310,7 +3314,7 @@ void do_tune(void)
 		p_voice->clone = -1;
 		p_voice->over = -1;
 		p_voice->posit = cfmt.posit;
-		p_voice->stafflines = -1;
+		p_voice->stafflines = NULL;
 //		p_voice->staffscale = 0;
 	}
 	curvoice = first_voice = voice_tb;
@@ -3598,6 +3602,7 @@ static void get_clef(struct SYMBOL *s)
 		/* the clef must appear before a key signature or a bar */
 		s2 = p_voice->last_sym;
 		if (s2 && s2->prev
+		 && s2->time == curvoice->time		// if no time skip
 		 && (s2->type == KEYSIG || s2->type == BAR)) {
 			struct SYMBOL *s3;
 
@@ -3823,7 +3828,7 @@ static void get_key(struct SYMBOL *s)
 		curvoice->scale = 0.7;
 	else if (s->u.key.cue < 0)
 		curvoice->scale = 1;
-	if (s->u.key.stafflines >= 0)
+	if (s->u.key.stafflines)
 		curvoice->stafflines = s->u.key.stafflines;
 	if (s->u.key.staffscale != 0)
 		curvoice->staffscale = s->u.key.staffscale;
@@ -3896,7 +3901,7 @@ static void get_key(struct SYMBOL *s)
 				p_voice->key.sf = 0;
 			if (s->u.key.octave != NO_OCTAVE)
 				p_voice->octave = s->u.key.octave;
-			if (s->u.key.stafflines >= 0)
+			if (s->u.key.stafflines)
 				p_voice->stafflines = s->u.key.stafflines;
 			if (s->u.key.staffscale != 0)
 				p_voice->staffscale = s->u.key.staffscale;
@@ -4110,7 +4115,7 @@ static void get_voice(struct SYMBOL *s)
 		p_voice->scale = 0.7;
 	else if (s->u.voice.cue < 0)
 		p_voice->scale = 1;
-	if (s->u.voice.stafflines >= 0)
+	if (s->u.voice.stafflines)
 		p_voice->stafflines = s->u.voice.stafflines;
 	if (s->u.voice.staffscale != 0)
 		p_voice->staffscale = s->u.voice.staffscale;
@@ -4235,6 +4240,19 @@ static void get_note(struct SYMBOL *s)
 			s->pits[i] += delta;
 		}
 	}
+
+	/* convert the decorations
+	 * (!beam-accel! and !beam-rall! may change the note duration)
+	 * (!8va(! may change ottava)
+	 */
+	if (s->u.note.dc.n > 0)
+		deco_cnv(&s->u.note.dc, s, prev);
+
+	if (curvoice->ottava) {
+		delta = curvoice->ottava;
+		for (i = 0; i <= m; i++)
+			s->pits[i] += delta;
+	}
 	s->combine = curvoice->combine;
 	s->color = curvoice->color;
 
@@ -4248,6 +4266,7 @@ static void get_note(struct SYMBOL *s)
 		switch (curvoice->posit.std) {
 		case SL_ABOVE: s->stem = 1; break;
 		case SL_BELOW: s->stem = -1; break;
+		case SL_HIDDEN: s->flags |= ABC_F_STEMLESS;; break;
 		}
 	} else {			/* grace note - adjust its duration */
 		int div;
@@ -4273,11 +4292,6 @@ static void get_note(struct SYMBOL *s)
 		case SL_HIDDEN:	s->stem = 2; break;	/* opposite */
 		}
 	}
-
-	/* convert the decorations
-	 * (!beam-accel! and !beam-rall! may change the note duration) */
-	if (s->u.note.dc.n > 0)
-		deco_cnv(&s->u.note.dc, s, prev);
 
 	/* insert the note/rest in the voice */
 	sym_link(s,  s->u.note.notes[0].len != 0 ? NOTEREST : SPACE);
@@ -4967,7 +4981,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			if (s->state == ABC_S_TUNE) {
 				gen_ly(1);
 			} else if (s->state == ABC_S_GLOBAL) {
-				if (epsf || in_fname == 0)
+				if (epsf || !in_fname)
 					return s;
 			}
 			p = s->text + 2 + 9;
@@ -5151,7 +5165,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			} else if (strncmp(p, "new", 3) == 0) {
 				if (multicol_start == 0) {
 					error(1, s,
-					      "%%%s new without start", w);
+					      "%%%%%s new without start", w);
 				} else {
 					buffer_eob(0);
 					bposy = get_bposy();
@@ -5166,7 +5180,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			} else if (strncmp(p, "end", 3) == 0) {
 				if (multicol_start == 0) {
 					error(1, s,
-					      "%%%s end without start", w);
+					      "%%%%%s end without start", w);
 				} else {
 					buffer_eob(0);
 					bposy = get_bposy();
@@ -5185,14 +5199,14 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 				}
 			} else {
 				error(1, s,
-				      "Unknown keyword '%s' in %%%s", p, w);
+				      "Unknown keyword '%s' in %%%%%s", p, w);
 			}
 			return s;
 		}
 		break;
 	case 'n':
 		if (strcmp(w, "newpage") == 0) {
-			if (epsf || in_fname == 0)
+			if (epsf || !in_fname)
 				return s;
 			if (s->state == ABC_S_TUNE)
 				generate();
@@ -5252,7 +5266,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 				 || (curvoice->last_sym->type == BAR
 					&& n > 2)) {
 					error(1, s,
-					      "Incorrect 1st value in %%%s", w);
+					      "Incorrect 1st value in %%%%%s", w);
 					return s;
 				}
 				while (*p != '\0' && !isspace((unsigned char) *p))
@@ -5268,7 +5282,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 //					  && n == 2
 //					  && k > 1)) {
 						error(1, s,
-						      "Incorrect 2nd value in %%%s", w);
+						      "Incorrect 2nd value in %%%%%s", w);
 						return s;
 					}
 				}
@@ -5308,7 +5322,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			if (s->state == ABC_S_TUNE) {
 				gen_ly(0);
 			} else if (s->state == ABC_S_GLOBAL) {
-				if (epsf || in_fname == 0)
+				if (epsf || !in_fname)
 					return s;
 			}
 			lwidth = (cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
@@ -5356,7 +5370,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			else
 				staff = atoi(p) - 1;
 			if ((unsigned) staff > (unsigned) nstaff) {
-				error(1, s, "Bad staff in %%%s", w);
+				error(1, s, "Bad staff in %%%%%s", w);
 				return s;
 			}
 			curvoice->floating = 0;
@@ -5369,7 +5383,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			if (isdigit(*p)) {
 				s->xmx = scan_u(p, 0);
 				if (s->xmx < 0) {
-					error(1, s, "Bad value in %%%s", w);
+					error(1, s, "Bad value in %%%%%s", w);
 					return s;
 				}
 				if (p[strlen(p) - 1] == 'f')
@@ -5383,18 +5397,34 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			return s;
 		}
 		if (strcmp(w, "stafflines") == 0) {
-			int lines;
+			if (isdigit((unsigned char) *p)) {
+				switch (atoi(p)) {
+				case 0: p = "..."; break;
+				case 1: p = "..|"; break;
+				case 2: p = ".||"; break;
+				case 3: p = ".|||"; break;
+				case 4: p = "||||"; break;
+				case 5: p = "|||||"; break;
+				case 6: p = "||||||"; break;
+				case 7: p = "|||||||"; break;
+				case 8: p = "||||||||"; break;
+				default:
+					error(1, s, "Bad number of lines");
+					break;
+				}
+			} else {
+				int l;
 
-			lines = atoi(p);
-			if ((unsigned) lines >= 10) {
-				error(1, s, "Bad value in %%%s", w);
-				return s;
+				l = strlen(p);
+				q = p;
+				p = getarena(l + 1);
+				strcpy(p, q);
 			}
 			if (s->state != ABC_S_TUNE) {
 				for (voice = 0; voice < MAXVOICE; voice++)
-					voice_tb[voice].stafflines = lines;
+					voice_tb[voice].stafflines = p;
 			} else {
-				curvoice->stafflines = lines;
+				curvoice->stafflines = p;
 			}
 			return s;
 		}
@@ -5405,7 +5435,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			scale = strtod(p, &q);
 			if (scale < 0.3 || scale > 2
 			 || (*q != '\0' && *q != ' ')) {
-				error(1, s, "Bad value in %%%s", w);
+				error(1, s, "Bad value in %%%%%s", w);
 				return s;
 			}
 			if (s->state != ABC_S_TUNE) {
@@ -5442,7 +5472,7 @@ center:
 			if (s->state == ABC_S_TUNE) {
 				gen_ly(1);
 			} else if (s->state == ABC_S_GLOBAL) {
-				if (epsf || in_fname == 0)
+				if (epsf || !in_fname)
 					return s;
 			}
 			if (w[0] == 'c') {
@@ -5823,7 +5853,7 @@ center:
 			if (s->state == ABC_S_TUNE) {
 				gen_ly(0);
 			} else if (s->state == ABC_S_GLOBAL) {
-				if (epsf || in_fname == 0)
+				if (epsf || !in_fname)
 					return s;
 			}
 			bskip(scan_u(p, 0));

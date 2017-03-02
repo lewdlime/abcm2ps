@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2016 Jean-François Moine
+ * Copyright (C) 1998-2017 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1425,6 +1425,58 @@ static float set_space(struct SYMBOL *s)
  * then, once per music line up to the first sequence */
 static void set_allsymwidth(struct SYMBOL *last_s)
 {
+#if 1
+//	float space;
+	float new_val, maxx;
+	struct SYMBOL *s = tsfirst, *s2;
+	float xa = 0;
+	float xl[MAXSTAFF];
+
+	memset(xl, 0, sizeof xl);
+
+	/* loop on all symbols */
+	while (1) {
+		maxx = xa;
+		s2 = s;
+//		space = 0;
+		do {
+			set_width(s);
+			new_val = xl[s->staff] + s->wl;
+			if (new_val > maxx)
+				maxx = new_val;
+
+//			if (s->ts_prev) {
+//				new_val = set_space(s);
+//				if (space < new_val)
+//					space = new_val;
+//			}
+
+			s = s->ts_next;
+		} while (s != last_s && (s->sflags & S_SEQST) == 0);
+
+		/* set the spaces at start of sequence */
+		s2->shrink = maxx - xa;
+		if (s2->ts_prev)
+			s2->space = set_space(s2);
+
+		if (s2->shrink == 0 && s2->space == 0 && s2->type == CLEF) {
+			s2->sflags &= ~S_SEQST;		/* no space */
+			s2->time = s2->ts_prev->time;
+		}
+		if (s == last_s)
+			return;
+
+		// update the min left space per staff
+		xa = maxx;
+		s = s2;
+		do {
+			if (xl[s->staff] < xa + s->wr)
+				xl[s->staff] = xa + s->wr;
+			s = s->ts_next;
+		} while ((s->sflags & S_SEQST) == 0);
+	}
+	// not reached
+#else
 	struct VOICE_S *p_voice;
 	struct SYMBOL *s, *s2, *s3;
 	struct tblt_s *tblt;
@@ -1550,6 +1602,7 @@ static void set_allsymwidth(struct SYMBOL *last_s)
 			s = s->ts_prev;
 		s->shrink += space - shrink;
 	}
+#endif
 }
 
 /* change a symbol into a rest */
@@ -2480,7 +2533,7 @@ static void set_clefs(void)
 			continue;
 		staff = sy->voice[voice].staff;
 		if (!sy->voice[voice].second) {		// main voices
-			if (p_voice->stafflines >= 0)
+			if (p_voice->stafflines)
 				sy->staff[staff].stafflines = p_voice->stafflines;
 			if (p_voice->staffscale != 0)
 				sy->staff[staff].staffscale = p_voice->staffscale;
@@ -2530,7 +2583,7 @@ static void set_clefs(void)
 					continue;
 				staff = sy->voice[voice].staff;
 				if (!sy->voice[voice].second) {
-					if (p_voice->stafflines >= 0)
+					if (p_voice->stafflines)
 						sy->staff[staff].stafflines =
 								p_voice->stafflines;
 					if (p_voice->staffscale != 0)
@@ -2600,6 +2653,14 @@ static void set_clefs(void)
 		}
 		if (s->type != CLEF)
 			continue;
+
+		if (s->u.clef.type == AUTOCLEF) {
+			s->u.clef.type = set_auto_clef(s->staff,
+						s->ts_next,
+						staff_clef[s->staff].clef->u.clef.type);
+			s->u.clef.line = s->u.clef.type == TREBLE ? 2 : 4;
+		}
+
 		p_voice = &voice_tb[s->voice];
 		p_voice->s_clef = s;
 		if (s->sflags & S_SECOND) {
@@ -2672,7 +2733,7 @@ static void set_pitch(struct SYMBOL *last_s)
 		0 - 2 * 2,
 		6 - 3 * 2,
 		12 - 4 * 2,
-		0 - 2 * 2
+		0 - 3 * 2
 	};
 
 	for (staff = 0; staff <= nstaff; staff++) {
@@ -4606,8 +4667,8 @@ static void set_piece(void)
 			for (staff = 0; staff <= sy->nstaff; staff++) {
 				p_staff = &staff_tb[staff];
 				p_staff->stafflines = sy->staff[staff].stafflines;
-				if (p_staff->stafflines < 0)
-					p_staff->stafflines = 5;
+				if (!p_staff->stafflines)
+					p_staff->stafflines = "|||||";
 				p_staff->staffscale = sy->staff[staff].staffscale;
 				if (p_staff->staffscale == 0)
 					p_staff->staffscale = 1;
@@ -4641,19 +4702,23 @@ static void set_piece(void)
 
 	/* define the offsets of the measure bars */
 	for (staff = 0; staff <= nstaff; staff++) {
+		int i, l;
+		char *stafflines;
+
 		if (empty_gl[staff])
 			continue;
 
 		p_staff = &staff_tb[staff];
-		p_staff->botbar = p_staff->stafflines <= 3 ? 6 : 0;
-		switch (p_staff->stafflines) {
-		case 0:
-		case 1:
-		case 3:	p_staff->topbar = 18; break;
-		case 2:	p_staff->topbar = 12; break;
-		default:
-			p_staff->topbar = 6 * (p_staff->stafflines - 1);
-			break;
+		stafflines = p_staff->stafflines;
+		l = strlen(stafflines);
+		p_staff->topbar = 6 * (l - 1);
+		for (i = 0; i < l - 1; i++)
+			if (stafflines[i] != '.')
+				break;
+		p_staff->botbar = i * 6;
+		if (i >= l - 2) {		// 0, 1 or 2 lines
+			p_staff->botbar -= 6;
+			p_staff->topbar += 6;
 		}
 	}
 

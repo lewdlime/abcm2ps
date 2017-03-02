@@ -1,7 +1,7 @@
 /*
  * Generic ABC parser.
  *
- * Copyright (C) 1998-2016 Jean-François Moine
+ * Copyright (C) 1998-2017 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996, 1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@ static char *abc_line;		/* line being parsed */
 static struct SYMBOL *last_sym;	/* last symbol for errors */
 
 static short nvoice;		/* number of voices (0..n-1) */
-static struct VOICE_S *curvoice;
+struct VOICE_S *curvoice;	/* current voice while parsing */
 
 /* char table for note line parsing */
 #define CHAR_BAD 0
@@ -259,7 +259,7 @@ static int check_nl(char *p)
 static char *parse_extra(char *p,
 			char **p_name,
 			char **p_middle,
-			char **p_lines,
+			char **p_stlines,
 			char **p_scale,
 			char **p_octave,
 			char **p_cue,
@@ -275,10 +275,12 @@ static char *parse_extra(char *p,
 			if (*p_name)
 				syntax("Double clef name", p);
 			*p_name = p;
-		} else if (strncmp(p, "microscale=", 11) == 0) {
+		} else if (strncmp(p, "microscale=", 11) == 0
+			|| strncmp(p, "uscale=", 7) == 0) {
 			int i;
 
-			i = atoi(p + 11);
+			p += p[0] == 'm' ? 11 : 7;
+			i = atoi(p);
 			if (i < 4 || i >= 256)
 				syntax("Invalid value in microscale=", p);
 			else
@@ -293,9 +295,36 @@ static char *parse_extra(char *p,
 				syntax("Double octave=", p);
 			*p_octave = p + 7;
 		} else if (strncmp(p, "stafflines=", 11) == 0) {
-			if (*p_lines)
+			int l;
+			char *q;
+
+			if (*p_stlines)
 				syntax("Double stafflines", p);
-			*p_lines = p + 11;
+			p += 11;
+			if (isdigit((unsigned char) *p)) {
+				switch (atoi(p)) {
+				case 0: *p_stlines = "..."; break;
+				case 1: *p_stlines = "..|"; break;
+				case 2: *p_stlines = ".||"; break;
+				case 3: *p_stlines = ".|||"; break;
+				case 4: *p_stlines = "||||"; break;
+				case 5: *p_stlines = "|||||"; break;
+				case 6: *p_stlines = "||||||"; break;
+				case 7: *p_stlines = "|||||||"; break;
+				case 8: *p_stlines = "||||||||"; break;
+				default:
+					syntax("Bad number of lines", p);
+					break;
+				}
+			} else {
+				q = p;
+				while (!isspace((unsigned char) *p) && *p != '\0')
+					p++;
+				l = p - q;
+				*p_stlines = getarena(l + 1);
+				strncpy(*p_stlines, q, l);
+				(*p_stlines)[l] = '\0';
+			}
 		} else if (strncmp(p, "staffscale=", 11) == 0) {
 			if (*p_scale)
 				syntax("Double staffscale", p);
@@ -307,9 +336,6 @@ static char *parse_extra(char *p,
 		} else if (strncmp(p, "map=", 4) == 0) {
 			if (*p_map)
 				syntax("Double map", p);
-			else
-				syntax("'map=' is obsolete - use %%voicemap instead",
-					p);
 			*p_map = p + 4;
 //		} else if (strncmp(p, "transpose=", 10) == 0
 //			|| strncmp(p, "t=", 2) == 0) {
@@ -606,11 +632,11 @@ static void parse_key(char *p,
 {
 	int sf, empty, instr;
 //	int mode;
-	char *clef_name, *clef_middle, *clef_lines, *clef_scale;
+	char *clef_name, *clef_middle, *clef_stlines, *clef_scale;
 	char *p_octave, *p_cue, *p_map;
 
 	// set important default values
-	s->u.key.stafflines = -1;
+//	s->u.key.stafflines = "|||||";
 	s->u.key.octave = NO_OCTAVE;
 
 	if (*p == '\0') {
@@ -780,9 +806,9 @@ unk:
 	}
 
 	// extra parameters
-	clef_name = clef_middle = clef_lines = clef_scale = NULL;
+	clef_name = clef_middle = clef_stlines = clef_scale = NULL;
 	p_octave = p_cue = p_map = NULL;
-	parse_extra(p, &clef_name, &clef_middle, &clef_lines,
+	parse_extra(p, &clef_name, &clef_middle, &clef_stlines,
 			&clef_scale, &p_octave, &p_cue, &p_map);
 
 	s->u.key.sf = sf;
@@ -795,15 +821,8 @@ unk:
 		else
 			s->u.key.cue = -1;
 	}
-	if (clef_lines) {
-		int l;
-
-		l = atoi(clef_lines);
-		if ((unsigned) l <= 12)
-			s->u.key.stafflines = l;
-		else
-			syntax("Bad value of stafflines", clef_lines);
-	}
+	if (clef_stlines)
+		s->u.key.stafflines = clef_stlines;
 	if (clef_scale) {
 		float sc;
 
@@ -821,7 +840,7 @@ unk:
 		char name[VOICE_NAME_SZ];
 
 		strcpy(name, "%%voicemap ");
-		strcpy(&name[11], p_map);
+		get_str(&name[11], p_map, VOICE_NAME_SZ - 12);
 		abc_new(ABC_T_PSCOM, name);
 	}
 }
@@ -1203,7 +1222,7 @@ static char *parse_voice(char *p,
 	int voice;
 	char *error_txt = NULL;
 	char name[VOICE_NAME_SZ];
-	char *clef_name, *clef_middle, *clef_lines, *clef_scale;
+	char *clef_name, *clef_middle, *clef_stlines, *clef_scale;
 	char *p_octave, *p_cue, *p_map;
 	signed char *p_stem;
 static struct kw_s {
@@ -1282,7 +1301,7 @@ static struct kw_s {
 	}
 
 	/* parse the other parameters */
-	clef_name = clef_middle = clef_lines = clef_scale = NULL;
+	clef_name = clef_middle = clef_stlines = clef_scale = NULL;
 	p_octave = p_cue = p_map = NULL;
 	p_stem = &s->u.voice.stem;
 	for (;;) {
@@ -1290,7 +1309,7 @@ static struct kw_s {
 			p++;
 		if (*p == '\0')
 			break;
-		p = parse_extra(p, &clef_name, &clef_middle, &clef_lines,
+		p = parse_extra(p, &clef_name, &clef_middle, &clef_stlines,
 				&clef_scale, &p_octave, &p_cue, &p_map);
 		if (*p == '\0')
 			break;
@@ -1364,17 +1383,10 @@ static struct kw_s {
 		else
 			s->u.voice.cue = -1;
 	}
-	if (clef_lines) {
-		int l;
-
-		l = atoi(clef_lines);
-		if ((unsigned) l < 10)
-			s->u.voice.stafflines = l;
-		else
-			syntax("Bad value of stafflines", clef_lines);
-	} else {
-		s->u.voice.stafflines = -1;
-	}
+	if (clef_stlines)
+		s->u.voice.stafflines = clef_stlines;
+//	else
+//		s->u.voice.stafflines = "|||||";
 	if (clef_scale) {
 		float sc;
 
@@ -1390,7 +1402,7 @@ static struct kw_s {
 	}
 	if (p_map) {
 		strcpy(name, "%%voicemap ");
-		p = get_str(&name[12], p, VOICE_NAME_SZ - 12);
+		get_str(&name[11], p_map, VOICE_NAME_SZ - 12);
 		abc_new(ABC_T_PSCOM, name);
 	}
 	return error_txt;

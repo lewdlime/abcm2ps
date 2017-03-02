@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2000-2016, Jean-François Moine.
+ * Copyright (C) 2000-2017, Jean-François Moine.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ static struct deco_elt {
 	unsigned char flags;
 #define DE_VAL	0x01		/* put extra value if 1 */
 #define DE_UP	0x02		/* above the staff */
-#define DE_BELOW 0x08		/* below the staff */
+//#define DE_BELOW 0x08		/* below the staff */
 //#define DE_GRACE 0x10		/* in grace note */
 #define DE_INV 0x20		/* invert the glyph */
 #define DE_LDST 0x40		/* start of long decoration */
@@ -159,6 +159,10 @@ static char *std_deco_tb[] = {
 	"-) 8 gliss 0 0 0",
 	"~( 8 glisq 0 0 0",
 	"~) 8 glisq 0 0 0",
+	"8va( 3 o8va 10 0 0",
+	"8va) 3 o8va 10 0 0",
+	"8vb( 4 o8vb 10 0 0",
+	"8vb) 4 o8vb 10 0 0",
 	"invisible 32 0 0 0 0",
 	"beamon 33 0 0 0 0",
 	"trem1 34 0 0 0 0",
@@ -598,7 +602,11 @@ static void d_trill(struct deco_elt *de)
 //	}
 	de->staff = staff = s2->staff;
 
-	up = s2->multi >= 0;
+	dd = &deco_def_tb[de->t];
+	if (dd->func == 4)		// if below
+		up = 0;
+	else
+		up = s2->multi >= 0;
 	if (de->defl & DEF_NOEN) {	/* if no decoration end */
 		w = de->x - x;
 		if (w < 20) {
@@ -617,7 +625,6 @@ static void d_trill(struct deco_elt *de)
 		}
 	}
 
-	dd = &deco_def_tb[de->t];
 	y = y_get(staff, up, x, w);
 	if (up) {
 		float stafft;
@@ -655,6 +662,14 @@ static void d_upstaff(struct deco_elt *de)
 	char *ps_name;
 	float x, yc, stafft, staffb, w;
 	int up, inv;
+
+	// don't treat here the long decorations
+	if (de->flags & DE_LDST)
+		return;
+	if (de->start) {
+		d_trill(de);
+		return;
+	}
 
 	s = de->s;
 	dd = &deco_def_tb[de->t];
@@ -1071,22 +1086,41 @@ void deco_cnv(struct decos *dc,
 					dd->name);
 				break;
 			}
-			if (m < 0) {		// apply !head-xx! to each head
-				dc->tm[i].m = 0;
-				n = dc->n;
-				for (m = 1; m <= s->nhd; m++) {
-					if (n >= MAXDC) {
-						error(1, s,
-							"Too many decorations");
-							break;
-					}
-					dc->tm[n].t = ideco;
-					dc->tm[n++].m = m;
-				}
-				dc->n = n;
+			if (m >= 0) {
+				s->u.note.notes[m].invisible = 1;
+				continue;
 			}
+
+			// apply !head-xx! to each head
+			dc->tm[i].m = 0;
+			s->u.note.notes[0].invisible = 1;
+			n = dc->n;
+			for (m = 1; m <= s->nhd; m++) {
+				if (n >= MAXDC) {
+					error(1, s,
+						"Too many decorations");
+						break;
+				}
+				dc->tm[n].t = ideco;
+				dc->tm[n++].m = m;
+				s->u.note.notes[m].invisible = 1;
+			}
+			dc->n = n;
 			continue;
 		default:
+			if (dd->name[0] == '8' && dd->name[1] == 'v'
+			 && dd->name[4] == '\0') {
+				if (dd->name[3] == '(') {
+					if (dd->name[2] == 'a')
+						curvoice->ottava = -7;
+					else if (dd->name[2] == 'b')
+						curvoice->ottava = 7;
+				} else if (dd->name[3] == ')') {
+					if (dd->name[2] == 'a'
+					 || dd->name[2] == 'b')
+						curvoice->ottava = 0;
+				}
+			}
 			continue;
 		case 32:		/* invisible */
 			if (m < 0)
@@ -1631,8 +1665,8 @@ void draw_deco_note(void)
 		if (!(f_note & (1 << f))	/* if not tied to the note */
 		 || de->m >= 0)			/* or head decoration */
 			continue;
-		if (f == 4)
-			de->flags |= DE_BELOW;
+//		if (f == 4)
+//			de->flags |= DE_BELOW;
 		func_tb[f](de);
 	}
 }

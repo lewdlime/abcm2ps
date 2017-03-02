@@ -131,7 +131,7 @@ static int calculate_beam(struct BEAM *bm,
 			  struct SYMBOL *s1)
 {
 	struct SYMBOL *s, *s2;
-	int notes, nflags, staff, voice, two_staves, two_dir;
+	int notes, nflags, staff, voice, two_staves, two_dir, visible = 0;
 	float x, y, ys, a, b, max_stem_err;
 	float sx, sy, sxx, sxy, syy, a0, stem_xoff, scale;
 	static float min_tb[2][6] = {
@@ -140,13 +140,6 @@ static int calculate_beam(struct BEAM *bm,
 		{STEM_CH_MIN, STEM_CH_MIN,
 			STEM_CH_MIN2, STEM_CH_MIN3, STEM_CH_MIN4, STEM_CH_MIN4}
 	};
-
-//	/* must have one printed note head */
-//	if (s1->flags & ABC_F_INVIS) {
-//		if (!s1->next
-//		 || (s1->next->flags & ABC_F_INVIS))
-//			return 0;
-//	}
 
 	if (!(s1->sflags & S_BEAM_ST)) {	/* beam from previous music line */
 		s = sym_dup(s1);
@@ -198,6 +191,9 @@ static int calculate_beam(struct BEAM *bm,
 				two_staves = 1;
 			if (s2->stem != s1->stem)
 				two_dir = 1;
+			if (!visible
+			 && !(s2->flags & (ABC_F_INVIS | ABC_F_STEMLESS)))
+				visible = 1;
 			if (s2->sflags & S_BEAM_END)
 				break;
 		}
@@ -229,6 +225,9 @@ static int calculate_beam(struct BEAM *bm,
 			break;
 		}
 	}
+	if (!visible)
+		return 0;
+
 	bm->s2 = s2;			/* (don't display the flags) */
 	if (staff_tb[staff].y == 0) {	/* staves not defined */
 		if (two_staves)
@@ -766,16 +765,16 @@ static void draw_sysbra(float x, int staff, int flag)
 	int i, end;
 	float yt, yb;
 
-	while (cursys->staff[staff].empty
-	    || staff_tb[staff].stafflines == 0) {
+	while (cursys->staff[staff].empty) {
+//	    || staff_tb[staff].stafflines == 0) {
 		if (cursys->staff[staff].flags & flag)
 			return;
 		staff++;
 	}
 	i = end = staff;
 	for (;;) {
-		if (!cursys->staff[i].empty
-		 && staff_tb[i].stafflines != 0)
+		if (!cursys->staff[i].empty)
+//		 && staff_tb[i].stafflines != 0)
 			end = i;
 		if (cursys->staff[i].flags & flag)
 			break;
@@ -803,8 +802,8 @@ static void draw_lstaff(float x)
 	for (i = 0; ; i++) {
 		if (cursys->staff[i].flags & (OPEN_BRACE | OPEN_BRACKET))
 			l++;
-		if (!cursys->staff[i].empty
-		 && staff_tb[i].stafflines != 0)
+		if (!cursys->staff[i].empty)
+//		 && staff_tb[i].stafflines != 0)
 			break;
 		if (cursys->staff[i].flags & (CLOSE_BRACE | CLOSE_BRACKET))
 			l--;
@@ -812,8 +811,8 @@ static void draw_lstaff(float x)
 			break;
 	}
 	for (j = nst; j > i; j--) {
-		if (!cursys->staff[j].empty
-		 && staff_tb[j].stafflines != 0)
+		if (!cursys->staff[j].empty)
+//		 && staff_tb[j].stafflines != 0)
 			break;
 	}
 	if (i == j && l == 0)
@@ -822,9 +821,7 @@ static void draw_lstaff(float x)
 	yb = staff_tb[j].y + staff_tb[j].botbar
 				* staff_tb[j].staffscale;
 	a2b("%.1f %.1f %.1f bar\n",
-	     staff_tb[i].y
-		+ staff_tb[i].topbar * staff_tb[i].staffscale
-		- yb,
+	     staff_tb[i].y + staff_tb[i].topbar * staff_tb[i].staffscale - yb,
 	     x, yb);
 	for (i = 0; i <= nst; i++) {
 		if (cursys->staff[i].flags & OPEN_BRACE)
@@ -842,28 +839,32 @@ static void draw_lstaff(float x)
 static void draw_staff(int staff,
 			float x1, float x2)
 {
-	int nlines;
-	float y;
+	char *stafflines;
+	int i, l;
+	float y, w;
 
 	/* draw the staff */
 	set_sscale(staff);
 	y = staff_tb[staff].y;
-	nlines = staff_tb[staff].stafflines;
-	switch (nlines) {
-	case 0:
-		return;
-	case 1:
-		y += 12;
-		break;
-	case 2:
-	case 3:
+	stafflines = staff_tb[staff].stafflines;
+	l = strlen(stafflines);
+	for (i = 0; i < l; i++) {
+		if (stafflines[i] != '.') {
+			a2b("dlw ");
+			w = x2 - x1;
+			for ( ; i < l; i++) {
+				if (stafflines[i] != '.') {
+					putx(w);
+					putxy(x1, y);
+					a2b("M 0 RL ");
+				}
+				y += 6;
+			}
+			a2b("stroke\n");
+			break;
+		}
 		y += 6;
-		break;
 	}
-	putx(x2 - x1);
-	a2b("%d ", nlines);
-	putxy(x1, y);
-	a2b("staff\n");
 }
 
 /* -- draw the time signature -- */
@@ -966,18 +967,19 @@ static void draw_acc(int acc, int microscale)
 
 // draw helper lines
 static void draw_hl(float x, float staffb, int up,
-		int y, int stafflines, char *hltype)
+		int y, char *stafflines, char *hltype)
 {
-	int i;
+	int i, l;
 
+	l = strlen(stafflines);
+
+	// lower ledger lines
 	if (!up) {
-		switch (stafflines) {		// lower ledger lines
-		case 0:
-		case 1: i = 6; break;
-		case 2:
-		case 3: i = 0; break;
-		default: i = -6; break;
+		for (i = 0; i < l - 1; i++) {
+			if (stafflines[i] != '.')
+				break;
 		}
+		i = i * 6 - 6;
 		for ( ; i >= y; i -= 6) {
 			putxy(x, staffb + i);
 			a2b("%s ", hltype);
@@ -985,13 +987,8 @@ static void draw_hl(float x, float staffb, int up,
 		return;
 	}
 
-	switch (stafflines) {			// upper ledger lines
-	case 0:
-	case 1:
-	case 2: i = 18; break;
-	case 3: i = 24; break;
-	default: i = stafflines * 6; break;
-	}
+	// upper ledger lines
+	i = l * 6;
 	for ( ; i <= y; i += 6) {
 		putxy(x, staffb + i);
 		a2b("%s ", hltype);
@@ -1253,8 +1250,9 @@ static void draw_bar(struct SYMBOL *s, float bot, float h)
 /* (the staves are defined) */
 static void draw_rest(struct SYMBOL *s)
 {
-	int i, y;
+	int i, j, y, l;
 //	int no_head;
+	char *stafflines;
 	float x, dotx, staffb;
 	static char *rest_tb[NFLAGS_SZ] = {
 		"r128", "r64", "r32", "r16", "r8",
@@ -1319,8 +1317,10 @@ static void draw_rest(struct SYMBOL *s)
 	y = s->y;
 
 	i = C_XFLAGS - s->nflags;		/* rest_tb index */
+	stafflines = staff_tb[s->staff].stafflines;
+	l = strlen(stafflines);
 	if (i == 7 && y == 12
-	 && staff_tb[s->staff].stafflines <= 2)
+	 && l <= 2)
 		y -= 6;				/* semibreve a bit lower */
 
 	putxy(x, y + staffb);				/* rest */
@@ -1329,55 +1329,27 @@ static void draw_rest(struct SYMBOL *s)
 
 	/* output ledger line(s) when greater than minim */
 	if (i >= 6) {
-		int yb, yt;
-
-		switch (staff_tb[s->staff].stafflines) {
-		case 0:
-			yb = 12;
-			yt = 12;
-			break;
-		case 1:
-			yb = 6;
-			yt = 18;
-			break;
-		case 2:
-			yb = 0;
-			yt = 18;
-			break;
-		case 3:
-			yb = 0;
-			yt = 24;
-			break;
+		j = y / 6;
+		switch (i) {
 		default:
-			yb = -6;
-			yt = staff_tb[s->staff].stafflines * 6;
+			if (j >= l - 1 || stafflines[j + 1] != '|') {
+				putxy(x, y + staffb);
+				a2b("hl1 ");
+			}
+			if (i == 9) {		// longa
+				y -= 6;
+				j--;
+			}
+			break;
+		case 7:
+			y += 6;
+			j++;
+		case 6:
 			break;
 		}
-		switch (i) {
-		case 6:					/* minim */
-			if (y <= yb || y >= yt) {
-				putxy(x, y + staffb);
-				a2b("hl ");
-			}
-			break;
-		case 7:					/* semibreve */
-			if (y < yb || y >= yt - 6) {
-				putxy(x, y + 6 + staffb);
-				a2b("hl ");
-			}
-			break;
-		default:
-			if (y < yb || y >= yt - 6) {
-				putxy(x,y + 6 + staffb);
-				a2b("hl ");
-			}
-			if (i == 9)			/* longa */
-				y -= 6;
-			if (y <= yb || y >= yt) {
-				putxy(x, y + staffb);
-				a2b("hl ");
-			}
-			break;
+		if (j >= l || stafflines[j] != '|') {
+			putxy(x, y + staffb);
+			a2b("hl1 ");
 		}
 	}
 
@@ -2095,11 +2067,12 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 						} else {
 							y1 = k1->ys - 6;
 						}
-					} else {
-						y1 = k1->ys + 3;
+// don't clash with decorations
+//					} else {
+//						y1 = k1->ys + 3;
 					}
-				} else {
-					y1 = k1->y + 8;
+//				} else {
+//					y1 = k1->y + 8;
 				}
 			} else {
 				if (k1->stem < 0) {
@@ -2114,11 +2087,11 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 						} else {
 							y1 = k1->ys + 6;
 						}
-					} else {
-						y1 = k1->ys - 3;
+//					} else {
+//						y1 = k1->ys - 3;
 					}
-				} else {
-					y1 = k1->y - 8;
+//				} else {
+//					y1 = k1->y - 8;
 				}
 			}
 		}
@@ -2136,10 +2109,10 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 					 && (!(k2->sflags & S_IN_TUPLET)))
 //						|| k2->ys > y2 - 3))
 						y2 = k2->ys - 6;
-					else
-						y2 = k2->ys + 3;
-				} else {
-					y2 = k2->y + 8;
+//					else
+//						y2 = k2->ys + 3;
+//				} else {
+//					y2 = k2->y + 8;
 				}
 			} else {
 				if (k2->stem < 0) {
@@ -2149,10 +2122,10 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 					 && (!(k2->sflags & S_IN_TUPLET)))
 //						|| k2->ys < y2 + 3))
 						y2 = k2->ys + 6;
-					else
-						y2 = k2->ys - 3;
-				} else {
-					y2 = k2->y - 8;
+//					else
+//						y2 = k2->ys - 3;
+//				} else {
+//					y2 = k2->y - 8;
 				}
 			}
 		}
@@ -4152,7 +4125,7 @@ void draw_sym_near(void)
 	if (cfmt.measurenb >= 0)
 		draw_measnb();
 
-	draw_deco_note();
+//	draw_deco_note();
 
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		s = p_voice->sym;
@@ -4203,6 +4176,7 @@ void draw_sym_near(void)
 			}
 		}
 	}
+	draw_deco_note();
 	draw_deco_staff();
 	set_sscale(-1);		/* restore the scale parameters */
 	draw_all_lyrics();

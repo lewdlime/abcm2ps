@@ -49,7 +49,7 @@ int pipeformat = 0;		/* format for bagpipes regardless of key */
 char outfn[FILENAME_MAX];	/* output file name */
 int file_initialized;		/* for output file */
 FILE *fout;			/* output file */
-char *in_fname;			/* current input file name */
+char *in_fname;			/* top level input file name */
 time_t mtime;			/* last modification time of the input file */
 static time_t fmtime;		/*	"	"	of all files */
 
@@ -82,7 +82,6 @@ static struct str_a {
 
 /* -- local functions -- */
 static void read_def_format(void);
-static void treat_file(char *fn, char *ext);
 
 static FILE *open_ext(char *fn, char *ext)
 {
@@ -195,21 +194,6 @@ static char *read_file(char *fn, char *ext)
 	return file;
 }
 
-/* call back to handle %%format/%%abc-include - see front.c */
-void include_file(unsigned char *fn)
-{
-	static int nbfiles;
-
-	if (nbfiles > 2) {
-		error(1, NULL, "Too many included files");
-		return;
-	}
-
-	nbfiles++;
-	treat_file((char *) fn, "fmt");
-	nbfiles--;
-}
-
 /* -- treat an input file and generate the ABC file -- */
 static void treat_file(char *fn, char *ext)
 {
@@ -249,7 +233,7 @@ static void treat_file(char *fn, char *ext)
 		file_type = FE_FMT;
 	} else {
 		file_type = FE_ABC;
-		in_fname = abc_fn;
+//		in_fname = abc_fn;
 		mtime = fmtime;
 	}
 
@@ -262,6 +246,21 @@ static void treat_file(char *fn, char *ext)
 				abc_fn, 0);
 	if (file_type == FE_ABC)	/* if ABC file */
 		clrarena(1);		/* clear previous tunes */
+}
+
+/* call back to handle %%format/%%abc-include - see front.c */
+void include_file(unsigned char *fn)
+{
+	static int nbfiles;
+
+	if (nbfiles > 2) {
+		error(1, NULL, "Too many included files");
+		return;
+	}
+
+	nbfiles++;
+	treat_file((char *) fn, "fmt");
+	nbfiles--;
 }
 
 /* -- treat an ABC input file and generate the music -- */

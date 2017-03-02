@@ -1,3 +1,41 @@
+---- Version 8.13.7 - 2017-02-26 ----
+
+Don't display beams when no visible note with a stem
+	(reported by Gerhard Schacherl)
+Fix non working !ped! and !ped-up! with SVG output
+	(reported by Gerhard Schacherl)
+Fix non working "%%pos stem hidden"
+	(reported by Gerhard Schacherl)
+Fix bad horizontal spacing since 8.13.6
+	(reported by David Lacroix)
+Fix clash of slurs with note decorations since 8.13.6
+	(reported by David Lacroix)
+
+---- Version 8.13.6 - 2017-02-24 ----
+
+Fix bad vertical offset of notes in percussion staves since 8.13.2
+Fix clash of note and accidentals when note in other staff
+	(reported by Hudson Lacerda)
+Add the decorations !8va(!, !8va)!, !8vb(! and !8vb)! (%%ottava alternative)
+	(asked by Hudson Lacerda)
+Handle the string definition of %%stafflines
+	(asked by Reinier Maliepaard)
+Handle "%%pos stem hidden" (same as '0' starting length / !stemless!)
+	(asked by Jakob Englhauser a long time ago!)
+Extend the tempo value up to 32000 (was < 256)
+	(asked by Hudson Lacerda)
+Fix loss of transposition of the bass when alone in a chord indication
+	(reported by Tim Goetze)
+Fix loss of measure bar when followed by clef change and time skip
+Fix bad output when "%%clef auto" without %%score
+	(reported by Hudson Lacerda)
+Fix clash of slurs with note decorations
+	(reported by Hudson Lacerda)
+Fix bad output file name when "%%abc-include xx.abc"
+	(reported by Guido Gonzato)
+Fix bad note head when !head-xx! decoration since 8.13.5 (?)
+	(reported by David Lacroix)
+
 ---- Version 8.13.5 - 2017-01-31 ----
 
 Fix clash of dot and glissendi
@@ -477,7 +515,7 @@ Accept (some) SVG paths by <defs>..</defs> for PS output
 Accept glyphs by <defs>..</defs> for SVG output
 Fix bad left margin when %%leftmargin inside tune body since 8.7.4
 	(reported by David Lacroix)
-Don't adjust the pitch of notes when the key is 'P' (percussion)
+Don't adjust the pitch of the notes when the key is 'P' (percussion)
 	(reported by Willem Vree)
 Fix bad output when internal output buffer overflow
 	(reported by Jan Wybren de Jong)

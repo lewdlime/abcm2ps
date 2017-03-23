@@ -822,7 +822,7 @@ static void set_bar_num(void)
 		case STBRK:
 			continue;
 		case BAR:
-			if (s->aux != 0) {
+			if (s->aux) {
 				nbar = s->aux;		/* (%%setbarnb) */
 				break;
 			}
@@ -920,12 +920,12 @@ static void set_bar_num(void)
 		case BAR:
 //			if (s->flags & ABC_F_INVIS)
 //				break;
-			if (s->aux != 0) {
+			if (s->aux) {
 				bar_num = s->aux;		/* (%%setbarnb) */
-				if (s->time < bar_time) {
-					s->aux = 0;
+//				if (s->time < bar_time) {
+//					s->aux = 0;
 					break;
-				}
+//				}
 			} else {
 				if (s->time < bar_time)	/* incomplete measure */
 					break;
@@ -1013,6 +1013,7 @@ static void generate(void)
 		p_voice->staff = cursys->voice[voice].staff;
 		p_voice->second = cursys->voice[voice].second;
 		p_voice->s_clef->time = 0;
+		p_voice->lyric_start = NULL;
 	}
 	staves_found = 0;		// (for voice compress/dup)
 }

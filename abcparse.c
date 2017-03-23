@@ -1649,9 +1649,9 @@ static char *parse_basic_note(char *p,
 }
 
 /* -- parse the decorations of notes and bars -- */
-char *parse_deco(char *p,
-		 struct decos *deco,
-		 int m)			/* note index / -1 */
+static char *parse_deco(char *p,
+			 struct decos *deco,
+			 int m)			/* note index / -1 */
 {
 	int n;
 	unsigned char t;
@@ -2030,11 +2030,11 @@ static int parse_line(char *p)
 			if (p[-1] == '.') {
 				if (*p == '(' || *p == '-')
 					break;
-				if (*p == '|') {
-					p = parse_bar(p + 1);
-					parse.last_sym->u.bar.dotted = 1;
-					break;
-				}
+//				if (*p == '|') {
+//					p = parse_bar(p + 1);
+//					parse.last_sym->u.bar.dotted = 1;
+//					break;
+//				}
 			}
 			p = parse_deco(p - 1, &dc, -1);
 			break;

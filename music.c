@@ -1949,17 +1949,9 @@ normal:
 			break;
 		switch (s->type) {
 		case BAR:
-//fixme: fixes |ccc||$|:c|
-//fixme: raises which problem?
-//			if (done
-//			 || (s->aux == 0	/* incomplete measure */
-//			  && s->next		/* not at end of tune */
-//			  && (s->u.bar.type & 0x0f) == B_COL
-//			  && !(s->sflags & S_RRBAR)))
-//						/* 'xx:' (not ':xx:') */
-//				goto cut_here;
-			if (!done)
-				done = 1;
+			if (done)
+				goto cut_here;
+			done = 1;
 			break;
 		case STBRK:
 			if (s->doty == 0) {	/* if not forced */
@@ -4599,31 +4591,28 @@ static void sym_staff_move(int staff)
 	}
 }
 
-/* -- adjust the empty flag in a staff system -- */
-static void set_empty(struct SYSTEM *sy)
+/* -- adjust the empty flag of a brace system -- */
+static void set_brace(struct SYSTEM *sy, char *empty, char *empty_gl)
 {
-	int staff;
+	int staff, i, empty_fl;
 
 	/* if a system brace has empty and non empty staves, keep all staves */
 	for (staff = 0; staff <= nstaff; staff++) {
-		int i, empty_fl;
-
 		if (!(sy->staff[staff].flags & (OPEN_BRACE | OPEN_BRACE2)))
 			continue;
 		empty_fl = 0;
 		i = staff;
 		while (staff <= nstaff) {
-			if (sy->staff[staff].empty)
-				empty_fl |= 1;
-			else
-				empty_fl |= 2;
+			empty_fl |= empty[staff] ? 1 : 2;
 			if (cursys->staff[staff].flags & (CLOSE_BRACE | CLOSE_BRACE2))
 				break;
 			staff++;
 		}
 		if (empty_fl == 3) {	/* if empty and not empty staves */
-			while (i <= staff)
-				sy->staff[i++].empty = 0;
+			while (i <= staff) {
+				empty[i] = 0;
+				empty_gl[i++] = 0;
+			}
 		}
 	}
 }
@@ -4658,11 +4647,11 @@ static void set_piece(void)
 		if (s->sflags & S_NL)
 			break;
 		if (s->sflags & S_NEW_SY) {
+			set_brace(sy, empty, empty_gl);
 			for (staff = 0; staff <= nstaff; staff++) {
 				sy->staff[staff].empty = empty[staff];
 				empty[staff] = 1;
 			}
-			set_empty(sy);
 			sy = sy->next;
 			for (staff = 0; staff <= sy->nstaff; staff++) {
 				p_staff = &staff_tb[staff];
@@ -4696,9 +4685,9 @@ static void set_piece(void)
 	tsnext = s;
 
 	/* set the last empty staves */
+	set_brace(sy, empty, empty_gl);
 	for (staff = 0; staff <= nstaff; staff++)
 		sy->staff[staff].empty = empty[staff];
-	set_empty(sy);
 
 	/* define the offsets of the measure bars */
 	for (staff = 0; staff <= nstaff; staff++) {

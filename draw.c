@@ -1869,6 +1869,9 @@ static int slur_direction(struct SYMBOL *k1,
 	struct SYMBOL *s;
 	int some_upstem, low;
 
+	if ((k1->flags & ABC_F_GRACE) && k1->stem > 0)
+		return -1;
+
 	some_upstem = low = 0;
 	for (s = k1; ; s = s->next) {
 		if (s->abc_type == ABC_T_NOTE) {

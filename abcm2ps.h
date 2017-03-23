@@ -744,7 +744,6 @@ char *get_str(char *d,
 char *parse_acc_pit(char *p,
 		int *pit,
 		int *acc);
-char *parse_deco(char *p, struct decos *deco, int m);
 /* buffer.c */
 void a2b(char *fmt, ...)
 #ifdef __GNUC__

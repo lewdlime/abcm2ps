@@ -1060,6 +1060,14 @@ void deco_cnv(struct decos *dc,
 			}
 			/* fall thru */
 		case 0:			// near
+
+			/* special case for dotted bars */
+			if (dd->func == 0 && s->abc_type == ABC_T_BAR
+			 && strcmp(dd->name, "dot") == 0) {
+				s->u.bar.dotted = 1;
+				break;
+			}
+			// fall thru
 		case 1:			// slide
 			if (s->abc_type != ABC_T_NOTE
 			 && s->abc_type != ABC_T_REST) {

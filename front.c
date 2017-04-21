@@ -671,7 +671,8 @@ void frontend(unsigned char *s,
 				l -= 4;
 				goto info;
 			}
-			if (strncmp((char *) s, "abcm2ps ", 8) == 0) {
+			if (strncmp((char *) s, "abcm2ps ", 8) == 0
+			 || strncmp((char *) s, "ss-pref ", 8) == 0) {
 				s += 8;
 				l -= 8;
 				while (*s == ' ' || *s == '\t') {

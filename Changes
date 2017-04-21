@@ -1,3 +1,13 @@
+---- Version 8.13.9 - 2017-04-21 ----
+
+Fix bad handling of the 4th parameter of %%tuplets
+	(reported by Reinier Maliepaard)
+Execute the format file in '-F' when '-H'
+	(reported by Richard Robinson)
+Add %%ss-pref (stylesheet prefix) as a replacement of %%abcm2ps
+Fix bad colors of lyrics and chord indications when last voice has a color
+	(reported by Jean-Luc Fargere)
+
 ---- Version 8.13.8 - 2017-03-22 ----
 
 Fix error on "!some deco!.|" (dotted bar)

@@ -853,6 +853,7 @@ int main(int argc, char **argv)
 					if (!fout) {
 						read_def_format();
 						make_font_list();
+						do_tune();
 					}
 					print_format();
 					return EXIT_SUCCESS;

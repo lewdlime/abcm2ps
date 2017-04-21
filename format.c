@@ -1235,8 +1235,8 @@ void interpret_fmt_line(char *w,		/* keyword */
 		if (fd->subtype == 3) {		/* tuplets */
 			unsigned i1, i2, i3, i4 = 0;
 
-			if (sscanf(p, "%d %d %d", &i1, &i2, &i3) != 3
-			 && sscanf(p, "%d %d %d %d", &i1, &i2, &i3, &i4) != 4)
+			if (sscanf(p, "%d %d %d %d", &i1, &i2, &i3, &i4) != 4
+			 && sscanf(p, "%d %d %d", &i1, &i2, &i3) != 3)
 				goto bad;
 			if (i1 > 2 || i2 > 2 || i3 > 2 || i4 > 2)
 				goto bad;

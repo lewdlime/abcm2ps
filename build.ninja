@@ -1,17 +1,18 @@
 # rules for ninja (ninja-build)
 
-VERSION = 8.13.9
+VERSION = 8.13.10
 
-#cc=musl-gcc
-cc=gcc
+cc=musl-gcc
+#cc=gcc
 #cc=clang
 
 #cflags = -g -O2 -Wall -pipe -I.
 cflags = -g -Wall -pipe -I. -fpie
-#cflags = -g -Wall -pipe -I. -fPIC
+#cflags = -g -Wall -pipe -I. -fPIC -O2
 #ldflags = -lm
 #ldflags=-static -pie
-ldflags=-pie -lm
+#ldflags=-pie -lm
+ldflags=-static -Wl,--no-dynamic-linker -lm
 
 rule cc
   command = $cc $cflags -c $in -o $out

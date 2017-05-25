@@ -3311,8 +3311,8 @@ static void init_music_line(void)
 			memcpy(&s->u.meter, &p_voice->meter,
 			       sizeof s->u.meter);
 //			set_yval(s);
-			insert_meter &= ~1;	// no more meter
 		}
+		insert_meter &= ~1;		// no meter any more
 	}
 
 	/* add bar if needed (for repeat bracket) */

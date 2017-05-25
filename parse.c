@@ -1901,6 +1901,7 @@ static void get_over(struct SYMBOL *s)
 	struct VOICE_S *p_voice, *p_voice2, *p_voice3;
 	int range, voice, voice2, voice3;
 static char tx_wrong_dur[] = "Wrong duration in voice overlay";
+static char txt_no_note[] = "No note in voice overlay";
 
 	/* treat the end of overlay */
 	p_voice = curvoice;
@@ -1908,6 +1909,10 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 		return;
 	if (s->abc_type == ABC_T_BAR
 	 || s->u.v_over.type == V_OVER_E)  {
+		if (!p_voice->last_sym) {
+			error(1, s, txt_no_note);
+			return;
+		}
 		p_voice->last_sym->sflags |= S_BEAM_END;
 		over_bar = 0;
 		if (over_time < 0) {
@@ -1930,6 +1935,10 @@ static char tx_wrong_dur[] = "Wrong duration in voice overlay";
 
 	/* (here is treated a new overlay - '&') */
 	/* create the extra voice if not done yet */
+	if (!p_voice->last_sym) {
+		error(1, s, txt_no_note);
+		return;
+	}
 	p_voice->last_sym->sflags |= S_BEAM_END;
 	voice2 = s->u.v_over.voice;
 	p_voice2 = &voice_tb[voice2];

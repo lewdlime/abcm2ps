@@ -3579,8 +3579,7 @@ static void draw_tblt_p(struct VOICE_S *p_voice,
 	setmap(sf, basemap);
 	for (j = 0; j < 10; j++)
 		memcpy(&workmap[7 * j], basemap, 7);
-	a2b("gsave 0 %.1f y%d T(%.2s)%s\n",
-		y, p_voice->staff,
+	a2b("gsave 0 %.1f yns%d T(%.2s)%s\n", y, p_voice->staff,
 		tblt->instr, tblt->head);
 	tied = 0;
 	for (s = p_voice->sym; s; s = s->next) {
@@ -3859,7 +3858,7 @@ static void draw_all_lyrics(void)
 	} lyvo_tb[MAXVOICE];
 	char above_tb[MAXVOICE];
 	char rv_tb[MAXVOICE];
-	float top, bot, y;
+	float top, bot, y, sc;
 
 	/* check if any lyric */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
@@ -3966,21 +3965,30 @@ static void draw_all_lyrics(void)
 			lyst_tb[staff].bot = draw_lyrics(p_voice, lyvo_tb[voice].nly,
 							 lyvo_tb[voice].h,
 							 lyst_tb[staff].bot, 1);
+		sc = staff_tb[p_voice->staff].staffscale;
 		for (nly = 0; nly < 2; nly++) {
 			if ((tblt = p_voice->tblts[nly]) == NULL)
 				break;
+//			if (tblt->hu > 0) {
+//				lyst_tb[staff].bot -= tblt->hu;
+//				lyst_tb[staff].b = 1;
+//			}
+			if (tblt->pitch == 0)
+				draw_tblt_w(p_voice,
+					lyvo_tb[voice].nly,
+					lyst_tb[staff].bot * sc - tblt->hu,
+					tblt);
+			else
+				draw_tblt_p(p_voice,
+//					lyst_tb[staff].bot,
+					lyst_tb[staff].bot * sc - tblt->hu,
+					tblt);
 			if (tblt->hu > 0) {
-				lyst_tb[staff].bot -= tblt->hu;
+				lyst_tb[staff].bot -= tblt->hu / sc;
 				lyst_tb[staff].b = 1;
 			}
-			if (tblt->pitch == 0)
-				draw_tblt_w(p_voice, lyvo_tb[voice].nly,
-						lyst_tb[staff].bot, tblt);
-			else
-				draw_tblt_p(p_voice, lyst_tb[staff].bot,
-						tblt);
 			if (tblt->ha != 0) {
-				lyst_tb[staff].top += tblt->ha;
+				lyst_tb[staff].top += tblt->ha / sc;
 				lyst_tb[staff].a = 1;
 			}
 		}

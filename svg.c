@@ -3556,26 +3556,20 @@ rmoveto:
 			return;
 		}
 		if (strcmp(op, "rotate") == 0) {
-			float x, xtmp, y, _sin, _cos;
+			float x, y, _sin, _cos;
 
 			setg(0);
 
 			// convert orig and currentpoint coord to absolute coord
-			xtmp = gcur.xoffs;
-			y = gcur.yoffs;
+			x = gcur.xoffs;
+			y = -gcur.yoffs;
 			_sin = gcur.sin;
 			_cos = gcur.cos;
-			x = xtmp * _cos - y * _sin;
-			y = xtmp * _sin + y * _cos;
-			gcur.xoffs = x / gcur.xscale;
-			gcur.yoffs = y / gcur.yscale;
+			gcur.xoffs = x * _cos + y * _sin;
+			gcur.yoffs = -x * _sin + y * _cos;	// PS orientation
 
-			xtmp = gcur.cx;
-			y = gcur.cy;
-			x = xtmp * _cos - y * _sin;
-			y = xtmp * _sin + y * _cos;
-			gcur.cx = x / gcur.xscale;
-			gcur.cy = y / gcur.yscale;
+			x = gcur.cx * _cos + gcur.cy * _sin;
+			y = -gcur.cx * _sin + gcur.cy * _cos;
 
 			// rotate
 			gcur.rotate -= pop_free_val();
@@ -3586,16 +3580,12 @@ rmoveto:
 			h = gcur.rotate * M_PI / 180;
 			gcur.sin = _sin = sin(h);
 			gcur.cos = _cos = cos(h);
-			x = gcur.cx;
-			gcur.cx = (x * _cos + gcur.cy * _sin) *
-					gcur.xscale;
-			gcur.cy = (-x * _sin + gcur.cy * _cos) *
-					gcur.yscale;
+			gcur.cx = x * _cos - y * _sin;
+			gcur.cy = x * _sin + y * _cos;
 			x = gcur.xoffs;
-			gcur.xoffs = (x * _cos + gcur.yoffs * _sin) *
-					gcur.xscale;
-			gcur.yoffs = (-x * _sin + gcur.yoffs * _cos) *
-					gcur.yscale;
+			y = gcur.yoffs;
+			gcur.xoffs = x * _cos - y * _sin;
+			gcur.yoffs = -(x * _sin + y * _cos);	// SVG orientation
 			return;
 		}
 		break;

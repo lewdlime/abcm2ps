@@ -1,3 +1,20 @@
+---- Version 8.13.10 - 2017-05-22 ----
+
+Fix abnormal meter in 2nd music line when no starting meter and
+		meter defined inside the 1st music line
+	(reported by Paul Morrissett)
+Fix bad x coordinate when PS rotate and SVG output
+Fix bad horizontal offset of end of repeat bracket on !rbend!
+Fix crash on %%deco in recent versions of MacOS X
+	(reported by Frédéric Boulanger)
+Fix crash when measure numbering and bad measure durations
+Fix bad vertical offset of automatic tablatures when %%staffscale != 1
+	(reported by Lionel Coates)
+Raise the breath marks when after high notes
+	(asked by Chris Myers)
+Fix crash when no note in voice overlay
+	(reported by Richard Robinson)
+
 ---- Version 8.13.9 - 2017-04-21 ----
 
 Fix bad handling of the 4th parameter of %%tuplets

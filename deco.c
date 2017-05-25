@@ -186,7 +186,7 @@ static char *std_deco_tb[] = {
 /* user decorations */
 static struct u_deco {
 	struct u_deco *next;
-	char text[2];
+	char text[256];			// dummy size
 } *user_deco;
 
 //static struct SYMBOL *first_note;	/* first note/rest of the line */
@@ -721,6 +721,10 @@ static void d_upstaff(struct deco_elt *de)
 		|| strcmp(ps_name, "mphr") == 0
 		|| strcmp(ps_name, "sphr") == 0) {
 		yc = stafft + 1;
+		if (ps_name[0] == 'b') {		// if breath
+			if (yc < s->ymx)
+				yc = s->ymx;
+		}
 		for (s = s->ts_next; s; s = s->ts_next)
 			if (s->shrink != 0)
 				break;
@@ -1764,18 +1768,17 @@ static void draw_repbra(struct VOICE_S *p_voice)
 				s2->flags |= ABC_F_INVIS;
 /*fixme:%%staves: cursys moved?*/
 			if (s1->staff > 0
-			 && !(cursys->staff[s1->staff - 1].flags & STOP_BAR)) {
+			 && !(cursys->staff[s1->staff - 1].flags & STOP_BAR))
 				w = s2->wl;
-			} else if ((s2->u.bar.type & 0x0f) == B_COL) {
+			else if ((s2->u.bar.type & 0x0f) == B_COL)
 				w = 12;
-			} else if (!(s2->sflags & S_RRBAR)
-				|| s2->u.bar.type == B_CBRA) {
+			else if (!(s2->sflags & S_RRBAR))
+//				|| s2->u.bar.type == B_CBRA)
 				w = 0;		/* explicit repeat end */
-			} else {
+			else
 				w = 8;
-			}
 		} else {
-			w = 8;
+			w = (s2->sflags & S_RBSTOP) ? 0 : 8;
 		}
 		w = s2->x - x - w;
 		p = s1->text;
@@ -2159,7 +2162,7 @@ void draw_measnb(void)
 				}
 				break;
 			}
-			if (s->prev->type != CLEF)
+			if (s->prev && s->prev->type != CLEF)
 				s = s->prev;
 			x = s->x - s->wl;
 			set_font(MEASUREFONT);

@@ -211,7 +211,7 @@ struct lyl {
 	struct FONTSPEC *f;	/* font */
 	float w;		/* width */
 	float s;		/* shift / note */
-	char t[1];		/* word */
+	char t[256];		/* word (dummy size) */
 };
 struct lyrics {
 	struct lyl *lyl[MAXLY];	/* ptr to lyric lines */

@@ -565,6 +565,8 @@ static void voice_dup(void)
 				break;
 		}
 		for ( ; s; s = s->next) {
+			if (s->type == STAVES)
+				continue;
 			s2 = (struct SYMBOL *) getarena(sizeof *s2);
 			memcpy(s2, s, sizeof *s2);
 			s2->prev = p_voice2->last_sym;
@@ -1810,7 +1812,8 @@ static struct SYMBOL *get_lyric(struct SYMBOL *s)
 				w = tex_str(q);
 				q = tex_buf;
 				lyl = (struct lyl *) getarena(sizeof *s1->ly->lyl[0]
-							    + strlen(q));
+							- sizeof s1->ly->lyl[0]->t
+							+ strlen(q) + 1);
 				s1->ly->lyl[ln] = lyl;
 				lyl->f = f;
 				lyl->w = w;
@@ -4403,7 +4406,7 @@ static void parse_path(char *p, char *q, char *id, int idsz)
 {
 	struct SYMBOL *s;
 	char *r, *op, *width;
-	int i, fill, npar;
+	int i, fill, npar = 0;
 
 	r = strstr(p, "class=\"");
 	if (!r || r > q)
@@ -4444,6 +4447,8 @@ static void parse_path(char *p, char *q, char *id, int idsz)
 		default:
 			if ((isdigit((unsigned char) p[-1]))
 			 || p[-1] == '-' || p[-1] == '.') {
+				if (!npar)
+					continue;
 				p--;			// same op
 				break;
 			}

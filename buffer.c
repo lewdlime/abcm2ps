@@ -133,7 +133,7 @@ static void init_ps(char *str)
 {
 	time_t ltime;
 	unsigned i;
-	char version[32];
+	char version[] = "/creator [(abcm2ps) " VERSION "] def";
 
 	if (epsf) {
 		cur_lmarg = min_lmarg - 10;
@@ -188,7 +188,6 @@ static void init_ps(char *str)
 	fprintf(fout, "\n\n");
 	if (epsf)
 		fprintf(fout, "save\n");
-	strcpy(version, "/creator [(abcm2ps) " VERSION "] def");
 	for (i = 0; i < strlen(version); i++) {
 		if (version[i] == '.')
 			version[i] = ' ';

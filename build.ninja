@@ -1,6 +1,6 @@
 # rules for ninja (ninja-build)
 
-VERSION = 8.13.10
+VERSION = 8.13.11
 
 cc=musl-gcc
 #cc=gcc

@@ -1,3 +1,11 @@
+---- Version 8.13.11 - 2017-06-15 ----
+
+Fix crash when twice a same voice in %%score inside tune
+Fix some compilation warnings and crash with gcc-5.4
+	(reported by Guido Gonzato and more people)
+Fix more crashes in recent versions of MacOS X
+	(reported by David Lacroix)
+
 ---- Version 8.13.10 - 2017-05-22 ----
 
 Fix abnormal meter in 2nd music line when no starting meter and

@@ -84,7 +84,6 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s);
 static void ps_def(struct SYMBOL *s, char *p, char use);
 static void set_tblt(struct VOICE_S *p_voice);
 static void set_tuplet(struct SYMBOL *s);
-static void sym_link(struct SYMBOL *s, int type);
 
 /* -- weight of the symbols -- */
 static char w_tb[NSYMTYPES] = {	/* !! index = symbol type !! */
@@ -109,6 +108,55 @@ static char w_tb[NSYMTYPES] = {	/* !! index = symbol type !! */
 /* key signature transposition tables */
 static signed char cde2fcg[7] = {0, 2, 4, -1, 1, 3, 5};
 static char cgd2cde[7] = {0, 4, 1, 5, 2, 6, 3};
+
+/* -- link a ABC symbol into the current voice -- */
+static void sym_link(struct SYMBOL *s, int type)
+{
+	struct VOICE_S *p_voice = curvoice;
+
+	if (!p_voice->ignore) {
+		s->prev = p_voice->last_sym;
+		if (s->prev)
+			p_voice->last_sym->next = s;
+		else
+			p_voice->sym = s;
+		p_voice->last_sym = s;
+//fixme:test bug
+//	} else {
+//		if (p_voice->sym)
+//			p_voice->last_sym = p_voice->sym = s;
+	}
+
+	s->type = type;
+	s->voice = p_voice - voice_tb;
+	s->staff = p_voice->cstaff;
+	s->time = p_voice->time;
+	s->posit = p_voice->posit;
+}
+
+/* -- add a new symbol in a voice -- */
+struct SYMBOL *sym_add(struct VOICE_S *p_voice, int type)
+{
+	struct SYMBOL *s;
+	struct VOICE_S *p_voice2;
+
+	s = (struct SYMBOL *) getarena(sizeof *s);
+	memset(s, 0, sizeof *s);
+	p_voice2 = curvoice;
+	curvoice = p_voice;
+	sym_link(s, type);
+	curvoice = p_voice2;
+	if (p_voice->second)
+		s->sflags |= S_SECOND;
+	if (p_voice->floating)
+		s->sflags |= S_FLOATING;
+	if (s->prev) {
+		s->fn = s->prev->fn;
+		s->linenum = s->prev->linenum;
+		s->colnum = s->prev->colnum;
+	}
+	return s;
+}
 
 /* -- expand a multi-rest into single rests and measure bars -- */
 static void mrest_expand(struct SYMBOL *s)
@@ -183,6 +231,8 @@ static void sort_all(void)
 	multi = -1;			/* (have gcc happy) */
 	for (;;) {
 		if (set_sy) {
+		    fl = 1;			// start a new sequence
+		    if (!new_sy) {
 			set_sy = 0;
 			fl = 1;			// start a new sequence
 			multi = -1;
@@ -197,6 +247,7 @@ static void sort_all(void)
 				vn[r] = voice;
 				multi++;
 			}
+		    }
 		}
 
 		/* search the min time and symbol weight */
@@ -2226,6 +2277,7 @@ static void parse_staves(struct SYMBOL *s,
 /* -- get staves definition (%%staves / %%score) -- */
 static void get_staves(struct SYMBOL *s)
 {
+	struct SYMBOL *s2;
 	struct VOICE_S *p_voice, *p_voice2;
 	struct staff_s *p_staff, staves[MAXVOICE];
 	int i, flags, voice, staff, range, dup_voice, maxtime;
@@ -2265,7 +2317,20 @@ static void get_staves(struct SYMBOL *s)
 /*fixme: should check if voice < MAXVOICE*/
 		}
 		curvoice->time = maxtime;
-		sym_link(s, STAVES);	/* link the staves in the current voice */
+
+		// put the staves before a measure bar (see draw_bar())
+		s2 = curvoice->last_sym;
+		if (s2 && s2->type == BAR && s2->time == maxtime) {
+			curvoice->last_sym = s2->prev;
+			if (!curvoice->last_sym)
+				curvoice->sym = NULL;
+			sym_link(s, STAVES);
+			s->next = s2;
+			s2->prev = s;
+			curvoice->last_sym = s2;
+		} else {
+			sym_link(s, STAVES); // link the staves in the current voice
+		}
 		s->state = ABC_S_HEAD; /* (output PS sequences immediately) */
 		parsys->nstaff = nstaff;
 		system_new();
@@ -2407,7 +2472,7 @@ static void get_staves(struct SYMBOL *s)
 
 	/* change the behaviour of '|' in %%score */
 	if (s->text[3] == 'c') {		/* if %%score */
-		for (staff = 0; staff <= nstaff; staff++)
+		for (staff = 0; staff < nstaff; staff++)
 			parsys->staff[staff].flags ^= STOP_BAR;
 	}
 
@@ -4246,6 +4311,11 @@ static void get_note(struct SYMBOL *s)
 	prev = curvoice->last_sym;
 	m = s->nhd;
 
+	/* insert the note/rest in the voice */
+	sym_link(s,  s->u.note.notes[0].len != 0 ? NOTEREST : SPACE);
+	if (!(s->flags & ABC_F_GRACE))
+		curvoice->time += s->dur;
+
 	if (curvoice->octave) {
 		delta = curvoice->octave * 7;
 		for (i = 0; i <= m; i++) {
@@ -4306,10 +4376,6 @@ static void get_note(struct SYMBOL *s)
 		}
 	}
 
-	/* insert the note/rest in the voice */
-	sym_link(s,  s->u.note.notes[0].len != 0 ? NOTEREST : SPACE);
-	if (!(s->flags & ABC_F_GRACE))
-		curvoice->time += s->dur;
 	s->nohdi1 = s->nohdi2 = -1;
 
 	/* change the figure of whole measure rests */
@@ -6049,53 +6115,4 @@ done:
 		sym_link(t, TUPLET);
 		t->aux = cfmt.tuplets;
 	}
-}
-
-/* -- add a new symbol in a voice -- */
-struct SYMBOL *sym_add(struct VOICE_S *p_voice, int type)
-{
-	struct SYMBOL *s;
-	struct VOICE_S *p_voice2;
-
-	s = (struct SYMBOL *) getarena(sizeof *s);
-	memset(s, 0, sizeof *s);
-	p_voice2 = curvoice;
-	curvoice = p_voice;
-	sym_link(s, type);
-	curvoice = p_voice2;
-	if (p_voice->second)
-		s->sflags |= S_SECOND;
-	if (p_voice->floating)
-		s->sflags |= S_FLOATING;
-	if (s->prev) {
-		s->fn = s->prev->fn;
-		s->linenum = s->prev->linenum;
-		s->colnum = s->prev->colnum;
-	}
-	return s;
-}
-
-/* -- link a ABC symbol into the current voice -- */
-static void sym_link(struct SYMBOL *s, int type)
-{
-	struct VOICE_S *p_voice = curvoice;
-
-	if (!p_voice->ignore) {
-		s->prev = p_voice->last_sym;
-		if (s->prev)
-			p_voice->last_sym->next = s;
-		else
-			p_voice->sym = s;
-		p_voice->last_sym = s;
-//fixme:test bug
-//	} else {
-//		if (p_voice->sym)
-//			p_voice->last_sym = p_voice->sym = s;
-	}
-
-	s->type = type;
-	s->voice = p_voice - voice_tb;
-	s->staff = p_voice->cstaff;
-	s->time = p_voice->time;
-	s->posit = p_voice->posit;
 }

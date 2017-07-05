@@ -3824,7 +3824,7 @@ static float draw_lyrics(struct VOICE_S *p_voice,
 			a2b("/y{%.1f yns%d}! ", y, p_voice->staff);
 			draw_lyric_line(p_voice, j);
 		}
-		return y / sc;
+		return (y - h[j - 1] / 6) / sc;
 	}
 
 	/* above the staff */
@@ -4452,14 +4452,15 @@ static float set_staff(void)
 }
 
 /* -- set the bottom and height of the measure bars -- */
-static void bar_set(float *bar_bot, float *bar_height)
+static void bar_set(float *bar_bot, float *bar_height, float *xstaff)
 {
 	int staff;
 	float dy, staffscale, top, bot;
 
 	dy = 0;
-	for (staff = 0; staff <= nstaff; staff++) {
-		if (cursys->staff[staff].empty) {
+	for (staff = 0; staff <= cursys->nstaff; staff++) {
+//		if (cursys->staff[staff].empty) {
+		if (xstaff[staff] < 0) {
 			bar_bot[staff] = bar_height[staff] = 0;
 			continue;
 		}
@@ -4468,10 +4469,8 @@ static void bar_set(float *bar_bot, float *bar_height)
 		bot = staff_tb[staff].botbar * staffscale;
 		if (dy == 0)
 			dy = staff_tb[staff].y + top;
-		bar_height[staff] = dy
-				- staff_tb[staff].y - bot;
-
 		bar_bot[staff] = staff_tb[staff].y + bot;
+		bar_height[staff] = dy - bar_bot[staff];
 
 		if (cursys->staff[staff].flags & STOP_BAR)
 			dy = 0;
@@ -4483,12 +4482,10 @@ static void bar_set(float *bar_bot, float *bar_height)
 /* -- draw the staff systems and the measure bars -- */
 float draw_systems(float indent)
 {
-	struct SYSTEM *next_sy;
 	struct SYMBOL *s, *s2;
-	int staff;
+	int staff, staves_bar, bar_force;
 	float xstaff[MAXSTAFF], bar_bot[MAXSTAFF], bar_height[MAXSTAFF];
-	float x, x2;
-	float line_height;
+	float x, x2, line_height;
 
 	line_height = set_staff();
 	draw_vname(indent);
@@ -4496,48 +4493,63 @@ float draw_systems(float indent)
 	/* draw the staff, skipping the staff breaks */
 	for (staff = 0; staff <= nstaff; staff++)
 		xstaff[staff] = cursys->staff[staff].empty ? -1 : 0;
-	bar_set(bar_bot, bar_height);
+	bar_set(bar_bot, bar_height, xstaff);
 	draw_lstaff(0);
+	bar_force = 0;
 	for (s = tsfirst; s; s = s->ts_next) {
-		if (s->sflags & S_NEW_SY) {
-			next_sy = cursys->next;
+		if (bar_force && (s->sflags & S_SEQST)) {
+			bar_force = 0;
 			for (staff = 0; staff <= nstaff; staff++) {
-//				if (next_sy->staff[staff].empty
-//						== cursys->staff[staff].empty
-//				 && next_sy->staff[staff].stafflines
-//						== cursys->staff[staff].stafflines)
-//					continue;
+				if (cursys->staff[staff].empty)
+					xstaff[staff] = -1;
+			}
+			bar_set(bar_bot, bar_height, xstaff);
+		}
+		if (s->sflags & S_NEW_SY) {
+			staves_bar = 0;
+			for (s2 = s->ts_next;
+			     s2 && !(s2->sflags & S_SEQST);
+			     s2 = s2->ts_next) {
+				if (s2->type == BAR) {
+					staves_bar = 1;
+					break;
+				}
+			}
+			cursys = cursys->next;
+			for (staff = 0; staff <= nstaff; staff++) {
 				x = xstaff[staff];
 				if (x < 0) {			// no staff yet
-					if (!next_sy->staff[staff].empty) {
-						if (s->type == BAR)
+					if (!cursys->staff[staff].empty) {
+//						if (s->type == BAR)
+						if (staves_bar)
 							xstaff[staff] = s->x;
 						else
 							xstaff[staff] = s->x - s->wl - 2;
 					}
 					continue;
 				}
-				if (s->ts_prev->type == BAR)
-					x2 = s->ts_prev->x;
-				else
-					x2 = s->x - s->wl - 2;
-				if (next_sy->staff[staff].empty)	// staff stop
-					xstaff[staff] = -1;
-				else if (next_sy->staff[staff].stafflines
-						== cursys->staff[staff].stafflines)
+				if (!cursys->staff[staff].empty) // if not staff stop
 					continue;
-				else
-					xstaff[staff] = x2;
+				if (staves_bar) {
+					x2 = s->x;
+					bar_force = 1;
+				} else {
+					if (s->ts_prev->type == BAR)
+						x2 = s->ts_prev->x;
+					else
+						x2 = s->x - s->wl - 2;
+					xstaff[staff] = -1;
+				}
 				draw_staff(staff, x, x2);
 			}
-			cursys = next_sy;
-			bar_set(bar_bot, bar_height);
+			bar_set(bar_bot, bar_height, xstaff);
 		}
 		staff = s->staff;
 		switch (s->type) {
 		case BAR:
 			if ((s->sflags & S_SECOND)
-			 || cursys->staff[staff].empty)
+//			 || cursys->staff[staff].empty)
+			 || xstaff[staff] < 0)
 				s->flags |= ABC_F_INVIS;
 			if (s->flags & ABC_F_INVIS)
 				break;

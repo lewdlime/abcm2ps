@@ -1132,6 +1132,8 @@ void deco_cnv(struct decos *dc,
 					 || dd->name[2] == 'b')
 						curvoice->ottava = 0;
 				}
+				if (voice_tb[s->voice].second)
+					break;
 			}
 			continue;
 		case 32:		/* invisible */

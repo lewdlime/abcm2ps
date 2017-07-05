@@ -1,3 +1,12 @@
+---- Version 8.13.12 - 2017-07-03 ----
+
+Fix bad height of SVG images when lyrics under the staff
+	(reported by Manavasu)
+Don't display ottava decorations on secondary voices
+	(reported by Willem Vree)
+Fix loss of measure bar when followed by %%score and voice absent
+	(reported by Simon Wascher)
+
 ---- Version 8.13.11 - 2017-06-15 ----
 
 Fix crash when twice a same voice in %%score inside tune

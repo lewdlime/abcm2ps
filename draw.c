@@ -2545,7 +2545,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 
 	next = s;
 	if ((t->aux & 0xf000) == 0x1000)	/* if 'when' == never */
-		return next;
+		goto done;
 
 	/* treat the nested tuplets starting on this symbol */
 	for (g = t->next; g; g = g->next) {
@@ -2596,7 +2596,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			break;
 	}
 	if (!s2)
-		return next;			/* no solution... */
+		goto done;			/* no solution... */
 	if (s2->time > next->time)
 		next = s2;
 
@@ -2660,7 +2660,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		float a, b;
 
 		if ((t->aux & 0x00f0) == 0x0010) /* if 'which' == none */
-			return next;
+			goto done;
 		xm = (s2->x + s1->x) * .5;
 		if (s1 == s2)			/* tuplet with 1 note */
 			a = 0;
@@ -2707,8 +2707,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 				sy->ymn = (short) ym;
 			y_set(s1->staff, 0, xm - 3, 6, ym);
 		}
-		s->sflags &= ~S_IN_TUPLET;		/* the tuplet is drawn */
-		return next;
+		goto done;
 	}
 
 	/* draw the slurs when inside the tuplet */
@@ -2942,9 +2941,8 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
     } /* lower voice */
 
 	if ((t->aux & 0x00f0) == 0x10) {	/* if 'which' == none */
-		s->sflags &= ~S_IN_TUPLET;
 		a2b("\n");
-		return next;
+		goto done;
 	}
 	yy = .5 * (y1 + y2);
 	if ((t->aux & 0x00f0) == 0)		/* if 'which' == number */
@@ -2953,6 +2951,8 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		a2b("(%d:%d)", t->u.tuplet.p_plet, t->u.tuplet.q_plet);
 	putxy(xm, yy);
 	a2b("y%d bnumb\n", upstaff);
+
+done:
 	s->sflags &= ~S_IN_TUPLET;
 	return next;
 }

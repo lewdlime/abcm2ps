@@ -1089,7 +1089,7 @@ static void gen_ly(int eob)
  */
 static int acc_same_pitch(int pitch)
 {
-	struct SYMBOL *s = curvoice->last_sym;
+	struct SYMBOL *s = curvoice->last_sym->prev;
 	int i, time;
 
 	// the overlaid voices may have no measure bars

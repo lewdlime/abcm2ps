@@ -4483,9 +4483,9 @@ static void bar_set(float *bar_bot, float *bar_height, float *xstaff)
 float draw_systems(float indent)
 {
 	struct SYMBOL *s, *s2;
-	int staff, staves_bar, bar_force;
+	int staff, bar_force;
 	float xstaff[MAXSTAFF], bar_bot[MAXSTAFF], bar_height[MAXSTAFF];
-	float x, x2, line_height;
+	float staves_bar, x, x2, line_height;
 
 	line_height = set_staff();
 	draw_vname(indent);
@@ -4497,7 +4497,7 @@ float draw_systems(float indent)
 	draw_lstaff(0);
 	bar_force = 0;
 	for (s = tsfirst; s; s = s->ts_next) {
-		if (bar_force && (s->sflags & S_SEQST)) {
+		if (bar_force && s->time != bar_force) {
 			bar_force = 0;
 			for (staff = 0; staff <= nstaff; staff++) {
 				if (cursys->staff[staff].empty)
@@ -4508,10 +4508,12 @@ float draw_systems(float indent)
 		if (s->sflags & S_NEW_SY) {
 			staves_bar = 0;
 			for (s2 = s->ts_next;
-			     s2 && !(s2->sflags & S_SEQST);
+			     s2;
 			     s2 = s2->ts_next) {
+				if (s2->time != s->time)
+					break;
 				if (s2->type == BAR) {
-					staves_bar = 1;
+					staves_bar = s2->x;
 					break;
 				}
 			}
@@ -4520,9 +4522,8 @@ float draw_systems(float indent)
 				x = xstaff[staff];
 				if (x < 0) {			// no staff yet
 					if (!cursys->staff[staff].empty) {
-//						if (s->type == BAR)
-						if (staves_bar)
-							xstaff[staff] = s->x;
+						if (staves_bar != 0)
+							xstaff[staff] = staves_bar;
 						else
 							xstaff[staff] = s->x - s->wl - 2;
 					}
@@ -4530,14 +4531,11 @@ float draw_systems(float indent)
 				}
 				if (!cursys->staff[staff].empty) // if not staff stop
 					continue;
-				if (staves_bar) {
-					x2 = s->x;
-					bar_force = 1;
+				if (staves_bar != 0) {
+					x2 = staves_bar;
+					bar_force = s->time;
 				} else {
-					if (s->ts_prev->type == BAR)
-						x2 = s->ts_prev->x;
-					else
-						x2 = s->x - s->wl - 2;
+					x2 = s->x - s->wl - 2;
 					xstaff[staff] = -1;
 				}
 				draw_staff(staff, x, x2);
@@ -4600,9 +4598,12 @@ float draw_systems(float indent)
 			break;
 		}
 	}
+
+	// draw the end of the staves
 	for (staff = 0; staff <= nstaff; staff++) {
+		if (bar_force && cursys->staff[staff].empty)
+			continue;
 		if ((x = xstaff[staff]) < 0)
-//		 || x >= realwidth - 8)
 			continue;
 		draw_staff(staff, x, realwidth);
 	}

@@ -2,6 +2,10 @@ language: c
 sudo: false
 addons:
   apt:
+    sources:
+      - extras-precise
+      - lucid
+      - partner-precise
     packages:
       - pkg-config
       - libpango-1.0-0

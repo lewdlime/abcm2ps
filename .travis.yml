@@ -6,7 +6,7 @@ os:
 addons:
   apt:
     packages:
-    - pkg-config pangocairo libpango-* libpango-*-dev libcairo2-* libpangocairo-* libfreetype6-* libpangoft2-* mingw-w64*
+    - pkg-config pangocairo libpango-1.0-0 libcairo2 libcairo2-dev libpangocairo-1.0-0 libfreetype6 libfreetype6-dev libpangoft2-1.0-0
 osx_image: xcode8.3
 branches:
   only:

@@ -1,20 +1,20 @@
 language: c
 sudo: false
-addons:
-  apt:
-    sources:
-      - extras-precise
-      - lucid
-      - partner-precise
-    packages:
-      - pkg-config
-      - libpango-1.0-0
-      - libcairo2
-      - libcairo2-dev
-      - libpangocairo-1.0-0
-      - libfreetype6
-      - libfreetype6-dev
-      - libpangoft2-1.0-0
+# addons:
+#   apt:
+#     sources:
+#       - extras-precise
+#       - lucid
+#       - partner-precise
+#     packages:
+#       - pkg-config
+#       - libpango-1.0-0
+#       - libcairo2
+#       - libcairo2-dev
+#       - libpangocairo-1.0-0
+#       - libfreetype6
+#       - libfreetype6-dev
+#       - libpangoft2-1.0-0
 branches:
   only:
   - master

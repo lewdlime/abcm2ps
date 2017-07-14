@@ -1,9 +1,10 @@
 # gitignore
+# important!
+!.gitignore
+!.travis.yml
 .*
 *.o
 *.gz
 *~
 Out*
 abcm2ps
-# important!
-!.gitignore

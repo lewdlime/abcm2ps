@@ -8,18 +8,19 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 
 CPPFLAGS = -DHAVE_PANGO=1 -I.
-CPPPANGO = -I/usr/include/pango-1.0 -pthread -I/usr/include/cairo -I/usr/include/glib-2.0 -I/usr/lib/arm-linux-gnueabihf/glib-2.0/include -I/usr/include/pixman-1  -I/usr/include/libpng12 -I/usr/include/freetype2  
+CPPPANGO = -I/usr/local/include/pango-1.0 -I/usr/local/Cellar/cairo/1.14.10/include/cairo -I/usr/local/Cellar/glib/2.52.3/include/glib-2.0 -I/usr/local/Cellar/glib/2.52.3/lib/glib-2.0/include -I/usr/local/opt/gettext/include -I/usr/local/Cellar/pcre/8.41/include -I/usr/local/Cellar/pixman/0.34.0_1/include/pixman-1 -I/usr/local/Cellar/fontconfig/2.12.4/include -I/usr/local/opt/freetype/include/freetype2 -I/usr/local/Cellar/libpng/1.6.30/include/libpng16 -I/usr/local/opt/freetype/include/freetype2
 CFLAGS = -g -O2 -Wall -pipe
-LDFLAGS =  -lpangocairo-1.0 -lcairo -lpangoft2-1.0 -lpango-1.0 -lgobject-2.0 -lglib-2.0 -lfontconfig -lfreetype   -lm
+LDFLAGS =  -L/usr/local/lib -L/usr/local/Cellar/cairo/1.14.10/lib -L/usr/local/lib -L/usr/local/Cellar/glib/2.52.3/lib -L/usr/local/opt/gettext/lib -L/usr/local/Cellar/fontconfig/2.12.4/lib -L/usr/local/opt/freetype/lib -lpangocairo-1.0 -lcairo -lpangoft2-1.0 -lpango-1.0 -lgobject-2.0 -lglib-2.0 -lintl -Wl,-framework -Wl,CoreFoundation -lfontconfig -lfreetype -lm
 
 prefix = /usr/local
 exec_prefix = ${prefix}
 
 srcdir = .
 VPATH = .
-bindir = ${exec_prefix}/bin
-datadir = ${prefix}/share
-docdir = ${prefix}/doc
+
+bindir = $(DESTDIR)${exec_prefix}/bin
+datadir = $(DESTDIR)${prefix}/share
+docdir = $(DESTDIR)${prefix}/doc
 
 # unix
 OBJECTS=abcm2ps.o \
@@ -34,13 +35,13 @@ abcparse.o abcm2ps.o buffer.o deco.o draw.o format.o front.o glyph.o \
 subs.o: subs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPPANGO) -c -o $@ $<
 
-DOCFILES=$(addprefix $(srcdir)/,Changes README *.abc *.eps *.txt)
+DOCFILES=$(addprefix $(srcdir)/,Changes README.md *.abc *.eps *.txt)
 
 install: abcm2ps
 	mkdir -p $(bindir); \
 	mkdir -p $(datadir)/abcm2ps; \
 	mkdir -p $(docdir)/abcm2ps; \
-	$(INSTALL_PROGRAM) abcm2ps $(bindir);\
+	$(INSTALL_PROGRAM) abcm2ps $(bindir); \
 	$(INSTALL_DATA) abc2svg.ttf $(datadir)/abcm2ps
 	for f in $(srcdir)/*.fmt; do \
 		$(INSTALL_DATA) $$f $(datadir)/abcm2ps; \
@@ -60,7 +61,7 @@ DIST_FILES = \
 	abcm2ps-$(VERSION)/INSTALL \
 	abcm2ps-$(VERSION)/Makefile \
 	abcm2ps-$(VERSION)/Makefile.in \
-	abcm2ps-$(VERSION)/README \
+	abcm2ps-$(VERSION)/README.md \
 	abcm2ps-$(VERSION)/abc2svg.ttf \
 	abcm2ps-$(VERSION)/abcm2ps.c \
 	abcm2ps-$(VERSION)/abcm2ps.h \

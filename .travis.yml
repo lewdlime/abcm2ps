@@ -1,37 +1,35 @@
 language: c
-sudo: false
-os:
-- linux
-- osx
-addons:
-  apt:
-    packages:
-    - pkg-config pangocairo libpango-1.0-0 libcairo2 libcairo2-dev libpangocairo-1.0-0 libfreetype6 libfreetype6-dev libpangoft2-1.0-0
-osx_image: xcode8.3
+sudo: required
 branches:
   only:
   - master
-  - "/^abcm2ps-\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
+  - /^abcm2ps-\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/
 notifications:
   slack:
     secure: RCTAGKXARo6MkEXigVVZp4Oc6B0AejbTYZp4YJ155DBp8Ygt42WuLlCxJZ60Ruzyjh5ymAOV1rsAKXPS+UJMWO7+pLJuqZEeWK08hGSL/DpIfa3IMYYSQYHCYDTpKiyqBC0ytEpd077Pv3b3ZVvZO2Tjo3F9806M5fTCFuwWgTxxt45302LiHCSOk4q/d8MT1cSK6k6ZvRarK0LG9cnudqcV6+Y8yDlJUz+ixxmSAg3j0jXwXisdyOFmI9hRc0DtNhkJHMORBigm0Cis5ipWRV9XH13MXgT3Vd61jG816mLUipht88PVcGzSfLUPcXlT0vMADy47WmVnUNqNosNyYXO9YHmNNj7wVIR79U7wrPXL6g3zXYBzs6JQwECPl1eGfnhZeOQ3drY+Pc+Sz+W8XT7q1SefzLhIws6vMM3i9UGQhOb74mMH5mrHaQTPaz6P4pOUQ9QaUOwK0ud6z6rC5uLD5GkQmdTuLpTiC2vvER46DxgzHghdqgeJXSwCkQEgBjTrs+ffc4kfeakFFW73B7x1sCz9katxHpzlajb03YYnPDhpODMazUx1AKmDHSJhsKv8mRm5L/7z24GIFs7m0xDmS4YMo1AqeLpAGu0zdhVE+0jN2s9QDo8pHrmikCdkhbaUKwXHZZY4d0ykK2rovROfBiZOld1TqbbaPOOBEck=
 before_install:
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -qq pkg-config pangocairo libpango-1.0-0 libcairo2 libcairo2-dev libpangocairo-1.0-0 libfreetype6 libfreetype6-dev libpangoft2-1.0-0; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then if brew ls --versions pango > /dev/null;
-  then brew install pkg-config freetype pango cairo; else brew upgrade; fi; fi
-install: "./configure && make clean && make && make test"
+- sudo apt-get update -qq
+- sudo apt-get install -qq pkg-config pangocairo libpango-1.0-0 libcairo2 libcairo2-dev libpangocairo-1.0-0 libfreetype6 libfreetype6-dev libpangoft2-1.0-0
+install: ./configure && make clean && make && make test
 before_deploy: make dist && make zip-dist
 deploy:
   - provider: releases
     api-key:
       secure: hVfF6MJJuqH9TkOqqyLdPtfERv9YyozoLHX3YaQbUuLcsvAVF2GBZvDAFIyInV4VWqbtVu7faOpZyrOvd3TMHJMNzWGwBjWxAUJmM2gVugjpxAv6G+11ReeF8okqOIQGWdigZ9lb29utwrGb3R1hC2I6qcdlziw2JXMdl2GTBr6/zn0cFnAtfJqzT3REgog2g9HBorzNC+DqQXWI5skz6N4tWEvUfEwKERJkjyz3Lqen86MGHv+wEpqqCSmVbsSpiIkSwvbSm1PIsHhMg2zMbuJoqNsvlhz6Muyk6B5vRxXkJMstS5hAuIYAdWwu+3r42ZxK+TB3QWOO5fWRRBS7r2buvI63b+TvUDgCvHIr4cA1qMvyOCd5Xbv5HdRiZRqiJrUubfm6L1gXZ2Wo7KZVN7NVI9YJRqY9yZi59BZOXI6eDzb5AsjmpqSWBwXKhLUhCNwdqL52DPfL9pOjk9HY1i27BpoyL3X3NI0OJ+fUf6Q/utlv/wTiSbwHjiN+7dpnIlbAe09JQRXi7ApqtO0gV5tCBucBSydv6aAO3h5T0dRWFIB90bo6f1t0qeBO/YicP3qrM2OryhJNlZwFoJYPy2XDAzQ8Q5ubCKCp+C7U97vJwqGiXprKKDz9rGVuPWeIV/tLkcVn2TQt8hNyOqkcn4nv8x0j+ukw1p/Svtb3z54=
-    name: "$TRAVIS_TAG"
-    body: "$TRAVIS_COMMIT_MESSAGE build $TRAVIS_BUILD_NUMBER"
+    name: $TRAVIS_TAG
+    body: $TRAVIS_COMMIT_MESSAGE build $TRAVIS_BUILD_NUMBER
     file_glob: true
-    file:
-    - "abcm2ps-*.tar.gz"
-    - "abcm2ps-*.zip"
+    file: abcm2ps-*.tar.gz
+    skip_cleanup: true
+    on:
+      branch: release
+  - provider: releases
+    api-key:
+      secure: hVfF6MJJuqH9TkOqqyLdPtfERv9YyozoLHX3YaQbUuLcsvAVF2GBZvDAFIyInV4VWqbtVu7faOpZyrOvd3TMHJMNzWGwBjWxAUJmM2gVugjpxAv6G+11ReeF8okqOIQGWdigZ9lb29utwrGb3R1hC2I6qcdlziw2JXMdl2GTBr6/zn0cFnAtfJqzT3REgog2g9HBorzNC+DqQXWI5skz6N4tWEvUfEwKERJkjyz3Lqen86MGHv+wEpqqCSmVbsSpiIkSwvbSm1PIsHhMg2zMbuJoqNsvlhz6Muyk6B5vRxXkJMstS5hAuIYAdWwu+3r42ZxK+TB3QWOO5fWRRBS7r2buvI63b+TvUDgCvHIr4cA1qMvyOCd5Xbv5HdRiZRqiJrUubfm6L1gXZ2Wo7KZVN7NVI9YJRqY9yZi59BZOXI6eDzb5AsjmpqSWBwXKhLUhCNwdqL52DPfL9pOjk9HY1i27BpoyL3X3NI0OJ+fUf6Q/utlv/wTiSbwHjiN+7dpnIlbAe09JQRXi7ApqtO0gV5tCBucBSydv6aAO3h5T0dRWFIB90bo6f1t0qeBO/YicP3qrM2OryhJNlZwFoJYPy2XDAzQ8Q5ubCKCp+C7U97vJwqGiXprKKDz9rGVuPWeIV/tLkcVn2TQt8hNyOqkcn4nv8x0j+ukw1p/Svtb3z54=
+    name: $TRAVIS_TAG
+    body: $TRAVIS_COMMIT_MESSAGE build $TRAVIS_BUILD_NUMBER
+    file_glob: true
+    file: abcm2ps-*.zip
     skip_cleanup: true
     on:
       branch: release

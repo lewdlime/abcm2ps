@@ -4507,9 +4507,7 @@ float draw_systems(float indent)
 		}
 		if (s->sflags & S_NEW_SY) {
 			staves_bar = 0;
-			for (s2 = s->ts_next;
-			     s2;
-			     s2 = s2->ts_next) {
+			for (s2 = s; s2; s2 = s2->ts_next) {
 				if (s2->time != s->time)
 					break;
 				if (s2->type == BAR) {

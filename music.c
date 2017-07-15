@@ -1878,9 +1878,9 @@ static void custos_add(struct SYMBOL *s)
 /* -- define the beginning of a new music line -- */
 static struct SYMBOL *set_nl(struct SYMBOL *s)
 {
-	struct SYMBOL *s2, *extra;
+	struct SYMBOL *s2, *extra, *new_sy;
 	struct VOICE_S *p_voice;
-	int done, new_sy;
+	int done;
 
 	/* if explicit EOLN, cut on the next symbol */
 	if ((s->sflags & S_EOLN) && !cfmt.keywarn && !cfmt.timewarn) {
@@ -1934,15 +1934,13 @@ normal:
 		}
 		break;
 	}
-	done = new_sy = 0;
-	extra = NULL;
+	done = 0;
+	new_sy = extra = NULL;
 	for ( ; ; s = s->ts_next) {
 		if (!s)
 			return s;
-		if (s->sflags & S_NEW_SY) {
-			new_sy = 1;
-			s->sflags &= ~S_NEW_SY;
-		}
+		if (s->sflags & S_NEW_SY)
+			new_sy = s;
 		if (!(s->sflags & S_SEQST))
 			continue;
 		if (done < 0)
@@ -1995,13 +1993,8 @@ cut_here:
 		s->extra = extra->extra;
 		extra->extra = NULL;
 	}
-	if (new_sy) {
-//		for (s2 = s->ts_next; /*s*/; s2 = s2->ts_next) {
-//			if (s2->sflags & S_SEQST) {
-//				s2->sflags |= S_NEW_SY;
-//				break;
-//			}
-//		}
+	if (new_sy && s != new_sy) {
+		new_sy->sflags &= ~S_NEW_SY;
 		s->sflags |= S_NEW_SY;
 	}
 setnl:

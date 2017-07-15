@@ -234,7 +234,6 @@ static void sort_all(void)
 		    fl = 1;			// start a new sequence
 		    if (!new_sy) {
 			set_sy = 0;
-			fl = 1;			// start a new sequence
 			multi = -1;
 			memset(vn, -1, sizeof vn);
 			for (p_voice = first_voice;

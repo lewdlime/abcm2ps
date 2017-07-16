@@ -192,7 +192,9 @@ static int calculate_beam(struct BEAM *bm,
 			if (s2->stem != s1->stem)
 				two_dir = 1;
 			if (!visible
-			 && !(s2->flags & (ABC_F_INVIS | ABC_F_STEMLESS)))
+			 && !(s2->flags & ABC_F_INVIS)
+			 && (!(s2->flags & ABC_F_STEMLESS)
+			  || (s2->sflags & S_TREM2)))
 				visible = 1;
 			if (s2->sflags & S_BEAM_END)
 				break;

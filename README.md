@@ -1,5 +1,7 @@
 # abcm2ps
 
+[![Build Status](https://travis-ci.org/leesavide/abcm2ps.svg?branch=master)](https://travis-ci.org/leesavide/abcm2ps)
+
 ### Overview
 
 abcm2ps is a program which converts music tunes from the ABC music

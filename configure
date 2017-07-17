@@ -12,8 +12,14 @@ if test -f ./custom; then
 	. ./custom
 fi
 
-VERSION=8.13.12
-VDATE='July 3, 2017'
+if [ -x /usr/bin/git -a -d .git ]; then
+	VERSION=`git describe`
+	VERSION=$${VERSION#abcm2ps-}
+	VDATE=`git log -1 --pretty=format:%ci HEAD | cut -d' ' -f1`
+else
+	VERSION=local
+	VDATE=`stat --printf=%y configure | cut -d' ' -f1`
+fi
 
 for c in $@; do
  case "$c" in

@@ -127,16 +127,9 @@ static void set_head_shift(struct SYMBOL *s)
 	/* set the heads of the notes with mapping */
 	dx_head = set_heads(s) + 2;
 
-	/* special case when single note */
 	n = s->nhd;
-	if (n == 0) {
-		if (s->u.note.notes[0].acc != 0) {
-			if (s->flags & ABC_F_GRACE)
-				dx_head *= 0.7;
-			s->u.note.notes[0].shac = dx_head;
-		}
-		return;
-	}
+	if (n == 0)
+		return;			// single note
 
 	/* set the head shifts */
 	dx = dx_head * 0.78;
@@ -267,7 +260,7 @@ static void set_acc_shft(void)
 	struct SYMBOL *s, *s2;
 	int i, staff, t, acc, n, nx;
 	float dx_head;
-	struct note *notes[MAXHD * 4];	// (4 voices per staff)
+	struct note *notes[MAXHD * 4];	// (max = 4 voices per staff)
 	struct note *nt;
 
 	s = tsfirst;
@@ -755,7 +748,8 @@ static float set_graceoffs(struct SYMBOL *s)
 {
 	struct SYMBOL *g, *next;
 	int m;
-	float xx, gspleft, gspinside, gspright;
+	float xx, dx, gspleft, gspinside, gspright;
+	struct note *notes[MAXHD];
 
 	gspleft = (cfmt.gracespace >> 16) * 0.1;
 	gspinside = ((cfmt.gracespace >> 8) & 0xff) * 0.1;
@@ -773,14 +767,15 @@ static float set_graceoffs(struct SYMBOL *s)
 			continue;
 		}
 		set_head_shift(g);
+		for (m = 0; m <= g->nhd; m++)
+			notes[m] = &g->u.note.notes[m];
+		acc_shift(notes, g->nhd + 1, 7);
+		dx = 0;
 		for (m = g->nhd; m >= 0; m--) {
-			if (g->u.note.notes[m].acc) {
-				xx += 5;
-				if (g->u.note.notes[m].acc & 0xf8)
-					xx += 2;
-				break;
-			}
+			if (g->u.note.notes[m].shac > dx)
+				dx = g->u.note.notes[m].shac;
 		}
+		xx += dx;
 		g->x = xx;
 
 		if (g->nflags <= 0)
@@ -1878,9 +1873,9 @@ static void custos_add(struct SYMBOL *s)
 /* -- define the beginning of a new music line -- */
 static struct SYMBOL *set_nl(struct SYMBOL *s)
 {
-	struct SYMBOL *s2, *extra;
+	struct SYMBOL *s2, *extra, *new_sy;
 	struct VOICE_S *p_voice;
-	int done, new_sy;
+	int done;
 
 	/* if explicit EOLN, cut on the next symbol */
 	if ((s->sflags & S_EOLN) && !cfmt.keywarn && !cfmt.timewarn) {
@@ -1934,15 +1929,13 @@ normal:
 		}
 		break;
 	}
-	done = new_sy = 0;
-	extra = NULL;
+	done = 0;
+	new_sy = extra = NULL;
 	for ( ; ; s = s->ts_next) {
 		if (!s)
 			return s;
-		if (s->sflags & S_NEW_SY) {
-			new_sy = 1;
-			s->sflags &= ~S_NEW_SY;
-		}
+		if (s->sflags & S_NEW_SY)
+			new_sy = s;
 		if (!(s->sflags & S_SEQST))
 			continue;
 		if (done < 0)
@@ -1995,13 +1988,8 @@ cut_here:
 		s->extra = extra->extra;
 		extra->extra = NULL;
 	}
-	if (new_sy) {
-//		for (s2 = s->ts_next; /*s*/; s2 = s2->ts_next) {
-//			if (s2->sflags & S_SEQST) {
-//				s2->sflags |= S_NEW_SY;
-//				break;
-//			}
-//		}
+	if (new_sy && s != new_sy) {
+		new_sy->sflags &= ~S_NEW_SY;
 		s->sflags |= S_NEW_SY;
 	}
 setnl:

@@ -192,7 +192,9 @@ static int calculate_beam(struct BEAM *bm,
 			if (s2->stem != s1->stem)
 				two_dir = 1;
 			if (!visible
-			 && !(s2->flags & (ABC_F_INVIS | ABC_F_STEMLESS)))
+			 && !(s2->flags & ABC_F_INVIS)
+			 && (!(s2->flags & ABC_F_STEMLESS)
+			  || (s2->sflags & S_TREM2)))
 				visible = 1;
 			if (s2->sflags & S_BEAM_END)
 				break;
@@ -4507,9 +4509,7 @@ float draw_systems(float indent)
 		}
 		if (s->sflags & S_NEW_SY) {
 			staves_bar = 0;
-			for (s2 = s->ts_next;
-			     s2;
-			     s2 = s2->ts_next) {
+			for (s2 = s; s2; s2 = s2->ts_next) {
 				if (s2->time != s->time)
 					break;
 				if (s2->type == BAR) {

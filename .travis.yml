@@ -1,6 +1,20 @@
 language: c
-dist: trusty
-sudo: required
+sudo: false
+# addons:
+#   apt:
+#     sources:
+#       - extras-precise
+#       - lucid
+#       - partner-precise
+#     packages:
+#       - pkg-config
+#       - libpango-1.0-0
+#       - libcairo2
+#       - libcairo2-dev
+#       - libpangocairo-1.0-0
+#       - libfreetype6
+#       - libfreetype6-dev
+#       - libpangoft2-1.0-0
 branches:
   only:
   - master
@@ -8,9 +22,6 @@ branches:
 notifications:
   slack:
     secure: RCTAGKXARo6MkEXigVVZp4Oc6B0AejbTYZp4YJ155DBp8Ygt42WuLlCxJZ60Ruzyjh5ymAOV1rsAKXPS+UJMWO7+pLJuqZEeWK08hGSL/DpIfa3IMYYSQYHCYDTpKiyqBC0ytEpd077Pv3b3ZVvZO2Tjo3F9806M5fTCFuwWgTxxt45302LiHCSOk4q/d8MT1cSK6k6ZvRarK0LG9cnudqcV6+Y8yDlJUz+ixxmSAg3j0jXwXisdyOFmI9hRc0DtNhkJHMORBigm0Cis5ipWRV9XH13MXgT3Vd61jG816mLUipht88PVcGzSfLUPcXlT0vMADy47WmVnUNqNosNyYXO9YHmNNj7wVIR79U7wrPXL6g3zXYBzs6JQwECPl1eGfnhZeOQ3drY+Pc+Sz+W8XT7q1SefzLhIws6vMM3i9UGQhOb74mMH5mrHaQTPaz6P4pOUQ9QaUOwK0ud6z6rC5uLD5GkQmdTuLpTiC2vvER46DxgzHghdqgeJXSwCkQEgBjTrs+ffc4kfeakFFW73B7x1sCz9katxHpzlajb03YYnPDhpODMazUx1AKmDHSJhsKv8mRm5L/7z24GIFs7m0xDmS4YMo1AqeLpAGu0zdhVE+0jN2s9QDo8pHrmikCdkhbaUKwXHZZY4d0ykK2rovROfBiZOld1TqbbaPOOBEck=
-before_install:
-- sudo apt-get update -qq
-- sudo apt-get install -qq pkg-config libpango-1.0-0 libcairo2 libcairo2-dev libpangocairo-1.0-0 libfreetype6 libfreetype6-dev libpangoft2-1.0-0
 install: ./configure && make clean && make && make test
 before_deploy: make dist && make zip-dist
 # deploy:

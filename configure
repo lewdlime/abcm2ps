@@ -14,7 +14,7 @@ fi
 
 if [ -x /usr/bin/git -a -d .git ]; then
 	VERSION=`git describe`
-	VERSION=$${VERSION#abcm2ps-}
+	VERSION=${VERSION#abcm2ps-}
 	VDATE=`git log -1 --pretty=format:%ci HEAD | cut -d' ' -f1`
 else
 	VERSION=local

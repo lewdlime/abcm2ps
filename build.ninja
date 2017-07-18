@@ -1,7 +1,5 @@
 # rules for ninja (ninja-build)
 
-VERSION = 8.13.12
-
 cc=musl-gcc
 #cc=gcc
 #cc=clang
@@ -34,55 +32,3 @@ build abcm2ps: ld abcm2ps.o abcparse.o buffer.o deco.o draw.o format.o front.o $
   glyph.o music.o parse.o subs.o svg.o syms.o
 
 default abcm2ps
-
-rule dist_tar
-  command = ln -s . abcm2ps-$VERSION; $
-   tar -zcvf $out $
-  abcm2ps-$VERSION/Changes $
-  abcm2ps-$VERSION/INSTALL $
-  abcm2ps-$VERSION/Makefile $
-  abcm2ps-$VERSION/Makefile.in $
-  abcm2ps-$VERSION/README $
-  abcm2ps-$VERSION/abc2svg.ttf $
-  abcm2ps-$VERSION/abcm2ps.c $
-  abcm2ps-$VERSION/abcm2ps.h $
-  abcm2ps-$VERSION/abcparse.c $
-  abcm2ps-$VERSION/accordion.abc $
-  abcm2ps-$VERSION/bravura.abc $
-  abcm2ps-$VERSION/build.ninja $
-  abcm2ps-$VERSION/buffer.c $
-  abcm2ps-$VERSION/chinese.abc $
-  abcm2ps-$VERSION/configure $
-  abcm2ps-$VERSION/config.h $
-  abcm2ps-$VERSION/config.h.in $
-  abcm2ps-$VERSION/deco.c $
-  abcm2ps-$VERSION/deco.abc $
-  abcm2ps-$VERSION/draw.c $
-  abcm2ps-$VERSION/flute.fmt $
-  abcm2ps-$VERSION/format.c $
-  abcm2ps-$VERSION/free.abc $
-  abcm2ps-$VERSION/front.c $
-  abcm2ps-$VERSION/glyph.c $
-  abcm2ps-$VERSION/glyphs.abc $
-  abcm2ps-$VERSION/landscape.fmt $
-  abcm2ps-$VERSION/music.c $
-  abcm2ps-$VERSION/musicfont.fmt $
-  abcm2ps-$VERSION/newfeatures.abc $
-  abcm2ps-$VERSION/options.txt $
-  abcm2ps-$VERSION/parse.c $
-  abcm2ps-$VERSION/sample.abc $
-  abcm2ps-$VERSION/sample2.abc $
-  abcm2ps-$VERSION/sample3.abc $
-  abcm2ps-$VERSION/sample3.eps $
-  abcm2ps-$VERSION/sample4.abc $
-  abcm2ps-$VERSION/sample5.abc $
-  abcm2ps-$VERSION/sample8.html $
-  abcm2ps-$VERSION/subs.c $
-  abcm2ps-$VERSION/svg.c $
-  abcm2ps-$VERSION/syms.c $
-  abcm2ps-$VERSION/voices.abc;$
-   rm abcm2ps-$VERSION
-
-build abcm2ps-$VERSION.tar.gz: dist_tar Changes
-
-build dist: phony abcm2ps-$VERSION.tar.gz

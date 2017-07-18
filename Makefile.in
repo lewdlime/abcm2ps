@@ -56,18 +56,6 @@ uninstall:
 	rm -rf $(datadir)/abcm2ps; \
 	rm -rf $(docdir)/abcm2ps
 
-zip: abcm2ps.exe
-	strip abcm2ps.exe; \
-	cd ..; zip -r abcm2ps-$(VERSION).zip \
-	abcm2ps-$(VERSION)/abcm2ps.exe \
-	abcm2ps-$(VERSION)/License \
-	abcm2ps-$(VERSION)/Changes \
-	abcm2ps-$(VERSION)/INSTALL \
-	abcm2ps-$(VERSION)/sample3.eps \
-	abcm2ps-$(VERSION)/*.abc \
-	abcm2ps-$(VERSION)/*.fmt \
-	abcm2ps-$(VERSION)/*.txt ; cd -
-
 EXAMPLES = accordion.ps \
 	chinese.ps \
 	deco.ps \

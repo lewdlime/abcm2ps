@@ -3269,6 +3269,7 @@ static void init_music_line(void)
 			continue;
 		if (last_s->voice == voice && last_s->type == KEYSIG) {
 			p_voice->last_sym = last_s;
+			last_s->aux = last_s->u.key.sf;	// no key cancel
 			last_s = last_s->ts_next;
 			continue;
 		}

@@ -18,7 +18,7 @@ if [ -x /usr/bin/git -a -d .git ]; then
 	VDATE=`git log -1 --pretty=format:%ci HEAD | cut -d' ' -f1`
 else
 	VERSION=local
-	VDATE=`stat --printf=%y configure | cut -d' ' -f1`
+	VDATE=`(GetFileInfo -m configure || stat -c %y configure) | cut -d' ' -f1`
 fi
 
 for c in $@; do

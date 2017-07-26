@@ -35,7 +35,7 @@ abcparse.o abcm2ps.o buffer.o deco.o draw.o format.o front.o glyph.o \
 subs.o: subs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPPANGO) -c -o $@ $<
 
-DOCFILES=$(addprefix $(srcdir)/,Changes README *.abc *.eps *.txt)
+DOCFILES=$(addprefix $(srcdir)/,*.abc *.eps *.txt)
 
 install: abcm2ps
 	mkdir -p $(bindir); \

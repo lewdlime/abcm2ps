@@ -46,5 +46,5 @@ know the list of the command line options).
 To know more about the ABC music notation, have a look at:
     http://abcnotation.com/
 
-Guido Gonzatto maintains many abcm2ps binaries and more documentation at:
+Guido Gonzato maintains many abcm2ps binaries and more documentation at:
     http://abcplus.sourceforge.net/

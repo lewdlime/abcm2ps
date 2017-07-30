@@ -98,7 +98,7 @@ enum accidentals {
 #define BEAM_FLATFAC	0.6	/* factor to decrease slope of long beams */
 #define BEAM_THRESH	0.06	/* flat beam if slope below this threshold */
 #define BEAM_SLOPE	0.5	/* max slope of a beam */
-#define BEAM_STUB	8.0	/* length of stub for flag under beam */ 
+#define BEAM_STUB	7.0	/* length of stub for flag under beam */ 
 #define SLUR_SLOPE	1.0	/* max slope of a slur */
 #define GSTEM		15	/* grace note stem length */
 #define GSTEM_XOFF	2.3	/* x offset for grace note stem */

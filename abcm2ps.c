@@ -221,7 +221,8 @@ static void treat_file(char *fn, char *ext)
 	}
 	abc_fn = strdup(tex_buf);
 	if (!quiet)
-		fprintf(stderr, "File %s\n", abc_fn);
+		fprintf(strcmp(outfn, "-") == 0 ? stderr : stdout,
+			"File %s\n", abc_fn);
 
 	/* convert the strings */
 	l = strlen(abc_fn);
@@ -419,7 +420,9 @@ void strext(char *fn, char *ext)
 /* -- write the program version -- */
 static void display_version(int full)
 {
-	fputs("abcm2ps-" VERSION " (" VDATE ")\n", stderr);
+	FILE *log = strcmp(outfn, "-") == 0 ? stderr : stdout;
+
+	fputs("abcm2ps-" VERSION " (" VDATE ")\n", log);
 	if (!full)
 		return;
 	fputs("Compiled: " __DATE__ "\n"
@@ -436,9 +439,9 @@ static void display_version(int full)
 #if !defined(A4_FORMAT) && !defined(DECO_IS_ROLL) && !defined(HAVE_PANGO)
 		" NONE"
 #endif
-		"\n", stderr);
+		"\n", log);
 	if (styd[0] != '\0')
-		fprintf(stderr, "Default format directory: %s\n", styd);
+		fprintf(log, "Default format directory: %s\n", styd);
 }
 
 /* -- display usage and exit -- */
@@ -606,6 +609,9 @@ int main(int argc, char **argv)
 			case 'g':
 				svg = 0;	/* SVG one file per tune */
 				epsf = 2;
+				break;
+			case 'H':
+				quiet = 1;	// don't output the version
 				break;
 			case 'h':
 				usage();	/* no return */

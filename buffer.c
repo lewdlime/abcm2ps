@@ -246,11 +246,10 @@ static void close_fout(void)
 		goto out1;
 	m = ftell(fout);
 	if (epsf || svg == 1)
-		fprintf(stderr, "Output written on %s (%ld bytes)\n",
+		printf("Output written on %s (%ld bytes)\n",
 			outfnam, m);
 	else
-		fprintf(stderr,
-			"Output written on %s (%d page%s, %d title%s, %ld bytes)\n",
+		printf("Output written on %s (%d page%s, %d title%s, %ld bytes)\n",
 			outfnam,
 			nbpages, nbpages == 1 ? "" : "s",
 			tunenum, tunenum == 1 ? "" : "s",

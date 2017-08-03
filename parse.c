@@ -555,27 +555,10 @@ static void voice_compress(void)
 			s->extra = ns;
 			s->prev->next = NULL;
 			s->prev = ns->prev;
-			if (s->prev) {
-
-				// change ':|' + '|:' into '::'
-				if (s->type == BAR
-				 && s->u.bar.type == B_LREP
-				 && s->prev->type == BAR
-				 && s->prev->u.bar.type == B_RREP) {
-					s->u.bar.type = B_DREP;
-					s->sflags |= S_RRBAR |
-						(s->prev->sflags & S_EOLN);
-					s->prev = s->prev->prev;
-					if (s->prev)
-						s->prev->next = s;
-					else
-						p_voice->sym = s;
-				} else {
-					s->prev->next = s;
-				}
-			} else {
+			if (s->prev)
+				s->prev->next = s;
+			else
 				p_voice->sym = s;
-			}
 			ns->prev = NULL;
 			ns = NULL;
 		}

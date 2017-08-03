@@ -4453,7 +4453,7 @@ static void get_note(struct SYMBOL *s)
 static void parse_path(char *p, char *q, char *id, int idsz)
 {
 	struct SYMBOL *s;
-	char *r, *op, *width;
+	char *r, *op = NULL, *width;
 	int i, fill, npar = 0;
 
 	r = strstr(p, "class=\"");

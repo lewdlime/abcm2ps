@@ -32,3 +32,28 @@ build abcm2ps: ld abcm2ps.o abcparse.o buffer.o deco.o draw.o format.o front.o $
   glyph.o music.o parse.o subs.o svg.o syms.o
 
 default abcm2ps
+
+# GitHub releases
+rule version
+  command = tag=`grep VERSION= configure|cut -d'=' -f2`;$
+	if [ $out = minor ]; then$
+		m=$${tag#*.};$
+		m=$${m%%.*};$
+		m=$$((m + 1));$
+		newtag="$${tag%%.*}.$$m.0";$
+	else$
+		p=$${tag##*.};$
+		p=$$((p + 1));$
+		newtag="$${tag%.*}.$$p";$
+	fi;$
+	p=`grep VDATE= configure|cut -d'=' -f2`;$
+	m=`date +%F`;$
+	mv configure configure~;$
+	sed -e "s/$$tag/$$newtag/;s/$$p/$$m/" configure~ > configure;$
+	git commit configure -m "New release v$$newtag";$
+	git tag -a v$$newtag;$
+	git push;$
+	git push --tags
+build minor: version
+build patch: version
+

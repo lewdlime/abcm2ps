@@ -436,7 +436,7 @@ static struct {
 	"</g>\n", D_pmsig},
 #define D_imsig 50
 {	"<path id=\"imsig\" class=\"stroke\" stroke-width=\".8\"\n"
-	"	d=\"M0 -7a5 5 0 1 1 0 -10\"/>\n"},
+	"	d=\"M3 -8a5 5 0 1 1 0 -8\"/>\n"},
 #define D_iMsig 51
 {	"<g id=\"iMsig\">\n"
 	"	<use xlink:href=\"#imsig\"/>\n"

@@ -386,7 +386,7 @@ static char ps_head[] =
 	/* x y xxsig - old time signatures ('o', 'o.', 'c' 'c.') */
 	"/pmsig{0.3 SLW 12 add M currentpoint 5 0 360 arc stroke}!\n"
 	"/pMsig{2 copy pmsig 12 add M currentpoint 1.3 0 360 arc fill}!\n"
-	"/imsig{0.3 SLW 12 add 2 copy 5 add M 5 90 270 arc stroke}!\n"
+	"/imsig{0.3 SLW 12 add 2 copy 5 add M 5 60 300 arc stroke}!\n"
 	"/iMsig{2 copy imsig 12 add M currentpoint 1.3 0 360 arc fill}!\n"
 
 	/* (top) (bot) x y tsig - time signature */

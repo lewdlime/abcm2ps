@@ -76,8 +76,7 @@ s+@exec_prefix@+$exec_prefix+
 s+@srcdir@+$srcdir+
 s+@bindir@+$bindir+
 s+@datarootdir@+$datarootdir+
-s+@docdir@+$docdir+
-s+@VERSION@+$VERSION+" Makefile.in > Makefile
+s+@docdir@+$docdir+" Makefile.in > Makefile
 echo "Makefile created"
 
 sed "s/define VERSION xxx/\define VERSION \"$VERSION\"/

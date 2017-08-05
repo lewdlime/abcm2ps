@@ -1,7 +1,5 @@
 # Makefile source for abcm2ps
 
-VERSION = @VERSION@
-
 CC = @CC@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@

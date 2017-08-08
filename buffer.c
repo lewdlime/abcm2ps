@@ -210,11 +210,17 @@ static void init_ps(char *str)
 	output = fprintf;
 	user_ps_write();
 	define_fonts();
-	if (!epsf)
+	if (!epsf) {
 		fprintf(fout, "/setpagedevice where{pop\n"
-			"	<</PageSize[%.0f %.0f]>>setpagedevice}if\n",
+			"	<</PageSize[%.0f %.0f]",
 				p_fmt->pagewidth * PPI_96_72,
 				p_fmt->pageheight * PPI_96_72);
+		if (cfmt.gutter)
+			fprintf(fout,
+			 "\n	/BeginPage{1 and 0 eq{%.1f 0 T}{-%.1f 0 T}ifelse}bind\n	",
+				cfmt.gutter, cfmt.gutter);
+		fprintf(fout, ">>setpagedevice}if\n");
+	}
 	fprintf(fout, "%%%%EndSetup\n");
 	file_initialized = 1;
 }
@@ -573,9 +579,6 @@ static void init_page(void)
 			"%% --- width %.1f\n",		/* for index */
 			(pwidth - cfmt.leftmargin - cfmt.rightmargin) /
 					cfmt.scale);
-	if (cfmt.gutter != 0)
-		output(fout, "%.1f 0 T\n", (pagenum & 1) ?
-					cfmt.gutter : -cfmt.gutter);
 
 	remy = maxy = pheight - cfmt.topmargin - cfmt.botmargin;
 

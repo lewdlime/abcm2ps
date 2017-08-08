@@ -2852,6 +2852,7 @@ static struct SYMBOL *get_info(struct SYMBOL *s)
 //				use_buffer = cfmt.splittune != 1;
 			bskip(cfmt.topspace);
 		}
+		a2b("%% --- xref %s\n", &info['X' - 'A']->text[2]); // (for index)
 		write_heading();
 		block_put();
 

@@ -886,7 +886,8 @@ void write_buffer(void)
 	outft = outft_sav;
 	bposy = 0;
 	ln_num = 0;
-	use_buffer = 0;
+	if (epsf != 3)
+		use_buffer = 0;
 }
 
 /* -- add a block of commmon margins / scale in the output buffer -- */

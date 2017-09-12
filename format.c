@@ -420,9 +420,9 @@ void set_format(void)
 	if (svg || epsf > 2) {		// SVG output
 		fontspec(&f->font_tb[ANNOTATIONFONT], sans, 0, 12.0);
 		fontspec(&f->font_tb[COMPOSERFONT], serif_italic, 0, 14.0);
-		fontspec(&f->font_tb[FOOTERFONT], serif, 0, 16.0); /* not scaled */
+		fontspec(&f->font_tb[FOOTERFONT], serif, 0, 16.0);
 		fontspec(&f->font_tb[GCHORDFONT], sans, 0, 12.0);
-		fontspec(&f->font_tb[HEADERFONT], serif, 0, 16.0); /* not scaled */
+		fontspec(&f->font_tb[HEADERFONT], serif, 0, 16.0);
 		fontspec(&f->font_tb[HISTORYFONT], serif, 0, 16.0);
 		fontspec(&f->font_tb[INFOFONT],	serif_italic, 0, 14.0); /* same as composer by default */
 		fontspec(&f->font_tb[MEASUREFONT], serif_italic, 0, 14.0);
@@ -438,9 +438,9 @@ void set_format(void)
 	} else {			// PS output
 		fontspec(&f->font_tb[ANNOTATIONFONT], helvetica, 0, 12.0);
 		fontspec(&f->font_tb[COMPOSERFONT], times_italic, 0, 14.0);
-		fontspec(&f->font_tb[FOOTERFONT], times, 0, 16.0); /* not scaled */
+		fontspec(&f->font_tb[FOOTERFONT], times, 0, 16.0);
 		fontspec(&f->font_tb[GCHORDFONT], helvetica, 0, 12.0);
-		fontspec(&f->font_tb[HEADERFONT], times, 0, 16.0); /* not scaled */
+		fontspec(&f->font_tb[HEADERFONT], times, 0, 16.0);
 		fontspec(&f->font_tb[HISTORYFONT], times, 0, 16.0);
 		fontspec(&f->font_tb[INFOFONT],	times_italic, 0, 14.0); /* same as composer by default */
 		fontspec(&f->font_tb[MEASUREFONT], times_italic, 0, 14.0);

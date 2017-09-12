@@ -50,6 +50,7 @@ rule version
 	m=`date +%F`;$
 	mv configure configure~;$
 	sed -e "s/$$tag/$$newtag/;s/$$p/$$m/" configure~ > configure;$
+	chmod +x configure;$
 	git commit configure -m "New release v$$newtag";$
 	git tag -a v$$newtag;$
 	echo "Don't forget: git push --follow-tags; configure"

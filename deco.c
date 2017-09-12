@@ -2470,7 +2470,7 @@ float draw_partempo(int staff, float top)
 			str_font(PARTSFONT);
 		}
 		w = tex_str(&g->text[2]);
-		y = y_get(staff, 1, s->x - 10, w + 15) + 5;
+		y = y_get(staff, 1, s->x - 10, w + 3) + 5;
 		if (ymin < y)
 			ymin = y;
 	}

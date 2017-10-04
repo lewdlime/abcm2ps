@@ -453,19 +453,6 @@ again:
 	memcpy(&s->pits[nhd + 1], s2->pits,
 		sizeof s->pits[0] * (nhd2 + 1));
 	s->sflags |= s2->sflags & (S_SL1 | S_SL2 | S_TI1);
-	if (s2->u.note.dc.n > 0) {	// update the added decorations
-		int n;
-
-		for (i = 0; i < s2->u.note.dc.n; i++) {
-			if (s2->u.note.dc.tm[i].m >= 0)
-				s2->u.note.dc.tm[i].m += nhd + 1;
-		}
-		n = s->u.note.dc.n;
-		memcpy(&s->u.note.dc.tm[n],
-			s2->u.note.dc.tm,
-			sizeof s->u.note.dc.tm[0] * s2->u.note.dc.n);
-		s->u.note.dc.n += s2->u.note.dc.n;
-	}
 
 	nhd += nhd2;
 	s->nhd = nhd;
@@ -501,6 +488,19 @@ delsym2:
 	if (s2->text && !s->text) {
 		s->text = s2->text;
 		s->gch = s2->gch;
+	}
+	if (s2->u.note.dc.n > 0) {	// update the added decorations
+		int n;
+
+		for (i = 0; i < s2->u.note.dc.n; i++) {
+			if (s2->u.note.dc.tm[i].m >= 0)
+				s2->u.note.dc.tm[i].m += nhd + 1;
+		}
+		n = s->u.note.dc.n;
+		memcpy(&s->u.note.dc.tm[n],
+			s2->u.note.dc.tm,
+			sizeof s->u.note.dc.tm[0] * s2->u.note.dc.n);
+		s->u.note.dc.n += s2->u.note.dc.n;
 	}
 	unlksym(s2);			/* remove the next symbol */
 

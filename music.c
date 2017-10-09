@@ -1864,7 +1864,7 @@ static void custos_add(struct SYMBOL *s)
 	new_s->nhd = s2->nhd;
 	for (i = 0; i <= new_s->nhd; i++) {
 //		new_s->u.note.notes[i].pit = s->u.note.notes[i].pit;
-		new_s->pits[i] = s->pits[i];
+		new_s->pits[i] = s2->pits[i];
 		new_s->u.note.notes[i].len = CROTCHET;
 	}
 	new_s->flags = ABC_F_STEMLESS;

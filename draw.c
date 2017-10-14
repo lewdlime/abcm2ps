@@ -842,7 +842,7 @@ static void draw_staff(int staff,
 			float x1, float x2)
 {
 	char *stafflines;
-	int i, l;
+	int i, l, thick = -1;
 	float y, w;
 
 	/* draw the staff */
@@ -852,10 +852,24 @@ static void draw_staff(int staff,
 	l = strlen(stafflines);
 	for (i = 0; i < l; i++) {
 		if (stafflines[i] != '.') {
-			a2b("dlw ");
 			w = x2 - x1;
 			for ( ; i < l; i++) {
 				if (stafflines[i] != '.') {
+					if (stafflines[i] == '[') {
+						if (thick != 1) {
+							if (thick >= 0)
+								a2b("stroke\n");
+							a2b("1.5 SLW ");
+							thick = 1;
+						}
+					} else {
+						if (thick != 0) {
+							if (thick >= 0)
+								a2b("stroke\n");
+							a2b("dlw ");
+							thick = 0;
+						}
+					}
 					putx(w);
 					putxy(x1, y);
 					a2b("M 0 RL ");

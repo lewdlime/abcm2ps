@@ -4459,12 +4459,9 @@ static float set_staff(void)
 	maxsep = cfmt.maxstaffsep * 0.5;
 	if (dy > maxsep)
 		dy = maxsep;
-	y += dy;
-	if (y > cfmt.maxstaffsep)
-		y = cfmt.maxstaffsep;
 
 	/* return the whole staff system height */
-	return y;
+	return y + dy;
 }
 
 /* -- set the bottom and height of the measure bars -- */

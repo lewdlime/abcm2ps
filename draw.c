@@ -3349,10 +3349,15 @@ static void draw_all_ties(struct VOICE_S *p_voice)
 				error(1, s1, "Bad tie");
 				continue;
 			}
-			if (s2->time == time)
+			if (s2->time == time) {
 				s4 = s2;
-			else
+			} else {
 				s4 = tie_comb(s1);
+				if (s4 == s1) {
+					error(1, s1, "Bad tie");
+					continue;
+				}
+			}
 		}
 		for (s3 = s1->ts_next; s3; s3 = s3->ts_next) {
 			if (s3->staff != s1->staff)

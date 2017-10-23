@@ -1948,7 +1948,7 @@ static void draw_gchord(struct SYMBOL *s,
 			float gchy_min, float gchy_max)
 {
 	struct gch *gch, *gch2;
-	int action, ix, box;
+	int action, ix, box, yav;
 	float x, y, w, h, y_above, y_below;
 	float hbox, xboxl, yboxh, yboxl, expdx;
 
@@ -1963,6 +1963,7 @@ static void draw_gchord(struct SYMBOL *s,
 	y_below = y_get(s->staff, 0, s->x - 2, w) - 2;
 #endif
 	gch2 = NULL;
+	yav = (s->ymx + s->ymn) / 2;
 	for (ix = 0, gch = s->gch; ix < MAXGCH; ix++, gch++) {
 		if (gch->type == '\0')
 			break;
@@ -2071,16 +2072,16 @@ static void draw_gchord(struct SYMBOL *s,
 /*fixme: what symbol space?*/
 			if (s->u.note.notes[0].acc)
 				x -= s->u.note.notes[0].shac;
-			y = s->yav + gch->y;
+			y = yav + gch->y;
 			break;
 		case '>':			/* right */
 			x += s->xmx;
 			if (s->dots > 0)
 				x += 1.5 + 3.5 * s->dots;
-			y = s->yav + gch->y;
+			y = yav + gch->y;
 			break;
 		case '@':			/* absolute */
-			y = s->yav + gch->y;
+			y = yav + gch->y;
 			break;
 		}
 		putxy(x, (y  + h * 0.2) *		/* (descent) */

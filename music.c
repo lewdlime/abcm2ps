@@ -475,7 +475,6 @@ again:
 
 	s->ymx = 3 * (s->pits[nhd] - 18) + 4;
 	s->ymn = 3 * (s->pits[0] - 18) - 4;
-	s->yav = (s->ymx + s->ymn) / 2;
 
 	/* force the tie directions */
 	type = s->u.note.notes[0].ti1;
@@ -2493,7 +2492,8 @@ static void set_clefs(void)
 	int staff, voice, pitch, new_type, new_line, old_lvl;
 	struct {
 		struct SYMBOL *clef;
-		int autoclef;
+		short autoclef;
+		short mid;
 	} staff_clef[MAXSTAFF];
 
 	old_lvl = lvlarena(1);			// keep the staff clefs
@@ -2543,6 +2543,8 @@ static void set_clefs(void)
 		}
 		staff_clef[staff].clef = staff_tb[staff].s_clef = s;
 	}
+	for (staff = 0; staff <= sy->nstaff; staff++)
+		staff_clef[staff].mid = (strlen(sy->staff[staff].stafflines) - 1) * 3;
 
 	for (s = tsfirst; s; s = s->ts_next) {
 		for (g = s->extra ; g; g = g->next) {
@@ -2580,6 +2582,9 @@ static void set_clefs(void)
 				if (!(s2->sflags & S_CLEF_AUTO))
 					staff_clef[staff].autoclef = 0;
 			}
+			for (staff = 0; staff <= sy->nstaff; staff++)
+				staff_clef[staff].mid =
+					(strlen(sy->staff[staff].stafflines) - 1) * 3;
 			for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 				voice = p_voice - voice_tb;
 				if (sy->voice[voice].range < 0
@@ -2631,8 +2636,10 @@ static void set_clefs(void)
 				staff_clef[staff].clef = p_voice->s_clef = g;
 			}
 		}
-		if (s->type != CLEF)
+		if (s->type != CLEF) {
+			s->mid = staff_clef[s->staff].mid;
 			continue;
+		}
 
 		if (s->u.clef.type == AUTOCLEF) {
 			s->u.clef.type = set_auto_clef(s->staff,
@@ -2784,9 +2791,8 @@ static void set_pitch(struct SYMBOL *last_s)
 			if (s->abc_type == ABC_T_NOTE) {
 				s->ymx = 3 * (s->pits[np] - 18) + 4;
 				s->ymn = 3 * (s->pits[0] - 18) - 4;
-				s->yav = (s->ymx + s->ymn) / 2;
 			} else {
-				s->y = s->yav = (s->pits[0] - 18) / 2 * 6;
+				s->y = (s->pits[0] - 18) / 2 * 6;
 				s->ymx = s->y + rest_sp[5 - s->nflags][0];
 				s->ymn = s->y - rest_sp[5 - s->nflags][1];
 			}
@@ -3656,17 +3662,25 @@ static float set_indent(void)
 /* this routine is called only once per tune */
 static void set_beams(struct SYMBOL *sym)
 {
+	struct SYSTEM *sy;
 	struct SYMBOL *s, *t, *g, *s_opp;
-	int beam, laststem, lasty;
+	int n, m, beam, laststem, mid_p;
 
 	beam = 0;
 	laststem = -1;
-	lasty = 0;
 	s_opp = NULL;
+	sy = cursys;
 	for (s = sym; s; s = s->next) {
 		if (s->abc_type != ABC_T_NOTE) {
-			if (s->type != GRACE)
+			switch (s->type) {
+			default:
 				continue;
+			case STAVES:
+				sy = sy->next;
+				continue;
+			case GRACE:
+				break;
+			}
 			g = s->extra;
 			while (g->abc_type != ABC_T_NOTE)
 				g = g->next;
@@ -3684,6 +3698,8 @@ static void set_beams(struct SYMBOL *sym)
 			continue;
 		}
 
+		mid_p = s->mid / 3 + 18;
+
 		if (s->stem == 0		/* if not explicitly set */
 		 && (s->stem = s->multi) == 0) { /* and alone on the staff */
 
@@ -3692,49 +3708,55 @@ static void set_beams(struct SYMBOL *sym)
 				s->stem = laststem;
 			} else if ((s->sflags & (S_BEAM_ST | S_BEAM_END))
 					== S_BEAM_ST) { /* start of beam */
-				int avg, n;
+			    int pu = s->pits[s->nhd],
+				pd = s->pits[0];
 
-				avg = s->yav;
-				n = 12;
+				beam = 1;
 				for (t = s->next; t; t = t->next) {
-					if (t->abc_type == ABC_T_NOTE) {
-						if (t->multi) {
-							avg = n - t->multi;
-							break;
-						}
-						avg += t->yav;
-						n += 12;
+					if (t->abc_type != ABC_T_NOTE)
+						continue;
+					if (t->stem || t->multi) {
+						s->stem = t->multi ? t->multi : t->stem;
+						break;
 					}
+					if (t->pits[t->nhd] > pu)
+						pu = t->pits[t->nhd];
+					if (t->pits[0] < pd)
+						pd = t->pits[0];
 					if (t->sflags & S_BEAM_END)
 						break;
 				}
-				if (avg < n)
-					laststem = 1;
-				else if (avg > n || cfmt.bstemdown)
-					laststem = -1;
-				beam = 1;
-				s->stem = laststem;
-			} else {
-				s->stem = s->yav >= 12 ? -1 : 1;
-				if (s->yav == 12	/* note on middle line */
-				 && !cfmt.bstemdown) {
-					int dy;
-
-					if (!s->prev || s->prev->type == BAR) {
-						for (t = s->next; t; t = t->next) {
-							if (t->abc_type == ABC_T_NOTE
-							 || t->type == BAR)
-								break;
-						}
-						if (t && t->abc_type == ABC_T_NOTE
-						 && t->yav < 12)
-							s->stem = 1;
+				if (t->sflags & S_BEAM_END) {
+					mid_p *= 2;
+					if (pu + pd < mid_p) {
+						s->stem = 1;
+					} else if (pu + pd < mid_p) {
+						s->stem = -1;
 					} else {
-						dy = s->yav - lasty;
-						if (dy > -7 && dy < 7)
-							s->stem = laststem;
+						if (cfmt.bstemdown)
+							s->stem = -1;
 					}
 				}
+				if (!s->stem)
+					s->stem = laststem;
+			} else {				// no beam
+				n = s->pits[s->nhd] + s->pits[0];
+				if (n == mid_p * 2) {
+					n = 0;
+					for (m = 0; m <= s->nhd; m++)
+						n += s->pits[m];
+					mid_p *= s->nhd + 1;
+				} else {
+					mid_p *= 2;
+				}
+				if (n < mid_p)
+					s->stem = 1;
+				else if (n > mid_p)
+					s->stem = -1;
+				else if (cfmt.bstemdown)
+					s->stem = -1;
+				else
+					s->stem = laststem;
 			}
 		} else {			/* stem set by set_stem_dir */
 			if ((s->sflags & (S_BEAM_ST | S_BEAM_END))
@@ -3744,7 +3766,6 @@ static void set_beams(struct SYMBOL *sym)
 		if (s->sflags & S_BEAM_END)
 			beam = 0;
 		laststem = s->stem;
-		lasty = s->yav;
 
 		if (s_opp) {			/* opposite gstem direction */
 			for (g = s_opp->extra; g; g = g->next)
@@ -4324,17 +4345,26 @@ static void set_overlap(void)
 /* this routine is called only once per tune */
 static void set_stems(void)
 {
+	struct SYSTEM *sy;
 	struct SYMBOL *s, *s2, *g;
 	float slen, scale;
-	int ymn, ymx, nflags;
+	int ymn, ymx, nflags, mid;
 
+	sy = cursys;
 	for (s = tsfirst; s; s = s->ts_next) {
 		if (s->abc_type != ABC_T_NOTE) {
 			int ymin, ymax;
 
-			if (s->type != GRACE)
+			switch (s->type) {
+			default:
 				continue;
-			ymin = ymax = 12;
+			case STAVES:
+				sy = sy->next;
+				continue;
+			case GRACE:
+				break;
+			}
+			ymin = ymax = s->mid;
 			for (g = s->extra; g; g = g->next) {
 				if (g->type != NOTEREST)
 					continue;
@@ -4397,6 +4427,7 @@ static void set_stems(void)
 		}
 
 		/* set height of stem end */
+		mid = s->mid;
 		slen = cfmt.stemheight;
 		switch (nflags) {
 		case 2: slen += 2; break;
@@ -4445,8 +4476,8 @@ static void set_stems(void)
 				ymn -= 3;
 			s->ymn = ymn - 4;
 			s->ys = ymx + slen;
-			if (s->ys < 12)
-				s->ys = 12;
+			if (s->ys < mid)
+				s->ys = mid;
 			s->ymx = (int) (s->ys + 2.5);
 		} else {			/* stem down */
 			if (s->pits[0] < 18
@@ -4458,8 +4489,8 @@ static void set_stems(void)
 					slen -= 2;
 			}
 			s->ys = ymn - slen;
-			if (s->ys > 12)
-				s->ys = 12;
+			if (s->ys > mid)
+				s->ys = mid;
 			s->ymn = (int) (s->ys - 2.5);
 			s->y = ymx;
 /*fixme:the tie may be lower*/

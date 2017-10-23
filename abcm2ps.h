@@ -344,7 +344,8 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 	int color;
 	float x;		/* x offset */
 	signed char y;		/* y offset of note head */
-	signed char ymn, ymx, yav; /* min, max, avg note head y offset */
+	signed char ymn, ymx;	/* min, max, note head y offset */
+	signed char mid;	// y offset of the staff middle line
 	float xmx;		/* max h-pos of a head rel to top
 				 * width when STBRK */
 	float xs, ys;		/* coord of stem end / bar height */

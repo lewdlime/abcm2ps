@@ -855,7 +855,7 @@ static void draw_staff(int staff,
 			w = x2 - x1;
 			for ( ; i < l; i++) {
 				if (stafflines[i] != '.') {
-					if (stafflines[i] == '[') {
+					if (stafflines[i] != '|') {
 						if (thick != 1) {
 							if (thick >= 0)
 								a2b("stroke\n");

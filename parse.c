@@ -4257,14 +4257,8 @@ static void set_map(struct SYMBOL *s)
 			switch (note_map->type) {
 			case MAP_ONE:
 				if (note->pit == note_map->pit
-				 && note->acc == note_map->acc) {
-					if (note_map->print_pit != -128) {
-						note->pit = note_map->print_pit;
-						s->pits[m] = note->pit;
-						note->acc = note_map->print_acc;
-					}
+				 && note->acc == note_map->acc)
 					break;
-				}
 				continue;
 			case MAP_OCT:
 				if ((note->pit - note_map->pit + 28 ) % 7 == 0
@@ -4280,6 +4274,11 @@ static void set_map(struct SYMBOL *s)
 			}
 			note->head = note_map->heads;
 			note->color = note_map->color;
+			if (note_map->print_pit != -128) {
+				note->pit = note_map->print_pit;
+				s->pits[m] = note->pit;
+				note->acc = note_map->print_acc;
+			}
 			break;
 		}
 	}

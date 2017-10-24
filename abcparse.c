@@ -537,15 +537,8 @@ static void parse_clef(struct SYMBOL *s,
 	}
 
 	if (clef >= 0) {
-		switch (*name) {
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
+		if (isdigit((unsigned char) *name))
 			clef_line = *name++ - '0';
-			break;
-		}
 		if (name[1] == '8') {
 			switch (*name) {
 			case '^':

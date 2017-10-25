@@ -874,6 +874,7 @@ int main(int argc, char **argv)
 					cfmt.fields[1] &= ~(1 << ('w' - 'a'));
 					lock_fmt(&cfmt.fields);
 					break;
+				case 'p':
 				case 'q':
 				case 'S':
 					break;

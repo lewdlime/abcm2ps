@@ -1963,7 +1963,7 @@ static void draw_gchord(struct SYMBOL *s,
 	y_below = y_get(s->staff, 0, s->x - 2, w) - 2;
 #endif
 	gch2 = NULL;
-	yav = (s->ymx + s->ymn) / 2;
+	yav = ((s->pits[s->nhd] + s->pits[0]) / 2 - 18) * 3;
 	for (ix = 0, gch = s->gch; ix < MAXGCH; ix++, gch++) {
 		if (gch->type == '\0')
 			break;

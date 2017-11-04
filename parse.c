@@ -69,6 +69,7 @@ static short over_bar;			/* voice overlay in a measure */
 static short over_voice;		/* main voice in voice overlay */
 static int staves_found;		/* time of the last %%staves */
 static int abc2win;
+static int capo;			// capo indication
 
 float multicol_start;			/* (for multicol) */
 static float multicol_max;
@@ -1250,17 +1251,20 @@ static void note_transpose(struct SYMBOL *s)
 }
 
 /* transpose a guitar chord */
-static void gch_tr1(struct SYMBOL *s, int i)
+static void gch_tr1(struct SYMBOL *s, int i, int i2)
 {
 	char *p = &s->text[i],
 		*q = p + 1,
 		*new_txt;
 	int l, latin;
-	int n, a, i1, i2, i3, i4;
+	int n, a, i1, i3, i4;
 	static const char note_names[] = "CDEFGAB";
 	static const char *latin_names[7] =
 			{ "Do", "Ré", "Mi", "Fa", "Sol", "La", "Si" };
 	static const char *acc_name[5] = {"bb", "b", "", "#", "##"};
+	static const char note_pit[] = {0, 2, 4, 5, 7, 9, 11};
+	static const char pit_note[] = {0, 0, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6};
+	static const char pit_acc[] = {2, 3, 2, 1, 2, 2, 3, 2, 1, 2, 1, 2};
 
 	/* main chord */
 	latin = 0;
@@ -1326,35 +1330,25 @@ static void gch_tr1(struct SYMBOL *s, int i)
 	new_txt += l;
 	p = q;
 
-	i2 = curvoice->ckey.sf - curvoice->okey.sf;
 	if (latin >= 0) {			// if some chord
-		i1 = cde2fcg[n];		/* fcgdaeb */
 		a = 0;
-		if (*p == '#') {
+		while (*p == '#') {
 			a++;
 			p++;
-			if (*p == '#') {
-				a++;
-				p++;
-			}
-		} else if (*p == 'b') {
+		}
+		while (*p == 'b') {
 			a--;
 			p++;
-			if (*p == 'b') {
-				a--;
-				p++;
-			}
-		} else if (*p == '=') {
-			p++;
 		}
-		i3 = i1 + i2 + a * 7;
-		i4 = cgd2cde[(unsigned) ((i3 + 16 * 7) % 7)];
+		if (*p == '=')
+			p++;
+		i3 = (note_pit[n] + a + i2 + 12) % 12;
+		i4 = pit_note[i3];
 		if (latin == 0)
 			*new_txt++ = note_names[i4];
 		else
 			new_txt += sprintf(new_txt, "%s", latin_names[i4]);
-		i1 = ((i3 + 1 + 21) / 7 + 2 - 3 + 32 * 5) % 5;
-							/* accidental */
+		i1 = pit_acc[i3];			// accidental
 		new_txt += sprintf(new_txt, "%s", acc_name[i1]);
 	}
 
@@ -1368,7 +1362,6 @@ static void gch_tr1(struct SYMBOL *s, int i)
 		if (q) {
 			p++;
 			n = q - note_names;
-			i1 = cde2fcg[n];	/* fcgdaeb */
 			if (*p == '#') {
 				a = 1;
 				p++;
@@ -1378,21 +1371,23 @@ static void gch_tr1(struct SYMBOL *s, int i)
 			} else {
 				a = 0;
 			}
-			i3 = i1 + i2 + a * 7;
-			i4 = cgd2cde[(unsigned) ((i3 + 16 * 7) % 7)];
+			i3 = (note_pit[n] + a + i2 + 12) % 12;
+			i4 = pit_note[i3];
 			*new_txt++ = note_names[i4];
-			i1 = ((i3 + 1 + 21) / 7 + 2 - 3 + 32 * 5) % 5;
+			i1 = pit_acc[i3];
 			new_txt += sprintf(new_txt, "%s", acc_name[i1]);
 		}
 	}
 	strcpy(new_txt, p);
 }
 
-static void gch_transpose(struct SYMBOL *s)
+static void gch_capo(struct SYMBOL *s)
 {
-	char *o = s->text, *p = o, *q = o, *r;
+	char *p = s->text, *q, *r;
+	int i, l, li = 0;
+	static const char *capo_txt = "  (capo: %d)";
 
-	/* skip the annotations */
+	// search the chord symbols
 	for (;;) {
 		if (!strchr("^_<>@", *p))
 			break;
@@ -1401,13 +1396,54 @@ static void gch_transpose(struct SYMBOL *s)
 			return;
 		p++;
 	}
-	q = strchr(p, '\t');
-	if (q) {
-		r = strchr(p, '\n');
-		if (!r || q < r)
-			gch_tr1(s, q + 1 - o);
+
+	// add a capo chord symbol
+	i = p - s->text;
+	q = strchr(p + 1, '\n');
+	if (q)
+		l = q - p;
+	else
+		l = strlen(p);
+	if (!capo) {
+		capo = 1;
+		li = strlen(capo_txt);
 	}
-	gch_tr1(s, p - o);
+	r = (char *) getarena(strlen(s->text) + l + li + 1);
+	i += l;
+	strncpy(r, s->text, i);		// annotations + chord symbol
+	r[i++] = '\n';
+	strncpy(r + i, p, l);		// capo
+	if (li) {
+		sprintf(r + i + l, capo_txt, cfmt.capo);
+		l += li;
+	}
+	if (q)
+		strcpy(r + i + l, q);	// ending annotations
+	s->text = r;
+	gch_tr1(s, i, -cfmt.capo);
+}
+
+static void gch_transpose(struct SYMBOL *s)
+{
+	int i2 = ((curvoice->ckey.sf - curvoice->okey.sf + 12) * 7) % 12;
+	char *o = s->text, *p = o, *q = o, *r;
+
+	// search the chord symbols
+	for (;;) {
+		if (!strchr("^_<>@", *p)) {
+			q = strchr(p, '\t');
+			if (q) {
+				r = strchr(p, '\n');
+				if (!r || q < r)
+					gch_tr1(s, q + 1 - o, i2);
+			}
+			gch_tr1(s, p - o, i2);
+		}
+		p = strchr(p, '\n');
+		if (!p)
+			return;
+		p++;
+	}
 }
 
 /* -- build the guitar chords / annotations -- */
@@ -1424,6 +1460,8 @@ static void gch_build(struct SYMBOL *s)
 	s->gch = getarena(sizeof *s->gch * MAXGCH);
 	memset(s->gch, 0, sizeof *s->gch * MAXGCH);
 
+	if (cfmt.capo)
+		gch_capo(s);
 	if (curvoice->transpose != 0)
 		gch_transpose(s);
 
@@ -2883,6 +2921,7 @@ static struct SYMBOL *get_info(struct SYMBOL *s)
 		over_voice = -1;
 		over_time = -1;
 		over_bar = 0;
+		capo = 0;
 		reset_gen();
 
 		s = get_global_def(s);

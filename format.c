@@ -54,6 +54,7 @@ static struct format {
 	{"breakoneoln", &cfmt.breakoneoln, FORMAT_B, 0},
 	{"bstemdown", &cfmt.bstemdown, FORMAT_B, 0},
 	{"cancelkey", &cfmt.cancelkey, FORMAT_B, 0},
+	{"capo", &cfmt.capo, FORMAT_I, 0},
 	{"combinevoices", &cfmt.combinevoices, FORMAT_I, 0},
 	{"composerfont", &cfmt.font_tb[COMPOSERFONT], FORMAT_F, 0},
 	{"composerspace", &cfmt.composerspace, FORMAT_U, 0},

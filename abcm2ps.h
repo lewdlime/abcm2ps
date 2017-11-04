@@ -525,7 +525,7 @@ struct FORMAT { 		/* struct for page layout */
 	float gutter, indent, infospace, slurheight, notespacingfactor, scale;
 	float staffsep, sysstaffsep, maxstaffsep, maxsysstaffsep, stretchlast;
 	int abc2pscompat, alignbars, aligncomposer, autoclef;
-	int barsperstaff, breakoneoln, bstemdown, cancelkey;
+	int barsperstaff, breakoneoln, bstemdown, cancelkey, capo;
 	int combinevoices, contbarnb, continueall, custos;
 	int dblrepbar, decoerr, dynalign, flatbeams, infoline;
 	int gchordbox, graceslurs, graceword,gracespace, hyphencont;

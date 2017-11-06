@@ -1361,8 +1361,12 @@ void put_history(void)
 			put_inf(s2);
 			if ((s2 = s2->next) == NULL)
 				break;
-			bskip(h);
-			a2b("%.2f 0 M ", w);
+			if (s2->text[0] == '+' && s2->text[1] == ':') {
+				put_str(" ", A_LEFT);
+			} else {
+				bskip(h);
+				a2b("%.2f 0 M ", w);
+			}
 		}
 		bskip(h * 1.2);
 		buffer_eob(0);

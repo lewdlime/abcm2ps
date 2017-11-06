@@ -619,12 +619,12 @@ void frontend(unsigned char *s,
 			goto next_eol;
 		}
 		if (histo) {			/* H: continuation */
-			if ((s[1] == ':'
-			  && (isalpha(*s) || *s == '+'))
+			if ((s[1] == ':' && isalpha(*s))
 			 || (*s == '%' && strchr(prefix, s[1]))) {
 				histo = 0;
 			} else {
-				txt_add((unsigned char *) "H:", 2);
+				if (*s != '+' || s[1] != ':')
+					txt_add((unsigned char *) "+:", 2);
 				goto next;
 			}
 		}

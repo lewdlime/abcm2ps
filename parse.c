@@ -3109,11 +3109,18 @@ addinfo:
 			 || (prev->state == ABC_S_GLOBAL
 			  && s->state != ABC_S_GLOBAL)) {
 				info[info_type - 'A'] = s;
-				break;
+			} else {
+				while (prev->next)
+					prev = prev->next;
+				prev->next = s;
 			}
-			while (prev->next)
-				prev = prev->next;
-			prev->next = s;
+			while (s->abc_next
+			    && s->abc_next->abc_type == ABC_T_INFO
+			    && s->abc_next->text[0] == '+') {
+				prev = s;
+				s = s->abc_next;
+				prev->next = s;
+			}
 			s->prev = prev;
 			break;
 		}

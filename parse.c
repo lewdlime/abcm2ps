@@ -4426,7 +4426,7 @@ static void get_note(struct SYMBOL *s)
 	}
 
 	/* get the max head type, number of dots and number of flags */
-	{
+	if (!curvoice->auto_len || (s->flags & ABC_F_GRACE)) {
 		int head, dots, nflags, l;
 
 		if ((l = s->u.note.notes[0].len) != 0) {

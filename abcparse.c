@@ -108,8 +108,6 @@ static char char_tb[256] = {
 
 static const char all_notes[] = "CDEFGABcdefgab";
 
-static char *parse_len(char *p,
-			int *p_len);
 static int parse_info(char *p);
 static char *parse_gchord(char *p);
 static int parse_line(char *p);
@@ -846,6 +844,7 @@ static char *get_len(char *p,
 	char *error_txt = NULL;
 
 	if (strcmp(p, "auto") == 0) {		/* L:auto */
+		ulen = 15120;			// 2*2*2*2*3*3*3*5*7
 		s->u.length.base_length = -1;
 		return error_txt;
 	}
@@ -1623,24 +1622,6 @@ char *parse_acc_pit(char *p,
 	return p;
 }
 
-/* -- parse note or rest with pitch and length -- */
-/* in case of error, 'accidental' is set to -1 */
-static char *parse_basic_note(char *p,
-				int *pitch,
-				int *length,
-				int *accidental,
-				int *stemless)
-{
-	p = parse_acc_pit(p, pitch, accidental);
-	if (*p == '0') {
-		*stemless = 1;
-		p++;
-	} else {
-		*stemless = 0;
-	}
-	return parse_len(p, length);
-}
-
 /* -- parse the decorations of notes and bars -- */
 static char *parse_deco(char *p,
 			 struct decos *deco,
@@ -1803,12 +1784,13 @@ static char *parse_gchord(char *p)
 
 /* -- parse a note length -- */
 static char *parse_len(char *p,
+			int dur_u,
 			int *p_len)
 {
 	int len, fac;
 	char *q;
 
-	len = BASE_LEN;
+	len = dur_u;
 	if (isdigit((unsigned char) *p)) {
 		len *= strtol(p, &q, 10);
 		if (len <= 0) {
@@ -2363,8 +2345,8 @@ static char *parse_note(char *p,
 		/* fall thru */
 	case 'z':
 		s->abc_type = ABC_T_REST;
-		p = parse_len(p + 1, &len);
-		s->u.note.notes[0].len = len * ulen / BASE_LEN;
+		p = parse_len(p + 1, ulen, &len);
+		s->u.note.notes[0].len = len;
 		goto do_brhythm;
 	case '[':			/* '[..]' = chord */
 		chord = 1;
@@ -2408,18 +2390,20 @@ static char *parse_note(char *p,
 			}
 		}
 		p = parse_deco(p, &dc, m);	/* note head decorations */
-		p = parse_basic_note(p, &pit, &len, &acc, &n);
-		if (!(flags & ABC_F_GRACE))
-			len = len * ulen / BASE_LEN;
-		else
-			len /= 8;		/* for grace note alone */
-
+		p = parse_acc_pit(p, &pit, &acc);
+		if (*p == '0') {
+			nostem = 1;
+			p++;
+		}
+		p = parse_len(p, (flags & ABC_F_GRACE) ?
+					BASE_LEN / 8 :	// for grace note alone
+					ulen,
+				&len);
 		s->u.note.notes[m].pit = pit;
 		s->pits[m] = pit;
 		s->u.note.notes[m].len = len;
 		s->u.note.notes[m].acc = acc;
 		s->u.note.notes[m].color = -1;
-		nostem |= n;
 
 		if (chord) {
 			for (;;) {
@@ -2458,11 +2442,11 @@ static char *parse_note(char *p,
 		if (*p == ']') {
 			p++;
 			if (*p == '0') {
-				nostem |= 1;
+				nostem = 1;
 				p++;
 			}
 			if (*p == '/' || isdigit((unsigned char) *p)) {
-				p = parse_len(p, &len);
+				p = parse_len(p, ulen, &len);
 				for (j = 0; j < m; j++) {
 					n = len * s->u.note.notes[j].len;
 					s->u.note.notes[j].len = n / BASE_LEN;

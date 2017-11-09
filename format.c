@@ -636,7 +636,8 @@ static int get_posit(char *p)
 	 || strcmp(p, "above") == 0)
 		return SL_ABOVE;
 	if (strcmp(p, "down") == 0
-	 || strcmp(p, "below") == 0)
+	 || strcmp(p, "below") == 0
+	 || strcmp(p, "under") == 0)
 		return SL_BELOW;
 	if (strcmp(p, "hidden") == 0
 	 || strcmp(p, "opposite") == 0)

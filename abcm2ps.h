@@ -117,7 +117,7 @@ enum accidentals {
 /* -- macros for program internals -- */
 
 #define STRL1		256	/* string length for file names */
-#define MAXSTAFF	16	/* max staves */
+#define MAXSTAFF	32	/* max staves */
 #define BSIZE		512	/* buffer size for one input string */
 
 #define BREVE		(BASE_LEN * 2)	/* double note (square note) */

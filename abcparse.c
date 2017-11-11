@@ -2448,8 +2448,8 @@ static char *parse_note(char *p,
 			if (*p == '/' || isdigit((unsigned char) *p)) {
 				p = parse_len(p, ulen, &len);
 				for (j = 0; j < m; j++) {
-					n = len * s->u.note.notes[j].len;
-					s->u.note.notes[j].len = n / BASE_LEN;
+					s->u.note.notes[j].len =
+						len * s->u.note.notes[j].len / ulen;
 				}
 			}
 			break;

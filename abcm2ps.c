@@ -425,8 +425,7 @@ static void display_version(int full)
 	fputs("abcm2ps-" VERSION " (" VDATE ")\n", log);
 	if (!full)
 		return;
-	fputs("Compiled: " __DATE__ "\n"
-	       "Options:"
+	fputs("Options:"
 #ifdef A4_FORMAT
 		" A4_FORMAT"
 #endif

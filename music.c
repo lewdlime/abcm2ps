@@ -3730,7 +3730,7 @@ static void set_beams(struct SYMBOL *sym)
 					mid_p *= 2;
 					if (pu + pd < mid_p) {
 						s->stem = 1;
-					} else if (pu + pd < mid_p) {
+					} else if (pu + pd > mid_p) {
 						s->stem = -1;
 					} else {
 						if (cfmt.bstemdown)

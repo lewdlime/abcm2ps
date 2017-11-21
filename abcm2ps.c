@@ -228,8 +228,6 @@ static void treat_file(char *fn, char *ext)
 	l = strlen(abc_fn);
 	if (strcmp(&abc_fn[l - 3], ".ps") == 0) {
 		file_type = FE_PS;
-		frontend((unsigned char *) "%%beginps\n", FE_ABC,
-				abc_fn, 0);
 	} else if (strcmp(&abc_fn[l - 4], ".fmt") == 0) {
 		file_type = FE_FMT;
 	} else {

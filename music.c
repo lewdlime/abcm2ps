@@ -4928,7 +4928,7 @@ static void set_sym_glue(float width)
 		} else {
 			alfa = (x - width) / (x - xmin);	/* shrink */
 			if (alfa > 1) {
-				error(0, s,
+				error(1, s,
 				      "Line too much shrunk (%.0f/%0.fpt of %.0fpt)",
 					xmin, x, width);
 // uncomment for staff greater than music line

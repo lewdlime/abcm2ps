@@ -870,14 +870,19 @@ void define_symbols(void)
 
 	// if a music font, give it a name
 	if (p) {
-		r = strrchr(p, '.');	// remove the file type
-		if (!r)
-			r = p + strlen(p) - 1;		// ')'
-		q = strrchr(p, DIRSEP);
-		if (!q)
-			q = strchr(p, '(');
-		q++;
-		fprintf(fout, "/music/%.*s def\n", (int) (r - q), q);
+		q = strchr(p, '(');
+		if (q) {		// hope "url(...)"
+			q++;
+			r = strrchr(q, '.');	// remove the file type
+			if (!r)
+				r = q + strlen(p) - 1;		// ')'
+			p = strrchr(q, DIRSEP);	// and the directory path
+			if (p)
+				q = p + 1;
+			fprintf(fout, "/music/%.*s def\n", (int) (r - q), q);
+		} else {
+			fprintf(fout, "/music/%s def\n", p);
+		}
 	}
 
 	/* len su - up stem */

@@ -1139,11 +1139,8 @@ static void gen_info(void)
 	fputs(" -->\n", fout);
 }
 
-/* -- output the symbol definitions -- */
-void define_svg_symbols(char *title, int num, float w, float h)
+static void define_head(float w, float h)
 {
-	char *s;
-	unsigned i;
 	static const char svg_head1[] =
 		"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\"\n"
 		"\txmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
@@ -1154,16 +1151,33 @@ void define_svg_symbols(char *title, int num, float w, float h)
 		".stroke {stroke: currentColor; fill: none}\n"
 		"text{white-space: pre}\n";
 	static const char svg_font_style[] =
+		".music {font-family: %s; font-size: 24px;\n"
+		"	fill: currentColor}\n";
+	static const char svg_font_style_url[] =
 		"@font-face {\n"
 		"	font-family: 'music';\n"
 		"	src: %s;\n"
 		"	font-weight: normal; font-style: normal}\n"
 		".music {font-family: music; font-size: 24px;\n"
-		"	font-weight: normal; font-style: normal;\n"
 		"	fill: currentColor}\n";
 	static const char svg_head2[] =
 		"</style>\n"
 		"<title>";
+
+	fprintf(fout, svg_head1, w, h);
+	if (cfmt.musicfont)
+		fprintf(fout,
+			strchr(cfmt.musicfont, '(') ?
+				svg_font_style_url : svg_font_style,
+			cfmt.musicfont);
+	fputs(svg_head2, fout);
+}
+
+/* -- output the symbol definitions -- */
+void define_svg_symbols(char *title, int num, float w, float h)
+{
+	char *s;
+	unsigned i;
 	static const char svg_head3[] =
 		" %s %d</title>\n";
 
@@ -1200,10 +1214,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 		} else {
 			fputs("<br/>\n", fout);
 		}
-		fprintf(fout, svg_head1, w, h);
-		if (cfmt.musicfont)
-			fprintf(fout, svg_font_style, cfmt.musicfont);
-		fputs(svg_head2, fout);
+		define_head(w, h);
 		xml_str_out(title);
 		fprintf(fout, svg_head3, "page", num);
 //		if (cfmt.bgcolor && cfmt.bgcolor[0] != '\0')
@@ -1220,10 +1231,7 @@ void define_svg_symbols(char *title, int num, float w, float h)
 //			else if (svg)
 //				fputs("<p>\n", fout);
 		}
-		fprintf(fout, svg_head1, w, h);
-		if (cfmt.musicfont)
-			fprintf(fout, svg_font_style, cfmt.musicfont);
-		fputs(svg_head2, fout);
+		define_head(w, h);
 		xml_str_out(title);
 		fprintf(fout, svg_head3, epsf ? "tune" : "page", num);
 		fputs("<!-- Creator: abcm2ps-" VERSION " -->\n", fout);

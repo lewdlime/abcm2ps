@@ -71,3 +71,6 @@ test:	$(EXAMPLES)
 
 clean:
 	rm -f *.o $(EXAMPLES) # *.obj
+
+cleanconfig: clean
+	rm -f config.h abcm2ps Makefile

@@ -3314,23 +3314,24 @@ static void init_music_line(void)
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		int bar_start;
 
-		bar_start = p_voice->bar_start;
-		if (!bar_start)
-			continue;
-		p_voice->bar_start = 0;
-
+		// if bar already, keep it in sequence
 		voice = p_voice - voice_tb;
-		if (cursys->voice[voice].range < 0
-		 || cursys->voice[voice].second
-		 || cursys->staff[cursys->voice[voice].staff].empty)
-			continue;
-
-		// if bar already, ignore
 		if (last_s->voice == voice && last_s->type == BAR) {
 			p_voice->last_sym = last_s;
 			last_s = last_s->ts_next;
 			continue;
 		}
+
+		bar_start = p_voice->bar_start;
+		if (!bar_start)
+			continue;
+		p_voice->bar_start = 0;
+
+		if (cursys->voice[voice].range < 0
+		 || cursys->voice[voice].second
+		 || cursys->staff[cursys->voice[voice].staff].empty)
+			continue;
+
 		s = sym_new(BAR, p_voice, last_s);
 		s->u.bar.type = bar_start & 0x0fff;
 		if (bar_start & 0x8000)

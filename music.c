@@ -1643,6 +1643,7 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 			error(0, s, "Not enough symbols to repeat");
 			goto delrep;
 		}
+		dur = s->time - s3->time;
 
 		i = g->nohdi1 * n;	/* number of notes/rests to repeat */
 		for (s2 = s; s2; s2 = s2->next) {
@@ -1667,32 +1668,35 @@ static void set_repeat(struct SYMBOL *g,	/* repeat format */
 				break;
 			}
 		}
-		s3 = s;
 		for (j = g->nohdi1; --j >= 0; ) {
 			i = n;			/* number of notes/rests */
-			if (s3->dur != 0)
+			if (s->dur != 0)
 				i--;
-			s2 = s3->ts_next;
+			s2 = s->ts_next;
 			while (i > 0) {
-				if (s2->staff != staff)
-					continue;
-				if (s2->voice == voice
-				 && s2->dur != 0)
-					i--;
-				s2->extra = NULL;
-				unlksym(s2);
+				if (s2->staff == staff) {
+					s2->extra = NULL;
+					unlksym(s2);
+					if (s2->voice == voice
+					 && s2->dur)
+						i--;
+				}
 				s2 = s2->ts_next;
 			}
-			to_rest(s3);
-			s3->dur = s3->u.note.notes[0].len
-				= s2->time - s3->time;
-//			s3->sflags |= S_REPEAT | S_BEAM_ST;
-			s3->sflags |= S_REPEAT;
-			set_width(s3);
-			if (s3->sflags & S_SEQST)
-				s3->space = set_space(s3);
-			s3->head = H_SQUARE;
-			s3 = s2;
+			to_rest(s);
+			s->dur = s->u.note.notes[0].len = dur;
+//			s->sflags |= S_REPEAT | S_BEAM_ST;
+			s->sflags |= S_REPEAT;
+			set_width(s);
+			if (s->sflags & S_SEQST)
+				s->space = set_space(s);
+			s->head = H_SQUARE;
+			for (s = s2; s; s = s->ts_next) {
+				if (s->staff == staff
+				 && s->voice == voice
+				 && s->dur)
+					break;
+			}
 		}
 		goto delrep;			/* done */
 	}

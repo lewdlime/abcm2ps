@@ -66,11 +66,9 @@ static float set_heads(struct SYMBOL *s)
 	for (m = 0; m <= n; m++) {
 		note = &s->u.note.notes[m];
 		p = note->head;			/* list of heads from parsing */
-		i = -s->nflags;
 		if (!p)
 			continue;
-		if (i < 0)
-			i = 0;
+		i = s->head;
 		for (;;) {		// search the head for the duration
 			q = strchr(p, ',');
 			if (!q)

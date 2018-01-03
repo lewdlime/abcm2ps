@@ -323,7 +323,7 @@ static void treat_abc_file(char *fn)
 		/* search the start of ABC lines */
 #if 1
 		for (q = p, l2 = l - 10; l2 > 0; l2--, q++) {
-			if (strncmp(q, "\n%abc2", 6) == 0
+			if (strncmp(q, "\n%abc", 5) == 0
 //			 || strncmp(q, "\n%%", 3) == 0
 			 || strncmp(q, "\nX:", 3) == 0)
 				break;

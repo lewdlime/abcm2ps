@@ -4683,9 +4683,18 @@ static void draw_symbols(struct VOICE_S *p_voice)
 	for (s = p_voice->sym; s; s = s->next) {
 		if (s->extra)
 			output_ps(s, 1);
-		if ((s->flags & ABC_F_INVIS)
-		 && s->type != NOTEREST && s->type != GRACE)
-			continue;
+		if (s->flags & ABC_F_INVIS) {
+			switch (s->type) {
+			case KEYSIG:
+				memcpy(&p_voice->key, &s->u.key,
+					sizeof p_voice->key);
+			default:
+				continue;
+			case NOTEREST:
+			case GRACE:
+				break;
+			}
+		}
 		set_color(s->color);
 		x = s->x;
 		switch (s->type) {

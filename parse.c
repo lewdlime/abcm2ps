@@ -2003,6 +2003,7 @@ static char txt_no_note[] = "No note in voice overlay";
 
 	/* treat the full overlay start */
 	if (s->u.v_over.type == V_OVER_S) {
+		over_voice = p_voice - voice_tb;
 		over_time = p_voice->time;
 		return;
 	}
@@ -2093,10 +2094,9 @@ static char txt_no_note[] = "No note in voice overlay";
 		}
 		over_time = s->time;
 	} else {
-		if (over_voice < 0) {
+		if (over_mxtime == 0)
 			over_mxtime = p_voice->time;
-			over_voice = voice;
-		} else if (p_voice->time != over_mxtime)
+		else if (p_voice->time != over_mxtime)
 			error(1, s, tx_wrong_dur);
 	}
 	p_voice2->time = over_time;

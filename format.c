@@ -608,12 +608,13 @@ float scan_u(char *str, int type)
 	int nch;
 
 	if (sscanf(str, "%f%n", &a, &nch) == 1) {
-		if (str[nch] == '\0' || str[nch] == ' '
-		 || !strncasecmp(str + nch, "pt", 2)) {
+		if (str[nch] == '\0' || str[nch] == ' ') {
 			if (type != 0)
 				error(0, NULL, "Bad unit \"%s\"", str);
 			return a PT;
 		}
+		if (!strncasecmp(str + nch, "pt", 2))
+			return a PT;
 		if (!strncasecmp(str + nch, "cm", 2))
 			return type ? a CM : a * 28.35;
 		if (!strncasecmp(str + nch, "in", 2))

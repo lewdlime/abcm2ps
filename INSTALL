@@ -1,24 +1,28 @@
 		--- abcm2ps installation ---
 
+Getting the source files
+========================
+
+abcm2ps is now distributed from a GitHub repository.
+
+You may get the source files either as a `tar.gz` or `.zip` file from
+
+	https://github.com/moinejf/abc2svg
+
+or by cloning the repository with 'git'
+
+	git clone http://github.com/moinejf/abcm2ps
+
+(you may use `--depth=1` if you don't want the full `git` history)
+
 
 Unix(-like) systems
 ===================
 
-This version does not use the GNU 'autoconf' package anymore.
+After getting the source files, or after updating them by 'git pull',
+you must generate the configuration files using the local script 'configure'.
 
-The furnished 'Makefile' should work as it is for most systems.
-So, simply do
-
-	make
-
-and then, as root, do:
-
-	make install
-
-If you are not happy with the Makefile options (install program,
-installation directories..), these ones may be customized
-using the furnished script 'configure'.
-The variables and their default values are:
+The configuration variables and their default values are:
 
 CC=gcc
 CFLAGS="-g -O2 -Wall -pipe"
@@ -44,28 +48,31 @@ the file 'custom' would contain the single line:
 then, you do:
 
 	./configure
-	make
 
 The script 'configure' may also get the values of the variables from
 the command line. These settings must start with '--':
 
 	./configure --CC=clang
 
-If you want to use the 'pango' library, this one is not enabled
-by default in the Makefile and you should use script 'configure'
-to include it in the Makefile.
+If you want to use the 'pango' library, install it prior running 'configure'.
+
+Creating the binary is done by a standard call to 'make'.
+
+An alternate option for this creation is to use 'ninja' (ninja-build) or
+'samurai'. These programs use the file 'build.ninja' which may be custumized.
 
 
 Windows or MAC systems
 ======================
 
-Change the file 'config.h' according to your preferences, compile all
-the '.c' files using an ANSI C compiler, and link them together.
+You must create the file 'config.h' from the 'config.h.in' skeleton.
+Then, the abcm2ps binary must be created by compiling all the '.c' files
+and by linking them together.
 The resulting binary file should run immediately from where it has been
 generated. You may then move it at any place you want.
 
 Note: I don't know how to do file mapping (mmap) in ms-windows, so,
-you must comment 'HAVE_MMAP' in config.h.
+you must comment the line containing 'HAVE_MMAP' in config.h.
 
 
 Testing

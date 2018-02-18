@@ -1,4 +1,4 @@
-# rules for ninja (ninja-build)
+# rules for ninja (ninja-build) or samurai
 
 cc=musl-gcc
 #cc=gcc

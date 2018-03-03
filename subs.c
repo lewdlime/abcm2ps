@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2017 Jean-François Moine
+ * Copyright (C) 1998-2018 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -399,8 +399,7 @@ static void pg_line_output(PangoLayoutLine *line)
 					fontname = FT_Get_Postscript_Name(face);
 					if (glypharray)
 						a2b("]glypharray");
-						a2b("\n");
-					a2b("/%s %.1f selectfont[",
+					a2b("\n/%s %.1f selectfont[",
 						fontname,
 						(float) wi / PG_SCALE);
 					glypharray = 1;

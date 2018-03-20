@@ -141,7 +141,7 @@ static struct format {
 	{"titleformat", &cfmt.titleformat, FORMAT_S, 0},
 	{"titleleft", &cfmt.titleleft, FORMAT_B, 0},
 	{"titlespace", &cfmt.titlespace, FORMAT_U, 0},
-	{"titletrim", &cfmt.titletrim, FORMAT_B, 0},
+	{"titletrim", &cfmt.titletrim, FORMAT_I, 0},
 	{"timewarn", &cfmt.timewarn, FORMAT_B, 0},
 	{"topmargin", &cfmt.topmargin, FORMAT_U, 1},
 	{"topspace", &cfmt.topspace, FORMAT_U, 0},

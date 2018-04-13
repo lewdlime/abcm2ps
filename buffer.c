@@ -36,7 +36,7 @@ static float remy;		/* remaining vertical space in page */
 static float bposy;		/* current position in buffered data */
 static int nepsf;		/* counter for -E/-g output files */
 static int nbpages;		/* number of pages in the output file */
-static int outbufsz;		/* size of outbuf */
+	int outbufsz;		/* size of outbuf */
 static char outfnam[FILENAME_MAX]; /* internal file name for open/close */
 static struct FORMAT *p_fmt;	/* current format while treating a new page */
 

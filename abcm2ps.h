@@ -559,6 +559,7 @@ typedef struct SYMBOL *INFO[26]; /* information fields ('A' .. 'Z') */
 extern INFO info;
 
 extern char *outbuf;		/* output buffer.. should hold one tune */
+extern int outbufsz;		/* size of outbuf */
 extern char *mbf;		/* where to PUTx() */
 extern int use_buffer;		/* 1 if lines are being accumulated */
 

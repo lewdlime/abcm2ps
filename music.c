@@ -13,6 +13,7 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
 
 #include "abcm2ps.h"
@@ -5068,10 +5069,15 @@ static void error_show(void)
 static float delayed_output(float indent)
 {
 	float line_height;
-	char *outbuf_sav, *mbf_sav, tmpbuf[20 * 1024];
+	char *outbuf_sav, *mbf_sav, *tmpbuf;
 
 	outbuf_sav = outbuf;
 	mbf_sav = mbf;
+	tmpbuf = malloc(outbufsz);
+	if (!tmpbuf) {
+		error(1, NULL, "Out of memory for delayed outbuf - abort");
+		exit(EXIT_FAILURE);
+	}
 	mbf = outbuf = tmpbuf;
 	*outbuf = '\0';
 	outft = -1;
@@ -5081,6 +5087,7 @@ static float delayed_output(float indent)
 	outft = -1;
 	line_height = draw_systems(indent);
 	a2b("%s", tmpbuf);
+	free(tmpbuf);
 	return line_height;
 }
 

@@ -3908,9 +3908,13 @@ static void set_k_acc(struct SYMBOL *s)
 			}
 		}
 		if (j == nacc) {
-			accs[j] = s->u.key.accs[i];
-			pits[j] = s->u.key.pits[i];
-			nacc++;		/* cannot overflow */
+			if (nacc >= sizeof accs) {
+				error(1, s, "Too many accidentals");
+			} else {
+				accs[j] = s->u.key.accs[i];
+				pits[j] = s->u.key.pits[i];
+				nacc++;
+			}
 		}
 	}
 	for (i = 0; i < nacc; i++) {

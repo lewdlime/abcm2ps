@@ -51,7 +51,7 @@ rule version
 	mv configure configure~;$
 	sed -e "s/$$tag/$$newtag/;s/$$p/$$m/" configure~ > configure;$
 	chmod +x configure;$
-	git commit configure -m "New release v$$newtag";$
+	echo "New release v$$newtag" | git commit -F- configure;$
 	git tag -a v$$newtag;$
 	echo "Don't forget: git push --follow-tags; configure"
 build minor: version

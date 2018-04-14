@@ -3566,9 +3566,10 @@ void do_tune(void)
 		case ABC_T_MREP: {
 			int n;
 
-			if (!s->abc_next || s->abc_next->abc_type != ABC_T_BAR) {
+			s2 = curvoice->last_sym;
+			if (!s2 || s2->type != BAR) {
 				error(1, s1,
-				      "Measure repeat not followed by a bar");
+				      "No bar before measure repeat");
 				break;
 			}
 			if (curvoice->ignore)

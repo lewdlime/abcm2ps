@@ -3188,6 +3188,7 @@ static void init_music_line(void)
 	/* initialize the voices */
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		voice = p_voice - voice_tb;
+		p_voice->last_sym = p_voice->sym;
 		if (cursys->voice[voice].range < 0)
 			continue;
 		p_voice->second = cursys->voice[voice].second;

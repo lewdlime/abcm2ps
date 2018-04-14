@@ -658,6 +658,8 @@ void frontend(unsigned char *s,
 				s++;
 				l--;
 			}
+			if (l <= 0)
+				goto ignore;
 			txt_add((unsigned char *) "%%", 2);
 			goto pcinfo;
 		}
@@ -699,6 +701,8 @@ pscom:
 				s++;
 				l--;
 			}
+			if (l <= 0)
+				goto ignore;
 			txt_add((unsigned char *) "%%", 2);
 			if (strncmp((char *) s, "begin", 5) == 0) {
 				q = begin_end = s + 5;

@@ -1826,6 +1826,7 @@ static int parse_line(char *p)
 {
 	struct SYMBOL *s;
 	char *q, c;
+	char *dot = NULL;
 	struct SYMBOL *last_note_sav = NULL;
 	struct decos dc_sav;
 	int i, flags, flags_sav = 0, slur;
@@ -2003,8 +2004,10 @@ static int parse_line(char *p)
 			/* fall thru */
 		case CHAR_DECO:
 			if (p[-1] == '.') {
-				if (*p == '(' || *p == '-')
+				if (*p == '(' || *p == '-') {
+					dot = p;
 					break;
+				}
 //				if (*p == '|') {
 //					p = parse_bar(p + 1);
 //					parse.last_sym->u.bar.dotted = 1;
@@ -2146,7 +2149,7 @@ static int parse_line(char *p)
 				break;
 			}
 			slur <<= 4;
-			if (p[-2] == '.' && dc.n == 0)
+			if (p == dot + 1 && dc.n == 0)
 				slur |= SL_DOTTED;
 			switch (*p) {
 			case '\'':
@@ -2206,7 +2209,7 @@ static int parse_line(char *p)
 			if (!curvoice->last_note
 			 || curvoice->last_note->abc_type != ABC_T_NOTE)
 				goto bad_char;
-			if (p[-2] == '.' && dc.n == 0)
+			if (p == dot + 1 && dc.n == 0)
 				tie_pos = SL_DOTTED;
 			else
 				tie_pos = 0;

@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2017 Jean-François Moine
+ * Copyright (C) 1998-2018 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -4504,8 +4504,9 @@ static void get_note(struct SYMBOL *s)
 static void parse_path(char *p, char *q, char *id, int idsz)
 {
 	struct SYMBOL *s;
-	char *r, *op = NULL, *width;
+	char *buf, *r, *op = NULL, *width;
 	int i, fill, npar = 0;
+char *rmax;
 
 	r = strstr(p, "class=\"");
 	if (!r || r > q)
@@ -4521,7 +4522,13 @@ static void parse_path(char *p, char *q, char *id, int idsz)
 			break;
 		p += 3;
 	}
-	r = tex_buf;
+	i = (int) (q - p) * 4 + 200;		// estimated PS buffer size
+	if (i > TEX_BUF_SZ)
+		buf = malloc(i);
+	else
+		buf = tex_buf;
+rmax=buf + i;
+	r = buf;
 	*r++ = '/';
 	idsz -= 5;
 	strncpy(r, id + 4, idsz);
@@ -4624,13 +4631,16 @@ static void parse_path(char *p, char *q, char *id, int idsz)
 		}
 		strcpy(r, op);
 		r += strlen(r);
+if (r + 30 > rmax) bug("Buffer overflow in SVG to PS", 1);
 	}
 	strcpy(r, fill ? " fill}!" : " stroke}!");
 	s = getarena(sizeof(struct SYMBOL));
 	memset(s, 0, sizeof(struct SYMBOL));
-	s->text = getarena(strlen(tex_buf) + 1);
-	strcpy(s->text, tex_buf);
+	s->text = getarena(strlen(buf) + 1);
+	strcpy(s->text, buf);
 	ps_def(s, s->text, 'p');
+	if (buf != tex_buf)
+		free(buf);
 }
 
 // parse <defs> .. </defs> from %%beginsvg

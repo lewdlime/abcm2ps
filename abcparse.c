@@ -2126,6 +2126,10 @@ static int parse_line(char *p)
 					syntax("Invalid 'r' in tuplet", p);
 					break;
 				}
+				if (pplet >= 128 || qplet >= 128 || rplet >= 128) {
+					syntax("Invalid 'p:q:r' in tuplet", p);
+					break;
+				}
 				if (qplet == 0)
 					qplet = meter % 3 == 0 ? 3 : 2;
 				s = abc_new(ABC_T_TUPLET, NULL);

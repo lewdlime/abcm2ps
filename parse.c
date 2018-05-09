@@ -4679,11 +4679,11 @@ static void parse_defs(char *p, char *q)
 		while (*p != '<')
 			p--;
 		if (strncmp(p, "<path ", 6) == 0) {
-			parse_path(p + 6, q, id, idsz);
-			p = strstr(p, "/>");
-			if (!p)
+			r = strstr(p, "/>");
+			parse_path(p + 6, r, id, idsz);
+			if (!r)
 				break;
-			p += 2;
+			p = r + 2;
 			continue;
 		}
 		break;

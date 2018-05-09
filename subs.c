@@ -128,7 +128,7 @@ static void cap_str(char *p)
 /* -- return the character width -- */
 float cwid(unsigned char c)
 {
-	if (c > 0x80) {
+	if (c >= 0x80) {
 		if (c < 0xc0)
 			return 0;	// not start of utf8 character
 		c = 'a';

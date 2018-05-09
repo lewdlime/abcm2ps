@@ -531,6 +531,7 @@ static void parse_clef(struct SYMBOL *s,
 			name += 4;
 		} else {
 			syntax("Unknown clef", name);
+			clef = TREBLE;
 		}
 	}
 

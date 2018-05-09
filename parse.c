@@ -4533,8 +4533,10 @@ rmax=buf + i;
 	idsz -= 5;
 	strncpy(r, id + 4, idsz);
 	r += idsz;
-	*r++ = '{';
-	*r++ = 'M';
+	strcpy(r, "{gsave T ");
+	r += strlen(r);
+	strcpy(r, "0 0 M\n");
+	r += strlen(r);
 	if (width && width < q) {
 		*r++ = ' ';
 		width += 13;
@@ -4560,30 +4562,33 @@ rmax=buf + i;
 			}
 			continue;
 		case 'M':
+			op = "M";
+			npar = 2;
+			break;
 		case 'm':
 			op = "RM";
 			npar = 2;
 			break;
-//		case 'L':
-//			op = "L";
-//			npar = 2;
-//			break;
+		case 'L':
+			op = "L";
+			npar = 2;
+			break;
 		case 'l':
 			op = "RL";
 			npar = 2;
 			break;
-//		case 'H':
-//			op = "H";
-//			npar = 1;
-//			break;
+		case 'H':
+			op = "H";
+			npar = 1;
+			break;
 		case 'h':
 			op = "h";
 			npar = 1;
 			break;
-//		case 'V':
-//			op = "V";
-//			npar = 1;
-//			break;
+		case 'V':
+			op = "V";
+			npar = 1;
+			break;
 		case 'v':
 			*r++ = ' ';
 			*r++ = '0';
@@ -4594,10 +4599,10 @@ rmax=buf + i;
 			op = "closepath";
 			npar = 0;
 			break;
-//		case 'C':
-//			op = "C";
-//			npar = 6;
-//			break;
+		case 'C':
+			op = "C";
+			npar = 6;
+			break;
 		case 'c':
 			op = "RC";
 			npar = 6;
@@ -4633,7 +4638,11 @@ rmax=buf + i;
 		r += strlen(r);
 if (r + 30 > rmax) bug("Buffer overflow in SVG to PS", 1);
 	}
-	strcpy(r, fill ? " fill}!" : " stroke}!");
+	strcpy(r, fill ? " fill" : " stroke");
+	r += strlen(r);
+	strcpy(r, "\ngrestore}!");
+	r += strlen(r);
+
 	s = getarena(sizeof(struct SYMBOL));
 	memset(s, 0, sizeof(struct SYMBOL));
 	s->text = getarena(strlen(buf) + 1);

@@ -4500,12 +4500,27 @@ static void get_note(struct SYMBOL *s)
 		gch_build(s);
 }
 
+static char *get_val(char *p, float *v)
+{
+	char tmp[32], *r = tmp;
+
+	while (isspace((unsigned char) *p))
+		p++;
+	while ((isdigit((unsigned char) *p) && r < &tmp[32 - 1])
+	    || *p == '-' || *p == '.')
+		*r++ = *p++;
+	*r = '\0';
+	sscanf(tmp, "%f", v);
+	return p;
+}
+
 // parse <path .../> from %%beginsvg and convert to Postscript
 static void parse_path(char *p, char *q, char *id, int idsz)
 {
 	struct SYMBOL *s;
-	char *buf, *r, *op = NULL, *width;
+	char *buf, *r, *t, *op = NULL, *width, *scale, *trans;
 	int i, fill, npar = 0;
+	float x1, y1, x, y;
 char *rmax;
 
 	r = strstr(p, "class=\"");
@@ -4514,6 +4529,12 @@ char *rmax;
 	r += 7;
 	fill = strncmp(r, "fill", 4) == 0;
 	width = strstr(p, "stroke-width:");
+	scale = strstr(p, "scale(");
+	if (scale && scale > q)
+		scale = NULL;
+	trans = strstr(p, "translate(");
+	if (trans && trans > q)
+		trans = NULL;
 	for (;;) {
 		p = strstr(p, "d=\"");
 		if (!p)
@@ -4535,6 +4556,31 @@ rmax=buf + i;
 	r += idsz;
 	strcpy(r, "{gsave T ");
 	r += strlen(r);
+	if (scale || trans) {
+		if (scale) {
+			scale += 6;		// "scale("
+			t = get_val(scale, &x1);
+			if (*t == ',')
+				t = get_val(t + 1, &y1);
+			else
+				y1 = x1;
+		}
+		if (trans) {
+			trans += 10;		// "translate("
+			t = get_val(trans, &x) + 1; //","
+			t = get_val(t, &y);
+		}
+		if (!scale)
+			r += sprintf(r, "%.2f %.2f T ", x, -y);
+		else if (!trans)
+			r += sprintf(r, "%.2f %.2f scale ", x1, y1);
+		else if (scale > trans)
+			r += sprintf(r, "%.2f %.2f T %.2f %.2f scale ",
+					x, -y, x1, y1);
+		else
+			r += sprintf(r, "%.2f %.2f scale %.2f %.2f T ",
+					x1, y1, x, -y);
+	}
 	strcpy(r, "0 0 M\n");
 	r += strlen(r);
 	if (width && width < q) {
@@ -4613,6 +4659,28 @@ rmax=buf + i;
 //		case 'a':
 //			op = "arc";
 //			break;
+		case 'q':
+			op = "RC";
+			npar = 2;
+			p = get_val(p, &x1);
+			p = get_val(p, &y1);
+			t = get_val(p, &x);
+			t = get_val(t, &y);
+			r += sprintf(r, " %.2f %.2f %.2f %.2f",
+					x1*2/3, -y1*2/3,
+					x1+(x-x1)*2/3, -y1-(y-y1)*2/3);
+			break;
+		case 't':
+			op = "RC";
+			npar = 2;
+			x1 = x - x1;
+			y1 = y - y1;
+			t = get_val(p, &x);
+			t = get_val(t, &y);
+			r += sprintf(r, " %.2f %.2f %.2f %.2f",
+					x1*2/3, -y1*2/3,
+					x1+(x-x1)*2/3, -y1-(y-y1)*2/3);
+			break;
 		}
 		*r++ = ' ';
 		for (i = 0; i < npar; i++) {

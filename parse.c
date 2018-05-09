@@ -5018,6 +5018,8 @@ static void get_map(char *p)
 	}
 	if (type != MAP_ALL) {
 		p = parse_acc_pit(p, &pit, &acc);
+		if (acc < 0)			// if error
+			pit = acc = 0;
 		if (type == MAP_OCT || type == MAP_KEY) {
 			pit %= 7;
 			if (type == MAP_KEY)
@@ -5073,8 +5075,10 @@ static void get_map(char *p)
 	if (isspace((unsigned char) *q) || *q == '\0') {
 		if (*p != '*') {
 			p = parse_acc_pit(p, &pit, &acc);
-			note_map->print_pit = pit;
-			note_map->print_acc = acc;
+			if (acc >= 0) {
+				note_map->print_pit = pit;
+				note_map->print_acc = acc;
+			}
 			if (*p == '\0')
 				return;
 		}
@@ -5117,8 +5121,10 @@ static void get_map(char *p)
 		} else if (strncmp(p, "print=", 6) == 0) {
 			p += 6;
 			p = parse_acc_pit(p, &pit, &acc);
-			note_map->print_pit = pit;
-			note_map->print_acc = acc;
+			if (acc >= 0) {
+				note_map->print_pit = pit;
+				note_map->print_acc = acc;
+			}
 		} else if (strncmp(p, "color=", 6) == 0) {
 			int color;
 

@@ -419,6 +419,8 @@ static char *parse_acc(char *p,
 			break;
 		}
 		p = parse_acc_pit(p, &pit, &acc);
+		if (acc < 0)
+			break;
 		s->u.key.pits[nacc] = pit;
 		s->u.key.accs[nacc++] = acc;
 		while (isspace((unsigned char) *p))
@@ -562,6 +564,8 @@ static void parse_clef(struct SYMBOL *s,
 		warn = middle;
 		/* 'middle=<note pitch>' */
 		parse_acc_pit(middle, &pit, &acc);
+		if (acc < 0)			// if error
+			pit = 22;
 
 		if (clef < 0)
 			clef = line_tb[(pit + 7) % 7];

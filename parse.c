@@ -3463,8 +3463,7 @@ void do_tune(void)
 			break;
 		case ABC_T_NOTE:
 		case ABC_T_REST:
-			s1 = s;
-			s1->dur = s1->u.note.notes[0].len;
+			s->dur = s->u.note.notes[0].len;
 			break;
 		}
 	}
@@ -3476,7 +3475,6 @@ void do_tune(void)
 
 	/* scan the tune */
 	for (s = parse.first_sym; s; s = s->abc_next) {
-		s1 = s;
 		if (s->flags & ABC_F_LYRIC_START)
 			curvoice->lyric_start = curvoice->last_sym;
 		switch (s->abc_type) {
@@ -3491,17 +3489,17 @@ void do_tune(void)
 			if (curvoice->space
 			 && !(s->flags & ABC_F_GRACE)) {
 				curvoice->space = 0;
-				s1->flags |= ABC_F_SPACE;
+				s->flags |= ABC_F_SPACE;
 			}
-			get_note(s1);
+			get_note(s);
 			break;
 		case ABC_T_BAR:
 			if (over_bar)
-				get_over(s1);
-			get_bar(s1);
+				get_over(s);
+			get_bar(s);
 			break;
 		case ABC_T_CLEF:
-			get_clef(s1);
+			get_clef(s);
 			break;
 		case ABC_T_EOLN:
 			if (cfmt.breakoneoln
@@ -3527,12 +3525,10 @@ void do_tune(void)
 				switch (s->abc_next->text[0]) {
 				case 'w':
 					s = get_info(s->abc_next);
-					s1 = s;
 					continue;
 				case 'd':
 				case 's':
 					s = s->abc_next;
-					s1 = s;
 					continue;
 				}
 				break;
@@ -3554,13 +3550,13 @@ void do_tune(void)
 				curvoice->time += dur;
 				break;
 			}
-			sym_link(s1, MREST);
+			sym_link(s, MREST);
 			s->dur = dur;
 			curvoice->time += dur;
-			if (s1->text)
-				gch_build(s1);	/* build the guitar chords */
-			if (s1->u.bar.dc.n > 0)
-				deco_cnv(&s1->u.bar.dc, s, NULL);
+			if (s->text)
+				gch_build(s);	/* build the guitar chords */
+			if (s->u.bar.dc.n > 0)
+				deco_cnv(&s->u.bar.dc, s, NULL);
 			break;
 		    }
 		case ABC_T_MREP: {
@@ -3568,7 +3564,7 @@ void do_tune(void)
 
 			s2 = curvoice->last_sym;
 			if (!s2 || s2->type != BAR) {
-				error(1, s1,
+				error(1, s,
 				      "No bar before measure repeat");
 				break;
 			}
@@ -3602,20 +3598,20 @@ void do_tune(void)
 			break;
 		    }
 		case ABC_T_V_OVER:
-			get_over(s1);
+			get_over(s);
 			continue;
 		case ABC_T_TUPLET:
-			set_tuplet(s1);
+			set_tuplet(s);
 			break;
 		default:
 			continue;
 		}
-		if (s1->type == 0)
+		if (s->type == 0)
 			continue;
 		if (curvoice->second)
-			s1->sflags |= S_SECOND;
+			s->sflags |= S_SECOND;
 		if (curvoice->floating)
-			s1->sflags |= S_FLOATING;
+			s->sflags |= S_FLOATING;
 	}
 
 	gen_ly(0);

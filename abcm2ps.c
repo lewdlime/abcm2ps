@@ -1062,11 +1062,11 @@ void clrarena(int level)
 	if ((a_p = str_r[level]) == NULL) {
 		str_r[level] = a_p = malloc(sizeof *str_r[0] + AREANASZ - 2);
 		a_p->sz = AREANASZ;
-		a_p->n = 0;
+		a_p->n = NULL;
 	}
 	str_c[level] = a_p;
 	a_p->p = a_p->str;
-	a_p->r = sizeof a_p->str;
+	a_p->r = a_p->sz;
 }
 
 int lvlarena(int level)
@@ -1103,7 +1103,7 @@ void *getarena(int len)
 			a_p->n->sz = len;
 		} else if (a_p->n == 0) {		/* standard allocation */
 			a_p->n = malloc(sizeof *str_r[0] + AREANASZ - 2);
-			a_p->n->n = 0;
+			a_p->n->n = NULL;
 			a_p->n->sz = AREANASZ;
 		}
 		str_c[str_level] = a_p = a_p->n;

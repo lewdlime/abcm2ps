@@ -1996,6 +1996,7 @@ static char txt_no_note[] = "No note in voice overlay";
 		if (p_voice->time != over_mxtime)
 			error(1, s, tx_wrong_dur);
 		curvoice = &voice_tb[over_voice];
+		over_mxtime = 0;
 		over_voice = -1;
 		over_time = -1;
 		return;

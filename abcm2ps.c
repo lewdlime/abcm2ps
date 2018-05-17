@@ -69,7 +69,7 @@ static struct SYMBOL notitle;
 /* memory arena (for clrarena, lvlarena & getarena) */
 #define MAXAREAL 3		/* max area levels:
 				 * 0; global, 1: tune, 2: generation */
-#define AREANASZ 8192		/* standard allocation size */
+#define AREANASZ 0x4000		/* standard allocation size */
 #define MAXAREANASZ 0x20000	/* biggest allocation size */
 static int str_level;		/* current arena level */
 static struct str_a {

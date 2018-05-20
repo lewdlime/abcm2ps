@@ -62,8 +62,8 @@ An alternate option for this creation is to use 'ninja' (ninja-build) or
 'samurai'. These programs use the file 'build.ninja' which may be custumized.
 
 
-Windows or MAC systems
-======================
+Windows or pre-OS X Mac systems
+===============================
 
 You must create the file 'config.h' from the 'config.h.in' skeleton.
 Then, the abcm2ps binary must be created by compiling all the '.c' files
@@ -86,7 +86,8 @@ line argument:
 The resulting file, 'Out.ps', may be displayed using a PostScript
 previewer such as ghostscript or zathura, or it may be sent directly
 to a PostScript printer, or indirectly to a simple printer using
-a postscript filter.
+a postscript filter. OSX/macOS users can view PostScript natively
+with the system default Preview app. Windows users can use GSView.
 
 
 About the 'pango' library

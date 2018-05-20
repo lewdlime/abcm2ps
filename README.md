@@ -4,8 +4,8 @@
 
 ### Overview
 
-abcm2ps is a program which converts music tunes from the ABC music
-notation to PostScript or SVG.  
+Jean-Francois Moine's abcm2ps is a program which converts music
+tunes from the ABC music notation to PostScript or SVG.
 Based on the abc2ps version 1.2.5 from Michael Methfessel,
 it was first developped to print barock organ scores that have
 independant voices played on one or many keyboards and a pedal-board

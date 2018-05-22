@@ -47,6 +47,8 @@ static struct SYMBOL *last_sym;	/* last symbol for errors */
 static short nvoice;		/* number of voices (0..n-1) */
 struct VOICE_S *curvoice;	/* current voice while parsing */
 
+struct parse parse;
+
 /* char table for note line parsing */
 #define CHAR_BAD 0
 #define CHAR_IGN 1

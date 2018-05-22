@@ -46,6 +46,11 @@ int in_page;			/* filling a PostScript page */
 char *outbuf;			/* output buffer.. should hold one tune */
 char *mbf;			/* where to a2b() */
 int use_buffer;			/* 1 if lines are being accumulated */
+int (*output)(FILE *out, const char *fmt, ...)
+#ifdef __GNUC__
+	__attribute__ ((format (printf, 2, 3)))
+#endif
+	;
 
 /* -- cut off extension on a file identifier -- */
 static void cutext(char *fid)

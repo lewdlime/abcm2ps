@@ -483,14 +483,15 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 };
 
 /* parse definition */
-struct {
+struct parse {
 	struct SYMBOL *first_sym; /* first symbol */
 	struct SYMBOL *last_sym; /* last symbol */
 	int abc_vers;		/* ABC version = (H << 16) + (M << 8) + L */
 	char *deco_tb[DC_NAME_SZ]; /* decoration names */
 	unsigned short micro_tb[MAXMICRO]; /* microtone values [ (n-1) | (d-1) ] */
 	int abc_state;		/* parser state */
-} parse;
+};
+extern struct parse parse;
 
 #define	FONT_UMAX 10		/* max number of user fonts 0..9 */
 enum e_fonts {
@@ -728,7 +729,7 @@ struct SYSTEM {			/* staff system */
 //		struct clef_s clef;
 	} voice[MAXVOICE];
 };
-struct SYSTEM *cursys;		/* current staff system */
+extern struct SYSTEM *cursys;		/* current staff system */
 
 /* -- external routines -- */
 /* abcm2ps.c */
@@ -763,7 +764,7 @@ void close_page(void);
 float get_bposy(void);
 void open_fout(void);
 void write_buffer(void);
-int (*output)(FILE *out, const char *fmt, ...)
+extern int (*output)(FILE *out, const char *fmt, ...)
 #ifdef __GNUC__
 	__attribute__ ((format (printf, 2, 3)))
 #endif

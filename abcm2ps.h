@@ -407,7 +407,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 			short wmeasure;		/* duration of a measure */
 			unsigned char nmeter;	/* number of meter elements */
 			char expdur;		/* explicit measure duration */
-#define MAX_MEASURE 6
+#define MAX_MEASURE 16
 			struct {
 				char top[8];	/* top value */
 				char bot[2];	/* bottom value */

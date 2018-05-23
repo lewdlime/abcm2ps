@@ -16,7 +16,6 @@ Since this time, it has evolved so it can render many more music kinds.
 
 The main features of abcm2ps are quite the same as the abc2ps ones,
 but they are closer to the ABC draft 2.2 (February 2013):
-
     http://abcnotation.com/wiki/abc:standard:v2.2
 
 ### Installation and usage

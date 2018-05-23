@@ -22,6 +22,12 @@ but they are closer to the ABC draft 2.2 (February 2013):
 ### Installation and usage
 
 The installation procedure is described in the file INSTALL.
+To build the program with default settings run
+
+```
+    ./configure
+    make
+```
 
 Basically, the program usage is:
 

@@ -110,6 +110,7 @@ static struct format {
 	{"partsfont", &cfmt.font_tb[PARTSFONT], FORMAT_F, 1},
 	{"partsspace", &cfmt.partsspace, FORMAT_U, 0},
 	{"pdfmark", &cfmt.pdfmark, FORMAT_I, 0},
+	{"pipeformat", &cfmt.pipeformat, FORMAT_B, 0},
 	{"rbdbstop", &cfmt.rbdbstop, FORMAT_B, 0},
 	{"rbmax", &cfmt.rbmax, FORMAT_I, 0},
 	{"rbmin", &cfmt.rbmin, FORMAT_I, 0},

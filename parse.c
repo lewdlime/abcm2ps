@@ -2760,7 +2760,7 @@ static void set_global_def(void)
 	     p_voice++) {
 		switch (p_voice->key.instr) {
 		case 0:
-			if (!pipeformat) {
+			if (!pipeformat || !cfmt.pipeformat) {
 //				p_voice->transpose = cfmt.transpose;
 				break;
 			}
@@ -2773,6 +2773,10 @@ static void set_global_def(void)
 		}
 //		if (p_voice->key.empty)
 //			p_voice->key.sf = 0;
+		if (cfmt.pipeformat) {
+			if (p_voice->posit.std == 0)
+				p_voice->posit.std = SL_BELOW;
+        }
 		if (!cfmt.autoclef
 		 && p_voice->s_clef
 		 && (p_voice->s_clef->sflags & S_CLEF_AUTO)) {
@@ -4031,7 +4035,7 @@ static void get_key(struct SYMBOL *s)
 					sizeof curvoice->okey);
 		switch (curvoice->key.instr) {
 		case 0:
-			if (!pipeformat) {
+			if (!pipeformat || !cfmt.pipeformat) {
 //				curvoice->transpose = cfmt.transpose;
 				break;
 			}
@@ -4042,6 +4046,10 @@ static void get_key(struct SYMBOL *s)
 				curvoice->posit.std = SL_BELOW;
 			break;
 		}
+		if (cfmt.pipeformat) {
+			if (curvoice->posit.std == 0)
+				curvoice->posit.std = SL_BELOW;
+        }
 		if (curvoice->key.empty)
 			curvoice->key.sf = 0;
 		return;
@@ -4386,7 +4394,7 @@ static void get_note(struct SYMBOL *s)
 
 		if (curvoice->key.instr != K_HP
 		 && curvoice->key.instr != K_Hp
-		 && !pipeformat) {
+		 && !(pipeformat || cfmt.pipeformat)) {
 			div = 2;
 			if (!prev
 			 || !(prev->flags & ABC_F_GRACE)) {

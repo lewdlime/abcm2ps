@@ -1460,10 +1460,10 @@ static void gch_build(struct SYMBOL *s)
 	s->gch = getarena(sizeof *s->gch * MAXGCH);
 	memset(s->gch, 0, sizeof *s->gch * MAXGCH);
 
-	if (cfmt.capo)
-		gch_capo(s);
 	if (curvoice->transpose != 0)
 		gch_transpose(s);
+	if (cfmt.capo)
+		gch_capo(s);
 
 	/* split the guitar chords / annotations
 	 * and initialize their vertical offsets */

@@ -1262,9 +1262,6 @@ static void gch_tr1(struct SYMBOL *s, int i, int i2)
 	static const char *latin_names[7] =
 			{ "Do", "Ré", "Mi", "Fa", "Sol", "La", "Si" };
 	static const char *acc_name[5] = {"bb", "b", "", "#", "##"};
-	static const char note_pit[] = {0, 2, 4, 5, 7, 9, 11};
-	static const char pit_note[] = {0, 0, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6};
-	static const char pit_acc[] = {2, 3, 2, 1, 2, 2, 3, 2, 1, 2, 1, 2};
 
 	/* main chord */
 	latin = 0;
@@ -1340,15 +1337,16 @@ static void gch_tr1(struct SYMBOL *s, int i, int i2)
 			a--;
 			p++;
 		}
-		if (*p == '=')
-			p++;
-		i3 = (note_pit[n] + a + i2 + 12) % 12;
-		i4 = pit_note[i3];
+//		if (*p == '=')
+//			p++;
+		i3 = cde2fcg[n] + i2 + a * 7;
+		i4 = cgd2cde[(unsigned) ((i3 + 16 * 7) % 7)];
+		i1 = ((i3 + 1 + 21) / 7 + 2 - 3 + 32 * 5) % 5;
+							/* accidental */
 		if (latin == 0)
 			*new_txt++ = note_names[i4];
 		else
 			new_txt += sprintf(new_txt, "%s", latin_names[i4]);
-		i1 = pit_acc[i3];			// accidental
 		new_txt += sprintf(new_txt, "%s", acc_name[i1]);
 	}
 
@@ -1371,10 +1369,10 @@ static void gch_tr1(struct SYMBOL *s, int i, int i2)
 			} else {
 				a = 0;
 			}
-			i3 = (note_pit[n] + a + i2 + 12) % 12;
-			i4 = pit_note[i3];
+			i3 = cde2fcg[n] + i2 + a * 7;
+			i4 = cgd2cde[(unsigned) ((i3 + 16 * 7) % 7)];
+			i1 = ((i3 + 1 + 21) / 7 + 2 - 3 + 32 * 5) % 5;
 			*new_txt++ = note_names[i4];
-			i1 = pit_acc[i3];
 			new_txt += sprintf(new_txt, "%s", acc_name[i1]);
 		}
 	}
@@ -1386,6 +1384,8 @@ static void gch_capo(struct SYMBOL *s)
 	char *p = s->text, *q, *r;
 	int i, l, li = 0;
 	static const char *capo_txt = "  (capo: %d)";
+	static signed char cap_trans[] =
+		{0, 5, -2, 3, -4, 1, -6, -1, 4, -3, 2, -5};
 
 	// search the chord symbols
 	for (;;) {
@@ -1420,12 +1420,12 @@ static void gch_capo(struct SYMBOL *s)
 	if (q)
 		strcpy(r + i + l, q);	// ending annotations
 	s->text = r;
-	gch_tr1(s, i, -cfmt.capo);
+	gch_tr1(s, i, cap_trans[cfmt.capo % 12]);
 }
 
 static void gch_transpose(struct SYMBOL *s)
 {
-	int i2 = ((curvoice->ckey.sf - curvoice->okey.sf + 12) * 7) % 12;
+	int i2 = curvoice->ckey.sf - curvoice->okey.sf;
 	char *o = s->text, *p = o, *q = o, *r;
 
 	// search the chord symbols

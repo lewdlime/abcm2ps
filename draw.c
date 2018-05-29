@@ -1428,6 +1428,7 @@ static void draw_gracenotes(struct SYMBOL *s)
 	/* slur */
 	if (voice_tb[s->voice].key.instr == K_HP	/* no slur when bagpipe */
 	 || voice_tb[s->voice].key.instr == K_Hp
+	 || cfmt.pipeformat
 	 || pipeformat
 	 || !cfmt.graceslurs
 	 || s->u.note.slur_st		/* explicit slur */

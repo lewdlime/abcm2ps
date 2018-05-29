@@ -536,7 +536,7 @@ struct FORMAT { 		/* struct for page layout */
 #ifdef HAVE_PANGO
 	int pango;
 #endif
-	int partsbox, pdfmark;
+	int partsbox, pdfmark, pipeformat;
 	int rbdbstop, rbmax, rbmin;
 	int setdefl, shiftunison, splittune, squarebreve;
 	int staffnonote, straightflags, stretchstaff;

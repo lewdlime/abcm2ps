@@ -1871,9 +1871,9 @@ struct SYMBOL *prev_scut(struct SYMBOL *s)
 	s = voice_tb[s->voice].sym;
 	while (s->type != CLEF)
 		s = s->ts_prev;		/* search a main voice */
-	if (s->next->type == KEYSIG)
+	if (s->next && s->next->type == KEYSIG)
 		s = s->next;
-	if (s->next->type == TIMESIG)
+	if (s->next && s->next->type == TIMESIG)
 		s = s->next;
 	return s;
 }

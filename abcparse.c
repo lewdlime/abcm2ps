@@ -1,7 +1,7 @@
 /*
  * Generic ABC parser.
  *
- * Copyright (C) 1998-2017 Jean-François Moine
+ * Copyright (C) 1998-2018 Jean-François Moine
  * Adapted from abc2ps, Copyright (C) 1996, 1997 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,8 +35,6 @@ static int g_abc_vers, g_ulen, g_microscale;
 static char g_char_tb[128];
 static char *g_deco_tb[128];		/* global decoration names */
 static unsigned short g_micro_tb[MAXMICRO]; /* global microtone values */
-
-#define VOICE_NAME_SZ 64	/* max size of a voice name */
 
 static char *abc_fn;		/* current source file name */
 static int linenum;		/* current source line number */
@@ -835,11 +833,9 @@ unk:
 		parse_clef(s, clef_name, clef_middle);
 	}
 	if (p_map) {
-		char name[VOICE_NAME_SZ];
-
-		strcpy(name, "%%voicemap ");
-		get_str(&name[11], p_map, VOICE_NAME_SZ - 12);
-		abc_new(ABC_T_PSCOM, name);
+		strcpy(tex_buf, "%%voicemap ");
+		get_str(&tex_buf[11], p_map, TEX_BUF_SZ - 12);
+		abc_new(ABC_T_PSCOM, tex_buf);
 	}
 }
 
@@ -1220,7 +1216,6 @@ static char *parse_voice(char *p,
 {
 	int voice;
 	char *error_txt = NULL;
-	char name[VOICE_NAME_SZ];
 	char *clef_name, *clef_middle, *clef_stlines, *clef_scale;
 	char *p_octave, *p_cue, *p_map;
 	signed char *p_stem;
@@ -1324,14 +1319,14 @@ static struct kw_s {
 		p += kw->len;
 		switch (kw->index) {
 		case 0:			/* name */
-			p = get_str(name, p, VOICE_NAME_SZ);
-			s->u.voice.fname = getarena(strlen(name) + 1);
-			strcpy(s->u.voice.fname, name);
+			p = get_str(tex_buf, p, TEX_BUF_SZ);
+			s->u.voice.fname = getarena(strlen(tex_buf) + 1);
+			strcpy(s->u.voice.fname, tex_buf);
 			break;
 		case 1:			/* subname */
-			p = get_str(name, p, VOICE_NAME_SZ);
-			s->u.voice.nname = getarena(strlen(name) + 1);
-			strcpy(s->u.voice.nname, name);
+			p = get_str(tex_buf, p, TEX_BUF_SZ);
+			s->u.voice.nname = getarena(strlen(tex_buf) + 1);
+			strcpy(s->u.voice.nname, tex_buf);
 			break;
 		case 2:			/* merge */
 			s->u.voice.merge = 1;
@@ -1400,9 +1395,9 @@ static struct kw_s {
 		parse_clef(s, clef_name, clef_middle);
 	}
 	if (p_map) {
-		strcpy(name, "%%voicemap ");
-		get_str(&name[11], p_map, VOICE_NAME_SZ - 12);
-		abc_new(ABC_T_PSCOM, name);
+		strcpy(tex_buf, "%%voicemap ");
+		get_str(&tex_buf[11], p_map, TEX_BUF_SZ - 12);
+		abc_new(ABC_T_PSCOM, tex_buf);
 	}
 	return error_txt;
 }

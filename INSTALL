@@ -7,11 +7,11 @@ abcm2ps is now distributed from a GitHub repository.
 
 You may get the source files either as a `tar.gz` or `.zip` file from
 
-	https://github.com/moinejf/abc2svg
+	https://github.com/leesavide/abcm2ps.git
 
 or by cloning the repository with 'git'
 
-	git clone http://github.com/moinejf/abcm2ps
+	https://github.com/leesavide/abcm2ps.git
 
 (you may use `--depth=1` if you don't want the full `git` history)
 

@@ -21,7 +21,7 @@
 /* global values */
 int severity;			/* error severity */
 
-static short ulen;		/* unit note length set by M: or L: */
+static int ulen;		/* unit note length set by M: or L: */
 static short meter;		/* upper value of time sig for n-plets */
 static unsigned char microscale; /* current microtone scale */
 static signed char vover;	/* voice overlay (1: single bar, -1: multi-bar */
@@ -1795,7 +1795,7 @@ static char *parse_len(char *p,
 	len = dur_u;
 	if (isdigit((unsigned char) *p)) {
 		len *= strtol(p, &q, 10);
-		if (len <= 0 || len > BASE_LEN * 8) {
+		if (len <= 0) {
 			syntax("Bad length", p);
 			len = BASE_LEN;
 		}

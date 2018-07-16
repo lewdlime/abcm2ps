@@ -168,7 +168,7 @@ struct map {		/* voice mapping */
 extern struct map *maps; /* note mappings */
 
 struct note {		/* note head */
-	short len;		/* note duration (# pts in [1] if space) */
+	int len;		/* note duration (# pts in [1] if space) */
 	signed char pit;	/* absolute pitch from source - used for ties and map */
 	unsigned char acc;	/* code for accidental & index in micro_tb */
 	unsigned char sl1;	/* slur start */
@@ -678,7 +678,7 @@ struct VOICE_S {
 							/* parsing */
 	struct SYMBOL *last_note;	/* last note or rest */
 	char *map_name;
-	short ulen;			/* unit note length */
+	int ulen;			/* unit note length */
 	unsigned char microscale;	/* microtone scale */
 	unsigned char mvoice;		/* main voice when voice overlay */
 };

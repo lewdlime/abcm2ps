@@ -35,6 +35,7 @@ struct SYMBOL *sym;		/* (points to the symbols of the current voice) */
 
 int tunenum;			/* number of current tune */
 int pagenum = 1;		/* current page in output file */
+int pagenum_nr = 1;		/* current page (non-resettable) */
 
 				/* switches modified by command line flags: */
 int quiet;			/* quiet mode */

@@ -567,6 +567,7 @@ extern int use_buffer;		/* 1 if lines are being accumulated */
 extern int outft;		/* last font in the output file */
 extern int tunenum;		/* number of current tune */
 extern int pagenum;		/* current page number */
+extern int pagenum_nr;		/* current page (non-resettable) */
 extern int nbar;		/* current measure number */
 extern int in_page;
 extern int defl;		/* decoration flags */

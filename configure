@@ -16,10 +16,11 @@ if test -f ./custom; then
 	. ./custom
 fi
 
-for c in $@; do
+for c in "$@"; do
  case "$c" in
 	--*=*)
-		eval ${c#--}
+		c="${c#--}"
+		eval "${c%%=*}='${c#*=}'"
 		;;
  esac
 done

@@ -50,7 +50,7 @@ fi
 if which pkg-config > /dev/null ; then
 	if pkg-config --exists freetype2 ; then
 		if pkg-config --exists pangocairo ; then
-			CPPFLAGS="-DHAVE_PANGO=1"
+			CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1"
 			CPPPANGO="`pkg-config pango cairo freetype2 --cflags`"
 			LDFLAGS="$LDFLAGS `pkg-config pangocairo pangoft2 freetype2 --libs`"
 		else

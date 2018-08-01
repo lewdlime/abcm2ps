@@ -1434,10 +1434,15 @@ static void gch_transpose(struct SYMBOL *s)
 			q = strchr(p, '\t');
 			if (q) {
 				r = strchr(p, '\n');
-				if (!r || q < r)
+				if (!r || q < r) {
 					gch_tr1(s, q + 1 - o, i2);
+					p = s->text + (p - o);
+					o = s->text;
+				}
 			}
-			gch_tr1(s, p - o, i2);
+			gch_tr1(s, p - s->text, i2);
+			p = s->text + (p - o);
+			o = s->text;
 		}
 		p = strchr(p, '\n');
 		if (!p)

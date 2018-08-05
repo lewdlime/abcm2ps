@@ -82,8 +82,9 @@ test:	$(EXAMPLES)
 %.ps: %.abc
 	./abcm2ps -O $@ $<
 
-clean:
-	rm -f *.o $(EXAMPLES) # *.obj
-
-cleanconfig: clean
-	rm -f config.h abcm2ps Makefile abcm2ps.1
+mostlyclean:
+	rm -f *.o $(EXAMPLES)
+clean: mostlyclean
+	rm -f abcm2ps abcm2ps.1
+distclean: clean
+	rm -f config.h Makefile

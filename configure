@@ -42,7 +42,7 @@ if test "x$datarootdir" = x; then
 	datarootdir='${prefix}/share'
 fi
 if test "x$docdir" = x; then
-	docdir='${prefix}/doc'
+	docdir='${prefix}/share/doc'
 fi
 if test "x$mandir" = x; then
 	mandir='${prefix}/share/man'

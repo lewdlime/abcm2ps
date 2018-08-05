@@ -36,7 +36,8 @@ abcparse.o abcm2ps.o buffer.o deco.o draw.o format.o front.o glyph.o \
 subs.o: subs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPPANGO) -c -o $@ $<
 
-DOCFILES=$(addprefix $(srcdir)/,*.abc *.eps README.md)
+DOCFILES=$(addprefix $(srcdir)/,README.md)
+examples=$(addprefix $(srcdir)/,*.abc *.eps)
 
 abcm2ps.1: abcm2ps.rst
 	rst2man abcm2ps.rst abcm2ps.1
@@ -44,7 +45,7 @@ abcm2ps.1: abcm2ps.rst
 install: build
 	mkdir -p $(bindir); \
 	mkdir -p $(datadir)/abcm2ps; \
-	mkdir -p $(docdir)/abcm2ps; \
+	mkdir -p $(docdir)/abcm2ps/examples; \
 	$(INSTALL_PROGRAM) abcm2ps $(bindir); \
 	$(INSTALL_DATA) abc2svg.ttf $(datadir)/abcm2ps
 	for f in $(srcdir)/*.fmt; do \
@@ -52,6 +53,9 @@ install: build
 	done
 	for f in $(DOCFILES); do \
 		$(INSTALL_DATA) $$f $(docdir)/abcm2ps; \
+	done
+	for f in $(examples); do \
+		$(INSTALL_DATA) $$f $(docdir)/abcm2ps/examples; \
 	done
 	mkdir -p $(mandir)/man1
 	$(INSTALL_DATA) abcm2ps.1 $(mandir)/man1

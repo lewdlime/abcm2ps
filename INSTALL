@@ -7,11 +7,11 @@ abcm2ps is now distributed from a GitHub repository.
 
 You may get the source files either as a `tar.gz` or `.zip` file from
 
-	https://github.com/moinejf/abc2svg
+	https://github.com/leesavide/abcm2ps.git
 
 or by cloning the repository with 'git'
 
-	git clone http://github.com/moinejf/abcm2ps
+	https://github.com/leesavide/abcm2ps.git
 
 (you may use `--depth=1` if you don't want the full `git` history)
 
@@ -86,8 +86,10 @@ line argument:
 The resulting file, 'Out.ps', may be displayed using a PostScript
 previewer such as ghostscript or zathura, or it may be sent directly
 to a PostScript printer, or indirectly to a simple printer using
-a postscript filter. OSX/macOS users can view PostScript natively
-with the system default Preview app. Windows users can use GSView.
+a postscript filter.
+OSX/macOS users can view PostScript natively with the system default
+Preview app.
+Windows users can use GSView.
 
 
 About the 'pango' library

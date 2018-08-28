@@ -8,16 +8,18 @@ Jean-Francois Moine's abcm2ps is a program which converts music tunes from the A
 
 ### Features
 
-The main features of abcm2ps are quite the same as the abc2ps ones, but they are closer to the ABC draft 2.2 (February 2013):
+The main features of abcm2ps are quite the same as the abc2ps ones,
+but they are closer to the ABC draft 2.2 (February 2013):
     http://abcnotation.com/wiki/abc:standard:v2.2
 
 ### Installation and usage
 
-The full installation options are described in the file INSTALL. To build the program with default settings run
+The installation procedure is described in the file INSTALL.
+To build the program with default settings run
 
 ```
-./configure
-make
+    ./configure
+    make
 ```
 
 Basically, the program usage is:

@@ -1,8 +1,8 @@
 #! /bin/sh
 
 # (automatic update)
-VERSION=8.13.21
-VDATE=2018-05-05
+VERSION=8.13.24
+VDATE=2018-08-01
 
 CC=gcc
 CFLAGS="-g -O2 -Wall -pipe"
@@ -16,10 +16,11 @@ if test -f ./custom; then
 	. ./custom
 fi
 
-for c in $@; do
+for c in "$@"; do
  case "$c" in
 	--*=*)
-		eval ${c#--}
+		c="${c#--}"
+		eval "${c%%=*}='${c#*=}'"
 		;;
  esac
 done
@@ -50,7 +51,7 @@ fi
 if which pkg-config > /dev/null ; then
 	if pkg-config --exists freetype2 ; then
 		if pkg-config --exists pangocairo ; then
-			CPPFLAGS="-DHAVE_PANGO=1"
+			CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1"
 			CPPPANGO="`pkg-config pango cairo freetype2 --cflags`"
 			LDFLAGS="$LDFLAGS `pkg-config pangocairo pangoft2 freetype2 --libs`"
 		else

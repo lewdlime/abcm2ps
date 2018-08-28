@@ -168,7 +168,7 @@ struct map {		/* voice mapping */
 extern struct map *maps; /* note mappings */
 
 struct note {		/* note head */
-	short len;		/* note duration (# pts in [1] if space) */
+	int len;		/* note duration (# pts in [1] if space) */
 	signed char pit;	/* absolute pitch from source - used for ties and map */
 	unsigned char acc;	/* code for accidental & index in micro_tb */
 	unsigned char sl1;	/* slur start */
@@ -407,7 +407,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 			short wmeasure;		/* duration of a measure */
 			unsigned char nmeter;	/* number of meter elements */
 			char expdur;		/* explicit measure duration */
-#define MAX_MEASURE 6
+#define MAX_MEASURE 16
 			struct {
 				char top[8];	/* top value */
 				char bot[2];	/* bottom value */
@@ -483,14 +483,15 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 };
 
 /* parse definition */
-struct {
+struct parse {
 	struct SYMBOL *first_sym; /* first symbol */
 	struct SYMBOL *last_sym; /* last symbol */
 	int abc_vers;		/* ABC version = (H << 16) + (M << 8) + L */
 	char *deco_tb[DC_NAME_SZ]; /* decoration names */
 	unsigned short micro_tb[MAXMICRO]; /* microtone values [ (n-1) | (d-1) ] */
 	int abc_state;		/* parser state */
-} parse;
+};
+extern struct parse parse;
 
 #define	FONT_UMAX 10		/* max number of user fonts 0..9 */
 enum e_fonts {
@@ -566,6 +567,7 @@ extern int use_buffer;		/* 1 if lines are being accumulated */
 extern int outft;		/* last font in the output file */
 extern int tunenum;		/* number of current tune */
 extern int pagenum;		/* current page number */
+extern int pagenum_nr;		/* current page (non-resettable) */
 extern int nbar;		/* current measure number */
 extern int in_page;
 extern int defl;		/* decoration flags */
@@ -677,7 +679,7 @@ struct VOICE_S {
 							/* parsing */
 	struct SYMBOL *last_note;	/* last note or rest */
 	char *map_name;
-	short ulen;			/* unit note length */
+	int ulen;			/* unit note length */
 	unsigned char microscale;	/* microtone scale */
 	unsigned char mvoice;		/* main voice when voice overlay */
 };
@@ -728,7 +730,7 @@ struct SYSTEM {			/* staff system */
 //		struct clef_s clef;
 	} voice[MAXVOICE];
 };
-struct SYSTEM *cursys;		/* current staff system */
+extern struct SYSTEM *cursys;		/* current staff system */
 
 /* -- external routines -- */
 /* abcm2ps.c */
@@ -763,7 +765,7 @@ void close_page(void);
 float get_bposy(void);
 void open_fout(void);
 void write_buffer(void);
-int (*output)(FILE *out, const char *fmt, ...)
+extern int (*output)(FILE *out, const char *fmt, ...)
 #ifdef __GNUC__
 	__attribute__ ((format (printf, 2, 3)))
 #endif

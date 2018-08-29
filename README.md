@@ -4,7 +4,14 @@
 
 ### Overview
 
-Jean-Francois Moine's abcm2ps is a program which converts music tunes from the ABC music notation to PostScript or SVG. Based on the abc2ps version 1.2.5 from Michael Methfessel, it was first developped to print barock organ scores that have independant voices played on one or many keyboards and a pedal-board (the 'm' of abcm2ps stands for many or multi staves/voices). Since this time, it has evolved so it can render many more music kinds.
+abcm2ps is a C program which converts music tunes from the ABC music notation
+to PostScript or SVG.
+
+Based on the abc2ps version 1.2.5 from Michael Methfessel,
+it was first developped to print barock organ scores that have independant
+voices played on one or many keyboards and a pedal-board
+(the 'm' of abcm2ps stands for many or multi staves/voices).
+Since this time, it has evolved so it can render many more music kinds.
 
 ### Features
 
@@ -26,7 +33,9 @@ Basically, the program usage is:
 
     abcm2ps [options] file1 [file1_options] file2 [file2_options] ...
 
-where file1, file2, .. are the ABC input files. This will generate a Postscript file (default name: `Out.ps`). Run `abcm2ps -h` to know the list of the command line options.
+where file1, file2, .. are the ABC input files.
+This will generate a Postscript file (default name: `Out.ps`).
+Run `abcm2ps -h` to know the list of the command line options.
 
 ### Documentation
 

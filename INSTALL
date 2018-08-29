@@ -36,6 +36,7 @@ bindir='${exec_prefix}/bin'
 libdir='${exec_prefix}/lib'
 datarootdir='${prefix}/share'
 docdir='${prefix}/doc'
+mandir='${datarootdir$/man'
 DEFAULT_FDIR="$prefix/share/abcm2ps"
 
 The script 'configure' first tries to read the file 'custom'

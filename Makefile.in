@@ -19,6 +19,9 @@ VPATH = @srcdir@
 bindir = $(DESTDIR)@bindir@
 datadir = $(DESTDIR)@datarootdir@
 docdir = $(DESTDIR)@docdir@
+mandir = $(DESTDIR)@mandir@
+
+build: abcm2ps abcm2ps.1
 
 # unix
 OBJECTS=abcm2ps.o \
@@ -33,9 +36,12 @@ abcparse.o abcm2ps.o buffer.o deco.o draw.o format.o front.o glyph.o \
 subs.o: subs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPPANGO) -c -o $@ $<
 
-DOCFILES=$(addprefix $(srcdir)/,*.abc *.eps *.txt)
+DOCFILES=$(addprefix $(srcdir)/,*.abc *.eps README.md)
 
-install: abcm2ps
+abcm2ps.1: abcm2ps.rst
+	rst2man abcm2ps.rst abcm2ps.1
+
+install: build
 	mkdir -p $(bindir); \
 	mkdir -p $(datadir)/abcm2ps; \
 	mkdir -p $(docdir)/abcm2ps; \
@@ -47,12 +53,15 @@ install: abcm2ps
 	for f in $(DOCFILES); do \
 		$(INSTALL_DATA) $$f $(docdir)/abcm2ps; \
 	done
+	mkdir -p $(mandir)/man1
+	$(INSTALL_DATA) abcm2ps.1 $(mandir)/man1
 
 uninstall:
 	echo "uninstalling..."; \
 	rm -f $(bindir)/abcm2ps; \
 	rm -rf $(datadir)/abcm2ps; \
-	rm -rf $(docdir)/abcm2ps
+	rm -rf $(docdir)/abcm2ps; \
+	rm -f $(mandir)/man1/abcm2ps.1
 
 EXAMPLES = accordion.ps \
 	chinese.ps \
@@ -73,4 +82,4 @@ clean:
 	rm -f *.o $(EXAMPLES) # *.obj
 
 cleanconfig: clean
-	rm -f config.h abcm2ps Makefile
+	rm -f config.h abcm2ps Makefile abcm2ps.1

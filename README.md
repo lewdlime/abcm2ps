@@ -39,18 +39,17 @@ Run `abcm2ps -h` to know the list of the command line options.
 
 ### Documentation
 
-- options.txt contains the list of the command line options.
+- abcm2ps.rst describes all command-line options.
 
-- the format parameters are described in:
+  When `abcm2ps` is installed, it may be read by `man abcm2ps`.
+
+- the feature and format parameters are described in
     http://moinejf.free.fr/abcm2ps-doc/index.html
-
-- the differences from the current ABC standard are described in:
-    http://moinejf.free.fr/abcm2ps-doc/features.html
 
 ### Links
 
-To know more about the ABC music notation, have a look at:
+To know more about the ABC music notation, have a look at
     http://abcnotation.com/
 
-Guido Gonzato maintains many abcm2ps binaries and more documentation at:
+Guido Gonzato maintains many abcm2ps binaries and more documentation at
     http://abcplus.sourceforge.net/

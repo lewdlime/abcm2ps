@@ -44,6 +44,9 @@ fi
 if test "x$docdir" = x; then
 	docdir='${prefix}/doc'
 fi
+if test "x$mandir" = x; then
+	mandir='${prefix}/man'
+fi
 if test "x$DEFAULT_FDIR" = x; then
 	DEFAULT_FDIR="$prefix/share/abcm2ps"
 fi
@@ -77,6 +80,7 @@ s+@exec_prefix@+$exec_prefix+
 s+@srcdir@+$srcdir+
 s+@bindir@+$bindir+
 s+@datarootdir@+$datarootdir+
+s+@mandir@+$mandir+
 s+@docdir@+$docdir+" Makefile.in > Makefile
 echo "Makefile created"
 

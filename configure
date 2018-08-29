@@ -45,7 +45,7 @@ if test "x$docdir" = x; then
 	docdir='${prefix}/doc'
 fi
 if test "x$mandir" = x; then
-	mandir='${prefix}/man'
+	mandir='${prefix}/share/man'
 fi
 if test "x$DEFAULT_FDIR" = x; then
 	DEFAULT_FDIR="$prefix/share/abcm2ps"

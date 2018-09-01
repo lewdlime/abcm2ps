@@ -5,10 +5,10 @@ INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 
-CPPFLAGS = @CPPFLAGS@ -I.
-CPPPANGO = @CPPPANGO@
+CPPFLAGS = @CPPFLAGS@
 CFLAGS = @CFLAGS@
-LDFLAGS = @LDFLAGS@ -lm
+LDFLAGS = @LDFLAGS@
+LDLIBS = @LDLIBS@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -30,8 +30,6 @@ OBJECTS=abcm2ps.o \
 abcm2ps: $(OBJECTS)
 
 $(OBJECTS): abcm2ps.h config.h Makefile
-
-subs.o: CPPFLAGS += $(CPPPANGO)
 
 abcm2ps.1: abcm2ps.rst
 	if [ -x "$$(command -v rst2man)" ]; then\

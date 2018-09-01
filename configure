@@ -60,9 +60,8 @@ fi
 if which pkg-config > /dev/null ; then
 	if pkg-config --exists freetype2 ; then
 		if pkg-config --exists pangocairo ; then
-			CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1"
-			CPPPANGO="`pkg-config pango cairo freetype2 --cflags`"
-			LDFLAGS="$LDFLAGS `pkg-config pangocairo pangoft2 freetype2 --libs`"
+			CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1 `pkg-config pango cairo freetype2 --cflags`"
+			LDLIBS="$LDLIBS `pkg-config pangocairo pangoft2 freetype2 --libs`"
 		else
 			echo "pangocairo not found - no pango support"
 		fi
@@ -73,11 +72,17 @@ else
 	echo "pkg-config not found - no pango support"
 fi
 
+CPPFLAGS="$CPPFLAGS -I."
+# ./config.h will not be found in srcdir.
+
+LDLIBS="$LDLIBS -lm"
+# Useful on some architectures.
+
 sed "s+@CC@+$CC+
 s+@CPPFLAGS@+$CPPFLAGS+
-s+@CPPPANGO@+$CPPPANGO+
 s+@CFLAGS@+$CFLAGS+
 s+@LDFLAGS@+$LDFLAGS+
+s+@LDLIBS@+$LDLIBS+
 s+@INSTALL@+$INSTALL+
 s+@INSTALL_DATA@+$INSTALL_DATA+
 s+@INSTALL_PROGRAM@+$INSTALL_PROGRAM+

@@ -25,6 +25,12 @@ for c in "$@"; do
  esac
 done
 
+case "$srcdir" in
+    *\ *)
+        echo "srcpath cannot contain spaces"
+        exit 1
+esac
+
 if test "x$INSTALL_DATA" = x; then
 	INSTALL_DATA='${INSTALL} -m 644'
 fi
@@ -81,11 +87,11 @@ s+@srcdir@+$srcdir+
 s+@bindir@+$bindir+
 s+@datarootdir@+$datarootdir+
 s+@mandir@+$mandir+
-s+@docdir@+$docdir+" Makefile.in > Makefile
+s+@docdir@+$docdir+" "$srcdir/Makefile.in" > Makefile
 echo "Makefile created"
 
 sed "s/define VERSION xxx/\define VERSION \"$VERSION\"/
 s/define VDATE xxx/define VDATE \"$VDATE\"/
 s+define DEFAULT_FDIR xxx+define DEFAULT_FDIR \"$DEFAULT_FDIR\"+
-" config.h.in > config.h
+" "$srcdir/config.h.in" > config.h
 echo "config.h created"

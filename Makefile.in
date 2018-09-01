@@ -41,9 +41,9 @@ examples=$(addprefix $(srcdir)/,*.abc *.eps)
 
 abcm2ps.1: abcm2ps.rst
 	if [ -x "$$(command -v rst2man)" ]; then\
-		rst2man abcm2ps.rst abcm2ps.1;\
+		rst2man $< $@;\
 	else\
-		cp abcm2ps.rst abcm2ps.1;\
+		cp $< $@;\
 	fi
 
 install: build
@@ -51,7 +51,7 @@ install: build
 	mkdir -p $(datadir)/abcm2ps; \
 	mkdir -p $(docdir)/abcm2ps/examples; \
 	$(INSTALL_PROGRAM) abcm2ps $(bindir); \
-	$(INSTALL_DATA) abc2svg.ttf $(datadir)/abcm2ps
+	$(INSTALL_DATA) $(srcdir)/abc2svg.ttf $(datadir)/abcm2ps
 	for f in $(srcdir)/*.fmt; do \
 		$(INSTALL_DATA) $$f $(datadir)/abcm2ps; \
 	done

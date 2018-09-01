@@ -28,13 +28,10 @@ OBJECTS=abcm2ps.o \
 	abcparse.o buffer.o deco.o draw.o format.o front.o glyph.o music.o parse.o \
 	subs.o svg.o syms.o
 abcm2ps: $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(LDFLAGS)
 
-$(OBJECTS): config.h Makefile
-abcparse.o abcm2ps.o buffer.o deco.o draw.o format.o front.o glyph.o \
-	music.o parse.o subs.o svg.o syms.o: abcm2ps.h
-subs.o: subs.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(CPPPANGO) -c -o $@ $<
+$(OBJECTS): abcm2ps.h config.h Makefile
+
+subs.o: CPPFLAGS += $(CPPPANGO)
 
 abcm2ps.1: abcm2ps.rst
 	if [ -x "$$(command -v rst2man)" ]; then\

@@ -55,7 +55,12 @@ the command line. These settings must start with '--':
 
 	./configure --CC=clang
 
-If you want to use the 'pango' library, install it prior running 'configure'.
+If you want to use the 'pango' library, install the development files
+for pango and freetype2, as well as the pkg-config tool prior running
+'configure'.
+
+In addition to the usual C build tools (mainly, gcc and make), you
+will require the rst2man tool from the python-docutils package.
 
 Creating the binary is done by a standard call to 'make'.
 

@@ -400,7 +400,7 @@ void set_format(void)
 	if (!svg && epsf <= 1)
 		f->pango = 1;
 	else
-		lock_fmt(&cfmt.pango);	/* SVG output does not use panga */
+		lock_fmt(&cfmt.pango);	/* SVG output does not use pango */
 #endif
 	f->rbdbstop = 1;
 	f->rbmax = 4;
@@ -758,7 +758,7 @@ static void g_fspc(char *p,
 			fsize = v;
 	}
 	fontspec(f,
-		 strcmp(fname, "*") != 0 ? fname : 0,
+		 strcmp(fname, "*") != 0 ? fname : NULL,
 		 encoding,
 		 fsize);
 	if (file_initialized <= 0)

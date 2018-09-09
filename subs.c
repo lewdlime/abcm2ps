@@ -325,7 +325,6 @@ void pg_init(void)
 		cfmt.pango = 0;
 	} else {
 		pango_layout_set_wrap(layout, PANGO_WRAP_WORD);
-//		pango_layout_set_spacing(layout, 0);
 		pg_str = g_string_sized_new(256);
 	}
 }
@@ -336,16 +335,55 @@ void pg_reset_font(void)
 
 static void desc_font(int fnum)
 {
-	char font_name[128], *p;
+	int i;
+	char font_name[128], *p, *q;
+static char *bad_tb[] = {
+	"Times-Roman", "Times", "Helvetica", "Courier"
+};
+static char *good_tb[] = {
+	"serif", "serif", "sans-serif", "monospace"
+};
 
-	if (desc_tb[fnum] == 0) {
+	// build a font description replacing X11 font names by generic names
+	if (!desc_tb[fnum]) {
 		p = font_name;
-		sprintf(p, "%s 10", fontnames[fnum]);
+		q = fontnames[fnum];
+		for (i = 0; i < sizeof bad_tb / sizeof bad_tb[0]; i++) {
+			if (strncmp(q, bad_tb[i], strlen(bad_tb[i])) == 0) {
+				p += sprintf(p, "%s", good_tb[i]);
+				q += strlen(bad_tb[i]);
+				break;
+			}
+		}
+		snprintf(p, sizeof font_name - 5, "%s 10", q);	// (dummy size)
+
+		// change '-' to a space
 		while (*p != '\0') {
 			if (*p == '-')
 				*p = ' ';
+			if (isupper(*p))
+				*p = tolower(*p);
 			p++;
 		}
+
+		// add spaces between styles/weight
+		p = strstr(&font_name[1], "italic");
+		if (p && p[-1] != ' ') {
+			memmove(p + 1, p, strlen(p) + 1);
+			*p = ' ';
+		}
+		p = strstr(&font_name[1], "oblique");
+		if (p && p[-1] != ' ') {
+			memmove(p + 1, p, strlen(p) + 1);
+			*p = ' ';
+		}
+		p = strstr(&font_name[1], "bold");
+		if (p && p[-1] != ' ') {
+			memmove(p + 1, p, strlen(p) + 1);
+			*p = ' ';
+		}
+
+		// create the font description
 		desc_tb[fnum] = pango_font_description_from_string(font_name);
 	}
 }
@@ -374,10 +412,6 @@ static void pg_line_output(PangoLayoutLine *line)
 		int wi = pango_font_description_get_size(ftdesc);
 		int i, c;
 
-		if (pango_font_description_get_size(ftdesc) != wi) {
-			wi = pango_font_description_get_size(ftdesc);
-			fontname = NULL;
-		}
 		for (i = 0; i < glyphs->num_glyphs; i++) {
 			glyph_info = &glyphs->glyphs[i];
 			c = glyph_info->glyph;
@@ -404,12 +438,12 @@ static void pg_line_output(PangoLayoutLine *line)
 						(float) wi / PG_SCALE);
 					glypharray = 1;
 				}
-				FT_Get_Glyph_Name((FT_FaceRec *) face, c,
+				FT_Get_Glyph_Name(face, c,
 						tmp, sizeof tmp);
 				a2b("/%s", tmp);
 			} else {
-				a2b("%% glyph: %s %d\n",
-					FT_Get_Postscript_Name(face), c);
+				error(0, NULL, "!! no glyph %d in %s-%s\n",
+					c, face->family_name, face->style_name);
 			}
 		}
 		pango_fc_font_unlock_face(fc_font);
@@ -493,8 +527,6 @@ static void str_pg_out(char *p, int action)
 	int wi;
 	float w;
 
-//fixme: test
-//a2b("\n%% t: '%s'\n", p);
 	if (out_pg_ft != curft)
 		out_pg_ft = -1;
 
@@ -590,7 +622,6 @@ static void pg_para_output(int job)
 				wi = pango_font_description_get_size(ftdesc);
 				fontname = NULL;
 			}
-//printf("font size: %.2f\n", (float) wi / PG_SCALE);
 
 			pango_layout_index_to_pos(layout, item->offset, &pos);
 			x = pos.x;

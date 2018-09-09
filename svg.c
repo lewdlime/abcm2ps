@@ -602,11 +602,11 @@ static struct {
 #define D_showerror 85
 {	"<circle id=\"showerror\" r=\"30\" stroke=\"#ffc0c0\" stroke-width=\"2.5\" fill=\"none\"/>\n"},
 #define D_sfz 86
-{	"<text id=\"sfz\" font-family=\"serif\" font-size=\"14\" font-style=\"italic\" font-weight=\"normal\"\n"
+{	"<text id=\"sfz\" style=\"font:italic 14px serif\"\n"
 	"	x=\"-5\" y=\"-7\">s<tspan\n"
 	"	font-size=\"16\" font-weight=\"bold\">f</tspan>z</text>\n"},
 #define D_trl 87
-{	"<text id=\"trl\" font-family=\"serif\" font-size=\"16\" font-style=\"italic\"\n"
+{	"<text id=\"trl\" style=\"font:italic bold 16px serif\"\n"
 	"	x=\"-2\" y=\"-4\">tr</text>\n"},
 #define D_marcato 88
 {	"<path id=\"marcato\" d=\"m-3 0l3 -7l3 7l-1.5 0l-1.8 -4.2l-1.7 4.2\"/>\n"},
@@ -1151,14 +1151,13 @@ static void define_head(float w, float h)
 		".stroke {stroke: currentColor; fill: none}\n"
 		"text{white-space: pre}\n";
 	static const char svg_font_style[] =
-		".music {font-family: %s; font-size: 24px;\n"
+		".music {font:24px music;\n"
 		"	fill: currentColor}\n";
 	static const char svg_font_style_url[] =
 		"@font-face {\n"
-		"	font-family: 'music';\n"
-		"	src: %s;\n"
-		"	font-weight: normal; font-style: normal}\n"
-		".music {font-family: music; font-size: 24px;\n"
+		"	font-family:music;\n"
+		"	src:%s}\n"
+		".music {font:24px music;\n"
 		"	fill: currentColor}\n";
 	static const char svg_head2[] =
 		"</style>\n"
@@ -1279,64 +1278,40 @@ void define_svg_symbols(char *title, int num, float w, float h)
 static void output_font(int back)
 {
 	char *p, *fn;
-	int i, imin, flags;
+	int i, imin;
 
 	if (gcur.font_n[0] == '\0')
 		return;
+	fprintf(fout, " style=\"font:");
 	fn = gcur.font_n;
 	if (fn[0] == '/')
 		fn++;
-	flags = 0;
 	imin = 255;
 	p = strchr(fn, '-');
-	if (p) {
+	if (p)
 		imin = p - fn;
-		flags = 1;
-	}
-	p = strstr(fn, "Bold");
-	if (p) {
-		i = p - fn;
+	p = strstr(fn, "old");
+	if (p && (p[-1] == 'B' || p[-1] == 'b')) {
+		fprintf(fout, "bold ");
+		i = p - fn - 1;
 		if (imin > i)
 			imin = i;
-		flags |= 2;
 	}
-	p = strstr(fn, "Italic");
-	if (p) {
-		i = p - fn;
+	p = strstr(fn, "talic");
+	if (p && (p[-1] == 'I' || p[-1] == 'i')) {
+		fprintf(fout, "italic ");
+		i = p - fn - 1;
 		if (imin > i)
 			imin = i;
-		flags |= 4;
 	}
-	p = strstr(fn, "Oblique");
-	if (p) {
-		i = p - fn;
+	p = strstr(fn, "blique");
+	if (p && (p[-1] == 'O' || p[-1] == 'o')) {
+		fprintf(fout, "oblique ");
+		i = p - fn - 1;
 		if (imin > i)
 			imin = i;
-		flags |= 8;
 	}
-	if (flags == 0) {
-		fprintf(fout, " font-family=\"%s\" font-size=\"%.2f\"",
-			fn, gcur.font_s);
-	} else {
-		fprintf(fout, " font-family=\"%.*s\" font-size=\"%.2f\"",
-			imin, fn, gcur.font_s);
-		if (flags & 2)
-			fprintf(fout, " font-weight=\"bold\"");
-		if (flags & 4)
-			fprintf(fout, " font-style=\"italic\"");
-		if (flags & 8)
-			fprintf(fout, " font-style=\"oblique\"");
-	}
-
-	if (!back)
-		return;
-	if (!(flags & 2)
-	 && strstr(gcur.font_n_old, "Bold") != NULL)
-		fprintf(fout, " font-weight=\"normal\"");
-	if (!(flags & 12)
-	 && (strstr(gcur.font_n_old, "Italic") != NULL
-	  || strstr(gcur.font_n_old, "Oblique") != NULL))
-		fprintf(fout, " font-style=\"normal\"");
+	fprintf(fout, "%.2fpx %.*s\"", gcur.font_s, imin, fn);
 }
 
 static float strw(char *s)
@@ -2079,7 +2054,7 @@ stack_dump();
 					x - w / 2, y - 10, w);
 			}
 			fprintf(fout,
-				"<text font-family=\"serif\" font-size=\"12\" font-style=\"italic\" font-weight=\"normal\"\n"
+				"<text style=\"font:italic 12px serif\"\n"
 				"	x=\"%.2f\" y=\"%.2f\" text-anchor=\"middle\">%s</text>\n",
 				x, y, s + 1);
 			free(s);
@@ -2151,8 +2126,9 @@ stack_dump();
 			setg(1);
 			y = gcur.yoffs - pop_free_val() - 6;
 			x = gcur.xoffs + pop_free_val();
-			fprintf(fout, "<text x=\"%.2f\" y=\"%.2f\" font-family=\"serif\" font-size=\"30\"\n"
-				"	font-weight=\"bold\" font-style=\"italic\">,</text>\n",
+			fprintf(fout, "<text x=\"%.2f\" y=\"%.2f\""
+					" style=\"font:bold italic 30px serif\">"
+					",</text>\n",
 				x, y);
 			return;
 		}
@@ -2261,7 +2237,7 @@ curveto:
 				ps_error = 1;
 				return;
 			}
-			fprintf(fout, "<text font-family=\"serif\" font-size=\"16\" font-weight=\"normal\" font-style=\"italic\"\n"
+			fprintf(fout, "<text style=\"font:italic 16px serif\"\n"
 				"	x=\"%.2f\" y=\"%.2f\" text-anchor=\"left\">%s</text>\n",
 				x, y, s + 1);
 			free(s);
@@ -2351,7 +2327,7 @@ curveto:
 				ps_error = 1;
 				return;
 			}
-			fprintf(fout, "<text font-family=\"serif\" font-size=\"16\" font-weight=\"normal\" font-style=\"normal\"\n"
+			fprintf(fout, "<text style=\"font:16px serif\"\n"
 				"	x=\"%.2f\" y=\"%.2f\" text-anchor=\"middle\">%s</text>\n",
 				x, y, s + 1);
 			free(s);
@@ -2559,7 +2535,7 @@ curveto:
 				ps_error = 1;
 				return;
 			}
-			fprintf(fout, "<text font-family=\"Bookman\" font-size=\"8\" font-weight=\"normal\" font-style=\"normal\"\n"
+			fprintf(fout, "<text style=\"font:8px Bookman\"\n"
 				"	x=\"%.2f\" y=\"%.2f\">%s</text>\n",
 				x, y, s + 1);
 			free(s);
@@ -3136,7 +3112,7 @@ moveto:
 				return;
 			}
 			fprintf(fout, "<use x=\"%.2f\" y=\"%.2f\" xlink:href=\"#mrest\"/>\n"
-				"<text font-family=\"serif\" font-size=\"15\" font-weight=\"bold\" font-style=\"normal\"\n"
+				"<text style=\"font:bold 15px serif\"\n"
 				"	x=\"%.2f\" y=\"%.2f\" text-anchor=\"middle\">%s</text>\n",
 				x, y, x, y - 28, s + 1);
 			free(s);
@@ -3242,7 +3218,7 @@ moveto:
 			setg(1);
 			y = gcur.yoffs - pop_free_val();
 			x = gcur.xoffs + pop_free_val();
-			fprintf(fout, "<text font-family=\"serif\" font-size=\"12\" font-weight=\"normal\" font-style=\"normal\"\n"
+			fprintf(fout, "<text style=\"font:12px serif\"\n"
 				"	x=\"%.2f\" y=\"%.2f\">8</text>\n",
 				x, y);
 			return;
@@ -3285,7 +3261,7 @@ moveto:
 				ps_error = 1;
 				return;
 			}
-			fprintf(fout, "<text font-family=\"serif\" font-size=\"16\" font-weight=\"bold\" font-style=\"italic\"\n"
+			fprintf(fout, "<text style=\"font:bold italic 16px serif\"\n"
 				"	x=\"%.2f\" y=\"%.2f\">%s</text>\n",
 				x, y, s + 1);
 			free(s);
@@ -4051,7 +4027,7 @@ rmoveto:
 				ps_error = 1;
 				return;
 			}
-			fprintf(fout, "<g font-family=\"serif\" font-size=\"18\" font-weight=\"bold\" font-style=\"normal\"\n"
+			fprintf(fout, "<g style=\"font:bold 18px serif\"\n"
 				"	transform=\"translate(%.2f,%.2f) scale(1.2,1)\">\n"
 				"	<text y=\"-7\" text-anchor=\"middle\">%s</text>\n"
 				"</g>\n",
@@ -4228,7 +4204,7 @@ translate:
 				ps_error = 1;
 				return;
 			}
-			fprintf(fout, "<g font-family=\"serif\" font-size=\"16\" font-weight=\"bold\" font-style=\"normal\"\n"
+			fprintf(fout, "<g style=\"font:bold 16px serif\"\n"
 				"	transform=\"translate(%.2f,%.2f) scale(1.2,1)\">\n"
 				"	<text text-anchor=\"middle\">%s</text>\n"
 				"	<text y=\"-12\" text-anchor=\"middle\">%s</text>\n"

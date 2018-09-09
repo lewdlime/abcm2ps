@@ -407,8 +407,7 @@ static void pg_line_output(PangoLayoutLine *line)
 		PangoFont *font = analysis->font;
 		PangoFcFont *fc_font = PANGO_FC_FONT(font);
 		FT_Face face = pango_fc_font_lock_face(fc_font);
-		PangoFontDescription *ftdesc =
-				pango_font_describe(font);
+		PangoFontDescription *ftdesc = pango_font_describe(font);
 		int wi = pango_font_description_get_size(ftdesc);
 		int i, c;
 
@@ -467,7 +466,7 @@ static void str_font_change(int start,
 		f->size = 8;
 	}
 	desc_font(fnum);
-	
+
 	attr1 = pango_attr_font_desc_new(desc_tb[fnum]);
 	attr1->start_index = start;
 	attr1->end_index = end;
@@ -722,37 +721,13 @@ static void pg_write_text(char *s, int job, float parskip)
 			continue;
 		}
 //fixme: maybe not useful
-		p [-1] = ' ';
+		p[-1] = ' ';
 	}
 	tex_str(s);
 	str_set_font(tex_buf);
 	if (pg_str->len)
 		pg_para_output(job);
 	pango_attr_list_unref(attrs);
-}
-
-/* check if pango is needed */
-static int is_latin(unsigned char *p)
-{
-	while (*p != '\0') {
-		if (*p >= 0xc6) {
-			if (*p == 0xe2) {
-				if (p[1] != 0x99
-				 || p[2] < 0xad || p[2] > 0xaf)
-					return 0;
-				p += 2;
-			} else if (*p == 0xf0) {
-				if (p[1] != 0x9d
-				 || p[2] != 0x84
-				 || p[3] < 0xaa || p[3] > 0xab)
-					return 0;
-			} else {
-				return 0;
-			}
-		}
-		p++;
-	}
-	return 1;
 }
 #endif /* HAVE_PANGO */
 
@@ -928,10 +903,8 @@ void str_out(char *p, int action)
 //fixme: pango KO if user modification of ly/gc/an/gxshow
 	/* use pango if some characters are out of the utf-array (in syms.c) */
 	if (cfmt.pango) {
-		if (cfmt.pango == 2 || !is_latin((unsigned char *) p)) {
-			str_pg_out(p, action);	/* output the string */
-			return;
-		}
+		str_pg_out(p, action);	/* output the string */
+		return;
 	}
 #endif
 
@@ -1031,9 +1004,6 @@ static void put_inf2r(struct SYMBOL *s1,
 void write_text(char *cmd, char *s, int job)
 {
 	int nw;
-#ifdef HAVE_PANGO
-	int do_pango;
-#endif
 	float lineskip, parskip, strw;
 	char *p;
 	struct FONTSPEC *f;
@@ -1097,10 +1067,7 @@ void write_text(char *cmd, char *s, int job)
 
 	/* fill or justify lines */
 #ifdef HAVE_PANGO
-	do_pango = cfmt.pango;
-	if (do_pango == 1)
-		do_pango = !is_latin((unsigned char *) s);
-	if (do_pango) {
+	if (cfmt.pango) {
 		pg_write_text(s, job, parskip);
 		goto skip;
 	}

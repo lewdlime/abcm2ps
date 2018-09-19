@@ -729,6 +729,30 @@ static void pg_write_text(char *s, int job, float parskip)
 		pg_para_output(job);
 	pango_attr_list_unref(attrs);
 }
+
+/* check if pango is needed */
+static int is_latin(unsigned char *p)
+{
+	while (*p != '\0') {
+		if (*p >= 0xc6) {
+			if (*p == 0xe2) {
+				if (p[1] != 0x99
+				 || p[2] < 0xad || p[2] > 0xaf)
+					return 0;
+				p += 2;
+			} else if (*p == 0xf0) {
+				if (p[1] != 0x9d
+				 || p[2] != 0x84
+				 || p[3] < 0xaa || p[3] > 0xab)
+					return 0;
+			} else {
+				return 0;
+			}
+		}
+		p++;
+	}
+	return 1;
+}
 #endif /* HAVE_PANGO */
 
 /* -- set the default font of a string -- */
@@ -903,8 +927,10 @@ void str_out(char *p, int action)
 //fixme: pango KO if user modification of ly/gc/an/gxshow
 	/* use pango if some characters are out of the utf-array (in syms.c) */
 	if (cfmt.pango) {
-		str_pg_out(p, action);	/* output the string */
-		return;
+		if (cfmt.pango == 2 || !is_latin((unsigned char *) p)) {
+			str_pg_out(p, action);	/* output the string */
+			return;
+		}
 	}
 #endif
 
@@ -1004,6 +1030,9 @@ static void put_inf2r(struct SYMBOL *s1,
 void write_text(char *cmd, char *s, int job)
 {
 	int nw;
+#ifdef HAVE_PANGO
+	int do_pango;
+#endif
 	float lineskip, parskip, strw;
 	char *p;
 	struct FONTSPEC *f;
@@ -1067,7 +1096,10 @@ void write_text(char *cmd, char *s, int job)
 
 	/* fill or justify lines */
 #ifdef HAVE_PANGO
-	if (cfmt.pango) {
+	do_pango = cfmt.pango;
+	if (do_pango == 1)
+		do_pango = !is_latin((unsigned char *) s);
+	if (do_pango) {
 		pg_write_text(s, job, parskip);
 		goto skip;
 	}

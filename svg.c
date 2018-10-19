@@ -1164,11 +1164,12 @@ static void define_head(float w, float h)
 		"<title>";
 
 	fprintf(fout, svg_head1, w, h);
-	if (cfmt.musicfont)
-		fprintf(fout,
-			strchr(cfmt.musicfont, '(') ?
-				svg_font_style_url : svg_font_style,
-			cfmt.musicfont);
+	if (cfmt.musicfont) {
+		if (strchr(cfmt.musicfont, '('))
+			fprintf(fout, svg_font_style_url, cfmt.musicfont);
+		else
+			fprintf(fout, svg_font_style);
+	}
 	fputs(svg_head2, fout);
 }
 

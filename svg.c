@@ -1276,14 +1276,26 @@ void define_svg_symbols(char *title, int num, float w, float h)
 	free(s);
 }
 
-static void output_font(int back)
+static void output_font(int span)
 {
 	char *p, *fn;
 	int i, imin;
 
-	if (gcur.font_n[0] == '\0')
+	if (gcur.font_n[0] == '\0'
+	 && (span || !gcur.rgb))
 		return;
-	fprintf(fout, " style=\"font:");
+
+	fprintf(fout, " style=\"");
+
+	if (!span && gcur.rgb) {
+		fprintf(fout, "color:#%06x;", gcur.rgb);
+		if (gcur.font_n[0] == '\0') {
+			fprintf(fout, "\"");
+			return;
+		}
+	}
+
+	fprintf(fout, "font:");
 	fn = gcur.font_n;
 	if (fn[0] == '/')
 		fn++;
@@ -1364,12 +1376,6 @@ static void defg1(void)
 		fputs("\"", fout);
 	}
 	output_font(0);
-	if (gcur.rgb != 0) {
-		fprintf(fout, " style=\"");
-		if (gcur.rgb != 0)
-			fprintf(fout, "color:#%06x;", gcur.rgb);
-		fprintf(fout, "\"");
-	}
 //jfm test
 //	fprintf(fout, "%s>\n", gcur.dash);
 	fprintf(fout, ">\n");

@@ -1189,6 +1189,8 @@ void interpret_fmt_line(char *w,		/* keyword */
 		switch (fd->subtype) {
 #ifdef HAVE_PANGO
 		case 2:				/* %%pango = 0, 1 or 2 */
+			if (svg || epsf > 1)	// if SVG output
+				break;
 			if (*p == '2') {
 				cfmt.pango = 2;
 				break;

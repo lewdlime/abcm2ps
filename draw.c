@@ -298,18 +298,19 @@ if (s1->xs == s2->xs)
 	if (a0 * a0 < BEAM_THRESH * BEAM_THRESH)
 		a = 0;			/* flat below threshhold */
 
-	b = (sy - a * sx) / notes;	/* recalculate b for new slope */
+//	b = (sy - a * sx) / notes;	/* recalculate b for new slope */
 
 /*  if (nflags>1) b=b+2*stem;*/	/* leave a bit more room if several beams */
 
 	/* have flat beams when asked */
 	if (cfmt.flatbeams) {
-		if (!(s1->flags & ABC_F_GRACE))
-			b = -11 + staff_tb[staff].y;
-		else
-			b = 35 + staff_tb[staff].y;
+//		if (!(s1->flags & ABC_F_GRACE))
+//			b = -11 + staff_tb[staff].y;
+//		else
+//			b = 35 + staff_tb[staff].y;
 		a = 0;
 	}
+	b = (sy - a * sx) / notes;	/* recalculate b for new slope */
 
 /*fixme: have a look again*/
 	/* have room for the symbols in the staff */

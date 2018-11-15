@@ -1155,7 +1155,7 @@ static void define_head(float w, float h)
 		"	fill: currentColor}\n";
 	static const char svg_font_style_url[] =
 		"@font-face {\n"
-		"	font-family:music;\n"
+		"	font-family:\"music\";\n"
 		"	src:%s}\n"
 		".music {font:24px music;\n"
 		"	fill: currentColor}\n";

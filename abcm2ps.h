@@ -127,7 +127,7 @@ enum accidentals {
 #define QUAVER		(BASE_LEN / 8)	/* 1/8 note */
 #define SEMIQUAVER	(BASE_LEN / 16)	/* 1/16 note */
 
-#define MAXFONTS	30	/* max number of fonts */
+#define MAXFONTS	60	/* max number of fonts */
 
 #define T_LEFT		0
 #define T_JUSTIFY	1

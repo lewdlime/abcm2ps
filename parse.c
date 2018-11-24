@@ -5161,6 +5161,8 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 
 	p = s->text + 2;		/* skip '%%' */
 	q = p + strlen(p) - 5;
+	if (q < p)
+	  return s;
 	lock = strncmp(q, " lock", 5) == 0;
 	if (lock)
 		*q = '\0'; 

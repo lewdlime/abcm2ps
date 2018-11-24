@@ -1242,7 +1242,7 @@ static int put_wline(char *p,
 	}
 	r = 0;
 	q = p;
-	if (isdigit((unsigned char) *p) || p[1] == '.') {
+	if (*p && (isdigit((unsigned char) *p) || p[1] == '.')) {
 		while (*p != '\0') {
 			p++;
 			if (*p == ' '

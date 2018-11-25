@@ -1240,9 +1240,10 @@ static int put_wline(char *p,
 		}
 		p += 2;
 	}
-	r = 0;
+	r = NULL;
 	q = p;
-	if (isdigit((unsigned char) *p) || p[1] == '.') {
+	if (isdigit((unsigned char) *p)
+	 || (*p != '\0' && p[1] == '.')) {
 		while (*p != '\0') {
 			p++;
 			if (*p == ' '
@@ -1255,7 +1256,7 @@ static int put_wline(char *p,
 			p++;
 	}
 
-	if (r != 0) {
+	if (r) {
 		sep = *r;
 		*r = '\0';
 		a2b("%.1f 0 M", x);

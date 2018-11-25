@@ -1424,5 +1424,5 @@ void set_font(int ft)
 /* -- get the encoding of a font -- */
 int get_font_encoding(int ft)
 {
-	return font_enc[ft];
+	return font_enc[cfmt.font_tb[ft].fnum];
 }

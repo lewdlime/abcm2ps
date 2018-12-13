@@ -2483,6 +2483,8 @@ curveto:
 	case 'F':
 		if (sscanf(op, "F%d", &n) == 1) {
 			h = pop_free_val();
+			if (!fontnames[n])
+				break;
 			if (gcur.font_s != h
 			 || strcmp(fontnames[n], gcur.font_n) != 0) {
 				free(gcur.font_n_old);

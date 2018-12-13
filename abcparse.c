@@ -1194,6 +1194,8 @@ static char *get_user(char *p,
 		p++;
 /*fixme: 'U: <char> = "text"' is not treated */
 	get_deco(p, &s->u.user.value);
+	if (!s->u.user.value)
+		return 0;
 
 	/* treat special pseudo decorations */
 	value = parse.deco_tb[s->u.user.value - 128];

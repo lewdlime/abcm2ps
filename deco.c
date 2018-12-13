@@ -1008,14 +1008,10 @@ static unsigned char deco_intern(unsigned char ideco,
 {
 	char *name;
 
-	if (ideco < 128) {
-		name = deco[ideco];
-		if (!name) {
-			error(1, s, "Bad character '%c'", ideco);
-			return 0;
-		}
-	} else {
-		name = parse.deco_tb[ideco - 128];
+	name = ideco < 128 ? deco[ideco] : parse.deco_tb[ideco - 128];
+	if (!name) {
+		error(1, s, "Bad character '%c'", ideco);
+		return 0;
 	}
 	for (ideco = 1; ideco < 128; ideco++) {
 		if (!deco_def_tb[ideco].name) {

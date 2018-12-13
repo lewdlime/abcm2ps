@@ -822,6 +822,7 @@ static unsigned char deco_build(char *name, char *text)
 		error(1, NULL, "Invalid %%%%deco %s", text);
 		return 128;
 	}
+
 	if ((unsigned) c_func > 10
 	 && (c_func < 32 || c_func > 41)) {
 		error(1, NULL, "%%%%deco: bad C function index (%s)", text);
@@ -1130,7 +1131,8 @@ void deco_cnv(struct decos *dc,
 			dc->n = n;
 			continue;
 		default:
-			if (dd->name[0] == '8' && dd->name[1] == 'v'
+			if (strlen(dd->name) >= 4
+			 && dd->name[0] == '8' && dd->name[1] == 'v'
 			 && dd->name[4] == '\0') {
 				if (dd->name[3] == '(') {
 					if (dd->name[2] == 'a')
@@ -1162,11 +1164,19 @@ void deco_cnv(struct decos *dc,
 					dd->name);
 				break;
 			}
+			if (strlen(dd->name) != 5)
+				n = 0;
+			else
+				n = dd->name[4] - '0';
+			if (n <= 0 || n > 4) {
+				error(1, s, "bad definition of !%s!", dd->name);
+				break;
+			}
 			s->sflags |= (S_TREM2 | S_BEAM_END);
 			s->sflags &= ~S_BEAM_ST;
 			prev->sflags |= (S_TREM2 | S_BEAM_ST);
 			prev->sflags &= ~S_BEAM_END;
-			s->aux = prev->aux = dd->name[4] - '0';
+			s->aux = prev->aux = n;
 			for (j = 0; j <= s->nhd; j++)
 				s->u.note.notes[j].len *= 2;
 			for (j = 0; j <= prev->nhd; j++)
@@ -1184,6 +1194,11 @@ void deco_cnv(struct decos *dc,
 				error(1, s, must_note_fmt, dd->name);
 				break;
 			}
+			if (strlen(dd->name) != 7
+			 || (dd->name[6] != '1' && dd->name[6] != '2')) {
+				error(1, s, "bad definition of !%s!", dd->name);
+				break;
+			}
 			s->sflags |= dd->name[6] == '1' ?
 					S_BEAM_BR1 : S_BEAM_BR2;
 			break;
@@ -1195,12 +1210,21 @@ void deco_cnv(struct decos *dc,
 				error(1, s, must_note_fmt, dd->name);
 				break;
 			}
+			n = strlen(dd->name);
+			if (n > 3) {
+				error(1, s, "bad definition of !%s!", dd->name);
+				break;
+			}
 			s->sflags |= S_TREM1;
-			s->aux = strlen(dd->name);	/* 1, 2 or 3 */
+			s->aux = n;	/* 1, 2 or 3 */
 			break;
 		case 39:		/* beam-accel/beam-rall */
 			if (s->abc_type != ABC_T_NOTE) {
 				error(1, s, must_note_fmt, dd->name);
+				break;
+			}
+			if (strlen(dd->name) < 6) {
+				error(1, s, "bad definition of !%s!", dd->name);
 				break;
 			}
 			s->sflags |= S_FEATHERED_BEAM;

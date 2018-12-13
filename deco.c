@@ -147,14 +147,14 @@ static char *std_deco_tb[] = {
 	"snap 3 snap 14 3 3",
 	"thumb 3 thumb 14 2 2",
 	"arpeggio 2 arp 12 10 0",
-	"crescendo( 7 cresc 18 0 0",
-	"crescendo) 7 cresc 18 0 0",
-	"<( 7 cresc 18 0 0",
-	"<) 7 cresc 18 0 0",
-	"diminuendo( 7 dim 18 0 0",
-	"diminuendo) 7 dim 18 0 0",
-	">( 7 dim 18 0 0",
-	">) 7 dim 18 0 0",
+	"crescendo( 6 cresc 18 0 0",
+	"crescendo) 6 cresc 18 0 0",
+	"<( 6 cresc 18 0 0",
+	"<) 6 cresc 18 0 0",
+	"diminuendo( 6 dim 18 0 0",
+	"diminuendo) 6 dim 18 0 0",
+	">( 6 dim 18 0 0",
+	">) 6 dim 18 0 0",
 	"-( 8 gliss 0 0 0",
 	"-) 8 gliss 0 0 0",
 	"~( 8 glisq 0 0 0",
@@ -342,7 +342,7 @@ static void d_arp(struct deco_elt *de)
 	de->y = (float) (3 * (s->pits[0] - 18)) - 3;
 }
 
-/* 7: special case for crescendo/diminuendo */
+/* special case for long dynamics */
 static void d_cresc(struct deco_elt *de)
 {
 	struct SYMBOL *s, *s2;
@@ -490,6 +490,14 @@ static void d_pf(struct deco_elt *de)
 	float x, x2;
 //	char *str;
 	int up;
+
+	// don't treat here the long decorations
+	if (de->flags & DE_LDST)
+		return;
+	if (de->start) {
+		d_cresc(de);
+		return;
+	}
 
 	s = de->s;
 	dd = &deco_def_tb[de->t];
@@ -821,6 +829,9 @@ static unsigned char deco_build(char *name, char *text)
 	}
 	if (c_func == 5)			// old !trill(!
 		c_func = 3;
+	if (c_func == 7)			// old !cresc(!
+		c_func = 6;
+
 	if (h < 0 || wl < 0 || wr < 0) {
 		error(1, NULL, "%%%%deco: cannot have a negative value (%s)", text);
 		return 128;
@@ -894,7 +905,6 @@ static unsigned char deco_build(char *name, char *text)
 	dd->h = h;
 	dd->wl = wl;
 	dd->wr = wr;
- 	dd->strx = strx;
 
 	/* link the start and end of long decorations */
 	l = strlen(name);
@@ -905,6 +915,7 @@ static unsigned char deco_build(char *name, char *text)
 	 || (name[l] == ')' && !strchr(name, '('))) {
 		struct deco_def_s *ddo;
 
+		strx = 0;			// (no string)
 		strcpy(name2, name);
 		if (name[l] == '(') {
 			dd->flags = DE_LDST;
@@ -931,6 +942,7 @@ static unsigned char deco_build(char *name, char *text)
 //fixme: memory leak...
 			deco_define(strdup(name2));
 	}
+ 	dd->strx = strx;
 	return ideco;
 }
 

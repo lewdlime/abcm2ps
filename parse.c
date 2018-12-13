@@ -918,11 +918,13 @@ static void set_bar_num(void)
 			s->ts_prev->ts_next = s->ts_next;
 			s->next = s2;
 			s->prev = s2->prev;
-			s->prev->next = s;
+			if (s->prev)
+				s->prev->next = s;
 			s2->prev = s;
 			s->ts_next = s2;
 			s->ts_prev = s2->ts_prev;
-			s->ts_prev->ts_next = s;
+			if (s->ts_prev)
+				s->ts_prev->ts_next = s;
 			s2->ts_prev = s;
 //			if (s->sflags & S_NEW_SY) {
 //				s->sflags &= ~S_NEW_SY;

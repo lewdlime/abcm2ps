@@ -1694,6 +1694,11 @@ static void show(char type)
 		s = NULL;
 		break;
 	default:
+		if (!stack) {
+			fprintf(stderr, "svg top: Stack empty\n");
+			ps_error = 1;
+			return;
+		}
 		if (stack->type == STR) {
 			s = pop_free_str();
 			if (!s || s[0] != '(') {

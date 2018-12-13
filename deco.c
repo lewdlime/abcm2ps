@@ -142,8 +142,8 @@ static char *std_deco_tb[] = {
 	"turn 3 turn 10 0 5",
 	"wedge 3 wedge 8 1 1",
 	"turnx 3 turnx 10 0 5",
-	"trill( 5 ltr 8 0 0",
-	"trill) 5 ltr 8 0 0",
+	"trill( 3 ltr 8 0 0",
+	"trill) 3 ltr 8 0 0",
 	"snap 3 snap 14 3 3",
 	"thumb 3 thumb 14 2 2",
 	"arpeggio 2 arp 12 10 0",
@@ -572,7 +572,7 @@ static void d_slide(struct deco_elt *de)
 	de->y = (float) (3 * (yc - 18));
 }
 
-/* 5: special case for long trill */
+/* special case for long decoration */
 static void d_trill(struct deco_elt *de)
 {
 	struct SYMBOL *s, *s2;
@@ -819,6 +819,8 @@ static unsigned char deco_build(char *name, char *text)
 		error(1, NULL, "%%%%deco: bad C function index (%s)", text);
 		return 128;
 	}
+	if (c_func == 5)			// old !trill(!
+		c_func = 3;
 	if (h < 0 || wl < 0 || wr < 0) {
 		error(1, NULL, "%%%%deco: cannot have a negative value (%s)", text);
 		return 128;
@@ -1451,8 +1453,6 @@ static void deco_create(struct SYMBOL *s,
 			break;
 		case 3:				/* d_upstaff */
 		case 4:
-//fixme:trill does not work yet
-		case 5:				/* trill */
 			posit = s->posit.orn;
 			break;
 		case 6:				/* d_pf */

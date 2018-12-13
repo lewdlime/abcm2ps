@@ -3202,7 +3202,7 @@ static void init_music_line(void)
 
 	/* add a clef at start of the main voices */
 	last_s = tsfirst;
-	while (last_s->type == CLEF) {		/* move the starting clefs */
+	while (last_s && last_s->type == CLEF) {	/* move the starting clefs */
 		voice = last_s->voice;
 		p_voice = &voice_tb[voice];
 		if (cursys->voice[voice].range >= 0
@@ -3242,7 +3242,7 @@ static void init_music_line(void)
 		s->type = CLEF;
 		s->voice = voice;
 		s->staff = staff;
-		s->time = last_s->time;
+		s->time = last_s ? last_s->time : 0;
 		s->next = p_voice->sym;
 		if (s->next) {
 			s->next->prev = s;
@@ -3252,16 +3252,18 @@ static void init_music_line(void)
 		}
 		p_voice->last_sym = p_voice->sym = s;
 		s->ts_next = last_s;
-		s->ts_prev = last_s->ts_prev;
+		s->ts_prev = last_s ? last_s->ts_prev : NULL;
 		if (!s->ts_prev) {
 			tsfirst = s;
 			s->sflags |= S_SEQST;
 		} else {
 			s->ts_prev->ts_next = s;
 		}
-		last_s->ts_prev = s;
-		if (last_s->type == CLEF)
-			last_s->sflags &= ~S_SEQST;
+		if (last_s) {
+			last_s->ts_prev = s;
+			if (last_s->type == CLEF)
+				last_s->sflags &= ~S_SEQST;
+		}
 //		if (cursys->voice[voice].second)
 //			s->sflags |= S_SECOND;
 		if (staff_tb[staff].s_clef->u.clef.invis
@@ -3277,7 +3279,8 @@ static void init_music_line(void)
 		 || cursys->voice[voice].second
 		 || cursys->staff[cursys->voice[voice].staff].empty)
 			continue;
-		if (last_s->voice == voice && last_s->type == KEYSIG) {
+		if (last_s
+		 && last_s->voice == voice && last_s->type == KEYSIG) {
 			p_voice->last_sym = last_s;
 			last_s->aux = last_s->u.key.sf;	// no key cancel
 			last_s = last_s->ts_next;
@@ -3301,7 +3304,8 @@ static void init_music_line(void)
 			 || cursys->staff[cursys->voice[voice].staff].empty
 			 || p_voice->meter.nmeter == 0)		/* M:none */
 				continue;
-			if (last_s->voice == voice && last_s->type == TIMESIG) {
+			if (last_s
+			 && last_s->voice == voice && last_s->type == TIMESIG) {
 				p_voice->last_sym = last_s;
 				last_s = last_s->ts_next;
 				continue;
@@ -3320,7 +3324,8 @@ static void init_music_line(void)
 
 		// if bar already, keep it in sequence
 		voice = p_voice - voice_tb;
-		if (last_s->voice == voice && last_s->type == BAR) {
+		if (last_s
+		 && last_s->voice == voice && last_s->type == BAR) {
 			p_voice->last_sym = last_s;
 			last_s = last_s->ts_next;
 			continue;

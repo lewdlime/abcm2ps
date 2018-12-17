@@ -613,6 +613,8 @@ static void d_trill(struct deco_elt *de)
 	dd = &deco_def_tb[de->t];
 	if (dd->func == 4)		// if below
 		up = 0;
+	else if (strcmp(ps_func_tb[dd->ps_func], "o8va") == 0)
+		up = 1;
 	else
 		up = s2->multi >= 0;
 	if (de->defl & DEF_NOEN) {	/* if no decoration end */

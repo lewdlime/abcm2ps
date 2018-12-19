@@ -5158,16 +5158,17 @@ static void get_map(char *p)
 static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 {
 	char w[32], *p, *q;
-	int lock, voice;
+	int voice;
 	float h1;
+	int lock = 0;
 
 	p = s->text + 2;		/* skip '%%' */
 	q = p + strlen(p) - 5;
-	if (q < p)
-		return s;
-	lock = strncmp(q, " lock", 5) == 0;
-	if (lock)
-		*q = '\0'; 
+	if (q > p
+	 && strncmp(q, " lock", 5) == 0) {
+		lock = 1;
+		*q = '\0';
+	}
 	p = get_str(w, p, sizeof w);
 	if (s->state == ABC_S_HEAD
 	 && !check_header(s)) {

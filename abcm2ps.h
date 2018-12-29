@@ -312,6 +312,7 @@ struct SYMBOL { 		/* struct for a drawable symbol */
 #define S_SHIFTUNISON_2	0x04000000	/* %%shiftunison 2 */
 #define S_NEW_SY	0x08000000	/* staff system change (%%staves) */
 #define S_RBSTART	0x10000000	// start of repeat bracket
+#define S_OTTAVA	0x20000000	// ottava decoration (start or stop)
 	struct posit_s posit;	/* positions / directions */
 	signed char stem;	/* 1 / -1 for stem up / down */
 	signed char combine;	/* voice combine */

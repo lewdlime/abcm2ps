@@ -592,6 +592,14 @@ static void d_trill(struct deco_elt *de)
 		return;
 	s2 = de->s;
 
+	// only one ottava per staff
+	if ((s2->sflags & S_OTTAVA)
+	 && s2->ts_next && (s2->ts_next->sflags & S_OTTAVA)
+	 && s2->staff == s2->ts_next->staff) {
+		de->t = 0;		// delete
+		return;
+	}
+
 //	if (de->start) {		/* deco start */
 		s = de->start->s;
 		x = s->x;
@@ -673,7 +681,7 @@ static void d_upstaff(struct deco_elt *de)
 	float x, yc, stafft, staffb, w;
 	int up, inv;
 
-	// don't treat here the long decorations
+	// don't treat here the start of long decorations
 	if (de->flags & DE_LDST)
 		return;
 	if (de->start) {
@@ -1146,6 +1154,7 @@ void deco_cnv(struct decos *dc,
 					 || dd->name[2] == 'b')
 						curvoice->ottava = 0;
 				}
+				s->sflags |= S_OTTAVA;
 			}
 			continue;
 		case 32:		/* invisible */

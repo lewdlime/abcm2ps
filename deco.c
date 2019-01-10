@@ -593,11 +593,18 @@ static void d_trill(struct deco_elt *de)
 	s2 = de->s;
 
 	// only one ottava per staff
-	if ((s2->sflags & S_OTTAVA)
-	 && s2->ts_next && (s2->ts_next->sflags & S_OTTAVA)
-	 && s2->staff == s2->ts_next->staff) {
-		de->t = 0;		// delete
-		return;
+	if (s2->sflags & S_OTTAVA) {
+		struct deco_elt *de2;
+
+		for (de2 = de->next; de2; de2 = de2->next) {
+			if (de2->t == de->t
+			 && de2->s->time == s2->time
+			 && de2->s->staff == s2->staff) {
+				de2->s->sflags &= ~S_OTTAVA;
+				de2->t = 0;
+			}
+		}
+		s2->sflags &= ~S_OTTAVA;
 	}
 
 //	if (de->start) {		/* deco start */

@@ -566,7 +566,7 @@ static void str_pg_out(char *p, int action)
 			wi /= 2;
 //		w = (float) wi / PG_SCALE;
 		w = (float) wi / PANGO_SCALE;
-		a2b("-%.1f 0 RM ", w);
+		a2b(" -%.1f 0 RM", w);
 		break;
 	}
 	pg_line_output(line);

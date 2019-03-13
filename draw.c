@@ -2535,7 +2535,6 @@ static void draw_slurs(struct SYMBOL *first,
 		 && gr1->next) {
 			gr1->next->prev->next = NULL;
 			gr1->next->prev = gr1;
-			gr1 = NULL;
 		}
 		if (gr2) {
 			gr2->prev->next = gr2;

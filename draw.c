@@ -122,6 +122,7 @@ static struct SYMBOL *sym_dup(struct SYMBOL *s_orig)
 
 	s->gch = NULL;
 	s->ly = NULL;
+	s->extra = NULL;
 	return s;
 }
 

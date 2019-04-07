@@ -48,6 +48,7 @@ install: build
 	$(INSTALL_DATA) $(srcdir)/README.md $(docdir)/abcm2ps
 	$(INSTALL_DATA) $(srcdir)/*.abc     $(docdir)/abcm2ps/examples
 	$(INSTALL_DATA) $(srcdir)/*.eps     $(docdir)/abcm2ps/examples
+	$(INSTALL_DATA) $(srcdir)/*.html    $(docdir)/abcm2ps/examples
 	mkdir -p $(mandir)/man1
 	$(INSTALL_DATA) abcm2ps.1 $(mandir)/man1
 

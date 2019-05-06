@@ -3521,7 +3521,7 @@ static void set_rb(struct VOICE_S *p_voice)
 				if (!s->next) {
 					s->flags |= ABC_F_RBSTOP;
 					s->sflags |= S_RBSTOP;
-				} else if (n == mx) {
+				} else if (n == mx && !cfmt.repeatstandard) {
 					s->sflags |= S_RBSTOP;
 				}
 			}

@@ -114,6 +114,7 @@ static struct format {
 	{"rbmax", &cfmt.rbmax, FORMAT_I, 0},
 	{"rbmin", &cfmt.rbmin, FORMAT_I, 0},
 	{"repeatfont", &cfmt.font_tb[REPEATFONT], FORMAT_F, 0},
+	{"repeatstandard", &cfmt.repeatstandard, FORMAT_B, 0},
 	{"rightmargin", &cfmt.rightmargin, FORMAT_U, 1},
 //	{"scale", &cfmt.scale, FORMAT_R, 0},
 	{"setdefl", &cfmt.setdefl, FORMAT_B, 0},
@@ -405,6 +406,7 @@ void set_format(void)
 	f->rbdbstop = 1;
 	f->rbmax = 4;
 	f->rbmin = 2;
+	f->repeatstandard = 0;
 	f->staffnonote = 1;
 	f->titletrim = 1;
 	f->aligncomposer = A_RIGHT;

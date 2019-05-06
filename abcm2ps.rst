@@ -286,6 +286,13 @@ List of the options
 
    When present, only the errors are shown.
 
+-R, +R
+   Repeat brackets follow the abc standard, ending at the next double bar.
+   Default behavior is for the number of measures in the first ending to
+   set the number of measures covered by the brackets in subsequent endings.
+
+   This corresponds to the ``%%repeatstandard`` formatting parameter.
+
 -s <float>
    Set the page scale factor to <float>. Note that the header
    and footer are not scaled (default: 0.75).

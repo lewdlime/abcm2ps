@@ -479,6 +479,7 @@ static void usage(void)
 		"             0=off 1=left 2=right 3=even left,odd right 4=even right,odd left\n"
 		"     -1      write one tune per page\n"
 		"     -G      no slur in grace notes\n"
+		"     -R      repeat bracket behavior follows the standard\n"
 		"     -j n[b] number the measures every n bars (or on the left if n=0)\n"
 		"             if 'b', display in a box\n"
 		"     -b n    set the first measure number to n\n"
@@ -776,6 +777,10 @@ int main(int argc, char **argv)
 				case 'O':
 					outfn[0] = '\0';
 					break;
+				case 'R':
+					cfmt.repeatstandard = 0;
+					lock_fmt(&cfmt.repeatstandard);
+					break;
 				case 'T': {
 					struct cmdtblt_s *cmdtblt;
 
@@ -874,6 +879,11 @@ int main(int argc, char **argv)
 					break;
 				case 'p':
 				case 'q':
+					break;
+				case 'R':
+					cfmt.repeatstandard = 1;
+					lock_fmt(&cfmt.repeatstandard);
+					break;
 				case 'S':
 					break;
 				case 'v':

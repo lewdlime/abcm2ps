@@ -3460,7 +3460,7 @@ static void set_words(struct VOICE_S *p_voice)
 static void set_rb(struct VOICE_S *p_voice)
 {
 	struct SYMBOL *s, *s2;
-	int mx, n;
+	int n;
 
 	s = p_voice->sym;
 	while (s) {
@@ -3470,60 +3470,26 @@ static void set_rb(struct VOICE_S *p_voice)
 			continue;
 		}
 
-		mx = cfmt.rbmax;
-
-		/* if 1st repeat sequence, compute the bracket length */
-		if (s->text && s->text[0] == '1') {
-			n = 0;
-			s2 = NULL;
-			for (s = s->next; s; s = s->next) {
-				if (s->type != BAR)
-					continue;
-				n++;
-				if (s->sflags & S_RBSTOP) {
-					if (n <= cfmt.rbmax) {
-						mx = n;
-						s2 = NULL;
-					}
-					break;
-				}
-				if (n == cfmt.rbmin)
-					s2 = s;
+		n = 0;
+		s2 = NULL;
+		for (s = s->next; s; s = s->next) {
+			if (s->type != BAR)
+				continue;
+			n++;
+			if (s->sflags & S_RBSTOP)
+				break;
+			if (!s->next) {
+				s->flags |= ABC_F_RBSTOP;
+				s->sflags |= S_RBSTOP;
+				break;
 			}
-			if (s2) {
-				s2->sflags |= S_RBSTOP;
-				mx = cfmt.rbmin;
-			}
-		}
-		while (s) {
-
-			/* check repbra shifts (:| | |2 in 2nd staves) */
-			if (!(s->flags & ABC_F_RBSTART)) {
-				s = s->next;
-				if (!s)
-					break;
-				if (!(s->flags & ABC_F_RBSTART)) {
-					s = s->next;
-					if (!s)
-						break;
-					if (!(s->flags & ABC_F_RBSTART))
-						break;
-				}
-			}
-			n = 0;
-			s2 = NULL;
-			for (s = s->next; s; s = s->next) {
-				if (s->type != BAR)
-					continue;
-				n++;
-				if (s->sflags & S_RBSTOP)
-					break;
-				if (!s->next) {
-					s->flags |= ABC_F_RBSTOP;
-					s->sflags |= S_RBSTOP;
-				} else if (n == mx) {
-					s->sflags |= S_RBSTOP;
-				}
+			if (n == cfmt.rbmin)
+				s2 = s;
+			if (n == cfmt.rbmax) {
+				if (s2)
+					s = s2;
+				s->sflags |= S_RBSTOP;
+				break;
 			}
 		}
 	}

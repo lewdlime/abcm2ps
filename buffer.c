@@ -3,12 +3,12 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2017 Jean-François Moine
- * Adapted from abc2ps, Copyright (C) 1996,1997 Michael Methfessel
+ * Copyright (C) 1998-2019 Jean-François Moine
+ * Adapted from abc2ps, Copyright (C) 1996-1998 Michael Methfessel
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  */
 

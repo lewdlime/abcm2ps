@@ -7,7 +7,8 @@
 abcm2ps is a C program which converts music tunes from the ABC music notation
 to PostScript or SVG.
 
-Based on the abc2ps version 1.2.5 from Michael Methfessel,
+Based on [abc2ps](https://github.com/methf/abc2ps),
+the Postscript generator for ABC music notation by Michael Methfessel,
 it was first developped to print barock organ scores that have independant
 voices played on one or many keyboards and a pedal-board
 (the 'm' of abcm2ps stands for many or multi staves/voices).
@@ -43,7 +44,7 @@ Run `abcm2ps -h` to know the list of the command line options.
 
   When `abcm2ps` is installed, it may be read by `man abcm2ps`.
 
-- the feature and format parameters are described in
+- the features and format parameters are described in
     http://moinejf.free.fr/abcm2ps-doc/index.html
 
 ### Links

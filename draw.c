@@ -1223,7 +1223,9 @@ static void draw_bar(struct SYMBOL *s, float bot, float h)
 	/* don't put a line between the staves if there is no bar above */
 	if (staff != 0
 	 && s->ts_prev
-	 && (s->ts_prev->type != BAR || s->ts_prev->staff != staff - 1))
+// (a staff may not be displayed)
+//	 && (s->ts_prev->type != BAR || s->ts_prev->staff != staff - 1))
+	 && s->ts_prev->type != BAR)
 		h = staff_tb[staff].topbar * staff_tb[staff].staffscale;
 
 	bar_type = bar_cnv(s->u.bar.type);

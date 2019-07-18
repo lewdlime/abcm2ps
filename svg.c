@@ -2496,6 +2496,7 @@ curveto:
 				gcur.font_n_old = gcur.font_n;
 				gcur.font_n = strdup(fontnames[n]);
 				gcur.font_s = h;
+				gold.font_n = NULL;
 			}
 			return;
 		}
@@ -2534,6 +2535,7 @@ curveto:
 				free(gcur.font_n_old);
 				gcur.font_n_old = gcur.font_n;
 				gcur.font_n = s;
+				gold.font_n = NULL;
 			} else {
 				free(s);
 			}
@@ -3702,6 +3704,7 @@ rmoveto:
 				gcur.font_n_old = gcur.font_n;
 				gcur.font_n = strdup(s);
 				gcur.font_s = h;
+				gold.font_n = NULL;
 			} else {
 				free(s);
 			}

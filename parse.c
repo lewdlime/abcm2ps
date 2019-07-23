@@ -5203,7 +5203,8 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			int job;
 
 			if (s->state == ABC_S_TUNE) {
-				gen_ly(1);
+				if (!multicol_start)
+					gen_ly(1);
 			} else if (s->state == ABC_S_GLOBAL) {
 				if (epsf || !in_fname)
 					return s;

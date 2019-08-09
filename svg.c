@@ -1151,11 +1151,11 @@ static void define_head(float w, float h)
 		".stroke {stroke: currentColor; fill: none}\n"
 		"text{white-space: pre}\n";
 	static const char svg_font_style[] =
-		".music {font:24px music;\n"
+		".music {font:24px %s;\n"
 		"	fill: currentColor}\n";
 	static const char svg_font_style_url[] =
 		"@font-face {\n"
-		"	font-family:\"music\";\n"
+		"	font-family:music;\n"
 		"	src:%s}\n"
 		".music {font:24px music;\n"
 		"	fill: currentColor}\n";
@@ -1168,7 +1168,7 @@ static void define_head(float w, float h)
 		if (strchr(cfmt.musicfont, '('))
 			fprintf(fout, svg_font_style_url, cfmt.musicfont);
 		else
-			fprintf(fout, svg_font_style);
+			fprintf(fout, svg_font_style, cfmt.musicfont);
 	}
 	fputs(svg_head2, fout);
 }

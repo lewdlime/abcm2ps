@@ -1072,7 +1072,6 @@ static void xml_str_out(char *p)
 {
 	char *q, *r;
 
-	q = p;
 	for (q = p; *p != '\0';) {
 		switch (*p++) {
 		case '<': r = "&lt;"; break;
@@ -4591,8 +4590,10 @@ void svg_write(char *buf, int len)
 				memcpy(r, q, l);
 				r[l] = '\0';
 				e = elt_new();
-				if (!e)
+				if (!e) {
+					free(r);
 					return;
+				}
 				e->type = STR;
 				e->u.s = (char *) r;
 			}

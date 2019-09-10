@@ -238,7 +238,7 @@ void glyph_add(char *p)
 	}
 	g1 = utf_1[i1];
 	if (!g1) {
-		g1 = calloc(64, sizeof(char **));
+		g1 = calloc(64, sizeof(char *));
 		utf_1[i1] = g1;
 	}
 	if (i3 < 0) {
@@ -247,7 +247,7 @@ void glyph_add(char *p)
 	}
 	g = (char **) g1[i2];
 	if (!g) {
-		g = calloc(64, sizeof(char **));
+		g = calloc(64, sizeof(char *));
 		g1[i2] = (char *) g;
 	}
 	if (i4 < 0) {
@@ -256,7 +256,7 @@ void glyph_add(char *p)
 	}
 	g1 = (char **) g[i3];
 	if (!g1) {
-		g1 = calloc(64, sizeof(char **));
+		g1 = calloc(64, sizeof(char *));
 		g[i3] = (char *) g1;
 	}
 	g1[i4] = strdup(p);

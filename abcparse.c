@@ -411,7 +411,7 @@ static char *get_deco(char *p,
 static char *parse_acc(char *p,
 			struct SYMBOL *s)
 {
-	int pit, acc;
+	int pit = 0, acc;
 	unsigned nacc;
 
 	nacc = 0;
@@ -559,7 +559,7 @@ static void parse_clef(struct SYMBOL *s,
 	}
 
 	if (middle) {
-		int pit, acc, l;
+		int pit = 0, acc, l;
 		static const char line_tb[7] =
 			{ALTO, TREBLE, ALTO, BASS, ALTO, BASS, ALTO};
 
@@ -2299,7 +2299,7 @@ static char *parse_note(char *p,
 {
 	struct SYMBOL *s;
 	char *q;
-	int pit, len, acc, nostem, chord, j, m, n;
+	int pit = 0, len, acc, nostem, chord, j, m, n;
 
 	if (flags & ABC_F_GRACE) {	/* in a grace note sequence */
 		s = abc_new(ABC_T_NOTE, NULL);

@@ -920,10 +920,11 @@ static void draw_timesig(float x,
 					f = "ctsig";
 					l--;
 				}
-				meter[0] = '\0';
-				x -= 5;
-				y += 12;
-				break;
+				dx = (float) (13 * l);
+				putxy(x - 5 + dx * .5, y + 12);
+				a2b("%s\n", f);
+				x += dx;
+				continue;
 			case 'c':
 				if (s->u.meter.meter[i].top[1] != '.') {
 					f = "imsig";

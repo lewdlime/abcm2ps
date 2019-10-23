@@ -2974,6 +2974,12 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	putxy(xm, yy);
 	a2b("y%d bnumb\n", upstaff);
 
+	// let some room for the number
+	if (dir == SL_ABOVE)
+		y_set(upstaff, 1, xm - 3, 6, ym + 3);
+	else
+		y_set(upstaff, 0, xm - 3, 6, ym);
+
 done:
 	s->sflags &= ~S_IN_TUPLET;
 	return next;

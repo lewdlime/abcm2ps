@@ -2843,7 +2843,7 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 			break;
 	}
 
-	ym += dy + 2;
+	ym += dy;
 	y1 = ym + a * (x1 - xm);
 	y2 = ym + a * (x2 - xm);
 	putxy(x2 - x1, y2 - y1);

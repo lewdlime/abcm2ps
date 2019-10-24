@@ -98,6 +98,7 @@ static struct format {
 	{"musicfont", &cfmt.musicfont, FORMAT_S, 1},
 	{"musicspace", &cfmt.musicspace, FORMAT_U, 0},
 	{"notespacingfactor", &cfmt.notespacingfactor, FORMAT_R, 1},
+	{"nowrap", &cfmt.nowrap, FORMAT_B, 0},
 	{"oneperpage", &cfmt.oneperpage, FORMAT_B, 0},
 	{"pageheight", &cfmt.pageheight, FORMAT_U, 1},
 	{"pagewidth", &cfmt.pagewidth, FORMAT_U, 1},

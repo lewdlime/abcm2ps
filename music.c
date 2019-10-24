@@ -2219,7 +2219,7 @@ static void cut_tune(float lwidth, float indent)
 		if (!(s->sflags & (S_SEQST | S_EOLN)))
 			continue;
 		xmin += s->shrink;
-		if (xmin > lwidth) {
+		if (!cfmt.nowrap && xmin > lwidth) {
 			if (cfmt.linewarn)
 				error(0, s, "Line overfull (%.0fpt of %.0fpt)",
 					xmin, lwidth);
@@ -4903,7 +4903,7 @@ static void set_sym_glue(float width)
 			alfa = 1;			// no extra space
 		} else {
 			alfa = (x - width) / (x - xmin);	/* shrink */
-			if (alfa > 1) {
+			if (!cfmt.nowrap && alfa > 1) {
 				error(1, s,
 				      "Line too much shrunk (%.0f/%0.fpt of %.0fpt)",
 					xmin, x, width);

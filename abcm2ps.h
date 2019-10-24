@@ -534,6 +534,7 @@ struct FORMAT { 		/* struct for page layout */
 	int keywarn, landscape, linewarn;
 	int measurebox, measurefirst, measurenb, micronewps;
 	int oneperpage;
+	int nowrap;
 #ifdef HAVE_PANGO
 	int pango;
 #endif

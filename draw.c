@@ -4171,7 +4171,7 @@ void draw_sym_near(void)
 	if (cfmt.measurenb >= 0)
 		draw_measnb();
 
-//	draw_deco_note();
+	draw_deco_note();
 
 	for (p_voice = first_voice; p_voice; p_voice = p_voice->next) {
 		s = p_voice->sym;
@@ -4223,7 +4223,7 @@ void draw_sym_near(void)
 		}
 	}
 	set_color(0);
-	draw_deco_note();
+//	draw_deco_note();
 	draw_deco_staff();
 	set_sscale(-1);		/* restore the scale parameters */
 	draw_all_lyrics();

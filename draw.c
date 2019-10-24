@@ -304,6 +304,9 @@ if (s1->xs == s2->xs)
 /*  if (nflags>1) b=b+2*stem;*/	/* leave a bit more room if several beams */
 
 	/* have flat beams when asked */
+	if ( cfmt.flatbeamgracing && s1->flags & ABC_F_GRACE)
+		a = 0;
+
 	if (cfmt.flatbeams) {
 //		if (!(s1->flags & ABC_F_GRACE))
 //			b = -11 + staff_tb[staff].y;

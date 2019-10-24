@@ -4782,7 +4782,8 @@ static void set_sym_glue(float width)
 			float space;
 
 			xmin += s->shrink;
-			if ((space = s->space) < s->shrink)
+			space = s->space;
+			if (!cfmt.nowrap && space < s->shrink)
 				space = s->shrink;
 			x += space;
 			if (cfmt.stretchstaff)

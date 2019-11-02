@@ -68,6 +68,7 @@ static struct format {
 	{"footer", &cfmt.footer, FORMAT_S, 0},
 	{"footerfont", &cfmt.font_tb[FOOTERFONT], FORMAT_F, 0},
 	{"flatbeams", &cfmt.flatbeams, FORMAT_B, 0},
+	{"flatbeamgracing", &cfmt.flatbeamgracing, FORMAT_B, 0},
 	{"gchordbox", &cfmt.gchordbox, FORMAT_B, 0},
 	{"gchordfont", &cfmt.font_tb[GCHORDFONT], FORMAT_F, 3},
 	{"graceslurs", &cfmt.graceslurs, FORMAT_B, 0},

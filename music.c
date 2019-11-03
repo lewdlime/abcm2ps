@@ -462,11 +462,14 @@ again:
 		for (m = nhd; m > 0; m--) {
 			if (s->u.note.notes[m].pit == s->u.note.notes[m - 1].pit
 			 && s->u.note.notes[m].acc == s->u.note.notes[m - 1].acc) {
-				memmove(&s->u.note.notes[m - 1],
-					&s->u.note.notes[m],
-					sizeof s->u.note.notes[0]);
-				memmove(&s->pits[m - 1], &s->pits[m],
-					sizeof s->pits[0]);
+				i = nhd - m;
+				if (i > 0) {
+					memmove(&s->u.note.notes[m],
+						&s->u.note.notes[m + 1],
+						sizeof s->u.note.notes[0] * i);
+					memmove(&s->pits[m], &s->pits[m + 1],
+						sizeof s->pits[0] * i);
+				}
 				s->nhd = --nhd;
 			}
 		}
@@ -1141,8 +1144,8 @@ static void set_width(struct SYMBOL *s)
 		s->wl = xx;
 		break;
 	case BAR:
-		if (s->sflags & S_NOREPBRA)
-			break;
+//		if (s->sflags & S_NOREPBRA)
+//			break;
 		if (!(s->flags & ABC_F_INVIS)) {
 			int bar_type;
 

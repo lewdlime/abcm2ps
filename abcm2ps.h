@@ -529,7 +529,7 @@ struct FORMAT { 		/* struct for page layout */
 	int abc2pscompat, alignbars, aligncomposer, autoclef;
 	int barsperstaff, breakoneoln, bstemdown, cancelkey, capo;
 	int combinevoices, contbarnb, continueall, custos;
-	int dblrepbar, decoerr, dynalign, flatbeams, infoline;
+	int dblrepbar, decoerr, dynalign, flatbeams, flatbeamgracing, infoline;
 	int gchordbox, graceslurs, graceword,gracespace, hyphencont;
 	int keywarn, landscape, linewarn;
 	int measurebox, measurefirst, measurenb, micronewps;

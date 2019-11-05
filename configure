@@ -1,8 +1,8 @@
 #! /bin/sh
 
 # (automatic update)
-VERSION=8.14.5
-VDATE=2019-07-17
+VERSION=8.14.6
+VDATE=2019-11-05
 
 CC=gcc
 CFLAGS="-g -O2 -Wall -pipe"

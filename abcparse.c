@@ -2332,7 +2332,7 @@ static char *parse_note(char *p,
 		len = 1;
 		if (isdigit((unsigned char) *p)) {
 			len = strtol(p, &q, 10);
-			if (len == 0 && len > 100) {
+			if (len == 0 || len > 100) {
 				syntax("Bad number of measures", p);
 				len = 1;
 			}

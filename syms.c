@@ -535,6 +535,12 @@ static char psdgl[] =
 	"	M 0.8 SLW -6 1.2 RM 12.6 12.6 RL stroke\n"
 	"	7 add exch 6 sub exch 1.2 0 360 arc fill\n"
 	"	8 add exch 6 add exch 1.2 0 360 arc fill}!\n"
+	/* x y dacoda - Da Coda */
+	"/dacoda{2 1 roll 10 add 2 1 roll dup 3 -1 roll dup 3 1 roll -23 add 4 1 roll\n"
+	"	1 SLW 2 add 2 copy M 0 20 RL\n"
+	"	2 copy M -10 10 RM 20 0 RL stroke\n"
+	"	10 add 6 0 360 arc 1.7 SLW stroke\n"
+	"	/Times-Roman 16 selectfont 7 add M (Da) showc}!\n"
 	/* x y coda - coda */
 	"/coda{	1 SLW 2 add 2 copy M 0 20 RL\n"
 	"	2 copy M -10 10 RM 20 0 RL stroke\n"

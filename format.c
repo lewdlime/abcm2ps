@@ -137,6 +137,7 @@ static struct format {
 	{"textfont", &cfmt.font_tb[TEXTFONT], FORMAT_F, 0},
 	{"textoption", &cfmt.textoption, FORMAT_I, 4},
 	{"textspace", &cfmt.textspace, FORMAT_U, 0},
+	{"tieheight", &cfmt.tieheight, FORMAT_R, 0},
 	{"titlecaps", &cfmt.titlecaps, FORMAT_B, 0},
 	{"titlefont", &cfmt.font_tb[TITLEFONT], FORMAT_F, 0},
 	{"titleformat", &cfmt.titleformat, FORMAT_S, 0},
@@ -379,6 +380,7 @@ void set_format(void)
 	f->textspace = 14 PT;
 	f->scale = 1.0;
 	f->slurheight = 1.0;
+	f->tieheight = 1.0;
 	f->maxshrink = 0.65;
 	f->breaklimit = 0.7;
 	f->stretchlast = 0.25;

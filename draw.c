@@ -3109,6 +3109,7 @@ static void draw_note_ties(struct SYMBOL *k1,
 #endif
 
 		h = (.04 * (x2 - x1) + 10) * s;
+		h *= cfmt.tieheight;
 		slur_out(x1, staff_tb[staff].y + y,
 			 x2, staff_tb[staff].y + y,
 			 s, h, k1->u.note.notes[m1].ti1 & SL_DOTTED, -1);

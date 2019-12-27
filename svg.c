@@ -2344,6 +2344,21 @@ curveto:
 			free(s);
 			return;
 		}
+		if (strcmp(op, "dacoda") == 0) {
+			setg(1);
+			e = elt_dup(stack);
+			y = gcur.yoffs - pop_free_val() - 7;
+			e2 = elt_dup(stack);
+			e2->u.v += 10;
+			x = gcur.xoffs + pop_free_val() - 10;
+			fprintf(fout, "<text style=\"font:16px serif\"\n"
+				"	x=\"%.2f\" y=\"%.2f\" text-anchor=\"middle\">Da</text>\n",
+				x, y);
+			push(e2);
+			push(e);
+			xysym("coda", D_coda);
+			return;
+		}
 		if (strcmp(op, "def") == 0) {
 			ps_exec("!");
 			return;

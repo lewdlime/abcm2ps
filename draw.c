@@ -3086,6 +3086,11 @@ static void draw_note_ties(struct SYMBOL *k1,
 			x2 -= 1.5;
 		}
 
+		if (k1->dots && !(p1 & 1)
+		 && ((s > 0 && k1->doty >= 0)
+		  || (s < 0 && k1->doty < 0)))
+			x1 += 6;		// avoid clash with dots
+
 		y = 3 * (p - 18);
 //fixme: clash when 2 ties on second interval chord
 //		if (p & 1)

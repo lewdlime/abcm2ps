@@ -5,6 +5,7 @@ VERSION=8.14.6
 VDATE=2019-11-05
 
 CC=gcc
+PKG_CONFIG=pkg-config
 CFLAGS="-g -O2 -Wall -pipe"
 
 srcdir=.
@@ -57,11 +58,11 @@ if test "x$DEFAULT_FDIR" = x; then
 	DEFAULT_FDIR="$prefix/share/abcm2ps"
 fi
 
-if which pkg-config > /dev/null ; then
-	if pkg-config --exists freetype2 ; then
-		if pkg-config --exists pangocairo ; then
-			CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1 `pkg-config pango cairo freetype2 --cflags`"
-			LDLIBS="$LDLIBS `pkg-config pangocairo pangoft2 freetype2 --libs`"
+if which $PKG_CONFIG > /dev/null ; then
+	if $PKG_CONFIG --exists freetype2 ; then
+		if $PKG_CONFIG --exists pangocairo ; then
+			CPPFLAGS="$CPPFLAGS -DHAVE_PANGO=1 `$PKG_CONFIG pango cairo freetype2 --cflags`"
+			LDLIBS="$LDLIBS `$PKG_CONFIG pangocairo pangoft2 freetype2 --libs`"
 		else
 			echo "pangocairo not found - no pango support"
 		fi

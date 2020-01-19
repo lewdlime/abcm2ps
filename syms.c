@@ -543,8 +543,8 @@ static char psdgl[] =
 	"	/Times-Roman 16 selectfont 7 add M (Da) showc}!\n"
 	/* x y coda - coda */
 	"/coda{	1 SLW 2 add 2 copy M 0 20 RL\n"
-	"	2 copy M -10 10 RM 20 0 RL stroke\n"
-	"	10 add 6 0 360 arc 1.7 SLW stroke}!\n"
+	"	2 copy M -10 10 RM 20 0 RL 1.1 SLW stroke\n"
+	"	exch -7 add exch (O) 3 1 roll /Times-Bold 18 selectfont 4 add M show}!\n"
 	/* x y tclef - treble clef */
 	"/utclef{<95200072\n"
 	"	0000ff2e01c2030c\n"

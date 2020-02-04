@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2019 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 1998-2020 Jean-François Moine (http://moinejf.free.fr)
  * Adapted from abc2ps, Copyright (C) 1996-1998 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -1794,6 +1794,7 @@ static char *parse_len(char *p,
 			int *p_len)
 {
 	int len, fac;
+	int err = 0;
 	char *q;
 
 	len = dur_u;
@@ -1801,27 +1802,33 @@ static char *parse_len(char *p,
 		len *= strtol(p, &q, 10);
 		if (len <= 0) {
 			syntax("Bad length", p);
-			len = BASE_LEN;
+			len = dur_u;
 		}
 		p = q;
 	}
-	fac = 1;
-	while (*p == '/') {
-		p++;
-		if (isdigit((unsigned char) *p)) {
-			fac *= strtol(p, &q, 10);
-			if (fac == 0) {
-				syntax("Bad length divisor", p - 1);
-				fac = 1;
-			}
-			p = q;
-		} else {
-			fac *= 2;
-		}
+	if (*p != '/') {
+		*p_len = len;
+		return p;
 	}
-	if (len % fac)
+	if (p[1] == '/') {
+		while (*p == '/') {
+			if (len & 1)
+				err = 1;
+			len /= 2;
+			p++;
+		}
+	} else if (isdigit((unsigned char) p[1])) {
+		fac = strtol(p + 1, &q, 10);
+		p = q;
+		if (fac == 0 || (fac & (fac - 1)))
+			err = 1;
+		else
+			len /= fac;
+	}
+	if (err || !len) {
 		syntax("Bad length divisor", p - 1);
-	len /= fac;
+		len = dur_u;
+	}
 	*p_len = len;
 	return p;
 }

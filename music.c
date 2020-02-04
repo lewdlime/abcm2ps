@@ -2632,8 +2632,10 @@ static void set_clefs(void)
 				 && new_line == staff_clef[staff].clef->u.clef.line)
 					continue;
 				g = s;
-				while (g->voice != voice)
+				while (g && g->voice != voice)
 					g = g->ts_next;
+				if (!g)
+					continue;
 				if (g->type != CLEF) {
 					g = insert_clef(g, new_type, new_line);
 					if (s2->sflags & S_CLEF_AUTO)

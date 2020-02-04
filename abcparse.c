@@ -2044,6 +2044,8 @@ static int parse_line(char *p)
 		case CHAR_SLASH:		/* '/' */
 			if (flags & ABC_F_GRACE)
 				goto bad_char;
+			if (char_tb[(unsigned char) p[-1]] != CHAR_BAR)
+				goto bad_char;
 			q = p;
 			while (*q == '/')
 				q++;

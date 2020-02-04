@@ -3169,7 +3169,8 @@ static struct SYMBOL *sym_new(int type,
 
 	s->ts_next = last_s;
 	s->ts_prev = last_s->ts_prev;
-	s->ts_prev->ts_next = s;
+	if (s->ts_prev)
+		s->ts_prev->ts_next = s;
 	if (!s->ts_prev || s->ts_prev->type != type)
 		s->sflags |= S_SEQST;
 	last_s->ts_prev = s;

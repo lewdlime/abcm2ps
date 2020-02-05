@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2019 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 1998-2020 Jean-François Moine (http://moinejf.free.fr)
  * Adapted from abc2ps, Copyright (C) 1996-1998 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -233,7 +233,8 @@ static void sort_all(void)
 	for (;;) {
 		if (set_sy) {
 		    fl = 1;			// start a new sequence
-		    if (!new_sy) {
+//		    if (!new_sy) {
+		    if (1) {
 			set_sy = 0;
 			multi = -1;
 			memset(vn, -1, sizeof vn);
@@ -2315,7 +2316,7 @@ static void parse_staves(struct SYMBOL *s,
 /* -- get staves definition (%%staves / %%score) -- */
 static void get_staves(struct SYMBOL *s)
 {
-	struct SYMBOL *s2;
+//	struct SYMBOL *s2;
 	struct VOICE_S *p_voice, *p_voice2;
 	struct staff_s *p_staff, staves[MAXVOICE];
 	int i, flags, voice, staff, range, dup_voice, maxtime;
@@ -2357,18 +2358,18 @@ static void get_staves(struct SYMBOL *s)
 		curvoice->time = maxtime;
 
 		// put the staves before a measure bar (see draw_bar())
-		s2 = curvoice->last_sym;
-		if (s2 && s2->type == BAR && s2->time == maxtime) {
-			curvoice->last_sym = s2->prev;
-			if (!curvoice->last_sym)
-				curvoice->sym = NULL;
-			sym_link(s, STAVES);
-			s->next = s2;
-			s2->prev = s;
-			curvoice->last_sym = s2;
-		} else {
+//		s2 = curvoice->last_sym;
+//		if (s2 && s2->type == BAR && s2->time == maxtime) {
+//			curvoice->last_sym = s2->prev;
+//			if (!curvoice->last_sym)
+//				curvoice->sym = NULL;
+//			sym_link(s, STAVES);
+//			s->next = s2;
+//			s2->prev = s;
+//			curvoice->last_sym = s2;
+//		} else {
 			sym_link(s, STAVES); // link the staves in the current voice
-		}
+//		}
 		s->state = ABC_S_HEAD; /* (output PS sequences immediately) */
 		parsys->nstaff = nstaff;
 		system_new();

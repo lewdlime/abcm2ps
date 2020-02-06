@@ -1810,20 +1810,20 @@ static char *parse_len(char *p,
 		*p_len = len;
 		return p;
 	}
-	if (p[1] == '/') {
-		while (*p == '/') {
-			if (len & 1)
-				err = 1;
-			len /= 2;
-			p++;
-		}
-	} else if (isdigit((unsigned char) p[1])) {
+	if (isdigit((unsigned char) p[1])) {
 		fac = strtol(p + 1, &q, 10);
 		p = q;
 		if (fac == 0 || (fac & (fac - 1)))
 			err = 1;
 		else
 			len /= fac;
+	} else {
+		while (*p == '/') {
+			if (len & 1)
+				err = 1;
+			len /= 2;
+			p++;
+		}
 	}
 	if (err || !len) {
 		syntax("Bad length divisor", p - 1);

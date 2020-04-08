@@ -2873,10 +2873,15 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 	x1 = s1->x - 7;
 
 	if (s2->dur > s2->prev->dur) {
-		if (s2->next)
-			x2 = s2->next->x - s2->next->wl - 8;
-		else
-			x2 = realwidth - 6;
+		sy = s2->next;
+		if (!sy			// maybe a note in an overlay voice
+		 || sy->time != s2->time + s2->dur) {
+			for (sy = s2->ts_next; sy; sy = sy->ts_next) {
+				if (sy->sflags & S_SEQST)
+					break;
+			}
+		}
+		x2 = sy ? sy->x - sy->wl - 5 : realwidth - 6;
 	} else {
 		x2 = s2->x + 2;
 		if (s2->u.note.notes[s2->nhd].shhd > 0)

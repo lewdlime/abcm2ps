@@ -2877,7 +2877,8 @@ static struct SYMBOL *draw_tuplet(struct SYMBOL *t,	/* tuplet in extra */
 		if (!sy			// maybe a note in an overlay voice
 		 || sy->time != s2->time + s2->dur) {
 			for (sy = s2->ts_next; sy; sy = sy->ts_next) {
-				if (sy->sflags & S_SEQST)
+				if ((sy->sflags & S_SEQST)
+				 && sy->time >= s2->time + s2->dur)
 					break;
 			}
 		}

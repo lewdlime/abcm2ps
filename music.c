@@ -3330,6 +3330,9 @@ static void init_music_line(void)
 
 		// if bar already, keep it in sequence
 		voice = p_voice - voice_tb;
+		bar_start = p_voice->bar_start;
+		p_voice->bar_start = 0;
+
 		if (last_s
 		 && last_s->voice == voice && last_s->type == BAR) {
 			p_voice->last_sym = last_s;
@@ -3337,10 +3340,8 @@ static void init_music_line(void)
 			continue;
 		}
 
-		bar_start = p_voice->bar_start;
 		if (!bar_start)
 			continue;
-		p_voice->bar_start = 0;
 
 		if (cursys->voice[voice].range < 0
 		 || cursys->voice[voice].second

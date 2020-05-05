@@ -4632,8 +4632,8 @@ float draw_systems(float indent)
 				if (x >= x2)
 					continue;
 				draw_staff(staff, x, x2);
+				xstaff[staff] = s->x;
 			}
-			xstaff[staff] = s->x;
 			break;
 		default:
 //fixme:does not work for "%%staves K: M: $" */

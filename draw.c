@@ -4623,9 +4623,10 @@ float draw_systems(float indent)
 			s2 = s->prev;
 			if (!s2)
 				break;
-			x2 = s2->x;
-			if (s2->type != BAR)
-				x2 += s2->wr;
+			if (s2->type == BAR)
+				x2 = s2->x;
+			else
+				x2 = s->x - s->xmx;
 			staff = s->staff;
 			x = xstaff[staff];
 			if (x >= 0) {

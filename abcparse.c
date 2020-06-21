@@ -1585,13 +1585,17 @@ char *parse_acc_pit(char *p,
 		if (microscale == 0) {
 			d--;
 			d += (n - 1) << 8;	/* short [ (n-1) | (d-1) ] */
-			for (n = 1; n < MAXMICRO; n++) {
+			if (d == 0) {
+				n = MAXMICRO - 1;
+			} else {
+			    for (n = 1; n < MAXMICRO; n++) {
 				if (parse.micro_tb[n] == d)
 					break;
 				if (parse.micro_tb[n] == 0) {
 					parse.micro_tb[n] = d;
 					break;
 				}
+			    }
 			}
 			if (n == MAXMICRO) {
 				syntax("Too many microtone accidentals", p);

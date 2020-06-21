@@ -5430,6 +5430,26 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 			return s;
 		}
 		break;
+	case 'M':
+		if (strcmp(w, "MIDI") == 0
+		 && strncmp(p, "temperamentequal", 16) == 0) {
+			int n;
+
+			if (cfmt.nedo) {
+				error(1, s, "%%%%MIDI temperamentequal redefined");
+				return s;
+			}
+			p += 16;
+			while (isspace((unsigned char) *p))
+				p++;
+			n = atoi(p);
+			if (n < 7 || n > 53) {
+				error(1, s, "Bad value in %%%%MIDI temperamentequal");
+				return s;
+			}
+			cfmt.nedo = n;
+		}
+		break;
 	case 'n':
 		if (strcmp(w, "newpage") == 0) {
 			if (epsf || !in_fname)

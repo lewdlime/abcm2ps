@@ -983,7 +983,8 @@ static void draw_acc(int acc, int microscale)
 		}
 		a2b("%d %s%d ", n, acc_tb[acc & 0x07], d);
 	} else {
-		if (cfmt.nedo)		// %%MIDI temperamentequal <nedo>
+		if (acc >> 3 != 0
+		 && cfmt.nedo)		// %%MIDI temperamentequal <nedo>
 			n = ((((n >> 8) + 1) * 12) - 1) * 256 + cfmt.nedo - 1;
 		a2b("%s%d ", acc_tb[acc & 0x07], n);
 	}

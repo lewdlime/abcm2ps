@@ -95,7 +95,6 @@ static struct format {
 	{"measurefirst", &cfmt.measurefirst, FORMAT_I, 0},
 	{"measurefont", &cfmt.font_tb[MEASUREFONT], FORMAT_F, 2},
 	{"measurenb", &cfmt.measurenb, FORMAT_I, 0},
-	{"micronewps", &cfmt.micronewps, FORMAT_B, 0},
 	{"musicfont", &cfmt.musicfont, FORMAT_S, 1},
 	{"musicspace", &cfmt.musicspace, FORMAT_U, 0},
 	{"notespacingfactor", &cfmt.notespacingfactor, FORMAT_R, 1},

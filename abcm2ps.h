@@ -532,7 +532,7 @@ struct FORMAT { 		/* struct for page layout */
 	int dblrepbar, decoerr, dynalign, flatbeams, flatbeamgracing, infoline;
 	int gchordbox, graceslurs, graceword,gracespace, hyphencont;
 	int keywarn, landscape, linewarn;
-	int measurebox, measurefirst, measurenb, micronewps;
+	int measurebox, measurefirst, measurenb;
 	int nedo, oneperpage;
 #ifdef HAVE_PANGO
 	int pango;

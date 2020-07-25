@@ -1344,7 +1344,29 @@ void interpret_fmt_line(char *w,		/* keyword */
 	case FORMAT_U:
 		*((float *) fd->v) = scan_u(p, fd->subtype);
 		switch (fd->subtype) {
+		case 1:
+			if (strcmp(fd->name, "rightmargin") != 0
+			 && strcmp(fd->name, "leftmargin") != 0)
+				break;
+			staffwidth = cfmt.pagewidth -
+						cfmt.leftmargin -
+						cfmt.rightmargin;
+			if (staffwidth > 100)
+				break;
+			error(1, NULL, "'staffwidth' too small\n");
+			staffwidth = 100;
+			if (fd->name[0] == 'r')
+				cfmt.rightmargin = cfmt.pagewidth -
+						cfmt.leftmargin - staffwidth;
+			else
+				cfmt.leftmargin = cfmt.pagewidth -
+						cfmt.rightmargin - staffwidth;
+			break;
 		case 2:					/* staffwidth */
+			if (staffwidth < 100) {
+				error(1, NULL, "'staffwidth' too small\n");
+				break;
+			}
 			f = (cfmt.landscape ? cfmt.pageheight : cfmt.pagewidth)
 					- staffwidth - cfmt.leftmargin;
 			if (f < 0)

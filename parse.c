@@ -2321,6 +2321,11 @@ static void get_staves(struct SYMBOL *s)
 	struct staff_s *p_staff, staves[MAXVOICE];
 	int i, flags, voice, staff, range, dup_voice, maxtime;
 
+	memset(staves, 0, sizeof staves);
+	parse_staves(s, staves);
+	if (staves[0].voice < 0)			// if error
+		return;
+
 	voice_compress();
 	voice_dup();
 
@@ -2375,9 +2380,6 @@ static void get_staves(struct SYMBOL *s)
 		system_new();
 	}
 	staves_found = maxtime;
-
-	memset(staves, 0, sizeof staves);
-	parse_staves(s, staves);
 
 	/* initialize the voices */
 	for (voice = 0, p_voice = voice_tb;

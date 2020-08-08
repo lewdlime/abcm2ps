@@ -1804,7 +1804,7 @@ static char *parse_len(char *p,
 	len = dur_u;
 	if (isdigit((unsigned char) *p)) {
 		len *= strtol(p, &q, 10);
-		if (len <= 0 || len > 1000) {
+		if (len <= 0 || len > 10000) {
 			syntax("Bad length", p);
 			len = dur_u;
 		}

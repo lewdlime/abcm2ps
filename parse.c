@@ -4614,6 +4614,7 @@ rmax=buf + i;
 	for (;;) {
 		if (*p == '\0' || *p == '"')
 			break;
+		i = 0;
 		switch (*p++) {
 		default:
 			if ((isdigit((unsigned char) p[-1]))
@@ -4656,7 +4657,8 @@ rmax=buf + i;
 			*r++ = ' ';
 			*r++ = '0';
 			op = "RL";
-			npar = 1;
+			i = 1;
+			npar = 2;
 			break;
 		case 'z':
 			op = "closepath";
@@ -4700,7 +4702,7 @@ rmax=buf + i;
 			break;
 		}
 		*r++ = ' ';
-		for (i = 0; i < npar; i++) {
+		for ( ; i < npar; i++) {
 			while (isspace((unsigned char) *p))
 				p++;
 			if (i & 1) {		// y is inverted

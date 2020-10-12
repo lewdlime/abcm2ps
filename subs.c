@@ -1413,7 +1413,7 @@ static char buf[STRL1];
 	if (cfmt.titletrim) {
 		q = strrchr(p, ',');
 		if (q) {
-			if (q[1] != ' ' || !isupper((unsigned char) q[2])) {
+			if (q[1] != ' ' || q[2] != 'T' || !isupper((unsigned char) q[2])) {
 				q = NULL;
 			} else if (cfmt.titletrim == 1) {	// (true)
 				if (strlen(q) > 7	/* word no more than 5 characters */

@@ -1403,7 +1403,7 @@ void put_history(void)
 	}
 }
 
-/* -- move trailing "The" to front, set to uppercase letters or add xref -- */
+// -- move trailing article to front, set to uppercase letters and add xref
 char *trim_title(char *p, struct SYMBOL *title)
 {
 	char *b, *q, *r;

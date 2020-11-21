@@ -35,8 +35,8 @@ CD EF|GA Bc|
 %%rightmargin 11cm
 CD EF|
 %%scale 1.2
+%%rightmargin 4cm	% must set the right margin before the left margin
 %%leftmargin 11cm
-%%rightmargin 4cm
 CD EF|
 %%leftmargin 5cm
 %%scale 1

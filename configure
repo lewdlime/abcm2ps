@@ -1,8 +1,8 @@
 #! /bin/sh
 
 # (automatic update)
-VERSION=8.14.10
-VDATE=2020-11-20
+VERSION=8.14.11
+VDATE=2020-12-05
 
 CC=gcc
 PKG_CONFIG=pkg-config

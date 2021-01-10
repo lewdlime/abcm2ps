@@ -4389,7 +4389,8 @@ static float set_staff(void)
 	y = 0;
 	if (staff > nstaff) {
 		staff--;			/* one staff, empty */
-	} else {
+//	} else {
+	} {
 		for (i = 0; i < YSTEP; i++) {
 			v = staff_tb[staff].top[i];
 			if (y < v)
@@ -4399,9 +4400,6 @@ static float set_staff(void)
 
 	/* draw the parts and tempo indications if any */
 	y += draw_partempo(staff, y);
-
-	if (empty[staff])
-		return y;
 
 	y *= staff_tb[staff].staffscale;
 	staffsep = cfmt.staffsep * 0.5 +

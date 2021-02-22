@@ -1148,7 +1148,7 @@ static void define_head(float w, float h)
 		"<style type=\"text/css\">\n"
 		".fill {fill: currentColor}\n"
 		".stroke {stroke: currentColor; fill: none}\n"
-		"text{white-space: pre}\n";
+		"text{white-space:pre; fill:currentColor}\n";
 	static const char svg_font_style[] =
 		".music {font:24px %s;\n"
 		"	fill: currentColor}\n";
@@ -1203,7 +1203,6 @@ void define_svg_symbols(char *title, int num, float w, float h)
 			fprintf(fout,
 				"}\n"
 				"\t@page {margin: 0}\n"
-				"\ttext {white-space: pre; fill:currentColor}\n"
 				"\tsvg {display: block}\n"
 				"</style>\n"
 				"<title>%s</title>\n"

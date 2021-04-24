@@ -324,6 +324,7 @@ void close_page(void)
 				"%%%%EndPage: %d %d\n",
 				nbpages, nbpages);
 	}
+	cur_lmarg = 0;
 	cur_scale = 1.0;
 	outft = -1;
 	use_buffer = 0;

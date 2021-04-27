@@ -1462,6 +1462,8 @@ void write_title(struct SYMBOL *s)
 	char *p;
 	float sz;
 
+	if (!&s->text[2])
+		return;
 	p = &s->text[2];
 	if (*p == '\0')
 		return;

@@ -2040,10 +2040,10 @@ static int parse_line(char *p)
 		case CHAR_NOTE:
 			p = parse_note(p - 1, flags);
 			flags &= ABC_F_GRACE;
-			parse.last_sym->u.note.slur_st = slur;
-			slur = 0;
-			if (parse.last_sym->u.note.notes[0].len > 0) /* if not space */
-				curvoice->last_note = parse.last_sym;
+			if (slur && parse.last_sym->u.note.notes[0].len) {
+				parse.last_sym->u.note.slur_st = slur;
+				slur = 0;
+			}
 			break;
 		case CHAR_SLASH:		/* '/' */
 			if (flags & ABC_F_GRACE)
@@ -2078,9 +2078,10 @@ static int parse_line(char *p)
 			if (p[1] != ':') {
 				p = parse_note(p - 1, flags); /* chord */
 				flags &= ABC_F_GRACE;
-				parse.last_sym->u.note.slur_st = slur;
-				slur = 0;
-				curvoice->last_note = parse.last_sym;
+				if (slur && parse.last_sym->u.note.notes[0].len) {
+					parse.last_sym->u.note.slur_st = slur;
+					slur = 0;
+				}
 				break;
 			}
 
@@ -2511,6 +2512,8 @@ add_deco:
 		syntax("Not a note in grace note sequence", p);
 		goto err;
 	}
+	if (s->u.note.notes[0].len > 0) /* if not space */
+		curvoice->last_note = s;
 	return p;
 
 err:

@@ -2011,9 +2011,14 @@ static char txt_no_note[] = "No note in voice overlay";
 			error(1, s, "Erroneous end of voice overlap");
 			return;
 		}
-		if (p_voice->time != over_mxtime)
-			error(1, s, tx_wrong_dur);
 		curvoice = &voice_tb[over_voice];
+		if (p_voice->time != over_mxtime) {
+			error(1, s, tx_wrong_dur);
+			if (p_voice->time > over_mxtime)
+				curvoice->time = p_voice->time;
+			else
+				p_voice->time = curvoice->time;
+		}
 		over_mxtime = 0;
 		over_voice = -1;
 		over_time = -1;

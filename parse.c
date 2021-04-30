@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2020 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 1998-2021 Jean-François Moine (http://moinejf.free.fr)
  * Adapted from abc2ps, Copyright (C) 1996-1998 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -2016,8 +2016,6 @@ static char txt_no_note[] = "No note in voice overlay";
 			error(1, s, tx_wrong_dur);
 			if (p_voice->time > over_mxtime)
 				curvoice->time = p_voice->time;
-			else
-				p_voice->time = curvoice->time;
 		}
 		over_mxtime = 0;
 		over_voice = -1;
@@ -2120,8 +2118,12 @@ static char txt_no_note[] = "No note in voice overlay";
 	} else {
 		if (over_mxtime == 0)
 			over_mxtime = p_voice->time;
-		else if (p_voice->time != over_mxtime)
+		else if (p_voice->time != over_mxtime) {
 			error(1, s, tx_wrong_dur);
+			if (p_voice->time > over_mxtime)
+				voice_tb[over_voice].time =
+					over_mxtime = p_voice->time;
+		}
 	}
 	p_voice2->time = over_time;
 	curvoice = p_voice2;

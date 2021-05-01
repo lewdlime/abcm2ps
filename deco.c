@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 2000-2019 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 2000-2021 Jean-François Moine (http://moinejf.free.fr)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published
@@ -1182,7 +1182,8 @@ void deco_cnv(struct decos *dc,
 		case 34:		/* trem1..trem4 */
 			if (s->abc_type != ABC_T_NOTE
 			 || !prev
-			 || prev->abc_type != ABC_T_NOTE) {
+			 || prev->abc_type != ABC_T_NOTE
+			 || s->dur != prev->dur) {
 				error(1, s,
 					"!%s! must be on the last of a couple of notes",
 					dd->name);

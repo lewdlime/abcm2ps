@@ -6231,6 +6231,10 @@ static void set_tuplet(struct SYMBOL *t)
 		if (--r <= 0)
 			break;
 	}
+	if (!l) {
+		error(1, t, "No note in the tuplet");
+		return;
+	}
 	if (!s) {
 		error(1, t, "End of tune found inside a tuplet");
 		return;

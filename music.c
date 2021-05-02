@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2019 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 1998-2021 Jean-François Moine (http://moinejf.free.fr)
  * Adapted from abc2ps, Copyright (C) 1996-1998 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -1975,7 +1975,7 @@ normal:
 				break;
 			goto cut_here;
 		}
-		if (s->extra) {
+		if (s->extra && s->type != GRACE) {
 			if (!extra)
 				extra = s;
 			else

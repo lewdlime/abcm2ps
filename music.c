@@ -2917,7 +2917,8 @@ if (staff > nst) {
 			if (u->ymn < stb[staff].st[i].ymn)
 				stb[staff].st[i].ymn = u->ymn;
 			if (u->sflags & S_XSTEM) {
-				if (u->ts_prev->staff != staff - 1
+				if (!u->ts_prev
+				 || u->ts_prev->staff != staff - 1
 				 || u->ts_prev->abc_type != ABC_T_NOTE) {
 					error(1, s, "Bad !xstem!");
 					u->sflags &= ~S_XSTEM;

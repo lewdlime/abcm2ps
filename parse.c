@@ -3068,7 +3068,8 @@ static struct SYMBOL *get_info(struct SYMBOL *s)
 		s = get_global_def(s);
 		break;
 	case 'U':
-		deco[s->u.user.symbol] = parse.deco_tb[s->u.user.value - 128];
+		if (s->u.user.value)	// if no error
+			deco[s->u.user.symbol] = parse.deco_tb[s->u.user.value - 128];
 		break;
 	case 'u':
 		break;

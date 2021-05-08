@@ -3,7 +3,7 @@
  *
  * This file is part of abcm2ps.
  *
- * Copyright (C) 1998-2020 Jean-François Moine (http://moinejf.free.fr)
+ * Copyright (C) 1998-2021 Jean-François Moine (http://moinejf.free.fr)
  * Adapted from abc2ps, Copyright (C) 1996-1998 Michael Methfessel
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -2272,7 +2272,6 @@ static int parse_line(char *p)
 			}
 			if (p[-1] == '<')
 				i = -i;
-			broken_rhythm(curvoice->last_note, i);
 			curvoice->last_note->u.note.brhythm = i;
 			break;
 		case CHAR_IGN:			/* '*' & '`' */
@@ -2497,8 +2496,11 @@ static char *parse_note(char *p,
 
 do_brhythm:
 	if (curvoice->last_note
-	 && curvoice->last_note->u.note.brhythm != 0)
+	 && curvoice->last_note->u.note.brhythm != 0) {
+		broken_rhythm(curvoice->last_note,
+				curvoice->last_note->u.note.brhythm);
 		broken_rhythm(s, -curvoice->last_note->u.note.brhythm);
+	}
 add_deco:
 	if (dc.n > 0) {
 		memcpy(s->abc_type != ABC_T_MREST ? &s->u.note.dc

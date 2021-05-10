@@ -6164,6 +6164,13 @@ static void set_tuplet(struct SYMBOL *t)
 
 	r = t->u.tuplet.r_plet;
 	grace = t->flags & ABC_F_GRACE;
+	if (t->flags & ABC_F_GR_END) {
+		if (r != 1) {
+			error(1, t, "Empty tuplet");
+			return;
+		}
+		grace = 0;
+	}
 
 	l = 0;
 	for (s = t->abc_next; s; s = s->abc_next) {
@@ -6225,8 +6232,13 @@ static void set_tuplet(struct SYMBOL *t)
 		}
 		if (s->u.note.notes[0].len == 0)	/* space ('y') */
 			continue;
-		if (grace ^ (s->flags & ABC_F_GRACE))
-			continue;
+		if (grace) {
+			if (!(s->flags & ABC_F_GRACE)) {
+				error(1, t, "End of tuplet before end of grace sequence");
+				return;
+			}
+		} else if (s->flags & ABC_F_GRACE)
+			continue;		// skip the grace note
 		s1 = s;
 		l += s->dur;
 		if (--r <= 0)

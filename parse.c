@@ -3631,6 +3631,8 @@ void do_tune(void)
 			continue;
 		case ABC_T_TUPLET:
 			set_tuplet(s);
+			if (!s->type && (s->flags & ABC_F_GR_END))
+				curvoice->last_sym->flags |= ABC_F_GR_END;
 			break;
 		default:
 			continue;

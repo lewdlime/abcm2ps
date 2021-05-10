@@ -582,13 +582,14 @@ void frontend(unsigned char *s,
 					goto next_eol;
 				}
 			}
-			if (strncmp("ps", (char *) begin_end, end_len) == 0) {
-				if (*s == '%')
-					goto ignore;		/* comment */
-			} else {
-				if (*s == '%' && strchr(prefix, s[1])) {
-					s += 2;
-					l -= 2;
+
+			// ignore '%' or '%%' at start of line
+			if (*s == '%') {
+				s++;
+				l--;
+				if (*s == '%') {
+					s++;
+					l--;
 				}
 			}
 			goto next;

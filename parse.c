@@ -468,25 +468,6 @@ static void voice_compress(void)
 				}
 				break;
 #endif
-			case FMTCHG:
-				s2 = s->extra;
-				if (s2) {	/* dummy format */
-					if (!ns)
-						ns = s2;
-					if (s->prev) {
-						s->prev->next = s2;
-						s2->prev = s->prev;
-					}
-					if (!s->next) {
-						ns = NULL;
-						break;
-					}
-					while (s2->next)
-						s2 = s2->next;
-					s->next->prev = s2;
-					s2->next = s->next;
-				}
-				/* fall thru */
 			case TEMPO:
 			case PART:
 			case TUPLET:
@@ -554,8 +535,11 @@ static void voice_compress(void)
 			}
 			if (!ns)
 				continue;
+			s2 = s->extra;			// old compression
 			s->extra = ns;
-			s->prev->next = NULL;
+			s->prev->next = s2;
+			if (s2)
+				s2->prev = s->prev;
 			s->prev = ns->prev;
 			if (s->prev)
 				s->prev->next = s;

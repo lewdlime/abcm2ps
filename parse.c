@@ -2346,8 +2346,7 @@ static void get_staves(struct SYMBOL *s)
 		if (p_voice->sym)
 			flags = 1;
 	}
-	if (flags == 0			/* if first %%staves */
-	 || (maxtime == 0 && staves_found < 0)) {
+	if (flags == 0) {			/* if first %%staves */
 		for (voice = 0; voice < MAXVOICE; voice++)
 			parsys->voice[voice].range = -1;
 	} else {

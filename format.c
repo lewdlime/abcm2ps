@@ -1140,6 +1140,8 @@ void interpret_fmt_line(char *w,		/* keyword */
 			f = strtod(p, &q);
 			if (*q != '\0' && *q != ' ')
 				goto bad;
+			if (f < .1 || f > 10.)
+				goto bad;
 			cfmt.scale = f / 0.75;		// old -> new scale
 			return;
 		}

@@ -214,7 +214,7 @@ static void sort_all(void)
 	struct SYMBOL *s, *prev, *s2;
 	struct VOICE_S *p_voice;
 	int fl, voice, time, w, wmin, multi, mrest_time;
-	int nb, r, set_sy, new_sy;	// nv
+	int nb, r, r2, v2, set_sy, new_sy;	// nv
 	struct SYMBOL *vtb[MAXVOICE];
 	signed char vn[MAXVOICE];	/* voice indexed by range */
 
@@ -233,8 +233,7 @@ static void sort_all(void)
 	for (;;) {
 		if (set_sy) {
 		    fl = 1;			// start a new sequence
-//		    if (!new_sy) {
-		    if (1) {
+		    if (!new_sy) {
 			set_sy = 0;
 			multi = -1;
 			memset(vn, -1, sizeof vn);
@@ -354,7 +353,6 @@ static void sort_all(void)
 			 || w_tb[s->type] != wmin)
 				continue;
 			if (s->type == STAVES) {	// change STAVES to a flag
-				sy = sy->next;
 				set_sy = new_sy = 1;
 				if (s->prev)
 					s->prev->next = s->next;
@@ -362,6 +360,20 @@ static void sort_all(void)
 					voice_tb[voice].sym = s->next;
 				if (s->next)
 					s->next->prev = s->prev;
+
+				// set all voices of previous and next staff systems
+				// as reachable
+				for (r2 = 0; r2 < MAXVOICE; r2++) {
+					if (vn[r2] < 0)
+						break;
+				}
+				for (v2 = 0; v2 < MAXVOICE; v2++) {
+					if (sy->next->voice[v2].range < 0
+					 || sy->voice[v2].range >= 0)
+						continue;
+					vn[r2++] = v2;
+				}
+				sy = sy->next;		// new staff system
 			} else {
 				if (fl) {
 					fl = 0;

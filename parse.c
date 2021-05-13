@@ -911,6 +911,8 @@ static void set_bar_num(void)
 				break;
 
 			/* move the clef */
+			if (!s->next)
+				break;
 			s->next->prev = s->prev;
 			s->prev->next = s->next;
 			s->ts_next->ts_prev = s->ts_prev;

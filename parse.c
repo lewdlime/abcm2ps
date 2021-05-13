@@ -713,6 +713,8 @@ static struct SYMBOL *go_global_time(struct SYMBOL *s,
 			 && s2->time != 0)
 				break;
 		}
+		if (!s2)
+			return s2;
 		if (s2->time < voice_tb[cursys->top_voice].meter.wmeasure)
 			s = s2;
 		goto chk_time;

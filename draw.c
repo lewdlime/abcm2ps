@@ -2097,12 +2097,11 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 						} else {
 							y1 = k1->ys - 6;
 						}
-// don't clash with decorations
-//					} else {
-//						y1 = k1->ys + 3;
+					} else {
+						y1 = k1->ys + 3;
 					}
-//				} else {
-//					y1 = k1->y + 8;
+				} else {
+					y1 = k1->y + 8;
 				}
 			} else {
 				if (k1->stem < 0) {
@@ -2117,11 +2116,11 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 						} else {
 							y1 = k1->ys + 6;
 						}
-//					} else {
-//						y1 = k1->ys - 3;
+					} else {
+						y1 = k1->ys - 3;
 					}
-//				} else {
-//					y1 = k1->y - 8;
+				} else {
+					y1 = k1->y - 8;
 				}
 			}
 		}
@@ -2139,10 +2138,10 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 					 && (!(k2->sflags & S_IN_TUPLET)))
 //						|| k2->ys > y2 - 3))
 						y2 = k2->ys - 6;
-//					else
-//						y2 = k2->ys + 3;
-//				} else {
-//					y2 = k2->y + 8;
+					else
+						y2 = k2->ys + 3;
+				} else {
+					y2 = k2->y + 8;
 				}
 			} else {
 				if (k2->stem < 0) {
@@ -2152,10 +2151,10 @@ if (two_staves) error(0, k1, "*** multi-staves slurs not treated yet");
 					 && (!(k2->sflags & S_IN_TUPLET)))
 //						|| k2->ys < y2 + 3))
 						y2 = k2->ys + 6;
-//					else
-//						y2 = k2->ys - 3;
-//				} else {
-//					y2 = k2->y - 8;
+					else
+						y2 = k2->ys - 3;
+				} else {
+					y2 = k2->y - 8;
 				}
 			}
 		}

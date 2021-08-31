@@ -2139,8 +2139,10 @@ static struct SYMBOL *set_lines(struct SYMBOL *first,	/* first symbol */
 			s2 = s3;
 		if (s2)
 			s = s2;
-		while (s->x == 0 || s->x + s->shrink * 2 >= xmax)
+		while (s && (s->x == 0 || s->x + s->shrink * 2 >= xmax))
 			s = s->ts_prev;
+		if (!s)
+			break;
 cut_here:
 		if (s->sflags & S_NL) {		/* already set here - advance */
 			error(0, s, "Line split problem - "

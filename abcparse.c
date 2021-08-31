@@ -2362,11 +2362,16 @@ static char *parse_note(char *p,
 		p++;
 		if (isdigit((unsigned char) *p)		/* number of points */
 		 || *p == '-') {			/* accept negative offset... */
-			s->u.note.notes[0].shhd = strtol(p, &q, 10);
+			len = strtol(p, &q, 10);
+			if (len < -100 || len > 100) {
+				syntax("Bad width of y (space)", p);
+				len = 10;
+			}
 			p = q;
 		} else {
-			s->u.note.notes[0].shhd = 10;	// default
+			len = 10;			// default
 		}
+		s->u.note.notes[0].shhd = len;
 		goto add_deco;
 	case 'x':			/* invisible rest */
 		s->flags |= ABC_F_INVIS;

@@ -1006,6 +1006,8 @@ static char top_err[] = "Cannot identify meter top";
 		wmeasure = m1 * BASE_LEN / m2;
 		s->u.meter.expdur = 1;
 	}
+	if (wmeasure > BASE_LEN * 16 || wmeasure < 0)
+		return "Too big meter value";
 	s->u.meter.wmeasure = wmeasure;
 	s->u.meter.nmeter = nm;
 

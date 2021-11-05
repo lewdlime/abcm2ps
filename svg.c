@@ -1322,7 +1322,10 @@ static void output_font(int span)
 		if (imin > i)
 			imin = i;
 	}
-	fprintf(fout, "%.2fpx %.*s\"", gcur.font_s, imin, fn);
+	if (strchr(fn, ' '))
+		fprintf(fout, "%.2fpx '%.*s'\"", gcur.font_s, imin, fn);
+	else
+		fprintf(fout, "%.2fpx %.*s\"", gcur.font_s, imin, fn);
 }
 
 static float strw(char *s)

@@ -1806,16 +1806,9 @@ static char *parse_len(char *p,
 	len = dur_u;
 	if (isdigit((unsigned char) *p)) {
 		len *= strtol(p, &q, 10);
-		if (len <= 0 || len > 10000) {
-			syntax("Bad length", p);
-			len = dur_u;
-		}
 		p = q;
 	}
-	if (*p != '/') {
-		*p_len = len;
-		return p;
-	}
+    if (*p == '/') {
 	if (isdigit((unsigned char) p[1])) {
 		fac = strtol(p + 1, &q, 10);
 		p = q;
@@ -1833,6 +1826,11 @@ static char *parse_len(char *p,
 	}
 	if (err || !len) {
 		syntax("Bad length divisor", p - 1);
+		len = dur_u;
+	}
+    }
+	if (len <= 0 || len > 10000) {
+		syntax("Bad length", p);
 		len = dur_u;
 	}
 	*p_len = len;

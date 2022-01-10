@@ -526,6 +526,7 @@ struct FORMAT { 		/* struct for page layout */
 	float breaklimit, maxshrink, lineskipfac, parskipfac, stemheight;
 	float gutter, indent, infospace, slurheight, tieheight, notespacingfactor, scale;
 	float staffsep, sysstaffsep, maxstaffsep, maxsysstaffsep, stretchlast;
+	float staffscale;			// (treated in parse.c)
 	int abc2pscompat, alignbars, aligncomposer, autoclef;
 	int barsperstaff, breakoneoln, bstemdown, cancelkey, capo;
 	int combinevoices, contbarnb, continueall, custos;

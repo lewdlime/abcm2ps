@@ -2805,6 +2805,8 @@ static void set_global_def(void)
 			p_voice->s_clef->u.clef.type = TREBLE;
 			p_voice->s_clef->sflags &= ~S_CLEF_AUTO;
 		}
+		if (cfmt.staffscale)
+			p_voice->staffscale = cfmt.staffscale;
 	}
 
 	/* switch to the 1st voice */
@@ -5698,8 +5700,7 @@ static struct SYMBOL *process_pscomment(struct SYMBOL *s)
 				return s;
 			}
 			if (s->state != ABC_S_TUNE) {
-				for (voice = 0; voice < MAXVOICE; voice++)
-					voice_tb[voice].staffscale = scale;
+				cfmt.staffscale = scale;
 			} else {
 				curvoice->staffscale = scale;
 			}

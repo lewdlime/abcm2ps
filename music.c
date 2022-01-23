@@ -3204,9 +3204,10 @@ static void init_music_line(void)
 
 		/* move the voice to a non empty staff */
 		staff = cursys->voice[voice].staff;
-		while (staff < nstaff && cursys->staff[staff].empty)
+		while (staff <= nstaff && cursys->staff[staff].empty)
 			staff++;
-		p_voice->staff = staff;
+		if (staff <= nstaff)
+			p_voice->staff = staff;
 	}
 
 	/* add a clef at start of the main voices */

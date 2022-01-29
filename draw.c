@@ -4386,10 +4386,10 @@ static float set_staff(void)
 		staff_tb[staff].empty = 1;
 	}
 	y = 0;
-	if (staff > nstaff) {
+	if (staff > nstaff)
 		staff--;			/* one staff, empty */
-//	} else {
-	} {
+
+	{
 		for (i = 0; i < YSTEP; i++) {
 			v = staff_tb[staff].top[i];
 			if (y < v)

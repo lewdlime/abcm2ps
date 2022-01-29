@@ -1,8 +1,8 @@
 #! /bin/sh
 
 # (automatic update)
-VERSION=8.14.12
-VDATE=2021-07-14
+VERSION=8.14.13
+VDATE=2022-01-29
 
 : "${CC:=gcc}"
 : "${PKG_CONFIG:=pkg-config}"

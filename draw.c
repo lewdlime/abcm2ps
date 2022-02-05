@@ -1244,6 +1244,7 @@ static void draw_bar(struct SYMBOL *s, float bot, float h)
 		case B_BAR:
 			if (s->u.bar.dotted)
 				psf = "dotbar";
+			x -= 1;
 			break;
 		case B_OBRA:
 		case B_CBRA:

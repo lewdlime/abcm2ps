@@ -374,7 +374,7 @@ static char ps_head[] =
 
 	/* -- bars -- */
 	/* h x y bar - thin bar */
-	"/bar{M 1 SLW 0 exch RL stroke}!\n"
+	"/bar{3 -1 roll 1 exch rectfill}!\n"
 	/* h x y dotbar - dotted bar */
 	"/dotbar{[5] 0 setdash bar [] 0 setdash}!\n"
 	/* h x y thbar - thick bar */

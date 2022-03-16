@@ -1076,6 +1076,7 @@ void deco_cnv(struct decos *dc,
 	struct deco_def_s *dd;
 	unsigned char ideco;
 	static char must_note_fmt[] = "Deco !%s! must be on a note";
+	static char no_head_fmt[] = "!%s! cannot be on a head";
 
 	for (i = dc->n; --i >= 0; ) {
 		if ((ideco = dc->tm[i].t) == 0)
@@ -1089,13 +1090,16 @@ void deco_cnv(struct decos *dc,
 
 		/* special decorations */
 		switch (dd->func) {
+		case 5:
+		case 6:
+		case 7:
 		case 2:			// arp
 			if (m >= 0) {
-				error(1, s,
-					"!%s! cannot be on a head (function 2)",
-					dd->name);
+				error(1, s, no_head_fmt, dd->name);
 				break;
 			}
+			if (dd->func != 2)
+				break;
 			/* fall thru */
 		case 0:			// near
 

@@ -1099,7 +1099,7 @@ void deco_cnv(struct decos *dc,
 				break;
 			}
 			if (dd->func != 2)
-				break;
+				continue;
 			/* fall thru */
 		case 0:			// near
 

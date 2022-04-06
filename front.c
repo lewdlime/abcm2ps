@@ -583,14 +583,13 @@ void frontend(unsigned char *s,
 				}
 			}
 
-			// ignore '%' or '%%' at start of line
+			// '%' starts a comment
+			// otherwise remove '%%' at start of line
 			if (*s == '%') {
-				s++;
-				l--;
-				if (*s == '%') {
-					s++;
-					l--;
-				}
+				if (!strchr(prefix, s[1]))
+					goto ignore;
+				s += 2;
+				l -= 2;
 			}
 			goto next;
 		}

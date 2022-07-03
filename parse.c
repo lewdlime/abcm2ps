@@ -4385,12 +4385,8 @@ static void get_note(struct SYMBOL *s)
 		}
 	}
 
-	/* convert the decorations
-	 * (!beam-accel! and !beam-rall! may change the note duration)
-	 * (!8va(! may change ottava)
-	 */
-	if (s->u.note.dc.n > 0)
-		deco_cnv(&s->u.note.dc, s, prev);
+	// the conversion of decorations must be done later
+	// for !trem! in grace notes
 
 	if (curvoice->ottava) {
 		delta = curvoice->ottava;
@@ -4436,6 +4432,13 @@ static void get_note(struct SYMBOL *s)
 		case SL_HIDDEN:	s->stem = 2; break;	/* opposite */
 		}
 	}
+
+	/* convert the decorations
+	 * (!beam-accel! and !beam-rall! may change the note duration)
+	 * (!8va(! may change ottava)
+	 */
+	if (s->u.note.dc.n > 0)
+		deco_cnv(&s->u.note.dc, s, prev);
 
 	s->nohdi1 = s->nohdi2 = -1;
 

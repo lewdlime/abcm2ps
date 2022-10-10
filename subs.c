@@ -58,9 +58,14 @@ static short cw_tb[] = {
 	500,500,444,480,200,480,541,500,
 };
 
+// PS/SVG user definitions
+// This structure is dynamically created by malloc
+// so that the field 'text' has the exact size of the user string.
+// The size of this field in the structure is big enough
+// to avoid most warnings of the C compiler.
 static struct u_ps {
 	struct u_ps *next;
-	char text[2];
+	char text[100000];
 } *user_ps;
 
 /* -- print message for internal error and maybe stop -- */

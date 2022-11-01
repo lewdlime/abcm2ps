@@ -3583,6 +3583,7 @@ void do_tune(void)
 			sym_link(s, MREST);
 			s->dur = dur;
 			curvoice->time += dur;
+			s->color = curvoice->color;
 			if (s->text)
 				gch_build(s);	/* build the guitar chords */
 			if (s->u.bar.dc.n > 0)

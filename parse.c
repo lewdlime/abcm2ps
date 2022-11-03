@@ -480,6 +480,7 @@ static void voice_compress(void)
 				}
 				break;
 #endif
+			case FMTCHG:
 			case TEMPO:
 			case PART:
 			case TUPLET:

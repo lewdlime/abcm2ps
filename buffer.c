@@ -434,12 +434,18 @@ static float headfooter(int header,
 	int cft_sav, dft_sav, outbufsz_sav;
 
 	if (header) {
-		p = cfmt.header;
+		if (pagenum & 1)
+			p = cfmt.header ? cfmt.header : cfmt.header2;
+		else
+			p = cfmt.header2 ? cfmt.header2 : cfmt.header;
 		f = &cfmt.font_tb[HEADERFONT];
 		size = f->size;
 		y = -size;
 	} else {
-		p = cfmt.footer;
+		if (pagenum & 1)
+			p = cfmt.footer ? cfmt.footer : cfmt.footer2;
+		else
+			p = cfmt.footer2 ? cfmt.footer2 : cfmt.footer;
 		f = &cfmt.font_tb[FOOTERFONT];
 		size = f->size;
 		y = - (pheight - cfmt.topmargin - cfmt.botmargin)
@@ -609,7 +615,7 @@ static void init_page(void)
 		if (p)
 			cfmt.header = strdup(p);
 	}
-	if (cfmt.header) {
+	if (cfmt.header || cfmt.header2) {
 		float dy;
 
 		dy = headfooter(1, pwidth, pheight);
@@ -618,7 +624,7 @@ static void init_page(void)
 			remy -= dy;
 		}
 	}
-	if (cfmt.footer)
+	if (cfmt.footer || cfmt.footer2)
 		remy -= headfooter(0, pwidth, pheight);
 	pagenum++;
 	pagenum_nr++;

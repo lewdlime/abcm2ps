@@ -544,7 +544,7 @@ struct FORMAT { 		/* struct for page layout */
 	int staffnonote, straightflags, stretchstaff;
 	int textoption, titlecaps, titleleft, titletrim;
 	int timewarn, transpose, tuplets;
-	char *bgcolor, *dateformat, *header, *footer, *titleformat;
+	char *bgcolor, *dateformat, *header, *footer, *header2, *footer2, *titleformat;
 	char *musicfont;
 	struct FONTSPEC font_tb[FONT_MAX];
 	char ndfont;		/* current index of dynamic fonts */

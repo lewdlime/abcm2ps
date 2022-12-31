@@ -852,7 +852,7 @@ static unsigned char deco_build(char *name, char *text)
 		return 128;
 	}
 	if (c_func == 5)			// old !trill(!
-		c_func = 3;
+		c_func = 6;
 	if (c_func == 7)			// old !cresc(!
 		c_func = 6;
 

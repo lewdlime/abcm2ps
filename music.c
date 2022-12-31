@@ -382,6 +382,9 @@ static int may_combine(struct SYMBOL *s)
 	struct SYMBOL *s2;
 	int nhd2;
 
+	if (s->combine == 0
+	 && s->abc_type != ABC_T_REST)
+		return 0;
 	s2 = s->ts_next;
 	if (!s2 || s2->type != NOTEREST)
 		return 0;
@@ -519,9 +522,9 @@ static void combine_voices(void)
 	for (s = tsfirst; s->ts_next; s = s->ts_next) {
 		if (s->combine < 0)
 			continue;
-		if (s->combine == 0
-		 && s->abc_type != ABC_T_REST)
-			continue;
+//		if (s->combine == 0
+//		 && s->abc_type != ABC_T_REST)
+//			continue;
 		if (s->sflags & S_IN_TUPLET) {
 			g = s->extra;
 			if (!g)

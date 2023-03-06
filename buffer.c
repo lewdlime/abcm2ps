@@ -220,8 +220,8 @@ static void init_ps(char *str)
 				p_fmt->pageheight * PPI_96_72);
 		if (cfmt.gutter)
 			fprintf(fout,
-			 "\n	/BeginPage{1 and 0 eq{%.1f 0 T}{-%.1f 0 T}ifelse}bind\n	",
-				cfmt.gutter, cfmt.gutter);
+			 "\n	/BeginPage{1 and 0 eq{%.1f 0 T}{%.1f 0 T}ifelse}bind\n	",
+				cfmt.gutter, -cfmt.gutter);
 		fprintf(fout, ">>setpagedevice}if\n");
 	}
 	fprintf(fout, "%%%%EndSetup\n");

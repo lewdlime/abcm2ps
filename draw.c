@@ -4094,11 +4094,11 @@ static void draw_all_lyrics(void)
  * - beams
  * - decorations near the notes
  * - measure bar numbers
- * - n-plets
  * - decorations tied to the notes
- * - slurs
- * - guitar chords
- * - then remaining decorations
+ * - tuplets and slurs
+ * - elements tied to the staves (voltas, chord symbols/annotations,
+ *				  remaining decorations)
+ * - lyrics
  * The buffer output is delayed until the definition of the staff system,
  * so, global variables must be saved (see music.c delayed_output()).
  */

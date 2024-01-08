@@ -964,6 +964,7 @@ static void set_bar_num(void)
 				bar_num = s->aux;		/* (%%setbarnb) */
 //				if (s->time < bar_time) {
 //					s->aux = 0;
+					bar_time = s->time + wmeasure;
 					break;
 //				}
 			} else {

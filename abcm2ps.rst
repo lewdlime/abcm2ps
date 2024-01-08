@@ -646,7 +646,7 @@ installed in <docdir>/abcm2ps/README.md.
 The ABC music notation is at http://abcnotation.com/.
 
 Especially, you may find a discussion of differences with the
-ABC standard at http://moinejf.free.fr/abcm2ps-doc/features.xhtml
+ABC standard at http://moinejf.free.fr/abcm2ps-doc/features.html
 and a list of formatting options at http://moinejf.free.fr/abcm2ps-doc/.
 
 AUTHOR

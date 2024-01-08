@@ -53,6 +53,6 @@ rule version
 	chmod +x configure;$
 	echo "New release v$$newtag" | git commit -F- configure;$
 	git tag -a v$$newtag;$
-	echo "Don't forget: git push --follow-tags; configure"
+	echo "Don't forget: git push --follow-tags; ./configure"
 build minor: version
 build patch: version

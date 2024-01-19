@@ -1,5 +1,5 @@
 #! /bin/sh
-set -e
+set -e -f -u
 
 # (automatic update)
 VERSION=8.14.15
@@ -50,11 +50,11 @@ fi
 sed "
 s+@CC@+${CC-${host+$host-}gcc}+
 # -I.: ./config.h will not be found in srcdir.
-s+@CPPFLAGS@+$CPPFLAGS $pango_cflags -I.+
-s+@CFLAGS@+-g -O2 -Wall -pipe $CFLAGS+
-s+@LDFLAGS@+$LDFLAGS+
+s+@CPPFLAGS@+${CPPFLAGS-} ${pango_cflags-} -I.+
+s+@CFLAGS@+-g -O2 -Wall -pipe ${CFLAGS-}+
+s+@LDFLAGS@+${LDFLAGS-}+
 # -lm: useful on some architectures.
-s+@LDLIBS@+$pango_libs $LDLIBS -lm+
+s+@LDLIBS@+${pango_libs-} ${LDLIBS-} -lm+
 s+@INSTALL@+${INSTALL-/usr/bin/install -c}+
 s+@INSTALL_DATA@+${INSTALL_DATA-\$(INSTALL) -m 644}+
 s+@INSTALL_PROGRAM@+${INSTALL_PROGRAM-\$(INSTALL)}+

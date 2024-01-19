@@ -25,7 +25,7 @@ done
 
 # Most variables are just passed to sed, but the following ones are
 # also expanded by the shell and need a default value.
-: "${PKG_CONFIG=pkg-config}"
+: "${PKG_CONFIG=${host+$host-}pkg-config}"
 : "${prefix=/usr/local}"
 : "${srcdir=.}"
 
@@ -45,7 +45,7 @@ else
 fi
 
 sed "
-s+@CC@+${CC-gcc}+
+s+@CC@+${CC-${host+$host-}gcc}+
 # -I.: ./config.h will not be found in srcdir.
 s+@CPPFLAGS@+$CPPFLAGS $pango_cflags -I.+
 s+@CFLAGS@+-g -O2 -Wall -pipe $CFLAGS+

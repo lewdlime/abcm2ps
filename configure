@@ -20,6 +20,9 @@ for c in "$@"; do
 		c="${c#--}"
 		eval "${c%%=*}='${c#*=}'"
 		;;
+	*)
+		echo "$0: unknown argument: $c"
+		;;
  esac
 done
 

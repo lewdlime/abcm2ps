@@ -4,14 +4,11 @@
 VERSION=8.14.15
 VDATE=2024-01-08
 
-: "${CC:=gcc}"
 : "${PKG_CONFIG:=pkg-config}"
 CFLAGS="-g -O2 -Wall -pipe $CFLAGS"
 
 srcdir=.
 : "${prefix=/usr/local}"
-
-: "${INSTALL:=/usr/bin/install -c}"
 
 if test -f ./custom; then
 	. ./custom
@@ -32,32 +29,6 @@ case "$srcdir" in
         exit 1
 esac
 
-if test "x$INSTALL_DATA" = x; then
-	INSTALL_DATA='${INSTALL} -m 644'
-fi
-if test "x$INSTALL_PROGRAM" = x; then
-	INSTALL_PROGRAM='${INSTALL}'
-fi
-
-if test "x$exec_prefix" = x; then
-	exec_prefix='${prefix}'
-fi
-if test "x$bindir" = x; then
-	bindir='${exec_prefix}/bin'
-fi
-if test "x$datarootdir" = x; then
-	datarootdir='${prefix}/share'
-fi
-if test "x$docdir" = x; then
-	docdir='${prefix}/share/doc'
-fi
-if test "x$mandir" = x; then
-	mandir='${prefix}/share/man'
-fi
-if test "x$DEFAULT_FDIR" = x; then
-	DEFAULT_FDIR="$prefix/share/abcm2ps"
-fi
-
 if ! $PKG_CONFIG --exists freetype2 ; then
 	echo "pkg-config/freetype2 not found - no pango support"
 elif ! $PKG_CONFIG --exists pangocairo ; then
@@ -73,26 +44,28 @@ CPPFLAGS="$CPPFLAGS -I."
 LDLIBS="$LDLIBS -lm"
 # Useful on some architectures.
 
-sed "s+@CC@+$CC+
+sed "
+s+@CC@+${CC-gcc}+
 s+@CPPFLAGS@+$CPPFLAGS+
 s+@CFLAGS@+$CFLAGS+
 s+@LDFLAGS@+$LDFLAGS+
 s+@LDLIBS@+$LDLIBS+
-s+@INSTALL@+$INSTALL+
-s+@INSTALL_DATA@+$INSTALL_DATA+
-s+@INSTALL_PROGRAM@+$INSTALL_PROGRAM+
+s+@INSTALL@+${INSTALL-/usr/bin/install -c}+
+s+@INSTALL_DATA@+${INSTALL_DATA-\$(INSTALL) -m 644}+
+s+@INSTALL_PROGRAM@+${INSTALL_PROGRAM-\$(INSTALL)}+
 s+@prefix@+$prefix+
-s+@exec_prefix@+$exec_prefix+
+s+@exec_prefix@+${exec_prefix-\$(prefix)}+
 s+@srcdir@+$srcdir+
-s+@bindir@+$bindir+
-s+@datarootdir@+$datarootdir+
-s+@mandir@+$mandir+
-s+@docdir@+$docdir+" "$srcdir/Makefile.in" > Makefile
+s+@bindir@+${bindir-\$(exec_prefix)/bin}+
+s+@datarootdir@+${datarootdir-\$(prefix)/share}+
+s+@mandir@+${mandir-\$(prefix)/share/man}+
+s+@docdir@+${docdir-\$(prefix)/share/doc}+
+" "$srcdir/Makefile.in" > Makefile
 echo "Makefile created"
 
 sed "
 s/@VERSION@/$VERSION/
 s/@VDATE@/$VDATE/
-s+@DEFAULT_FDIR@+$DEFAULT_FDIR+
+s+@DEFAULT_FDIR@+${DEFAULT_FDIR-$prefix/share/abcm2ps}+
 " "$srcdir/config.h.in" > config.h
 echo "config.h created"

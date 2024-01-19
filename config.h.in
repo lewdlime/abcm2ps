@@ -10,7 +10,7 @@
 #define HAVE_MMAP 1
 
 /* default directory to search for format files */
-#define DEFAULT_FDIR xxx
+#define DEFAULT_FDIR "@DEFAULT_FDIR@"
 
-#define VERSION xxx
-#define VDATE xxx
+#define VERSION "@VERSION@"
+#define VDATE "@VDATE@"

@@ -90,8 +90,9 @@ s+@mandir@+$mandir+
 s+@docdir@+$docdir+" "$srcdir/Makefile.in" > Makefile
 echo "Makefile created"
 
-sed "s/define VERSION xxx/\define VERSION \"$VERSION\"/
-s/define VDATE xxx/define VDATE \"$VDATE\"/
-s+define DEFAULT_FDIR xxx+define DEFAULT_FDIR \"$DEFAULT_FDIR\"+
+sed "
+s/@VERSION@/$VERSION/
+s/@VDATE@/$VDATE/
+s+@DEFAULT_FDIR@+$DEFAULT_FDIR+
 " "$srcdir/config.h.in" > config.h
 echo "config.h created"

@@ -223,7 +223,7 @@ void glyph_add(char *p)
 	while (isspace(*p))
 		p++;
 	i3 = i4 = -1;
-	if (val < 0x0400) {
+	if (val < 0x0800) {
 		i1 = (val >> 6) - 2;
 		i2 = val & 0x3f;
 	} else if (val < 0x10000) {

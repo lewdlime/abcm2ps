@@ -42,7 +42,6 @@ install: build
 	mkdir -p $(bindir)
 	$(INSTALL_PROGRAM) abcm2ps $(bindir)
 	mkdir -p $(datadir)/abcm2ps
-	$(INSTALL_DATA) $(srcdir)/abc2svg.ttf $(datadir)/abcm2ps
 	$(INSTALL_DATA) $(srcdir)/*.fmt       $(datadir)/abcm2ps
 	mkdir -p $(docdir)/abcm2ps/examples
 	$(INSTALL_DATA) $(srcdir)/README.md $(docdir)/abcm2ps
